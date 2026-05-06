@@ -1,0 +1,86 @@
+# YHer-skill .gitignore
+
+# 敏感数据
+.env
+.env.local
+.env.*.local
+*.key
+secrets/
+config.yaml
+
+# 大文件 (走 HuggingFace Datasets)
+embeddings/
+data/embeddings/
+data/embeddings
+*.faiss
+*.bin
+*.pkl
+
+# 数据文件 (61MB 太大)
+chunks_tagged.jsonl
+chunks_tagged_*.jsonl
+data/exam_patterns_curated.jsonl
+data/knowledge_graph_full.jsonl
+
+# 备份
+*.bak
+*.bak.*
+*.backup
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志
+*.log
+logs/
+tmp/
+.cache/
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
+
+# HuggingFace 缓存
+.huggingface/
+models/
+*.safetensors
+
+# 临时
+*.tmp.jsonl
+chunks_meta.jsonl.tmp
+test_outputs/
+
+# 论文素材 (单独归档)
+handoff_*.md
+supervision_*.md
+phase*_design.md
+CLAUDE.md
+KNOWN_ISSUES_*.md
+exam_patterns_full_v1_*.jsonl
+
+# 系统
+Thumbs.db
+desktop.ini

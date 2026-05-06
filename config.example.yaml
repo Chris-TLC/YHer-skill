@@ -1,0 +1,48 @@
+# 一化儿 AI 化学助手 - 配置文件 v3
+
+llm:
+  # 选一个：deepseek / kimi / tongyi / zhipu / doubao / minimax / anthropic / openai
+  provider: deepseek
+
+  # 模型名（每家不同，详见 adapters/llm_client.py 的 PROVIDER_CONFIGS）
+  model: deepseek-v4-pro
+
+  # API key 从环境变量读取（推荐）
+  api_key_env: DEEPSEEK_API_KEY
+
+  # 高级配置
+  max_tokens: 2000
+  temperature: 0.3
+  enable_caching: true
+
+memory:
+  # 完整记忆 always-on（用户决策 v3）
+  enabled: true
+  user_id: chris_2026
+
+  # Supabase 配置（从环境变量读）
+  supabase_url_env: SUPABASE_URL
+  supabase_key_env: SUPABASE_KEY
+
+  # 季度高保真压缩（v3 关键）
+  compression:
+    enabled: true
+    threshold_days: 90              # 季度（90 天），非月度
+    max_summary_tokens: 4000        # 高保真（4000），非 500
+    auto_run_on_startup: true
+
+  # 成本预警
+  cost_alert:
+    monthly_budget: 30
+    alert_at_pct: 80
+
+retrieve:
+  embeddings_dir: data/embeddings/
+  top_k_chunks: 8
+  top_k_nodes: 3
+  top_k_patterns: 2
+
+format:
+  max_response_length: 1500
+  opening_max_chars: 15
+  closing_max_chars: 20
