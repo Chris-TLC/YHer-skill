@@ -28,6 +28,11 @@ data/knowledge_graph_full.jsonl
 *.backup
 *~
 .DS_Store
+data/backups/
+*.backup.json
+
+# Streamlit secrets（含 Supabase Key，不提交）
+.streamlit/secrets.toml
 
 # Python
 __pycache__/

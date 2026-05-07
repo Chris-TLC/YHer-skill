@@ -16,6 +16,8 @@ class LLMClient:
             'model_default': 'deepseek-v4-pro',
             'context_window': 1_000_000,
             'sdk': 'openai',
+            'label': 'DeepSeek（推荐，国内最快，最便宜）',
+            'key_link': 'https://platform.deepseek.com/api_keys',
             'pricing': {
                 'input_miss': 3.13,
                 'input_hit': 0.026,
@@ -27,6 +29,8 @@ class LLMClient:
             'model_default': 'moonshot-v1-128k',
             'context_window': 128_000,
             'sdk': 'openai',
+            'label': 'Kimi（月之暗面，128K 上下文）',
+            'key_link': 'https://platform.moonshot.cn/console/api-keys',
             'pricing': {'input_miss': 12, 'input_hit': 1.2, 'output': 12}
         },
         'tongyi': {
@@ -34,6 +38,8 @@ class LLMClient:
             'model_default': 'qwen-max',
             'context_window': 32_000,
             'sdk': 'openai',
+            'label': '通义千问（阿里）',
+            'key_link': 'https://dashscope.console.aliyun.com/apiKey',
             'pricing': {'input_miss': 20, 'input_hit': None, 'output': 60}
         },
         'zhipu': {
@@ -41,6 +47,8 @@ class LLMClient:
             'model_default': 'glm-4-plus',
             'context_window': 128_000,
             'sdk': 'openai',
+            'label': '智谱 GLM',
+            'key_link': 'https://bigmodel.cn/usercenter/apikeys',
             'pricing': {'input_miss': 50, 'input_hit': None, 'output': 50}
         },
         'doubao': {
@@ -48,6 +56,8 @@ class LLMClient:
             'model_default': 'doubao-pro-32k',
             'context_window': 32_000,
             'sdk': 'openai',
+            'label': '豆包（字节）',
+            'key_link': 'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey',
             'pricing': {'input_miss': 0.8, 'input_hit': None, 'output': 2}
         },
         'minimax': {
@@ -55,13 +65,17 @@ class LLMClient:
             'model_default': 'abab6.5s-chat',
             'context_window': 245_000,
             'sdk': 'openai_compat',
+            'label': 'MiniMax',
+            'key_link': 'https://platform.minimax.chat/user-center/basic-information/interface-key',
             'pricing': {'input_miss': 1, 'input_hit': None, 'output': 1}
         },
         'anthropic': {
             'base_url': 'https://api.anthropic.com/v1',
-            'model_default': 'claude-opus-4-7',
+            'model_default': 'claude-sonnet-4-6',
             'context_window': 200_000,
             'sdk': 'anthropic',
+            'label': 'Anthropic Claude（海外，需翻墙）',
+            'key_link': 'https://console.anthropic.com/settings/keys',
             'pricing': {'input_miss': 105, 'input_hit': 10.5, 'output': 525}
         },
         'openai': {
@@ -69,6 +83,8 @@ class LLMClient:
             'model_default': 'gpt-4o',
             'context_window': 128_000,
             'sdk': 'openai',
+            'label': 'OpenAI GPT（海外，需翻墙）',
+            'key_link': 'https://platform.openai.com/api-keys',
             'pricing': {'input_miss': 17.5, 'input_hit': 8.75, 'output': 70}
         },
     }
@@ -132,12 +148,24 @@ class LLMClient:
     # ── OpenAI 兼容接口（7 家国产 + OpenAI）─────────
 
     def _chat_openai(self, messages, max_tokens, temperature):
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        except Exception as e:
+            error_str = str(e).lower()
+            if '401' in error_str or 'unauthorized' in error_str or 'invalid api key' in error_str:
+                raise ValueError(f"API Key 无效，请检查是否输入正确。获取地址：{self.config.get('key_link', '')}") from e
+            if '402' in error_str or 'insufficient' in error_str or 'balance' in error_str or '余额' in error_str:
+                raise ValueError("账户余额不足，请前往充值。") from e
+            if '429' in error_str or 'rate' in error_str:
+                raise ValueError("请求过于频繁，请稍后重试。") from e
+            if 'timeout' in error_str or 'connection' in error_str or 'network' in error_str:
+                raise ConnectionError("网络异常，请检查网络连接后重试。") from e
+            raise
 
         returned_model = response.model
         self._validate_model(returned_model)

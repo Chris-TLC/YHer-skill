@@ -82,7 +82,7 @@ class YihuierMemory:
     # ========== 用户档案 ============================
 
     def get_user_profile(self, user_id: str) -> dict:
-        """获取用户档案（跨表合并 users + user_profile）"""
+        """获取用户档案（跨表合并 users + user_profile，按 user_id 隔离）"""
         user_data = {}
         profile_data = {}
 
@@ -111,6 +111,29 @@ class YihuierMemory:
             'mastered_topics': profile_data.get('mastered_topics') or [],
             'learning_goals': profile_data.get('learning_goals', ''),
         }
+
+    def sync_user_info(self, user_id: str, grade: str = None,
+                       name: str = None, school: str = None):
+        """同步用户基本信息到 Supabase（Web 端用）"""
+        import traceback
+        try:
+            user_data = {'user_id': user_id}
+            if grade:
+                user_data['grade'] = grade
+            if name:
+                user_data['school'] = name
+            if school:
+                user_data['school'] = school
+
+            self.supabase.table('users').upsert(user_data).execute()
+
+            # 确保 user_profile 行存在
+            self.supabase.table('user_profile').upsert({
+                'user_id': user_id,
+            }).execute()
+        except Exception as e:
+            print(f"[memory] ❌ sync_user_info 失败: {e}")
+            traceback.print_exc()
 
     def update_weak_topics(self, user_id: str, new_weak: list):
         """从诊断结果增量更新弱点列表"""
