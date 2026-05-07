@@ -91,7 +91,7 @@
 ### 1. 克隆 + 安装
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/YHer-skill.git
+git clone https://github.com/Chris-TLC/YHer-skill.git
 cd YHer-skill
 
 pip install -r requirements.txt
@@ -99,16 +99,18 @@ pip install -r requirements.txt
 
 ### 2. 下载 embeddings 数据
 
-embeddings 索引文件（约 154 MB）托管在 HuggingFace Datasets，方便研究复现：
+embeddings 索引文件（约 154 MB）托管在 ModelScope（国内访问最快）：
 
 ```bash
-# 方式 A：huggingface-cli（推荐）
-pip install huggingface_hub
-huggingface-cli download YOUR-HF-USERNAME/YHer-skill-embeddings \
-    --local-dir ./data/embeddings --repo-type dataset
+# 方式 A：ModelScope CLI（推荐，国内访问最快）
+pip install modelscope
+modelscope download --dataset ChrisTLC/YHer-skill-embeddings --local_dir ./data/embeddings
 
-# 方式 B：手动下载（如果网络受限可用 hf-mirror.com）
-# 详见 data/embeddings/README.md
+# 方式 B：使用 modelscope SDK
+python3 -c "from modelscope.hub.snapshot_download import snapshot_download; snapshot_download('ChrisTLC/YHer-skill-embeddings', repo_type='dataset', cache_dir='./data/embeddings')"
+
+# Dataset 主页：
+# https://www.modelscope.cn/datasets/ChrisTLC/YHer-skill-embeddings
 ```
 
 ### 3. 配置 .env
@@ -271,7 +273,7 @@ YHer-skill/
   title = {YHer-skill: A RAG-based AI Chemistry Tutor Mimicking a Real Educator's Teaching Methodology},
   year = {2026},
   publisher = {GitHub},
-  howpublished = {\url{https://github.com/YOUR-USERNAME/YHer-skill}}
+  howpublished = {\url{https://github.com/Chris-TLC/YHer-skill}}
 }
 ```
 
