@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 一化儿 AI 化学助手 - Web 版（Streamlit Cloud 公开部署）
-阶段 10：BYOK + UUID 隔离 + 8 家 LLM + ModelScope 下载
+阶段 10：BYOK + UUID 隔离 + 8 家 LLM + 对话搜索
 """
 
 import streamlit as st
@@ -9,7 +9,6 @@ import sys
 import os
 import uuid
 from pathlib import Path
-from datetime import datetime
 
 SKILL_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(SKILL_DIR))
@@ -19,7 +18,7 @@ load_dotenv(SKILL_DIR / ".env")
 
 from core.retrieve import YihuierRetriever
 from core.diagnose import diagnose_query
-from core.format_answer import format_retrieval_for_prompt
+from core.format_answer import build_response_prompt
 from adapters.llm_client import LLMClient
 
 # ── 页面配置 ─────────────────────────────────────────
@@ -27,19 +26,38 @@ st.set_page_config(
     page_title="YHer-skill：杰哥 AI 化学私教",
     page_icon="🧪",
     layout="wide",
+    initial_sidebar_state="collapsed",
+    menu_items={
+        "About": "模仿 B 站一化儿（杰哥）的高考化学应试 AI · BYOK · 长期记忆"
+    }
 )
 
-# ── Embeddings 下载（首次启动从 ModelScope 拉）────────
+# ── 隐藏 Streamlit 默认元素 ──────────────────────────
+hide_streamlit_style = """
+<style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display: none;}
+    div[data-testid="stToolbar"] {visibility: hidden;}
+    button[title="View fullscreen"] {visibility: hidden;}
+    .st-keyboard-shortcuts {display: none !important;}
+    [data-testid="stSidebarCollapseButton"] {display: none !important;}
+    div[data-testid="collapsedControl"] {display: none !important;}
+    .search-highlight {background-color: #FF6B3540; padding: 2px 4px; border-radius: 3px;}
+    .st-key-jiege {display: none;}
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# ── Embeddings 下载 ──────────────────────────────────
 EMBEDDINGS_DIR = SKILL_DIR / "data" / "embeddings"
 
 
 @st.cache_resource(show_spinner=False)
 def ensure_embeddings():
-    """确保 embeddings 存在，不存在则从 ModelScope 下载"""
     if (EMBEDDINGS_DIR / "chunks.faiss").exists():
         return str(EMBEDDINGS_DIR)
-
-    # 检查软链接
     if EMBEDDINGS_DIR.is_symlink():
         real_path = EMBEDDINGS_DIR.resolve()
         if (real_path / "chunks.faiss").exists():
@@ -55,15 +73,13 @@ def ensure_embeddings():
             )
             return local_dir
         except Exception as e:
-            st.error(f"❌ embeddings 下载失败：{e}")
-            st.info("请确保网络可访问 modelscope.cn")
+            st.error(f"embeddings 下载失败：{e}")
             st.stop()
 
 
 @st.cache_resource
 def init_retriever():
-    embeddings_path = ensure_embeddings()
-    return YihuierRetriever(embeddings_dir=embeddings_path)
+    return YihuierRetriever(embeddings_dir=ensure_embeddings())
 
 
 @st.cache_resource
@@ -71,29 +87,23 @@ def load_system_prompt():
     return (SKILL_DIR / "system_prompt.md").read_text(encoding="utf-8")
 
 
-# ── 记忆初始化 ───────────────────────────────────────
 def init_memory():
     supabase_url = os.environ.get("SUPABASE_URL", "")
     supabase_key = os.environ.get("SUPABASE_KEY", "")
-
     if not supabase_url or not supabase_key:
         return None
-
     try:
         from adapters.memory import YihuierMemory
         return YihuierMemory(supabase_url, supabase_key)
-    except Exception as e:
-        st.sidebar.warning(f"⚠️ 记忆系统不可用：{e}")
+    except Exception:
         return None
 
 
 # ── Session 初始化 ───────────────────────────────────
 def init_session():
-    """初始化 session_state，优先从 query_params 恢复 user_id"""
     if "initialized" not in st.session_state:
         st.session_state.initialized = True
 
-        # 尝试从 URL query params 恢复 user_id
         qp = st.query_params
         if "uid" in qp:
             st.session_state.user_id = qp["uid"]
@@ -105,8 +115,11 @@ def init_session():
         st.session_state.llm_provider = "deepseek"
         st.session_state.grade = ""
         st.session_state.name = ""
+        st.session_state.show_settings = False
+        st.session_state.search_query = ""
+        st.session_state.search_results = []
+        st.session_state.scroll_to_msg = None
 
-    # 如果 user_id 变了（用户手动导入），更新 query_params
     if "user_id" in st.session_state:
         st.query_params["uid"] = st.session_state.user_id
 
@@ -118,144 +131,240 @@ def is_ready():
     )
 
 
-# ── Sidebar ──────────────────────────────────────────
-def render_sidebar():
-    st.sidebar.title("⚙️ 设置")
+# ── Settings 按钮 ────────────────────────────────────
+def render_top_bar():
+    """顶部栏：标题 + 搜索 + 设置按钮"""
+    col1, col2, col3 = st.columns([3, 2, 1])
+    with col1:
+        st.markdown("### 🧪 YHer-skill：杰哥 AI 化学私教")
+    with col2:
+        # 搜索框
+        search_input = st.text_input(
+            "🔍 搜索对话历史",
+            placeholder="输入关键词搜索历史对话...",
+            key="search_input",
+            label_visibility="collapsed",
+        )
+        if search_input and search_input != st.session_state.get("_last_search", ""):
+            st.session_state._last_search = search_input
+            _do_search(search_input)
+
+    with col3:
+        # 设置按钮
+        if st.button("⚙️ 设置", use_container_width=True, key="top_settings_btn"):
+            st.session_state.show_settings = True
+            st.rerun()
+
+
+def _do_search(query: str):
+    """搜索对话历史"""
+    results = []
+    msgs = st.session_state.messages
+    # 对话配对：user 消息 + 紧随的 assistant 消息
+    i = 0
+    while i < len(msgs):
+        if msgs[i]["role"] == "user" and query.lower() in msgs[i]["content"].lower():
+            # 找紧随的 assistant 回复
+            assistant_content = ""
+            assistant_cost = None
+            if i + 1 < len(msgs) and msgs[i + 1]["role"] == "assistant":
+                assistant_content = msgs[i + 1]["content"]
+                assistant_cost = msgs[i + 1].get("cost")
+            results.append({
+                "user_idx": i,
+                "user_content": msgs[i]["content"],
+                "assistant_content": assistant_content,
+                "cost": assistant_cost,
+            })
+            i += 2 if (i + 1 < len(msgs) and msgs[i + 1]["role"] == "assistant") else 1
+        else:
+            i += 1
+
+    st.session_state.search_results = results
+
+
+# ── 顶部栏（紧凑版）──────────────────────────────────
+def render_compact_topbar():
+    """搜索栏 + 设置按钮（一行）"""
+    c1, c2 = st.columns([5, 1])
+    with c1:
+        search = st.text_input(
+            "🔍 搜索对话",
+            placeholder="输入关键词...",
+            key="compact_search",
+            label_visibility="collapsed",
+        )
+        if search and search != st.session_state.get("_compact_search_last", ""):
+            st.session_state._compact_search_last = search
+            _do_search(search)
+    with c2:
+        if st.button("⚙️", help="设置", key="gear_btn", use_container_width=True):
+            st.session_state.show_settings = True
+            st.rerun()
+
+
+# ── Settings 页面 ────────────────────────────────────
+def render_settings_page():
+    """设置页面（全屏覆盖）"""
+    # 顶部：保存 + X 关闭
+    sc1, sc2, sc3 = st.columns([4, 1, 1])
+    with sc1:
+        st.markdown("## ⚙️ 设置")
+    with sc2:
+        save_clicked = st.button("💾 保存", use_container_width=True, key="save_settings")
+    with sc3:
+        if st.button("✕ 关闭", use_container_width=True, key="close_settings"):
+            st.session_state.show_settings = False
+            st.rerun()
+
+    st.divider()
 
     # LLM 提供商
     providers = LLMClient.PROVIDER_CONFIGS
     provider_keys = list(providers.keys())
-
     current_idx = provider_keys.index(st.session_state.llm_provider) \
         if st.session_state.llm_provider in provider_keys else 0
 
-    provider = st.sidebar.selectbox(
+    provider = st.selectbox(
         "LLM 提供商",
         options=provider_keys,
         index=current_idx,
         format_func=lambda p: providers[p]["label"],
-        key="provider_select",
     )
     st.session_state.llm_provider = provider
 
     # API Key 链接
     key_link = providers[provider].get("key_link", "")
-    if key_link:
-        st.sidebar.markdown(f"[获取 API Key]({key_link})")
+    st.caption(f"[获取 API Key]({key_link})（免费注册，按量付费 ~¥0.01/题）")
 
     # API Key 输入
-    api_key = st.sidebar.text_input(
+    api_key = st.text_input(
         "API Key",
         type="password",
         placeholder="sk-xxxxxxxx",
-        help="Key 仅在当前 session 内存中保留，刷新后需重新输入。不会上传到任何服务器。",
-        key="api_key_input",
+        help="Key 仅在当前 session 内存保留，不存储。",
     )
     if api_key:
         st.session_state.api_key = api_key
 
-    st.sidebar.divider()
-
     # 年级
-    grade = st.sidebar.selectbox(
-        "年级 *（必填，影响难度）",
-        options=["", "高一", "高二", "高三"],
-        index=0 if not st.session_state.grade
-        else ["", "高一", "高二", "高三"].index(st.session_state.grade),
-        key="grade_select",
+    grade_opts = ["", "高一", "高二", "高三"]
+    current_grade_idx = grade_opts.index(st.session_state.grade) \
+        if st.session_state.grade in grade_opts else 0
+    grade = st.selectbox(
+        "年级 *（必填）",
+        options=grade_opts,
+        index=current_grade_idx,
+        help="影响杰哥讲题难度和深度",
     )
     if grade:
         st.session_state.grade = grade
-        # 同步到 Supabase
-        memory_obj = init_memory()
-        if memory_obj:
-            try:
-                memory_obj.sync_user_info(
-                    st.session_state.user_id, grade=grade)
-            except Exception:
-                pass
 
     # 姓名
-    name = st.sidebar.text_input(
-        "姓名（可选）",
-        placeholder="留空则杰哥默认称呼为'同学'",
-        max_chars=10,
+    name = st.text_input(
+        "你的名字（可选）",
         value=st.session_state.name,
-        key="name_input",
+        placeholder="杰哥会用它称呼你",
+        max_chars=10,
     )
-    if name != st.session_state.name:
-        st.session_state.name = name
-        memory_obj = init_memory()
-        if memory_obj:
-            try:
-                memory_obj.sync_user_info(
-                    st.session_state.user_id, name=name,
-                    grade=st.session_state.grade)
-            except Exception:
-                pass
+    st.session_state.name = name
 
-    st.sidebar.divider()
+    st.divider()
 
     # 用户 ID
-    with st.sidebar.expander("📊 我的用户 ID（跨设备同步）"):
-        uid = st.session_state.user_id
-        st.code(uid)
-        st.caption("这是你的唯一身份标识。换设备时复制此 ID，在另一设备粘贴以同步记忆。")
+    st.markdown("#### 📊 我的用户 ID")
+    st.caption("跨设备同步记忆：复制此 ID → 在其他设备粘贴导入")
+    st.code(st.session_state.user_id)
 
-        st.button("📋 点击选中上方 ID（Ctrl+C 复制）", key="copy_uid",
-                  on_click=lambda: None)
+    import_id = st.text_input(
+        "导入其他设备的 user_id",
+        placeholder="anon_xxxxxxxxxxxxxxxx",
+        key="import_uid_settings",
+    )
+    if st.button("切换到此 ID") and import_id:
+        if import_id.startswith("anon_") and len(import_id) == 21:
+            st.session_state.user_id = import_id
+            st.session_state.messages = []
+            st.query_params["uid"] = import_id
+            st.success("已切换，记忆已同步！")
+            st.rerun()
+        else:
+            st.error("格式错误，应为 anon_xxxxxxxxxxxxxxxx（21 字符）")
 
-        new_id = st.text_input(
-            "导入其他设备的 user_id",
-            placeholder="anon_xxxxxxxxxxxxxxxx",
-            key="import_uid",
-        )
-        if st.button("切换到此 ID") and new_id:
-            if new_id.startswith("anon_") and len(new_id) == 21:
-                st.session_state.user_id = new_id
-                st.session_state.messages = []
-                st.query_params["uid"] = new_id
-                st.rerun()
-            else:
-                st.error("格式错误，应为 anon_xxxxxxxxxxxxxxxx（21 字符）")
-
-    st.sidebar.divider()
-
-    # 链接
-    st.sidebar.markdown("🔗 **链接**")
-    st.sidebar.markdown("[GitHub 仓库](https://github.com/Chris-TLC/YHer-skill)")
-    st.sidebar.markdown("[一化儿 B 站主页](https://space.bilibili.com/277378387)")
-    st.sidebar.markdown("[ModelScope Dataset](https://www.modelscope.cn/datasets/ChrisTLC/YHer-skill-embeddings)")
-
-    st.sidebar.divider()
-
-    # 清除对话
-    if st.sidebar.button("🗑️ 清除当前对话"):
-        st.session_state.messages = []
-        st.rerun()
+    # 保存按钮逻辑
+    if save_clicked:
+        if not st.session_state.api_key:
+            st.error("请填写 API Key")
+        elif not st.session_state.grade:
+            st.error("请选择年级")
+        else:
+            memory_obj = init_memory()
+            if memory_obj and st.session_state.grade:
+                try:
+                    memory_obj.sync_user_info(
+                        st.session_state.user_id,
+                        grade=st.session_state.grade,
+                        name=st.session_state.name,
+                    )
+                except Exception:
+                    pass
+            st.session_state.show_settings = False
+            st.success("设置已保存！")
+            st.rerun()
 
 
-# ── 主区域 ───────────────────────────────────────────
+# ── Main area ────────────────────────────────────────
 def render_main():
-    st.title("🧪 YHer-skill：杰哥 AI 化学私教")
-    st.caption("模仿 B 站 [一化儿](https://space.bilibili.com/277378387)（杰哥）的高考化学应试 AI · BYOK · 长期记忆")
+    # 顶部栏
+    render_compact_topbar()
 
-    # 未配置时的欢迎页
-    if not is_ready():
-        st.info("👋 欢迎！请在左侧侧边栏配置 **API Key** 和 **年级** 后开始对话。")
-        st.markdown("""
-        ### 快速开始（2 步）：
-        1. **获取 API Key**：点击侧边栏的链接 → 注册/登录 → 复制 Key → 粘贴到输入框
-        2. **选择年级**：影响杰哥讲题难度（高一基础版 / 高二进阶版 / 高三冲刺版）
+    st.markdown(
+        '<p style="color: #888; font-size: 0.85rem; margin-top: -10px;">'
+        '模仿 B 站 <a href="https://space.bilibili.com/1526560679" target="_blank" '
+        'style="color: #FF6B35;">一化儿（杰哥）</a> 的高考化学应试 AI · BYOK · 长期记忆 · '
+        '<a href="https://github.com/Chris-TLC/YHer-skill" target="_blank" '
+        'style="color: #888;">GitHub</a>'
+        '</p>',
+        unsafe_allow_html=True,
+    )
 
-        > 推荐选择 **DeepSeek**（国内最快，¥0.01/题，1M 上下文）
-        """)
-        return
+    # 显示搜索结果
+    if st.session_state.search_results:
+        st.divider()
+        st.caption(f"🔍 找到 {len(st.session_state.search_results)} 段相关对话：")
+        for idx, result in enumerate(st.session_state.search_results):
+            with st.container():
+                c1, c2 = st.columns([8, 1])
+                with c1:
+                    user_preview = result["user_content"][:80].replace("\n", " ")
+                    asst_preview = result["assistant_content"][:60].replace("\n", " ")
+                    cost_str = f" · ¥{result['cost']:.4f}" if result["cost"] else ""
+                    st.markdown(f"**Q**: {user_preview}...")
+                    st.markdown(f"*A*: {asst_preview}...{cost_str}")
+                with c2:
+                    if st.button("📍", key=f"goto_{idx}", help="定位到这段对话"):
+                        st.session_state.search_results = []
+                        st.session_state.scroll_to_msg = result["user_idx"]
+                        st.rerun()
+                st.divider()
 
-    # 显示对话历史
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+    # 历史消息（含滚动定位标记）
+    target_idx = st.session_state.get("scroll_to_msg")
+    for idx, msg in enumerate(st.session_state.messages):
+        # 高亮目标消息
+        highlight_attr = 'id="target-msg"' if idx == target_idx else ""
+
+        avatar = "🧑‍🎓" if msg["role"] == "user" else "🧪"
+        with st.chat_message(msg["role"], avatar=avatar):
+            if highlight_attr:
+                st.markdown(
+                    f'<div {highlight_attr} style="border-left: 3px solid #FF6B35; '
+                    f'padding-left: 12px;">{msg["content"]}</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(msg["content"])
+
             if msg["role"] == "assistant" and "cost" in msg:
                 st.caption(
                     f"💰 ¥{msg['cost']:.4f} | "
@@ -264,13 +373,29 @@ def render_main():
                     f"输出 {msg.get('output_tokens', '?')}"
                 )
 
+    # 清除滚动目标
+    if target_idx is not None:
+        st.session_state.scroll_to_msg = None
+
+    # 未配置提示
+    if not is_ready():
+        st.info("👋 欢迎！点击右上角 ⚙️ **设置**，配置 API Key 和年级后开始对话。")
+        st.markdown("""
+        **快速上手**（2 步）：
+        1. 点 ⚙️ → 选择 LLM 提供商 → 点击"获取 API Key"链接 → 复制 Key → 粘贴
+        2. 选择你的年级 → 点 💾 保存
+
+        > 推荐 **DeepSeek**（国内最快，~¥0.01/题，1M 上下文）
+        """)
+        return
+
     # 输入框
     if query := st.chat_input("问杰哥一道题..."):
         st.session_state.messages.append({"role": "user", "content": query})
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar="🧑‍🎓"):
             st.markdown(query)
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar="🧪"):
             with st.spinner("🎯 杰哥思考中..."):
                 try:
                     _handle_query(query)
@@ -281,12 +406,11 @@ def render_main():
                 except Exception as e:
                     st.error(f"❌ 出错了：{e}")
                     import traceback
-                    with st.expander("详细错误信息"):
+                    with st.expander("详情"):
                         st.code(traceback.format_exc())
 
 
 def _handle_query(query: str):
-    """核心对话流程"""
     retriever = init_retriever()
     system_prompt = load_system_prompt()
 
@@ -297,16 +421,15 @@ def _handle_query(query: str):
 
     diagnosis = diagnose_query(query, retriever)
 
-    # 记忆
+    # 记忆（v3.1 缓存友好）
     memory_obj = init_memory()
     if memory_obj:
         static_memory = memory_obj.get_static_memory_section(st.session_state.user_id)
         dynamic_memory = memory_obj.get_dynamic_memory_section(st.session_state.user_id)
     else:
         static_memory = "[USER_PROFILE]\n（记忆功能未启用）"
-        dynamic_memory = "[RECENT_30_DAYS_HISTORY]\n（记忆功能未启用）"
+        dynamic_memory = "[RECENT_30_DAYS_HISTORY]\n（暂无记录）"
 
-    # 注入年级到 system_prompt
     grade_hint = f"\n\n[当前用户]\n年级: {st.session_state.grade}"
     name_hint = f"\n称呼: {st.session_state.name}" if st.session_state.name else ""
     enhanced_system_prompt = (
@@ -314,22 +437,18 @@ def _handle_query(query: str):
         "\n\n## 用户长期档案\n\n" + static_memory
     )
 
-    retrieval_text = format_retrieval_for_prompt(diagnosis)
+    response_prompt = build_response_prompt(query, diagnosis, style='auto')
 
     user_msg = f"""{dynamic_memory}
 
-[RETRIEVAL_RESULTS]
-{retrieval_text}
-
-[USER_QUERY]
-{query}"""
+{response_prompt}"""
 
     response = llm.chat(
         messages=[
             {"role": "system", "content": enhanced_system_prompt},
             {"role": "user", "content": user_msg}
         ],
-        max_tokens=2000,
+        max_tokens=3000,
     )
 
     content = response["content"]
@@ -354,7 +473,6 @@ def _handle_query(query: str):
         "cache_hit": usage["cache_hit_tokens"],
     })
 
-    # 保存到记忆
     if memory_obj:
         try:
             memory_obj.save_query(
@@ -377,11 +495,14 @@ def _handle_query(query: str):
                 pass
 
 
-# ── Main ─────────────────────────────────────────────
+# ── Main entry ───────────────────────────────────────
 def main():
     init_session()
-    render_sidebar()
-    render_main()
+
+    if st.session_state.show_settings:
+        render_settings_page()
+    else:
+        render_main()
 
 
 if __name__ == "__main__":

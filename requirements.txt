@@ -11,6 +11,11 @@ supabase>=2.0.0
 
 streamlit>=1.28.0
 
+# 阶段一引擎层后端（FastAPI 后端，App 阶段复用同一接口）
+fastapi>=0.110.0
+uvicorn>=0.27.0
+python-multipart>=0.0.9
+
 rich>=13.0.0
 pyyaml>=6.0.0
 python-dotenv>=1.0.0

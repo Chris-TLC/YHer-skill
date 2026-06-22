@@ -2,7 +2,9 @@
 
 > 模仿 B 站化学 UP 主"一化儿"（杰哥）的应试教学体系，构建以高考化学复习为目标的 RAG-based AI 私教。
 >
-> **状态**：阶段 8.6 已部署 ✅ | **下一步**：30 题盲测 + 研究性学习论文
+> **状态**：阶段 8.6 已部署 ✅ | 阶段一私教引擎层已重构（引擎/适配/后端/界面四层分离，护城河真正接入，诊断客观校验+标准解锚点+多讲法+反人机）✅ | **下一步**：Chris 搜集真题入库 + 单科托管盲测
+>
+> 阶段一详见 [`docs/阶段一_引擎层实施总结_v1.md`](docs/阶段一_引擎层实施总结_v1.md)、[`docs/YHer完整愿景总蓝图_v1.md`](docs/YHer完整愿景总蓝图_v1.md)
 
 ---
 
@@ -13,6 +15,7 @@
 - 🎓 **学段适配**：自动判断高一/高二/高三难度，从基础概念到压轴题对应不同讲法
 - 📊 **私教级长期记忆**：完整记忆 always-on，季度高保真压缩（4000 tokens 档案），跨设备 Supabase 云端同步
 - 🌐 **8 家 LLM 兼容**：DeepSeek、Kimi、通义、智谱、豆包、MiniMax、Anthropic、OpenAI
+- 🧭 **阶段一学习舱**：化学单科托管闭环（诊断题 → 能力画像 → 任务队列 → AI 批改/追问 → 复盘报告）
 
 ---
 
@@ -139,6 +142,9 @@ python3 apps/chat.py
 
 # Web 版（Streamlit）
 streamlit run apps/app.py
+
+# 阶段一 Demo：化学私教学习舱
+streamlit run apps/stage1_demo.py
 ```
 
 ---
@@ -158,7 +164,9 @@ YHer-skill/
 ├── core/                      # 核心引擎
 │   ├── retrieve.py            # RAG 检索（向量+BM25+RRF）
 │   ├── diagnose.py            # 知识点诊断
-│   └── format_answer.py       # 回答格式化器
+│   ├── format_answer.py       # 回答格式化器
+│   ├── private_tutor.py       # 阶段一私教编排（画像/诊断/任务队列）
+│   └── tutor_prompts.py       # 阶段一教学动作提示词
 │
 ├── adapters/                  # 抽象层
 │   ├── llm_client.py          # 8 家 LLM 兼容
@@ -167,6 +175,7 @@ YHer-skill/
 ├── apps/
 │   ├── chat.py                # 命令行版
 │   ├── app.py                 # Streamlit Web 版
+│   ├── stage1_demo.py         # 阶段一：单科 AI 私教学习舱
 │   └── api_server.py          # FastAPI（占位）
 │
 ├── tests/                     # 测试
@@ -177,6 +186,20 @@ YHer-skill/
 │   └── huggingface_spaces_guide.md
 └── docs/                      # 设计文档
 ```
+
+---
+
+## 🧭 阶段一 Demo：单科 AI 私教学习舱
+
+阶段一不再把 AI 定位为"问答助手"，而是定位为一节课的执行型私教：
+
+1. 输入学生画像、本次目标和托管时长
+2. 自动生成诊断题、初始能力假设和任务队列
+3. 使用 LLM 批改诊断题，定位真实错因
+4. 按任务节点执行教学：追问、微讲解、例题、流程训练、变式、复盘
+5. 结束时生成学生画像更新和下一次学习计划
+
+数据库草案见 `deploy/init_stage1_tutor.sql`，用于后续把 Demo 状态迁移到 Supabase。
 
 ---
 
