@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import os
 import sys
-import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -37,19 +36,24 @@ sys.path.insert(0, str(SKILL_DIR))
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 load_dotenv(SKILL_DIR / ".env")
 
 from adapters.store import LocalJsonStore
+from apps.security import RequestGuardMiddleware, UploadSecurityError, save_image_upload
 from core.tutor.llm_bridge import make_llm_caller
 from core.tutor.session_orchestrator import SessionOrchestrator, TutorSession
 
 app = FastAPI(title="YHer 化学私教 API", version="1.0")
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
+    RequestGuardMiddleware,
+    max_body_bytes=512 * 1024,
+    body_limit_overrides={"/upload/homework": 10 * 1024 * 1024},
+    max_requests=120,
+    window_seconds=60,
+    max_rate_keys=4096,
 )
 
 LEGACY_GONE_DETAIL = "legacy student flow retired; use /api/demo/* on port 8700"
@@ -65,6 +69,7 @@ async def reject_legacy_student_flow(request: Request, call_next):
 STORE = LocalJsonStore()
 UPLOAD_DIR = SKILL_DIR / "data" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_MAX_BYTES = 8 * 1024 * 1024
 
 
 # ── 请求模型 ──────────────────────────────────────────────
@@ -190,13 +195,17 @@ async def upload_homework(user_id: str = Form("demo"), file: UploadFile = File(.
     当前 L1：收图、存储、返回结构化占位。
     L2 印刷体OCR / L3 答案识别 / L4 手写过程，接入视觉模型后逐层增强，管线不返工。
     """
-    ext = Path(file.filename or "img.jpg").suffix or ".jpg"
-    fname = f"{user_id}_{uuid.uuid4().hex[:10]}{ext}"
-    dest = UPLOAD_DIR / fname
-    content = await file.read()
-    dest.write_bytes(content)
+    try:
+        saved = await save_image_upload(
+            file,
+            user_id=user_id,
+            upload_dir=UPLOAD_DIR,
+            max_bytes=UPLOAD_MAX_BYTES,
+        )
+    except UploadSecurityError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.code) from exc
     return {
-        "upload_id": fname, "stored": True, "size_bytes": len(content),
+        **saved, "stored": True,
         "vision_status": "pending",
         "note": "L1 管线已收图存储。印刷体OCR/答案识别/手写过程识别将逐层接入视觉模型。",
         "uploaded_at": datetime.now().isoformat(timespec="seconds"),
