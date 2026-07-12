@@ -60,6 +60,10 @@ class MasteryRecord:
     last_updated: str = ""
     source: str = "llm"  # rubric | llm | mixed —— rubric 来源可信度最高
     confidence: float = 0.3
+    belief: List[float] = field(default_factory=lambda: [0.25, 0.25, 0.25, 0.25])
+    stability: Optional[float] = None
+    last_review_at: Optional[float] = None
+    direct_answers: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -72,6 +76,12 @@ class MasteryRecord:
             last_updated=d.get("last_updated", ""),
             source=d.get("source", "llm"),
             confidence=float(d.get("confidence", 0.3)),
+            belief=[float(x) for x in d.get("belief", [0.25, 0.25, 0.25, 0.25])],
+            stability=None if d.get("stability") is None else float(d["stability"]),
+            last_review_at=(
+                None if d.get("last_review_at") is None else float(d["last_review_at"])
+            ),
+            direct_answers=int(d.get("direct_answers", 0)),
         )
 
 
@@ -128,6 +138,7 @@ class StudentModel:
     region: str = "全国卷"
     exam_system: str = "高考"
     goals: str = ""
+    learning_purpose: str = "review"
     universal: UniversalAbility = field(default_factory=UniversalAbility)
     subjects: Dict[str, SubjectAbility] = field(default_factory=dict)
 
@@ -146,6 +157,7 @@ class StudentModel:
             "region": self.region,
             "exam_system": self.exam_system,
             "goals": self.goals,
+            "learning_purpose": self.learning_purpose,
             "universal": self.universal.to_dict(),
             "subjects": {k: v.to_dict() for k, v in self.subjects.items()},
         }
@@ -159,6 +171,7 @@ class StudentModel:
             region=d.get("region", "全国卷"),
             exam_system=d.get("exam_system", "高考"),
             goals=d.get("goals", ""),
+            learning_purpose=d.get("learning_purpose", "review"),
             universal=UniversalAbility.from_dict(d.get("universal")),
             subjects={
                 k: SubjectAbility.from_dict(v) for k, v in (d.get("subjects", {}) or {}).items()

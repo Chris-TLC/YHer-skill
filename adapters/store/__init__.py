@@ -5,8 +5,9 @@ from __future__ import annotations
 
 from .base import StorePort
 from .local_json import LocalJsonStore
+from .memory import MemoryStore
 
-__all__ = ["StorePort", "LocalJsonStore", "make_store"]
+__all__ = ["StorePort", "LocalJsonStore", "MemoryStore", "make_store"]
 
 
 def make_store(mode: str = "local", **kwargs) -> StorePort:
