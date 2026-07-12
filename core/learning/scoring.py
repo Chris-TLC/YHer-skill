@@ -90,6 +90,8 @@ def score_item(
     llm_grader: LLMGrader | None = None,
 ) -> ScoreResult:
     """Score one server-held item. The caller never supplies an item or key."""
+    if item.answer_verification_status != "passed":
+        return _deferred_result("unverified_answer_evidence")
     if item.scoring_mode == "mcq":
         expected = normalize_mcq(item.answer_values[0]) if len(item.answer_values) == 1 else None
         if expected is None:
@@ -106,6 +108,8 @@ def score_item(
         return _deterministic_result(item, correct)
     if item.scoring_mode != "free_llm":
         raise ValueError(f"unsupported scoring mode: {item.scoring_mode}")
+    if not item.llm_gradable:
+        return _deferred_result("unverified_answer_evidence")
     if llm_grader is None:
         return _deferred_result()
     try:
@@ -170,13 +174,13 @@ def _normalize_unit(unit: str | None) -> str | None:
     return unicodedata.normalize("NFKC", unit).replace(" ", "").replace("⋅", "·").lower()
 
 
-def _deferred_result() -> ScoreResult:
+def _deferred_result(error_code: str = "llm_unavailable_or_invalid") -> ScoreResult:
     return ScoreResult(
         status="deferred",
         correct=None,
         likelihood=(0.25, 0.25, 0.25, 0.25),
         update_allowed=False,
-        error_code="llm_unavailable_or_invalid",
+        error_code=error_code,
         confidence=0.0,
     )
 

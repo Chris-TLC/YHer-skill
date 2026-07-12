@@ -39,6 +39,7 @@ def _catalog() -> ItemCatalog:
                 item_type="mcq",
                 scoring_mode="mcq",
                 answer_values=("A",),
+                answer_verification_status="passed",
                 source_label="synthetic fixture",
             )
         )
@@ -291,6 +292,57 @@ def test_actual_catalog_never_places_media_only_questions_in_session_partitions(
     practice_ids = session["partitions"]["practice"]["ids"]
     assert practice_ids
     assert catalog.items[practice_ids[0]].scoring_mode == "free_llm"
+    assert catalog.items[practice_ids[0]].answer_verification_status == "passed"
+
+
+def test_unverified_free_response_is_excluded_from_practice_partition():
+    base = _catalog()
+    unverified = CatalogItem(
+        item_id="unverified-free",
+        family_id="aaa-unverified-free",
+        aligned_item_id="v3-unverified-free",
+        alignment_status="auto_inherited",
+        node_ids=(NODE,),
+        stem_blocks=({"para": [{"type": "text", "text": "unverified free"}]},),
+        stem_text="unverified free",
+        stem_hash="unverified-free",
+        stem_normalized="unverifiedfree",
+        options={},
+        difficulty=0.5,
+        item_type="free",
+        scoring_mode="free_llm",
+        answer_values=("partial",),
+        rubric=({"point_id": "answer", "desc": "partial"},),
+        answer_verification_status="needs_review",
+        source_label="fixture",
+    )
+    verified = CatalogItem(
+        item_id="verified-free",
+        family_id="aab-verified-free",
+        aligned_item_id="v3-verified-free",
+        alignment_status="auto_inherited",
+        node_ids=(NODE,),
+        stem_blocks=({"para": [{"type": "text", "text": "verified free"}]},),
+        stem_text="verified free",
+        stem_hash="verified-free",
+        stem_normalized="verifiedfree",
+        options={},
+        difficulty=0.5,
+        item_type="free",
+        scoring_mode="free_llm",
+        answer_values=("complete",),
+        rubric=({"point_id": "answer", "desc": "complete"},),
+        answer_verification_status="passed",
+        source_label="fixture",
+    )
+    catalog = ItemCatalog.from_items([*base.items.values(), unverified, verified])
+
+    service = SessionService(catalog, MemoryStore())
+    session_id = service.start_session("verified-practice", NODE, "30min")["session_id"]
+    practice_ids = service.store.load_session(session_id)["partitions"]["practice"]["ids"]
+
+    assert practice_ids == [verified.item_id]
+    assert unverified.item_id not in practice_ids
 
 
 def test_done_response_embeds_the_same_safe_report():
@@ -529,9 +581,11 @@ def test_actual_oxidation_diagnosis_uses_aggregated_prerequisite_eig_candidates(
         if assignment["role"] == "prereq":
             break
         local_answers += 1
-        service.submit(sid, assignment["assignment_id"], f"prereq-local-{index}", "Z")
+        wrong = "F" if assignment["question"]["kind"] == "mcq" else "999999999"
+        service.submit(sid, assignment["assignment_id"], f"prereq-local-{index}", wrong)
     assert assignment["role"] == "prereq"
-    service.submit(sid, assignment["assignment_id"], "prereq-answer", "Z")
+    wrong = "F" if assignment["question"]["kind"] == "mcq" else "999999999"
+    service.submit(sid, assignment["assignment_id"], "prereq-answer", wrong)
     record = store.load_student("prereq-eig")["subjects"]["chemistry"]["kg_mastery"][NODE]
     assert record["direct_answers"] == local_answers
 

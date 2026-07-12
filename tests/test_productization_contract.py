@@ -36,6 +36,7 @@ def _fixture_catalog() -> ItemCatalog:
                 item_type="mcq",
                 scoring_mode="mcq",
                 answer_values=("A",),
+                answer_verification_status="passed",
                 source_label="fixture",
             )
             for index in range(10)

@@ -117,7 +117,7 @@ class SessionService:
             _one_per_family(
                 item
                 for item in self.catalog.for_node(node)
-                if item.scoring_mode == "free_llm"
+                if item.llm_gradable
                 and not item.has_media
                 and item.family_id not in held_out_families
             ),
@@ -552,6 +552,12 @@ class SessionService:
             and event.get("phase") == "diagnostic"
         }
         evidence: list[dict[str, Any]] = []
+        result_summary = {
+            "total": 0,
+            "correct": 0,
+            "incorrect": 0,
+            "deferred": 0,
+        }
         for assignment in session["assignments"].values():
             if assignment.get("phase") != "diagnostic" or not assignment.get("submitted"):
                 continue
@@ -559,22 +565,27 @@ class SessionService:
             item = self.catalog.items[assignment["item_id"]]
             correct = event.get("correct")
             result = "correct" if correct is True else "incorrect" if correct is False else "deferred"
+            authoritative = item.authoritative_solution
+            if authoritative is None:
+                continue
+            result_summary["total"] += 1
+            result_summary[result] += 1
             evidence.append(
                 {
                     "question": item.stem_text,
                     "difficulty": item.difficulty,
                     "source": item.source_label,
-                    "criteria": [dict(point) for point in item.rubric],
-                    "expected_response": list(item.answer_values),
+                    "expected_response": authoritative["answers"],
+                    "solution_steps": authoritative["solution_steps"],
+                    "key_insight": authoritative["key_insight"],
                     "result": result,
-                    "cause_code": event.get("error_code"),
-                    "confidence": event.get("confidence"),
                 }
             )
         return {
             "node": session["node"],
             "grade": session["grade"],
             "learning_purpose": session["learning_purpose"],
+            "result_summary": result_summary,
             "evidence": evidence,
         }
 

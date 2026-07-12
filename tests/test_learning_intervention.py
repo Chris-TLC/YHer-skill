@@ -44,6 +44,10 @@ def _catalog() -> ItemCatalog:
                 scoring_mode="mcq",
                 answer_values=("A",),
                 rubric=({"point_id": "p1", "desc": f"criterion {index}"},),
+                answer_verification_status="passed",
+                answer_verification_confidence=0.99,
+                solution_steps=(f"standard solution {index}",),
+                solution_key_insight=f"verified insight {index}",
                 source_label=f"202{index % 5}上海卷",
             )
             for index in range(10)
@@ -248,9 +252,23 @@ def test_slow_explanation_does_not_block_health_or_another_sessions_next() -> No
     )
     service = app.state.session_service
     slow_session = service.start_session("slow-provider", NODE, "30min")["session_id"]
+    service.next_assignment(slow_session)
     state = store.load_session(slow_session)
+    assignment = next(iter(state["assignments"].values()))
+    assignment["submitted"] = True
+    state["current_assignment_id"] = None
     state["phase"] = "learning"
     store.save_session(slow_session, state)
+    store.append_event(
+        "slow-provider",
+        {
+            "kind": "answer_scored",
+            "session_id": slow_session,
+            "assignment_id": assignment["assignment_id"],
+            "phase": "diagnostic",
+            "correct": True,
+        },
+    )
     other_session = service.start_session("fast-path", NODE, "30min")["session_id"]
 
     slow_client, fast_client = TestClient(app), TestClient(app)
@@ -386,12 +404,13 @@ def test_explanation_prompt_binds_private_evidence_but_public_view_hides_provide
     evidence = context["evidence"][0]
     assert evidence["difficulty"] in {(index + 1) / 10 for index in range(10)}
     assert evidence["source"] in {f"202{index % 5}上海卷" for index in range(10)}
-    assert evidence["criteria"]
+    assert evidence["solution_steps"]
+    assert evidence["expected_response"]
     assert evidence["result"] in {"correct", "incorrect", "deferred"}
     for required in ("数据代入", "变量", "因果链", "难度", "比喻", "必要"):
         assert required in prompt
     assert checkpoint["explanation"]["status"] == "generated"
-    assert checkpoint["explanation"]["title"] == "电子守恒复盘"
+    assert checkpoint["explanation"]["title"] == f"{NODE}标准解复盘"
     assert "model" not in checkpoint["explanation"]
     assert "provider" not in str(checkpoint).lower()
     assert "must-not-leak" not in str(checkpoint)
@@ -403,6 +422,189 @@ def test_explanation_prompt_binds_private_evidence_but_public_view_hides_provide
     assert generation_events[0]["cost_yuan"] == 0.031
     assert "model" not in generation_events[0]
     assert "provider" not in generation_events[0]
+
+
+def test_unverified_incomplete_item_never_reaches_the_explanation_provider() -> None:
+    catalog = _catalog()
+    trusted = catalog.items["item-1"]
+    incomplete = CatalogItem(
+        item_id="incomplete",
+        family_id="incomplete-family",
+        aligned_item_id="incomplete-v3",
+        alignment_status="auto_inherited",
+        node_ids=(NODE,),
+        stem_blocks=(
+            {
+                "para": [
+                    {
+                        "type": "text",
+                        "text": "6FeCl2 + NaClO3 + 6HCl = ___ + 3H2O + ___",
+                    }
+                ]
+            },
+        ),
+        stem_text="6FeCl2 + NaClO3 + 6HCl = ___ + 3H2O + ___",
+        stem_hash="incomplete-hash",
+        stem_normalized="incomplete",
+        options={},
+        difficulty=0.5,
+        item_type="free",
+        scoring_mode="free_llm",
+        answer_values=("6FeCl3",),
+        rubric=({"point_id": "ans", "desc": "6FeCl3"},),
+        answer_verification_status="needs_review",
+        answer_verification_confidence=0.623,
+        solution_steps=(),
+        source_label="incomplete source",
+    )
+    service = SessionService(ItemCatalog.from_items([incomplete, trusted]), MemoryStore())
+    session = {
+        "session_id": "source-contract",
+        "user_id": "source-contract-user",
+        "node": NODE,
+        "grade": "高二",
+        "learning_purpose": "review",
+        "assignments": {
+            "unverified-assignment": {
+                "assignment_id": "unverified-assignment",
+                "item_id": incomplete.item_id,
+                "phase": "diagnostic",
+                "submitted": True,
+            },
+            "verified-assignment": {
+                "assignment_id": "verified-assignment",
+                "item_id": trusted.item_id,
+                "phase": "diagnostic",
+                "submitted": True,
+            },
+        },
+    }
+    service.store.append_event(
+        session["user_id"],
+        {
+            "kind": "answer_scored",
+            "session_id": session["session_id"],
+            "assignment_id": "unverified-assignment",
+            "phase": "diagnostic",
+            "correct": True,
+        },
+    )
+    service.store.append_event(
+        session["user_id"],
+        {
+            "kind": "answer_scored",
+            "session_id": session["session_id"],
+            "assignment_id": "verified-assignment",
+            "phase": "diagnostic",
+            "correct": True,
+        },
+    )
+
+    context = service._explanation_context(session)
+    serialized = json.dumps(context, ensure_ascii=False)
+
+    assert context["result_summary"] == {
+        "total": 1,
+        "correct": 1,
+        "incorrect": 0,
+        "deferred": 0,
+    }
+    assert len(context["evidence"]) == 1
+    assert context["evidence"][0]["question"] == trusted.stem_text
+    assert context["evidence"][0]["solution_steps"] == list(trusted.solution_steps)
+    assert "analysis_blocks" not in context["evidence"][0]
+    assert incomplete.stem_text not in serialized
+    assert "6FeCl3" not in serialized
+
+
+def test_authoritative_projection_removes_wrong_chemistry_and_all_correct_blame() -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    class ContradictoryProvider:
+        def generate(self, **_kwargs):
+            return {
+                "content": {
+                    "title": "错误标题",
+                    "diagnosis": "你作答错误，而且基础薄弱。",
+                    "worked_example": (
+                        "NaClO3 中没有 Cl；Cl 从 +5 变为 0 得 5e，"
+                        "即使 6 与 5 不等也可写出 3Cl2。"
+                    ),
+                    "causal_chain": ["6FeCl2 只有 6 个 Cl"],
+                    "exam_strategy": ["忽略电子守恒"],
+                    "analogy_used": True,
+                },
+                "usage": {"input_tokens": 100, "output_tokens": 50},
+                "cost_yuan": 0.01,
+            }
+
+    context = {
+        "node": NODE,
+        "result_summary": {
+            "total": 4,
+            "correct": 4,
+            "incorrect": 0,
+            "deferred": 0,
+            "unverified_for_teaching": 1,
+        },
+        "evidence": [
+            {
+                "question": "在给定条件下，哪种物质能完全消耗？",
+                "difficulty": 0.75,
+                "source": "2022上海卷",
+                "result": "correct",
+                "expected_response": ["A"],
+                "solution_steps": [
+                    "6.4g铜为0.1mol，稀硝酸为0.45mol；按方程式稀硝酸过量，铜完全消耗。"
+                ],
+                "key_insight": "先由质量和浓度求物质的量，再按方程式比较。",
+            }
+        ],
+    }
+
+    explanation, audit = module.generate_explanation(ContradictoryProvider(), context)
+    rendered = json.dumps(explanation, ensure_ascii=False)
+
+    assert explanation["status"] == "generated"
+    assert "4/4" in explanation["diagnosis"]
+    assert "作答错误" not in rendered
+    assert "薄弱" not in rendered
+    assert "NaClO3" not in rendered
+    assert "3Cl2" not in rendered
+    assert "6 与 5" not in rendered
+    assert context["evidence"][0]["solution_steps"][0] in explanation["worked_example"]
+    assert explanation["causal_chain"] == context["evidence"][0]["solution_steps"]
+    assert explanation["analogy_used"] is False
+    assert audit["generation_status"] == "generated"
+    assert audit["grounding_status"] == "authoritative_projection"
+
+
+def test_no_verified_solution_skips_provider_instead_of_guessing() -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    class MustNotRun:
+        def generate(self, **_kwargs):
+            raise AssertionError("unverified evidence must not be sent to the provider")
+
+    explanation, audit = module.generate_explanation(
+        MustNotRun(),
+        {
+            "node": NODE,
+            "result_summary": {
+                "total": 1,
+                "correct": 1,
+                "incorrect": 0,
+                "deferred": 0,
+                "unverified_for_teaching": 1,
+            },
+            "evidence": [],
+        },
+    )
+
+    assert explanation["status"] == "evidence_fallback"
+    assert "1/1" in explanation["diagnosis"]
+    assert audit["generation_status"] == "evidence_fallback"
+    assert audit["grounding_status"] == "no_verified_solution"
 
 
 def test_explanation_provider_failure_is_honest_and_does_not_block_ack() -> None:
@@ -464,7 +666,19 @@ def test_billed_invalid_explanation_retains_usage_and_cost_in_fallback_audit() -
             }
 
     explanation, audit = module.generate_explanation(
-        BilledInvalidProvider(), {"node": NODE, "evidence": []}
+        BilledInvalidProvider(),
+        {
+            "node": NODE,
+            "evidence": [
+                {
+                    "question": "已核验例题",
+                    "source": "测试卷",
+                    "result": "incorrect",
+                    "expected_response": ["A"],
+                    "solution_steps": ["标准步骤"],
+                }
+            ],
+        },
     )
 
     assert explanation["status"] == "offline_fallback"
@@ -473,6 +687,188 @@ def test_billed_invalid_explanation_retains_usage_and_cost_in_fallback_audit() -
     assert audit["cost_yuan"] == 0.018911
     assert "model" not in audit
     assert "provider" not in audit
+
+
+def test_explanation_prompt_makes_authoritative_answers_and_conservation_hard_constraints() -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    prompt = module.build_explanation_prompt(
+        {
+            "node": NODE,
+            "evidence": [
+                {
+                    "question": "配平 6FeCl2 + NaClO3 + 6HCl",
+                    "expected_response": ["6FeCl3", "NaCl"],
+                    "criteria": [{"desc": "电子守恒与原子守恒"}],
+                    "result": "incorrect",
+                }
+            ],
+        }
+    )
+
+    for required in (
+        "expected_response 是权威答案",
+        "不得引入权威答案中没有的产物",
+        "原子守恒",
+        "电荷守恒",
+        "电子得失守恒",
+        "任何一步不自洽就不得输出",
+    ):
+        assert required in prompt
+
+
+@pytest.mark.parametrize(
+    "bad_text",
+    (
+        "NaClO3 中 Cl 从 +5 价降到 0 价，得到 5 个电子，通常生成 Cl2。",
+        "NaClO3 中无 Cl，因此先写成 6FeCl3·NaCl，再改为 NaCl。",
+        "6FeCl2 中有 6 个 Cl；检查时再按 6×2=12 个 Cl。",
+        "O2F2 中 O 从 +1 到 0，四份 O2F2 共得到 1×4=4 个电子。",
+        "失电子 6 个、得电子 5 个，电子得失不相等，但仍可继续配平。",
+    ),
+)
+def test_observed_hard_chemistry_contradictions_fail_closed(bad_text: str) -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    class BadProvider:
+        def generate(self, **_kwargs):
+            return {
+                "content": {
+                    "title": "错误讲解",
+                    "diagnosis": "需要复盘。",
+                    "worked_example": bad_text,
+                    "causal_chain": [bad_text],
+                    "exam_strategy": ["最后验算"],
+                    "analogy_used": False,
+                },
+                "usage": {"input_tokens": 2_066, "output_tokens": 822},
+                "cost_yuan": 0.0116123,
+            }
+
+    context = {
+        "node": NODE,
+        "evidence": [
+            {
+                "question": (
+                    "6FeCl2 + NaClO3 + 6HCl = 6FeCl3 + 3H2O + NaCl；"
+                    "H2S + 4O2F2 = SF6 + 2HF + 4O2"
+                ),
+                "expected_response": ["6FeCl3", "NaCl", "1:4"],
+                "criteria": [{"desc": "原子、电子和电荷守恒"}],
+                "solution_steps": ["按权威标准解逐项核对原子、电子和电荷守恒。"],
+                "result": "incorrect",
+            }
+        ],
+    }
+
+    explanation, audit = module.generate_explanation(BadProvider(), context)
+
+    assert explanation["status"] == "generated"
+    assert audit["generation_status"] == "generated"
+    assert audit["quality_status"] == "projected"
+    assert audit["quality_failures"]
+    assert audit["usage"] == {"input_tokens": 2_066, "output_tokens": 822}
+    assert audit["cost_yuan"] == pytest.approx(0.0116123)
+    assert bad_text not in str(explanation)
+
+
+def test_semantic_validator_rejection_aggregates_billed_generation_and_review() -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    class ReviewedProvider:
+        def generate(self, **_kwargs):
+            return {
+                "content": {
+                    "title": "表面完整",
+                    "diagnosis": "需要复盘。",
+                    "worked_example": "逐步配平并检查。",
+                    "causal_chain": ["标价", "守恒", "复核"],
+                    "exam_strategy": ["最后验算"],
+                    "analogy_used": False,
+                },
+                "usage": {"input_tokens": 800, "output_tokens": 400},
+                "cost_yuan": 0.01,
+            }
+
+        def validate(self, **_kwargs):
+            return {
+                "valid": False,
+                "errors": ["产物与 expected_response 冲突"],
+                "usage": {"input_tokens": 500, "output_tokens": 80},
+                "cost_yuan": 0.003,
+            }
+
+    context = {
+        "node": NODE,
+        "evidence": [
+            {
+                "question": "配平氧化还原反应",
+                "expected_response": ["6FeCl3", "NaCl"],
+                "criteria": [{"desc": "电子守恒"}],
+                "solution_steps": ["按权威标准解完成配平并检查守恒。"],
+                "result": "incorrect",
+            }
+        ],
+    }
+
+    explanation, audit = module.generate_explanation(ReviewedProvider(), context)
+
+    assert explanation["status"] == "generated"
+    assert audit["generation_status"] == "generated"
+    assert audit["grounding_status"] == "authoritative_projection"
+    assert audit["usage"] == {"input_tokens": 800, "output_tokens": 400}
+    assert audit["cost_yuan"] == pytest.approx(0.01)
+
+
+def test_chat_explanation_semantic_review_is_evidence_bound_and_deterministic() -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    class FakeReviewClient:
+        def __init__(self):
+            self.calls = []
+
+        def chat(self, messages, **kwargs):
+            self.calls.append((messages, kwargs))
+            return {
+                "content": json.dumps(
+                    {"valid": False, "errors": ["电子得失不守恒"]}, ensure_ascii=False
+                ),
+                "usage": {"input_tokens": 500, "output_tokens": 80},
+                "cost_yuan": 0.003,
+            }
+
+    client = FakeReviewClient()
+    provider = module.ChatExplanationProvider(client)
+    context = {
+        "node": NODE,
+        "evidence": [
+            {
+                "question": "配平方程式",
+                "expected_response": ["6FeCl3", "NaCl"],
+                "criteria": [{"desc": "电子守恒"}],
+            }
+        ],
+    }
+    result = provider.validate(
+        explanation={
+            "title": "讲解",
+            "diagnosis": "复盘",
+            "worked_example": "逐步计算",
+            "causal_chain": ["标价", "守恒"],
+            "exam_strategy": ["验算"],
+            "analogy_used": False,
+        },
+        context=context,
+    )
+
+    assert result["valid"] is False
+    assert result["errors"] == ["电子得失不守恒"]
+    messages, kwargs = client.calls[0]
+    assert "expected_response" in messages[-1]["content"]
+    assert "原子守恒" in messages[-1]["content"]
+    assert "电荷守恒" in messages[-1]["content"]
+    assert "电子得失守恒" in messages[-1]["content"]
+    assert kwargs["temperature"] == 0.0
 
 
 def test_offline_fallback_is_evidence_bound_and_safe_for_non_redox_nodes() -> None:

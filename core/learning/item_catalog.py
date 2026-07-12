@@ -58,13 +58,43 @@ class CatalogItem:
     scoring_mode: str
     answer_values: tuple[str, ...]
     rubric: tuple[dict[str, Any], ...] = ()
+    answer_verification_status: str = ""
+    answer_verification_confidence: float | None = None
+    solution_steps: tuple[str, ...] = ()
+    solution_key_insight: str = ""
+    analysis_blocks: tuple[dict[str, Any], ...] = ()
     has_media: bool = False
     numeric_unit: str | None = None
     source_label: str = ""
 
     @property
     def deterministic(self) -> bool:
-        return self.scoring_mode in {"mcq", "numeric"} and not self.has_media
+        return (
+            self.scoring_mode in {"mcq", "numeric"}
+            and not self.has_media
+            and self.answer_verification_status == "passed"
+        )
+
+    @property
+    def authoritative_solution(self) -> dict[str, Any] | None:
+        """Return private teaching evidence only after answer review passed."""
+        if self.answer_verification_status != "passed" or not self.solution_steps:
+            return None
+        return {
+            "answers": list(self.answer_values),
+            "solution_steps": list(self.solution_steps),
+            "key_insight": self.solution_key_insight,
+        }
+
+    @property
+    def llm_gradable(self) -> bool:
+        """Allow free-response grading only with a reviewed key and rubric."""
+        return bool(
+            self.scoring_mode == "free_llm"
+            and self.answer_verification_status == "passed"
+            and self.answer_values
+            and self.rubric
+        )
 
     def public_question(self) -> dict[str, Any]:
         """Build a whitelist-only pre-submit view; no private dict is copied."""
@@ -283,6 +313,7 @@ def _adapt_item(v4: dict[str, Any], v3: dict[str, Any], family_id: str) -> Catal
     from core.learning.scoring import normalize_mcq, parse_scalar_answer
 
     solution = v4.get("standard_solution") or {}
+    verification = v4.get("answer_verification") or {}
     answer_values = tuple(
         str(value).strip()
         for value in (solution.get("final_answers") or [])
@@ -319,10 +350,26 @@ def _adapt_item(v4: dict[str, Any], v3: dict[str, Any], family_id: str) -> Catal
         scoring_mode=scoring_mode,
         answer_values=answer_values,
         rubric=tuple(v4.get("rubric") or ()),
+        answer_verification_status=str(verification.get("verification_status") or ""),
+        answer_verification_confidence=_optional_float(verification.get("confidence")),
+        solution_steps=tuple(
+            str(step).strip()
+            for step in (solution.get("solution_steps") or ())
+            if str(step).strip()
+        ),
+        solution_key_insight=str(solution.get("key_insight") or "").strip(),
+        analysis_blocks=tuple(v4.get("analysis_blocks") or ()),
         has_media=_contains_media(v4.get("stem_blocks") or ()),
         numeric_unit=numeric_unit,
         source_label=source,
     )
+
+
+def _optional_float(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _file_metadata(path: Path) -> dict[str, Any]:

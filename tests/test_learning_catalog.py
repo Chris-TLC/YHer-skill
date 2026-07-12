@@ -65,6 +65,29 @@ def test_v4_owns_stem_and_answer_while_v3_only_supplies_metadata(catalog: ItemCa
     ) or item.answer_values == tuple(v4["standard_solution"]["final_answers"])
 
 
+def test_catalog_preserves_private_verified_solution_evidence(catalog: ItemCatalog):
+    item = catalog.items["223eeb45e3c02166564fde22c9e40bca62f1e10f"]
+    v4 = _row(V4, item.item_id)
+
+    assert item.answer_verification_status == "passed"
+    assert item.answer_verification_confidence == 0.89
+    assert item.solution_steps == tuple(v4["standard_solution"]["solution_steps"])
+    assert item.solution_key_insight == v4["standard_solution"]["key_insight"]
+    assert item.authoritative_solution is not None
+    assert item.authoritative_solution["answers"] == list(item.answer_values)
+    assert "authoritative_solution" not in item.public_question()
+    assert "solution_steps" not in item.public_question()
+
+
+def test_incomplete_unverified_solution_is_not_authoritative(catalog: ItemCatalog):
+    item = catalog.items["f275e91d02e1fca3cd91be90decaa6dfe243172f"]
+
+    assert item.answer_verification_status == "needs_review"
+    assert item.solution_steps == ()
+    assert item.authoritative_solution is None
+    assert item.deterministic is False
+
+
 def test_adapter_maps_are_explicit_and_fail_closed():
     assert [map_difficulty(x) for x in ("T1", "T2", "T3", "T4")] == [
         0.25,
@@ -164,9 +187,9 @@ def test_media_questions_fail_closed_until_a_safe_asset_route_exists(catalog: It
 
     assert media_scored
     assert all(item.deterministic is False for item in media_scored)
-    assert len(deterministic) == 409
-    assert len(catalog.open_nodes()) == 28
-    assert catalog.open_nodes()["氧化还原反应"] == 33
+    assert len(deterministic) == 400
+    assert len(catalog.open_nodes()) == 27
+    assert catalog.open_nodes()["氧化还原反应"] == 32
 
 
 def test_health_metadata_has_exact_read_only_data_fingerprints(catalog: ItemCatalog):

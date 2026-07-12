@@ -10,7 +10,13 @@ from core.learning.item_catalog import CatalogItem
 from core.learning.scoring import parse_scalar_answer, score_item
 
 
-def _item(*, mode: str, answers=("A",), unit: str | None = None) -> CatalogItem:
+def _item(
+    *,
+    mode: str,
+    answers=("A",),
+    unit: str | None = None,
+    verification: str = "passed",
+) -> CatalogItem:
     return CatalogItem(
         item_id="private-item",
         family_id="family-1",
@@ -26,6 +32,8 @@ def _item(*, mode: str, answers=("A",), unit: str | None = None) -> CatalogItem:
         item_type="mcq" if mode == "mcq" else "free",
         scoring_mode=mode,
         answer_values=tuple(answers),
+        rubric=({"point_id": "answer", "desc": "verified answer"},),
+        answer_verification_status=verification,
         numeric_unit=unit,
         source_label="fixture",
     )
@@ -72,6 +80,48 @@ def test_free_response_without_llm_is_deferred_and_zero_information():
     assert result.correct is None
     assert result.update_allowed is False
     assert result.likelihood == (0.25, 0.25, 0.25, 0.25)
+
+
+def test_unverified_free_response_never_reaches_llm_grader() -> None:
+    called = False
+
+    def grader(_item, _submission):
+        nonlocal called
+        called = True
+        return {
+            "correct": True,
+            "confidence": 1.0,
+            "likelihood": [1, 0, 0, 0],
+        }
+
+    result = score_item(
+        _item(mode="free_llm", answers=("partial answer",), verification="needs_review"),
+        "student work",
+        grader,
+    )
+
+    assert called is False
+    assert result.status == "deferred"
+    assert result.update_allowed is False
+    assert result.error_code == "unverified_answer_evidence"
+
+
+@pytest.mark.parametrize(
+    ("mode", "answers", "submission"),
+    (("mcq", ("A",), "A"), ("numeric", ("3 mol",), "3 mol")),
+)
+def test_persisted_unverified_deterministic_assignment_cannot_update_profile(
+    mode: str, answers: tuple[str, ...], submission: str
+) -> None:
+    result = score_item(
+        _item(mode=mode, answers=answers, verification="needs_review"),
+        submission,
+    )
+
+    assert result.status == "deferred"
+    assert result.correct is None
+    assert result.update_allowed is False
+    assert result.error_code == "unverified_answer_evidence"
 
 
 def test_llm_likelihood_is_confidence_weighted_and_capped_at_three_to_one():
