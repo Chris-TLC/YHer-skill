@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-会话编排层（总蓝图 A：engine 心脏）。
+DEPRECATED: retained for historical tools; student traffic uses SessionService.
+
+会话编排层（历史总蓝图 A：engine 心脏）。
 
 把诊断引擎/教学引擎/任务状态机/学生模型/题库/检索/LLM 串成一个完整私教会话。
 纯逻辑，零界面依赖——FastAPI 后端和 Streamlit 壳调的是同一个 Orchestrator。
@@ -36,7 +38,8 @@ DEFAULT_TASKS = [
     TaskSpec("T2", "根因补洞", 40, mastery_gate=0.68, depends_on=["T1"]),
     TaskSpec("T3", "题型入口训练", 40, mastery_gate=0.72, depends_on=["T2"]),
     TaskSpec("T4", "视频定点巩固", 20, mastery_gate=0.65, depends_on=["T2"]),
-    TaskSpec("T5", "变式迁移训练", 45, mastery_gate=0.78, depends_on=["T3", "T4"]),
+    # Historical-only threshold. This task queue is unreachable from student HTTP routes.
+    TaskSpec("T5", "变式迁移训练", 45, mastery_gate=0.75, depends_on=["T3", "T4"]),
     TaskSpec("T6", "复盘与下次计划", 15, mastery_gate=0.70, depends_on=["T5"]),
 ]
 
@@ -64,6 +67,10 @@ class TutorSession:
 
 # LLM 调用签名：(system, user) -> {"content":..., "cost_yuan":...}
 LLMCaller = Callable[[str, str], Dict[str, Any]]
+
+
+class LegacyStudentFlowDeprecated(RuntimeError):
+    """Raised when callers use the retired pre-canonical student flow."""
 
 
 class SessionOrchestrator:
@@ -158,6 +165,20 @@ class SessionOrchestrator:
             session.current_task_id = "T2"
         return {"visible": visible, "control": control, "mastery": mastery,
                 "next_question": next_q, "ready_for_execution": ready}
+
+    def build_post_video_verification(self, session: TutorSession) -> Dict[str, Any]:
+        del session
+        raise LegacyStudentFlowDeprecated(
+            "legacy verification is retired; use core.learning.SessionService held-out assignments"
+        )
+
+    def submit_post_video_verification(
+        self, session: TutorSession, answers: Dict[str, str]
+    ) -> Dict[str, Any]:
+        del session, answers
+        raise LegacyStudentFlowDeprecated(
+            "legacy verification is retired; use core.learning.SessionService held-out assignments"
+        )
 
     # === 执行教学一轮 ===
     def run_execution_turn(

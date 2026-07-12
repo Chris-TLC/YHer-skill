@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
-FastAPI 后端（总蓝图 A：HTTP↔引擎唯一翻译层）。
+DEPRECATED: legacy v3/v4 application retained only for historical tools.
+
+The authoritative student application is ``apps.demo_api`` on port 8700.
+All legacy ``/session*`` student routes return HTTP 410.
+
+FastAPI 后端（历史总蓝图 A：HTTP↔引擎翻译层）。
 
 今天 Streamlit 直接 import 引擎；明天 iOS/安卓 App 走这些 HTTP 端点，调同一个引擎。
 两条路行为一致 → App 阶段零返工。
@@ -31,8 +36,9 @@ SKILL_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(SKILL_DIR))
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 load_dotenv(SKILL_DIR / ".env")
@@ -45,6 +51,16 @@ app = FastAPI(title="YHer 化学私教 API", version="1.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
+
+LEGACY_GONE_DETAIL = "legacy student flow retired; use /api/demo/* on port 8700"
+
+
+@app.middleware("http")
+async def reject_legacy_student_flow(request: Request, call_next):
+    if request.url.path == "/session" or request.url.path.startswith("/session/"):
+        return JSONResponse(status_code=410, content={"detail": LEGACY_GONE_DETAIL})
+    return await call_next(request)
+
 
 STORE = LocalJsonStore()
 UPLOAD_DIR = SKILL_DIR / "data" / "uploads"

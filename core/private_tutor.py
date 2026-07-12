@@ -842,7 +842,8 @@ class ChemistryPrivateTutor:
                 tutor_instruction="根据学生上一题表现调难度；错了先判错因，再决定补概念还是换题。",
                 resource_query=f"{topic['name']} 变式 易错",
                 depends_on=["T3", "T4"],
-                mastery_gate=0.78,
+                # Historical planner only; canonical student sessions use engine.planner.
+                mastery_gate=0.75,
             ),
             TutorTask(
                 task_id="T6",
