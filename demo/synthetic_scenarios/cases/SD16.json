@@ -1,0 +1,35 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD16",
+  "label": "SYNTHETIC_DEMO",
+  "title": "烃类双专题：分段暂停",
+  "budget_tier": "1h",
+  "outcome": "paused",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD16",
+    "grade": "高一",
+    "learning_purpose": "exam"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD16-E1",
+      "node": "烷烃",
+      "expected_availability": "open",
+      "watch": "skip"
+    },
+    {
+      "synthetic": true,
+      "episode_id": "SD16-E2",
+      "node": "芳香烃",
+      "expected_availability": "open",
+      "watch": "skip"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "paused",
+    "profile_continuity": true,
+    "real_student_evidence": false
+  }
+}

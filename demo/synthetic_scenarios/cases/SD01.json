@@ -1,0 +1,35 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD01",
+  "label": "SYNTHETIC_DEMO",
+  "title": "氧化还原复访：两次独立通过",
+  "budget_tier": "30min",
+  "outcome": "verified",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD01",
+    "grade": "高一",
+    "learning_purpose": "preview"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD01-E1",
+      "node": "氧化还原反应",
+      "expected_availability": "open",
+      "watch": "complete"
+    },
+    {
+      "synthetic": true,
+      "episode_id": "SD01-E2",
+      "node": "氧化还原反应",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "verified",
+    "profile_continuity": true,
+    "real_student_evidence": false
+  }
+}

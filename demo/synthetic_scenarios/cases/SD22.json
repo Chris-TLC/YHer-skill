@@ -1,0 +1,35 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD22",
+  "label": "SYNTHETIC_DEMO",
+  "title": "反应热与速率：开放门诚实降级",
+  "budget_tier": "2h",
+  "outcome": "partial",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD22",
+    "grade": "高一",
+    "learning_purpose": "review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD22-E1",
+      "node": "反应热/焓变",
+      "expected_availability": "open",
+      "watch": "complete"
+    },
+    {
+      "synthetic": true,
+      "episode_id": "SD22-E2",
+      "node": "化学反应速率",
+      "expected_availability": "closed",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "partial",
+    "profile_continuity": true,
+    "real_student_evidence": false
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD23",
+  "label": "SYNTHETIC_DEMO",
+  "title": "铁及其化合物：中途暂停",
+  "budget_tier": "2h",
+  "outcome": "paused",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD23",
+    "grade": "高二",
+    "learning_purpose": "error_review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD23-E1",
+      "node": "铁及其化合物",
+      "expected_availability": "open",
+      "watch": "skip"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "paused",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

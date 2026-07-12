@@ -1,0 +1,35 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD13",
+  "label": "SYNTHETIC_DEMO",
+  "title": "结构与周期律：跨节点续学",
+  "budget_tier": "1h",
+  "outcome": "partial",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD13",
+    "grade": "高一",
+    "learning_purpose": "preview"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD13-E1",
+      "node": "原子结构",
+      "expected_availability": "open",
+      "watch": "complete"
+    },
+    {
+      "synthetic": true,
+      "episode_id": "SD13-E2",
+      "node": "元素周期律/周期表",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "partial",
+    "profile_continuity": true,
+    "real_student_evidence": false
+  }
+}

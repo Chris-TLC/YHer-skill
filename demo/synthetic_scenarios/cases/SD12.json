@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD12",
+  "label": "SYNTHETIC_DEMO",
+  "title": "氮及其化合物：继续补强",
+  "budget_tier": "1h",
+  "outcome": "needs_reinforcement",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD12",
+    "grade": "高三",
+    "learning_purpose": "exam"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD12-E1",
+      "node": "氮及其化合物",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "needs_reinforcement",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

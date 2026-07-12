@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD09",
+  "label": "SYNTHETIC_DEMO",
+  "title": "弱电解质：完整独立通过",
+  "budget_tier": "1h",
+  "outcome": "verified",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD09",
+    "grade": "高三",
+    "learning_purpose": "preview"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD09-E1",
+      "node": "弱电解质电离平衡",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "verified",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD06",
+  "label": "SYNTHETIC_DEMO",
+  "title": "化学键：混合作答与断点续上",
+  "budget_tier": "30min",
+  "outcome": "partial",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD06",
+    "grade": "高三",
+    "learning_purpose": "review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD06-E1",
+      "node": "化学键",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "partial",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

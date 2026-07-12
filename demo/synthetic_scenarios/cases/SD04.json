@@ -1,0 +1,35 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD04",
+  "label": "SYNTHETIC_DEMO",
+  "title": "化学平衡复访：持续混淆",
+  "budget_tier": "30min",
+  "outcome": "needs_reinforcement",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD04",
+    "grade": "高一",
+    "learning_purpose": "exam"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD04-E1",
+      "node": "化学平衡",
+      "expected_availability": "open",
+      "watch": "complete"
+    },
+    {
+      "synthetic": true,
+      "episode_id": "SD04-E2",
+      "node": "化学平衡",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "needs_reinforcement",
+    "profile_continuity": true,
+    "real_student_evidence": false
+  }
+}

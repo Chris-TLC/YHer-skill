@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD17",
+  "label": "SYNTHETIC_DEMO",
+  "title": "物质制备：完整通过",
+  "budget_tier": "2h",
+  "outcome": "verified",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD17",
+    "grade": "高二",
+    "learning_purpose": "preview"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD17-E1",
+      "node": "物质制备",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "verified",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

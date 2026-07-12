@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD20",
+  "label": "SYNTHETIC_DEMO",
+  "title": "电解质分类：继续补强",
+  "budget_tier": "2h",
+  "outcome": "needs_reinforcement",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD20",
+    "grade": "高二",
+    "learning_purpose": "exam"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD20-E1",
+      "node": "电解质与非电解质",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "needs_reinforcement",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD10",
+  "label": "SYNTHETIC_DEMO",
+  "title": "有机推断复访：画像延续",
+  "budget_tier": "1h",
+  "outcome": "verified",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD10",
+    "grade": "高一",
+    "learning_purpose": "review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD10-E1",
+      "node": "有机推断",
+      "expected_availability": "open",
+      "watch": "complete"
+    },
+    {
+      "synthetic": true,
+      "episode_id": "SD10-E2",
+      "node": "有机推断",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "verified",
+    "profile_continuity": true,
+    "real_student_evidence": false
+  }
+}

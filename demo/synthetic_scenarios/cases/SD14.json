@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD14",
+  "label": "SYNTHETIC_DEMO",
+  "title": "氯及其化合物：超时后收尾",
+  "budget_tier": "1h",
+  "outcome": "partial",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD14",
+    "grade": "高二",
+    "learning_purpose": "review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD14-E1",
+      "node": "氯及其化合物",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "partial",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD15",
+  "label": "SYNTHETIC_DEMO",
+  "title": "物质分类：主动暂停",
+  "budget_tier": "1h",
+  "outcome": "paused",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD15",
+    "grade": "高三",
+    "learning_purpose": "error_review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD15-E1",
+      "node": "物质分类",
+      "expected_availability": "open",
+      "watch": "skip"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "paused",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}
