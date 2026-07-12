@@ -14,7 +14,7 @@ sys.path.insert(0, str(SKILL_DIR))
 
 
 def test_study_pool_is_r5_whitelist_only():
-    """学生口径红线:study 池必须 == R5 白名单(1207),与审计面(2526)不同池。"""
+    """学生口径红线:study 池必须 == R5 白名单(1202),与审计面(2526)不同池。"""
     from apps.api_v4_render import _study_pool, _pool
     sp = _study_pool()
     wl = set()

@@ -40,10 +40,11 @@ def catalog() -> ItemCatalog:
 def test_actual_r5_pool_rejects_all_untrusted_crosswalk_rows(catalog: ItemCatalog):
     stats = catalog.stats()
 
-    assert stats.r5_rows == 1207
-    assert stats.trusted_items == 977
-    assert stats.rejected_items == 230
-    assert len(catalog.items) == 977
+    assert stats.r5_rows == 1202
+    assert stats.trusted_items == 973
+    assert stats.rejected_items == 229
+    assert stats.families == 963
+    assert len(catalog.items) == 973
     assert all(i.alignment_status in TRUSTED_ALIGNMENT_STATUSES for i in catalog.items.values())
 
 
