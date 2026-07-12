@@ -106,7 +106,11 @@ class LLMClient:
         sdk = self.config['sdk']
         if sdk in ('openai', 'openai_compat'):
             from openai import OpenAI
-            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                max_retries=0,
+            )
         elif sdk == 'anthropic':
             from anthropic import Anthropic
             self.client = Anthropic(api_key=self.api_key)
