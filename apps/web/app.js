@@ -44,6 +44,8 @@
     queuedAssignment: null,
     draftAnswer: "",
     pendingSubmissionId: "",
+    learningActionId: "",
+    watchIds: {},
     continueAction: null,
     retryAction: null,
     synthetic: false,
@@ -68,7 +70,7 @@
       "checkpoint-panel", "checkpoint-title", "checkpoint-content", "continue-button",
       "degraded-panel", "degraded-message", "retry-button", "report-state",
       "report-outcome", "report-metrics", "belief-section", "belief-list", "report-empty",
-      "report-error", "new-session-button"
+      "report-guidance", "report-guidance-content", "report-error", "new-session-button"
     ].forEach(function (id) {
       elements[id] = document.getElementById(id);
     });
@@ -739,7 +741,37 @@
     elements["learning-context"].replaceChildren();
     appendLearningContent(elements["learning-context"], payload);
     elements["learning-context"].hidden = false;
-    showCheckpoint("准备好后继续", "", "继续", advanceSession, true);
+    state.learningActionId = typeof payload.action_id === "string" ? payload.action_id : "";
+    showCheckpoint("准备好后继续", "", "继续练习", acknowledgeLearning, true);
+  }
+
+  async function acknowledgeLearning() {
+    if (!state.sessionId || !state.learningActionId) {
+      showDegraded("学习确认信息不完整，请重新获取。", advanceSession);
+      return;
+    }
+    const path = `/api/demo/sessions/${state.sessionId}/learning/ack`;
+    setBusy(true, "正在确认学习阶段");
+    try {
+      const acknowledged = await request(path, {
+        method: "POST",
+        body: {action_id: state.learningActionId}
+      });
+      assertPublicPayload(acknowledged);
+      state.learningActionId = "";
+      const phase = phaseFromServer(acknowledged);
+      if (phase) state.phase = phase;
+      if (state.phase === "report" || acknowledged.next_action === "complete") {
+        await fetchReport();
+        return;
+      }
+      const next = await request(`/api/demo/sessions/${state.sessionId}/next`, {method: "GET"});
+      renderPayload(next);
+    } catch (error) {
+      showDegraded(messageForError(error), acknowledgeLearning);
+    } finally {
+      setBusy(false);
+    }
   }
 
   function hasLearningContent(source) {
@@ -751,13 +783,15 @@
   }
 
   function appendLearningContent(target, source) {
-    const title = firstString(source.title, source.heading, source.feedback && source.feedback.title);
-    if (title) {
-      const heading = document.createElement("h3");
-      heading.textContent = title;
-      target.appendChild(heading);
+    const explanation = source.explanation && typeof source.explanation === "object"
+      ? source.explanation
+      : null;
+    if (explanation) appendExplanation(target, explanation);
+    else {
+      const title = firstString(source.title, source.heading, source.feedback && source.feedback.title);
+      if (title) appendHeading(target, title, "h3");
+      appendFeedback(target, source.feedback || source.summary);
     }
-    appendFeedback(target, source.explanation || source.feedback || source.summary);
     const recommendations = Array.isArray(source.recommendations)
       ? source.recommendations
       : Array.isArray(source.recommendation)
@@ -767,8 +801,19 @@
           : [];
     recommendations.forEach(function (recommendation) {
       if (!recommendation || typeof recommendation !== "object") return;
-      appendFeedback(target, recommendation);
+      const item = document.createElement("section");
+      item.className = "learning-recommendation";
+      appendHeading(item, firstString(recommendation.title, "学习资源"), "h4");
+      if (recommendation.value) appendLabeledText(item, "推荐原因", recommendation.value);
+      if (recommendation.reason) appendLabeledText(item, "匹配依据", recommendation.reason);
+      if (recommendation.completion_criterion) {
+        appendLabeledText(item, "完成标准", recommendation.completion_criterion);
+      }
+      const duration = finiteNumber(recommendation.duration_seconds);
+      if (duration !== null) appendLabeledText(item, "预计用时", formatDuration(duration));
       const url = safeLearningUrl(recommendation.url);
+      const actions = document.createElement("div");
+      actions.className = "learning-actions";
       if (url) {
         const link = document.createElement("a");
         link.className = "learning-link";
@@ -776,7 +821,96 @@
         link.target = "_blank";
         link.rel = "noopener noreferrer";
         link.textContent = "观看讲解";
-        target.appendChild(link);
+        link.addEventListener("click", function () {
+          void recordRecommendationWatch(recommendation, false).catch(function () {
+            announce("讲解已打开，观看进度暂未记录");
+          });
+        });
+        actions.appendChild(link);
+      }
+      if (typeof recommendation.rec_id === "string" && recommendation.rec_id) {
+        const completedButton = document.createElement("button");
+        completedButton.type = "button";
+        completedButton.className = "button quiet compact";
+        completedButton.textContent = "已看完";
+        completedButton.addEventListener("click", async function () {
+          completedButton.disabled = true;
+          try {
+            await recordRecommendationWatch(recommendation, true);
+            completedButton.textContent = "已记录";
+            announce("观看进度已记录");
+          } catch (error) {
+            completedButton.disabled = false;
+            completedButton.textContent = "重试记录";
+            announce(messageForError(error));
+          }
+        });
+        actions.appendChild(completedButton);
+      }
+      if (actions.childNodes.length) item.appendChild(actions);
+      target.appendChild(item);
+    });
+  }
+
+  function appendExplanation(target, explanation) {
+    appendHeading(target, firstString(explanation.title, "本次诊断讲解"), "h3");
+    if (explanation.status === "offline_fallback") {
+      const status = document.createElement("p");
+      status.className = "learning-status";
+      status.textContent = "当前使用本地讲解模板";
+      target.appendChild(status);
+    }
+    appendLabeledText(target, "诊断结论", explanation.diagnosis);
+    appendLabeledText(target, "题目代入", explanation.worked_example);
+    appendLabeledList(target, "因果链", explanation.causal_chain);
+    appendLabeledList(target, "应试步骤", explanation.exam_strategy);
+  }
+
+  function appendHeading(target, text, tagName) {
+    const heading = document.createElement(tagName || "h3");
+    heading.textContent = text;
+    target.appendChild(heading);
+  }
+
+  function appendLabeledText(target, label, text) {
+    if (typeof text !== "string" || !text.trim()) return;
+    const paragraph = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = `${label}：`;
+    paragraph.append(strong, document.createTextNode(text.trim()));
+    target.appendChild(paragraph);
+  }
+
+  function appendLabeledList(target, label, values) {
+    if (!Array.isArray(values) || !values.length) return;
+    const wrapper = document.createElement("div");
+    wrapper.className = "learning-list";
+    appendHeading(wrapper, label, "h4");
+    const list = document.createElement("ol");
+    values.forEach(function (value) {
+      if (typeof value !== "string" || !value.trim()) return;
+      const item = document.createElement("li");
+      item.textContent = value.trim();
+      list.appendChild(item);
+    });
+    if (list.childNodes.length) {
+      wrapper.appendChild(list);
+      target.appendChild(wrapper);
+    }
+  }
+
+  async function recordRecommendationWatch(recommendation, completed) {
+    if (!state.sessionId || !recommendation || typeof recommendation.rec_id !== "string") return;
+    const key = `${recommendation.rec_id}:${completed ? "complete" : "open"}`;
+    if (!state.watchIds[key]) state.watchIds[key] = makeOpaqueId("watch");
+    const duration = finiteNumber(recommendation.duration_seconds);
+    return request(`/api/demo/sessions/${state.sessionId}/watch`, {
+      method: "POST",
+      body: {
+        rec_id: recommendation.rec_id,
+        watch_id: state.watchIds[key],
+        watched_seconds: completed && duration !== null ? Math.max(0, duration) : 0,
+        completed: completed === true
       }
     });
   }
@@ -864,18 +998,44 @@
     const metrics = [];
     const mastery = finiteNumber(report.mastery_probability);
     if (mastery !== null) metrics.push(["掌握概率", formatPercent(mastery)]);
+    const delta = finiteNumber(report.delta);
+    if (delta !== null) metrics.push(["本次画像变化", formatDelta(delta)]);
     const evidence = finiteNumber(report.evidence_count);
     if (evidence !== null) metrics.push(["有效证据", `${Math.max(0, Math.round(evidence))} 条`]);
     if (report.as_of) metrics.push(["画像时间", formatDateTime(report.as_of)]);
     if (report.review_due_at) metrics.push(["建议复习", formatDateTime(report.review_due_at)]);
+    if (report.seven_day_review_at) metrics.push(["7 日复习", formatDateTime(report.seven_day_review_at)]);
     renderMetrics(metrics);
     const hasBelief = renderBelief(report.belief);
+    const hasGuidance = renderReportGuidance(report.error_summary, report.reinforcement_plan);
 
-    elements["report-empty"].hidden = Boolean(metrics.length || hasBelief);
+    elements["report-empty"].hidden = Boolean(metrics.length || hasBelief || hasGuidance);
     state.sessionId = "";
     localStorage.removeItem(STORAGE.session);
     elements["resume-panel"].hidden = true;
     announce("复盘已生成");
+  }
+
+  function renderReportGuidance(errorSummary, reinforcementPlan) {
+    const target = elements["report-guidance-content"];
+    target.replaceChildren();
+    if (!errorSummary && !reinforcementPlan) {
+      elements["report-guidance"].hidden = true;
+      return false;
+    }
+    if (errorSummary && typeof errorSummary === "object") {
+      const failed = finiteNumber(errorSummary.failed_held_out);
+      const total = finiteNumber(errorSummary.total_held_out);
+      if (failed !== null && total !== null) {
+        appendParagraph(target, `独立验证 ${Math.round(failed)} / ${Math.round(total)} 道尚未通过。`);
+      }
+    }
+    if (reinforcementPlan && typeof reinforcementPlan === "object") {
+      appendParagraph(target, reinforcementPlan.summary || "继续补强后再用不同题族验证。");
+      appendLabeledList(target, "补强顺序", reinforcementPlan.steps);
+    }
+    elements["report-guidance"].hidden = !target.childNodes.length;
+    return Boolean(target.childNodes.length);
   }
 
   function renderMetrics(metrics) {
@@ -897,7 +1057,7 @@
       elements["belief-section"].hidden = true;
       return false;
     }
-    const labels = {M: "已掌握", P: "步骤不稳", C: "概念混淆", U: "证据不足"};
+    const labels = {M: "已掌握", P: "前置缺口", C: "概念混淆", U: "证据不足"};
     const fragment = document.createDocumentFragment();
     belief.forEach(function (entry) {
       const row = document.createElement("div");
@@ -927,9 +1087,9 @@
     if (!value || typeof value !== "object") return [];
     const aliases = {
       M: ["M", "m", "mastered"],
-      P: ["P", "p", "procedural"],
-      C: ["C", "c", "confused"],
-      U: ["U", "u", "unknown"]
+      P: ["P", "p", "prerequisite_gap"],
+      C: ["C", "c", "concept_confusion"],
+      U: ["U", "u", "uncertain"]
     };
     return Object.entries(aliases).map(function (entry) {
       const found = entry[1].find(function (key) {
@@ -1036,6 +1196,8 @@
     state.queuedAssignment = null;
     state.draftAnswer = "";
     state.pendingSubmissionId = "";
+    state.learningActionId = "";
+    state.watchIds = {};
     state.synthetic = false;
     localStorage.removeItem(STORAGE.session);
     elements["resume-panel"].hidden = true;
@@ -1173,6 +1335,12 @@
   function formatPercent(value) {
     const normalized = value > 1 ? value / 100 : value;
     return `${Math.round(Math.min(1, Math.max(0, normalized)) * 100)}%`;
+  }
+
+  function formatDelta(value) {
+    const points = Math.round(value * 1000) / 10;
+    const sign = points > 0 ? "+" : "";
+    return `${sign}${points} 个百分点`;
   }
 
   function formatDuration(seconds) {

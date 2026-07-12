@@ -686,11 +686,53 @@ progress::-moz-progress-bar {
   margin-top: 9px;
 }
 
+.learning-status {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.learning-list {
+  margin-top: 14px;
+}
+
+.learning-list h4,
+.learning-recommendation h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.learning-list ol,
+.report-guidance ol {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.learning-list li + li,
+.report-guidance li + li {
+  margin-top: 6px;
+}
+
+.learning-recommendation {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.learning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  margin-top: 12px;
+}
+
 .learning-link {
   display: inline-flex;
   min-height: 44px;
   align-items: center;
-  margin-top: 12px;
+  margin-top: 0;
   color: #64a9ff;
   font-weight: 600;
   text-decoration: none;
@@ -741,6 +783,23 @@ progress::-moz-progress-bar {
 
 .belief-section {
   margin: 28px 0;
+}
+
+.report-guidance {
+  margin: 28px 0;
+}
+
+.report-guidance h3 {
+  margin-bottom: 12px;
+}
+
+.report-guidance p {
+  line-height: 1.65;
+}
+
+.report-guidance p + p,
+.report-guidance .learning-list {
+  margin-top: 10px;
 }
 
 .belief-section h3 {

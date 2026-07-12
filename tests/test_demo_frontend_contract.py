@@ -84,6 +84,7 @@ def test_frontend_never_scores_or_persists_private_question_state():
 def test_phase_gates_delay_diagnostic_and_held_out_correctness():
     js = _read(JS)
 
+    assert 'practice: "learning"' in js
     assert 'return phase === "learning";' in js
     assert 'phase === "diagnostic" || phase === "held_out"' in js
     assert "result.is_correct" in js
@@ -168,6 +169,65 @@ def test_report_outcome_codes_are_rendered_as_student_facing_chinese():
     assert 'needs_reinforcement: "继续补强"' in js
     assert 'partial: "本次学习已保存"' in js
     assert "REPORT_OUTCOME_COPY[report.outcome]" in js
+
+
+def test_learning_checkpoint_uses_explicit_ack_instead_of_replaying_next():
+    js = _read(JS)
+    checkpoint_renderer = js.split("function renderLearningCheckpoint", 1)[1].split(
+        "function acknowledgeLearning", 1
+    )[0]
+
+    assert "/api/demo/sessions/${state.sessionId}/learning/ack" in js
+    assert "action_id: state.learningActionId" in js
+    assert "acknowledgeLearning" in checkpoint_renderer
+    assert "advanceSession" not in checkpoint_renderer
+
+
+def test_recommendation_watch_events_are_bound_to_the_issued_rec_id():
+    js = _read(JS)
+
+    assert "/api/demo/sessions/${state.sessionId}/watch" in js
+    assert "rec_id: recommendation.rec_id" in js
+    assert "watched_seconds:" in js
+    assert "completed:" in js
+    assert "recordRecommendationWatch" in js
+    assert "recordRecommendationWatch(recommendation, false).catch" in js
+
+
+def test_learning_checkpoint_renders_deep_explanation_and_recommendation_evidence():
+    js = _read(JS)
+
+    for field in (
+        "explanation.diagnosis",
+        "explanation.worked_example",
+        "explanation.causal_chain",
+        "explanation.exam_strategy",
+        "recommendation.title",
+        "recommendation.value",
+        "recommendation.completion_criterion",
+    ):
+        assert field in js
+
+
+def test_report_renders_session_delta_seven_day_reminder_and_failure_plan():
+    js = _read(JS)
+
+    for field in (
+        "report.delta",
+        "report.seven_day_review_at",
+        "report.error_summary",
+        "report.reinforcement_plan",
+    ):
+        assert field in js
+
+
+def test_report_maps_the_canonical_four_state_belief_shape():
+    js = _read(JS)
+
+    assert 'P: ["P", "p", "prerequisite_gap"]' in js
+    assert 'C: ["C", "c", "concept_confusion"]' in js
+    assert 'U: ["U", "u", "uncertain"]' in js
+    assert 'P: "前置缺口"' in js
 
 
 def test_question_media_is_restricted_to_same_origin():

@@ -50,6 +50,7 @@ venv/
 env/
 ENV/
 .venv/
+.venv-demo/
 
 # IDE
 .vscode/
