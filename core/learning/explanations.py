@@ -281,7 +281,27 @@ def _authoritative_projection(
     source = str(primary.get("source") or "本次题组")
     question = str(primary.get("question") or "本次诊断题")
     anchor_node = str(primary.get("node") or context.get("node") or "本考点")
-    worked_parts = [f"例题（{source}）：{question}", *steps]
+    key_insight = str(primary.get("key_insight") or "").strip()
+    summary = _result_summary(context)
+    needs_layered_scaffold = (
+        _float_or_zero(primary.get("difficulty")) >= 0.75
+        or summary["incorrect"] >= 2
+    )
+    worked_parts = [
+        f"零基础起点：{key_insight or '先明确题目要求、已知条件和待求结论。'}",
+        f"例题（{source}）：{question}",
+    ]
+    if needs_layered_scaffold:
+        worked_parts.append(
+            "分层支架：先读清题目要求与已知条件，再逐条执行已核验步骤；"
+            "每一步只使用题干与标准解给出的关系。"
+        )
+    worked_parts.extend(["已核验步骤：", *steps])
+    if needs_layered_scaffold:
+        worked_parts.append(
+            "验算闭环：逐项对照题干、已核验步骤和标准答案；若三者不能对应，"
+            "停在当前步骤重新核对。"
+        )
     if answers:
         worked_parts.append(f"标准答案：{answers}")
     return {

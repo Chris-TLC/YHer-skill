@@ -547,6 +547,113 @@ def test_authoritative_projection_titles_a_prerequisite_anchor_with_its_node() -
     assert explanation["title"] == "化学计量（摩尔/阿伏伽德罗）标准解复盘"
 
 
+def test_authoritative_projection_builds_scaffold_only_from_verified_evidence() -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    class InventingProvider:
+        def generate(self, **_kwargs):
+            return {
+                "content": {
+                    "title": "模型标题",
+                    "diagnosis": "模型诊断",
+                    "worked_example": "模型新增产物X，价态从+7降到-3。",
+                    "causal_chain": ["模型新增产物X"],
+                    "exam_strategy": ["猜测反应产物"],
+                    "analogy_used": True,
+                }
+            }
+
+    question = "向150mL稀硝酸中加入6.4g铜，判断铜能否完全消耗。"
+    key_insight = "先由质量和浓度求物质的量，再按方程式比较。"
+    steps = [
+        "6.4g铜为0.1mol。",
+        "稀硝酸为0.45mol，按已核验方程式比较后铜完全消耗。",
+    ]
+    context = {
+        "node": NODE,
+        "result_summary": {
+            "total": 6,
+            "correct": 1,
+            "incorrect": 5,
+            "deferred": 0,
+        },
+        "evidence": [
+            {
+                "node": NODE,
+                "question": question,
+                "difficulty": 0.9,
+                "source": "2022上海卷",
+                "result": "incorrect",
+                "expected_response": ["A"],
+                "solution_steps": steps,
+                "key_insight": key_insight,
+            }
+        ],
+    }
+
+    explanation, _audit = module.generate_explanation(InventingProvider(), context)
+    rendered = json.dumps(explanation, ensure_ascii=False)
+
+    assert "零基础起点" in explanation["worked_example"]
+    assert "已核验步骤" in explanation["worked_example"]
+    assert question in explanation["worked_example"]
+    assert key_insight in explanation["worked_example"]
+    assert all(step in explanation["worked_example"] for step in steps)
+    assert "标准答案：A" in explanation["worked_example"]
+    assert explanation["causal_chain"] == steps
+    assert "模型新增产物X" not in rendered
+    assert "价态从+7降到-3" not in rendered
+
+
+def test_authoritative_projection_scales_depth_for_difficulty_and_errors() -> None:
+    module = importlib.import_module("core.learning.explanations")
+    question = "比较两种给定物质的量。"
+    key_insight = "先统一单位，再比较题目给定量。"
+    steps = ["读取题干数据。", "统一单位后比较。"]
+
+    def projection(*, difficulty: float, correct: int, incorrect: int) -> dict:
+        context = {
+            "node": NODE,
+            "result_summary": {
+                "total": correct + incorrect,
+                "correct": correct,
+                "incorrect": incorrect,
+                "deferred": 0,
+            },
+            "evidence": [
+                {
+                    "node": NODE,
+                    "question": question,
+                    "difficulty": difficulty,
+                    "source": "上海卷",
+                    "result": "correct" if not incorrect else "incorrect",
+                    "expected_response": ["相等"],
+                    "solution_steps": steps,
+                    "key_insight": key_insight,
+                }
+            ],
+        }
+        explanation, _audit = module.generate_explanation(None, context)
+        return explanation
+
+    baseline = projection(difficulty=0.25, correct=3, incorrect=0)
+    high_difficulty = projection(difficulty=0.9, correct=3, incorrect=0)
+    many_errors = projection(difficulty=0.25, correct=2, incorrect=6)
+
+    for explanation in (baseline, high_difficulty, many_errors):
+        assert question in explanation["worked_example"]
+        assert key_insight in explanation["worked_example"]
+        assert all(step in explanation["worked_example"] for step in steps)
+        assert "标准答案：相等" in explanation["worked_example"]
+    assert "分层支架" not in baseline["worked_example"]
+    assert "分层支架" in high_difficulty["worked_example"]
+    assert "分层支架" in many_errors["worked_example"]
+    assert "验算闭环" in high_difficulty["worked_example"]
+    assert "验算闭环" in many_errors["worked_example"]
+    assert len(high_difficulty["worked_example"]) > len(baseline["worked_example"])
+    assert len(many_errors["worked_example"]) > len(baseline["worked_example"])
+
+
 def test_authoritative_projection_removes_wrong_chemistry_and_all_correct_blame() -> None:
     module = importlib.import_module("core.learning.explanations")
 
