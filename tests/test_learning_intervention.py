@@ -595,6 +595,9 @@ def test_authoritative_projection_builds_scaffold_only_from_verified_evidence() 
     rendered = json.dumps(explanation, ensure_ascii=False)
 
     assert "零基础起点" in explanation["worked_example"]
+    assert "难度支架" in explanation["worked_example"]
+    assert "错题支架" in explanation["worked_example"]
+    assert "5 道未通过" in explanation["worked_example"]
     assert "已核验步骤" in explanation["worked_example"]
     assert question in explanation["worked_example"]
     assert key_insight in explanation["worked_example"]
@@ -603,6 +606,38 @@ def test_authoritative_projection_builds_scaffold_only_from_verified_evidence() 
     assert explanation["causal_chain"] == steps
     assert "模型新增产物X" not in rendered
     assert "价态从+7降到-3" not in rendered
+
+
+def test_authoritative_projection_replaces_an_incomplete_key_insight_fragment() -> None:
+    module = importlib.import_module("core.learning.explanations")
+    fragment = "先由质量求物质的量，再根据化学方程"
+    context = {
+        "node": NODE,
+        "result_summary": {
+            "total": 1,
+            "correct": 1,
+            "incorrect": 0,
+            "deferred": 0,
+        },
+        "evidence": [
+            {
+                "node": NODE,
+                "question": "比较反应物的物质的量。",
+                "difficulty": 0.25,
+                "source": "上海卷",
+                "result": "correct",
+                "expected_response": ["A"],
+                "solution_steps": ["按已核验标准解完成比较。"],
+                "key_insight": fragment,
+            }
+        ],
+    }
+
+    explanation, _audit = module.generate_explanation(None, context)
+    zero_start = explanation["worked_example"].splitlines()[0]
+
+    assert fragment not in zero_start
+    assert zero_start == "零基础起点：先明确题目要求、已知条件和待求结论。"
 
 
 def test_authoritative_projection_scales_depth_for_difficulty_and_errors() -> None:
@@ -639,19 +674,29 @@ def test_authoritative_projection_scales_depth_for_difficulty_and_errors() -> No
     baseline = projection(difficulty=0.25, correct=3, incorrect=0)
     high_difficulty = projection(difficulty=0.9, correct=3, incorrect=0)
     many_errors = projection(difficulty=0.25, correct=2, incorrect=6)
+    high_with_errors = projection(difficulty=0.9, correct=9, incorrect=8)
 
-    for explanation in (baseline, high_difficulty, many_errors):
+    for explanation in (baseline, high_difficulty, many_errors, high_with_errors):
         assert question in explanation["worked_example"]
         assert key_insight in explanation["worked_example"]
         assert all(step in explanation["worked_example"] for step in steps)
         assert "标准答案：相等" in explanation["worked_example"]
-    assert "分层支架" not in baseline["worked_example"]
-    assert "分层支架" in high_difficulty["worked_example"]
-    assert "分层支架" in many_errors["worked_example"]
+    assert "难度支架" not in baseline["worked_example"]
+    assert "错题支架" not in baseline["worked_example"]
+    assert "难度支架" in high_difficulty["worked_example"]
+    assert "错题支架" not in high_difficulty["worked_example"]
+    assert "难度支架" not in many_errors["worked_example"]
+    assert "错题支架" in many_errors["worked_example"]
+    assert "6 道未通过" in many_errors["worked_example"]
+    assert "难度支架" in high_with_errors["worked_example"]
+    assert "错题支架" in high_with_errors["worked_example"]
+    assert "8 道未通过" in high_with_errors["worked_example"]
     assert "验算闭环" in high_difficulty["worked_example"]
     assert "验算闭环" in many_errors["worked_example"]
+    assert "验算闭环" in high_with_errors["worked_example"]
     assert len(high_difficulty["worked_example"]) > len(baseline["worked_example"])
     assert len(many_errors["worked_example"]) > len(baseline["worked_example"])
+    assert len(high_with_errors["worked_example"]) > len(high_difficulty["worked_example"])
 
 
 def test_authoritative_projection_removes_wrong_chemistry_and_all_correct_blame() -> None:

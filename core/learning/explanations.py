@@ -282,22 +282,27 @@ def _authoritative_projection(
     question = str(primary.get("question") or "本次诊断题")
     anchor_node = str(primary.get("node") or context.get("node") or "本考点")
     key_insight = str(primary.get("key_insight") or "").strip()
+    if not key_insight.endswith(("。", "！", "？", "；", ".", "!", "?", ";")):
+        key_insight = ""
     summary = _result_summary(context)
-    needs_layered_scaffold = (
-        _float_or_zero(primary.get("difficulty")) >= 0.75
-        or summary["incorrect"] >= 2
-    )
+    needs_difficulty_scaffold = _float_or_zero(primary.get("difficulty")) >= 0.75
+    incorrect_count = summary["incorrect"]
     worked_parts = [
         f"零基础起点：{key_insight or '先明确题目要求、已知条件和待求结论。'}",
         f"例题（{source}）：{question}",
     ]
-    if needs_layered_scaffold:
+    if needs_difficulty_scaffold:
         worked_parts.append(
-            "分层支架：先读清题目要求与已知条件，再逐条执行已核验步骤；"
-            "每一步只使用题干与标准解给出的关系。"
+            "难度支架：本题难度较高；先拆清已知条件、待求结论和中间步骤，"
+            "再进入已核验解法。"
+        )
+    if incorrect_count:
+        worked_parts.append(
+            f"错题支架：本轮有 {incorrect_count} 道未通过；先定位第一处不确定步骤，"
+            "再逐项对照下面的已核验解法。"
         )
     worked_parts.extend(["已核验步骤：", *steps])
-    if needs_layered_scaffold:
+    if needs_difficulty_scaffold or incorrect_count:
         worked_parts.append(
             "验算闭环：逐项对照题干、已核验步骤和标准答案；若三者不能对应，"
             "停在当前步骤重新核对。"
