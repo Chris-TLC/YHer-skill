@@ -565,13 +565,18 @@ class SessionService:
             item = self.catalog.items[assignment["item_id"]]
             correct = event.get("correct")
             result = "correct" if correct is True else "incorrect" if correct is False else "deferred"
+            result_summary["total"] += 1
+            result_summary[result] += 1
             authoritative = item.authoritative_solution
             if authoritative is None:
                 continue
-            result_summary["total"] += 1
-            result_summary[result] += 1
             evidence.append(
                 {
+                    "node": (
+                        session["node"]
+                        if session["node"] in item.node_ids
+                        else item.node_ids[0] if item.node_ids else session["node"]
+                    ),
                     "question": item.stem_text,
                     "difficulty": item.difficulty,
                     "source": item.source_label,

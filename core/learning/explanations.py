@@ -280,11 +280,12 @@ def _authoritative_projection(
     answers = "；".join(str(value) for value in (primary.get("expected_response") or []))
     source = str(primary.get("source") or "本次题组")
     question = str(primary.get("question") or "本次诊断题")
+    anchor_node = str(primary.get("node") or context.get("node") or "本考点")
     worked_parts = [f"例题（{source}）：{question}", *steps]
     if answers:
         worked_parts.append(f"标准答案：{answers}")
     return {
-        "title": f"{context.get('node') or '本考点'}标准解复盘",
+        "title": f"{anchor_node}标准解复盘",
         "diagnosis": _diagnosis_text(_result_summary(context), source),
         "worked_example": "\n".join(worked_parts),
         "causal_chain": selected_steps or steps,

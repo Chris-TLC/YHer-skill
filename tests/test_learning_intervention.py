@@ -504,17 +504,47 @@ def test_unverified_incomplete_item_never_reaches_the_explanation_provider() -> 
     serialized = json.dumps(context, ensure_ascii=False)
 
     assert context["result_summary"] == {
-        "total": 1,
-        "correct": 1,
+        "total": 2,
+        "correct": 2,
         "incorrect": 0,
         "deferred": 0,
     }
     assert len(context["evidence"]) == 1
+    assert context["evidence"][0]["node"] == NODE
     assert context["evidence"][0]["question"] == trusted.stem_text
     assert context["evidence"][0]["solution_steps"] == list(trusted.solution_steps)
     assert "analysis_blocks" not in context["evidence"][0]
     assert incomplete.stem_text not in serialized
     assert "6FeCl3" not in serialized
+
+
+def test_authoritative_projection_titles_a_prerequisite_anchor_with_its_node() -> None:
+    module = importlib.import_module("core.learning.explanations")
+    context = {
+        "node": NODE,
+        "result_summary": {
+            "total": 2,
+            "correct": 0,
+            "incorrect": 2,
+            "deferred": 0,
+        },
+        "evidence": [
+            {
+                "node": "化学计量（摩尔/阿伏伽德罗）",
+                "question": "等质量的乙烯与丙烯，碳氢质量比是否相等？",
+                "difficulty": 0.25,
+                "source": "2022上海卷",
+                "result": "incorrect",
+                "expected_response": ["相等"],
+                "solution_steps": ["二者最简式均为CH2，因此碳氢质量比相等。"],
+                "key_insight": "先比较最简式。",
+            }
+        ],
+    }
+
+    explanation, _audit = module.generate_explanation(None, context)
+
+    assert explanation["title"] == "化学计量（摩尔/阿伏伽德罗）标准解复盘"
 
 
 def test_authoritative_projection_removes_wrong_chemistry_and_all_correct_blame() -> None:
