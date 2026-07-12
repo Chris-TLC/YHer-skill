@@ -373,6 +373,20 @@ def test_chat_explanation_provider_scales_depth_with_actual_difficulty() -> None
     assert client.calls[1][0][-1] == {"role": "user", "content": "high"}
 
 
+@pytest.mark.parametrize(
+    ("difficulty", "expected_tokens"),
+    ((0.2, 3_200), (0.5, 4_200), (0.9, 5_200)),
+)
+def test_reasoning_model_budget_covers_reasoning_and_structured_explanation(
+    difficulty: float, expected_tokens: int
+) -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    assert module._dynamic_max_tokens(
+        {"evidence": [{"difficulty": difficulty}]}
+    ) == expected_tokens
+
+
 def _runtime_payload() -> dict:
     track_map = {
         "version": "fixture-v1",

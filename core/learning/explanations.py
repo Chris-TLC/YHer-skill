@@ -194,10 +194,10 @@ def _dynamic_max_tokens(context: dict[str, Any]) -> int:
             continue
     maximum = max(difficulties, default=0.5)
     if maximum <= 0.35:
-        return 900
+        return 3_200
     if maximum <= 0.7:
-        return 1_400
-    return 2_000
+        return 4_200
+    return 5_200
 
 
 def _strip_json_fence(value: str) -> str:
