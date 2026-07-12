@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import re
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping
 
 from engine.mastery import sanitize_llm_likelihood
@@ -34,6 +34,10 @@ class ScoreResult:
     update_allowed: bool
     error_code: str | None = None
     confidence: float = 1.0
+    usage: dict[str, int] = field(
+        default_factory=lambda: {"input_tokens": 0, "output_tokens": 0}
+    )
+    cost_yuan: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -43,6 +47,8 @@ class ScoreResult:
             "update_allowed": self.update_allowed,
             "error_code": self.error_code,
             "confidence": self.confidence,
+            "usage": dict(self.usage),
+            "cost_yuan": self.cost_yuan,
         }
 
 
@@ -108,6 +114,14 @@ def score_item(
         if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
             return _deferred_result()
         clean, illegal = sanitize_llm_likelihood(raw.get("likelihood"), confidence)
+        usage_value = raw.get("usage") if isinstance(raw.get("usage"), Mapping) else {}
+        usage = {
+            "input_tokens": max(0, int(usage_value.get("input_tokens") or 0)),
+            "output_tokens": max(0, int(usage_value.get("output_tokens") or 0)),
+        }
+        cost_yuan = float(raw.get("cost_yuan") or 0.0)
+        if not math.isfinite(cost_yuan) or cost_yuan < 0.0:
+            raise ValueError("invalid grader cost")
     except Exception:
         # The LLM boundary includes network, SDK and provider failures. A missing
         # slow path must never block deterministic study or mutate the profile.
@@ -121,6 +135,8 @@ def score_item(
         update_allowed=True,
         error_code=str(raw.get("error_code") or "") or None,
         confidence=max(0.0, min(1.0, confidence)),
+        usage=usage,
+        cost_yuan=cost_yuan,
     )
 
 

@@ -631,3 +631,44 @@ def test_completed_report_is_frozen_at_that_sessions_last_event():
     after = service.report(first_sid)
 
     assert after == before
+
+
+def test_completed_report_ignores_foreign_session_event_inserted_before_completion():
+    store = MemoryStore()
+    service = _service(store)
+    user_id = "concurrent-report"
+    sid = service.start_session(user_id, NODE, "30min")["session_id"]
+    for index in range(30):
+        step = _ack_learning_if_needed(service, sid, service.next_assignment(sid))
+        if step.get("done"):
+            break
+        service.submit(sid, step["assignment_id"], f"target-{index}", "A")
+    else:
+        raise AssertionError("target session did not complete")
+
+    before = service.report(sid)
+    rows = store._events[user_id]
+    completion_index = next(
+        index
+        for index, event in enumerate(rows)
+        if event.get("kind") == "session_completed" and event.get("session_id") == sid
+    )
+    rows.insert(
+        completion_index,
+        {
+            "event_id": "foreign-answer",
+            "kind": "answer_scored",
+            "occurred_at": 1_000.0,
+            "session_id": "foreign-session",
+            "user_id": user_id,
+            "node": NODE,
+            "phase": "diagnostic",
+            "correct": False,
+            "confidence": 1.0,
+            "likelihood": [0.1, 0.9, 0.9, 0.9],
+            "update_applied": True,
+            "is_direct": True,
+        },
+    )
+
+    assert service.report(sid) == before

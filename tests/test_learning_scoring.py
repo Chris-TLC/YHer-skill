@@ -92,6 +92,27 @@ def test_llm_likelihood_is_confidence_weighted_and_capped_at_three_to_one():
     assert max(result.likelihood) / min(result.likelihood) <= 3.0 + 1e-9
 
 
+def test_valid_llm_usage_and_cost_are_retained_for_internal_accounting():
+    def grader(_item, _submission):
+        return {
+            "correct": True,
+            "error_code": None,
+            "confidence": 0.9,
+            "likelihood": [0.7, 0.1, 0.1, 0.1],
+            "usage": {"input_tokens": 140, "output_tokens": 35},
+            "cost_yuan": 0.006,
+            "provider": "must-not-be-retained",
+            "model": "must-not-be-retained",
+        }
+
+    result = score_item(_item(mode="free_llm", answers=("long answer",)), "work", grader)
+
+    assert result.usage == {"input_tokens": 140, "output_tokens": 35}
+    assert result.cost_yuan == 0.006
+    assert "provider" not in result.to_dict()
+    assert "model" not in result.to_dict()
+
+
 def test_illegal_llm_likelihood_fails_closed_without_profile_update():
     def grader(_item, _submission):
         return {

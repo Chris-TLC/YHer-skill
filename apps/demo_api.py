@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from adapters.store import LocalJsonStore
 from apps.security import RequestGuardMiddleware
 from core.learning.curriculum import CurriculumRuntime
-from core.learning.explanations import environment_explanation_provider
+from core.learning.explanations import environment_learning_adapters
 from core.learning.item_catalog import ItemCatalog
 from core.learning.session_service import SessionError, SessionService
 
@@ -45,7 +45,12 @@ def create_app(
     catalog = catalog or ItemCatalog.from_default_data()
     store = store or LocalJsonStore()
     curriculum = curriculum or CurriculumRuntime.from_default_asset()
-    explanation_provider = explanation_provider or environment_explanation_provider()
+    if explanation_provider is None or llm_grader is None:
+        env_explanation, env_grader = environment_learning_adapters()
+        if explanation_provider is None:
+            explanation_provider = env_explanation
+        if llm_grader is None:
+            llm_grader = env_grader
     service = SessionService(
         catalog,
         store,

@@ -90,6 +90,80 @@ class CapturingExplanationProvider:
         }
 
 
+def test_production_env_reuses_one_client_for_explanations_and_free_response_grading(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from adapters import llm_client as llm_module
+
+    class FakeLLMClient:
+        instances: list["FakeLLMClient"] = []
+
+        def __init__(self, **kwargs):
+            self.init_kwargs = kwargs
+            self.calls: list[list[dict]] = []
+            self.instances.append(self)
+
+        def chat(self, messages, **_kwargs):
+            self.calls.append(messages)
+            return {
+                "content": json.dumps(
+                    {
+                        "correct": False,
+                        "error_code": "missing_conservation",
+                        "confidence": 0.8,
+                        "likelihood": [0.2, 0.2, 0.6, 0.2],
+                    }
+                ),
+                "usage": {"input_tokens": 120, "output_tokens": 40},
+                "cost_yuan": 0.004,
+                "model_returned": "internal-only",
+            }
+
+    monkeypatch.setenv("YHER_ENABLE_PAID_LLM", "1")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-only-key")
+    monkeypatch.setattr(llm_module, "LLMClient", FakeLLMClient)
+
+    app = create_app(
+        catalog=_catalog(), store=MemoryStore(), curriculum=FakeCurriculum(), static_dir=None
+    )
+    service = app.state.session_service
+
+    assert len(FakeLLMClient.instances) == 1
+    assert service.explanation_provider.client is FakeLLMClient.instances[0]
+    assert service.llm_grader.client is FakeLLMClient.instances[0]
+
+    free_item = CatalogItem(
+        item_id="free-item",
+        family_id="free-family",
+        aligned_item_id="free-aligned",
+        alignment_status="auto_inherited",
+        node_ids=(NODE,),
+        stem_blocks=({"para": [{"type": "text", "text": "解释电子守恒"}]},),
+        stem_text="解释电子守恒",
+        stem_hash="free-hash",
+        stem_normalized="解释电子守恒",
+        options={},
+        difficulty=0.8,
+        item_type="free",
+        scoring_mode="free_llm",
+        answer_values=("氧化失电子数等于还原得电子数",),
+        rubric=({"point_id": "conservation", "desc": "写出电子守恒"},),
+        source_label="2025上海卷",
+    )
+    graded = service.llm_grader(free_item, "只写了化合价变化")
+
+    assert graded == {
+        "correct": False,
+        "error_code": "missing_conservation",
+        "confidence": 0.8,
+        "likelihood": [0.2, 0.2, 0.6, 0.2],
+        "usage": {"input_tokens": 120, "output_tokens": 40},
+        "cost_yuan": 0.004,
+    }
+    assert "写出电子守恒" in FakeLLMClient.instances[0].calls[0][1]["content"]
+    assert "只写了化合价变化" in FakeLLMClient.instances[0].calls[0][1]["content"]
+
+
 class FailLearningCheckpointSaveStore(MemoryStore):
     def __init__(self):
         super().__init__()
@@ -794,8 +868,12 @@ def test_report_counts_only_session_evidence_and_has_distinct_seven_day_reminder
     service = SessionService(_catalog(), store, curriculum=FakeCurriculum())
     _complete_session(service, "returning-report", "A", "first")
     second_session = _complete_session(service, "returning-report", "A", "second")
+    fresh_store = MemoryStore()
+    fresh_service = SessionService(_catalog(), fresh_store, curriculum=FakeCurriculum())
+    fresh_session = _complete_session(fresh_service, "fresh-report", "A", "fresh")
 
     report = service.report(second_session)
+    fresh_report = fresh_service.report(fresh_session)
     second_events = [
         event
         for event in store.all_events("returning-report")
@@ -812,6 +890,7 @@ def test_report_counts_only_session_evidence_and_has_distinct_seven_day_reminder
 
     assert report["evidence_count"] == len(second_events)
     assert report["evidence_count"] < len(all_answer_events)
+    assert report["mastery_probability"] > fresh_report["mastery_probability"]
     assert isinstance(report["delta"], float)
     assert set(report["belief"]) == {
         "mastered",

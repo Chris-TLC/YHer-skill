@@ -39,16 +39,23 @@ class ChatExplanationProvider:
 
 def environment_explanation_provider():
     """Opt-in paid provider; missing key/dependency safely selects offline mode."""
+    return environment_learning_adapters()[0]
+
+
+def environment_learning_adapters():
+    """Build explanation and grading adapters around one opt-in paid client."""
     enabled = str(os.environ.get("YHER_ENABLE_PAID_LLM") or "").strip().lower()
     api_key = str(os.environ.get("DEEPSEEK_API_KEY") or "").strip()
     if enabled not in {"1", "true", "yes"} or not api_key:
-        return None
+        return None, None
     try:
         from adapters.llm_client import LLMClient
+        from core.learning.grading import ChatRubricGrader
 
-        return ChatExplanationProvider(LLMClient(provider="deepseek", api_key=api_key))
+        client = LLMClient(provider="deepseek", api_key=api_key)
+        return ChatExplanationProvider(client), ChatRubricGrader(client)
     except Exception:  # noqa: BLE001 - startup must retain the offline capability
-        return None
+        return None, None
 
 
 def build_explanation_prompt(context: dict[str, Any]) -> str:

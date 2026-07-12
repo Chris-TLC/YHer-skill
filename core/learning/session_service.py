@@ -641,6 +641,9 @@ class SessionService:
             "is_direct": assignment["role"] != "prereq",
             "synthetic": session["synthetic"],
         }
+        if item.scoring_mode == "free_llm":
+            event["usage"] = dict(scored.usage)
+            event["cost_yuan"] = scored.cost_yuan
         appended = append_once(self.store, session["user_id"], event)
         if not appended:
             existing = self._answer_event(session["user_id"], assignment_id)
@@ -717,7 +720,30 @@ class SessionService:
                 ),
                 default=-1,
             )
-        events = all_user_events[: completion_index + 1]
+        prefix = all_user_events[: completion_index + 1]
+        start_index = next(
+            (
+                index
+                for index, event in enumerate(prefix)
+                if event.get("kind") == "session_started"
+                and event.get("session_id") == session_id
+            ),
+            None,
+        )
+        if start_index is None:
+            start_index = next(
+                (
+                    index
+                    for index, event in enumerate(prefix)
+                    if event.get("session_id") == session_id
+                ),
+                len(prefix),
+            )
+        baseline_events = prefix[:start_index]
+        target_events = [
+            event for event in prefix[start_index:] if event.get("session_id") == session_id
+        ]
+        events = [*baseline_events, *target_events]
         held_out_events = [
             event
             for event in events
@@ -782,8 +808,7 @@ class SessionService:
             projected = mastery.get_belief(state, now)
             delta = None
             if session_answers:
-                without_session = [event for event in events if event not in session_answers]
-                baseline_model = project_student(user_id, without_session)
+                baseline_model = project_student(user_id, baseline_events)
                 baseline_record = baseline_model.subject("chemistry").kg_mastery.get(node)
                 baseline = 0.25
                 if baseline_record is not None:
