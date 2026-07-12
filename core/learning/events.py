@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
@@ -9,6 +10,16 @@ import numpy as np
 
 from core.tutor.profile_model import MasteryRecord, StudentModel
 from engine import mastery
+
+
+@dataclass
+class ProjectedStudentModel(StudentModel):
+    """StudentModel projection extended with replayable video exposure state."""
+
+    seen_segments: list[dict[str, Any]] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {**super().to_dict(), "seen_segments": [dict(row) for row in self.seen_segments]}
 
 
 def append_once(store, user_id: str, event: dict[str, Any]) -> bool:
@@ -34,13 +45,23 @@ def all_events(store, user_id: str) -> list[dict[str, Any]]:
 
 def project_student(user_id: str, events: Iterable[dict[str, Any]]) -> StudentModel:
     """Rebuild the online profile only from the append-only event history."""
-    model = StudentModel(user_id=user_id)
+    model = ProjectedStudentModel(user_id=user_id)
     held_out_reviews: dict[str, int] = {}
+    seen_segment_keys: set[tuple[str, int]] = set()
     for event in events:
         kind = event.get("kind")
         if kind == "session_started":
             model.grade = str(event.get("grade") or model.grade)
             model.learning_purpose = str(event.get("learning_purpose") or model.learning_purpose)
+            continue
+        if kind == "seen_segments":
+            try:
+                key = (str(event["bv"]), int(event["p"]))
+            except (KeyError, TypeError, ValueError):
+                continue
+            if key[0] and key[1] >= 1 and key not in seen_segment_keys:
+                model.seen_segments.append({"bv": key[0], "p": key[1]})
+                seen_segment_keys.add(key)
             continue
         if kind != "answer_scored" or event.get("update_applied") is not True:
             continue

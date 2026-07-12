@@ -194,6 +194,13 @@ def test_session_view_and_report_are_projected_and_hide_raw_profile_details(tmp_
     assert "item_id" not in view.text
     next_step = client.get(f"/api/demo/sessions/{sid}/next").json()
     for index in range(20):
+        if next_step.get("phase") == "learning":
+            acknowledged = client.post(
+                f"/api/demo/sessions/{sid}/learning/ack",
+                json={"action_id": next_step["action_id"]},
+            )
+            assert acknowledged.status_code == 200
+            next_step = client.get(f"/api/demo/sessions/{sid}/next").json()
         if next_step.get("done"):
             break
         client.post(

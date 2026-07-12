@@ -87,6 +87,15 @@ def _private_item_id(store: MemoryStore, session_id: str, assignment_id: str) ->
     return session["assignments"][assignment_id]["item_id"]
 
 
+def _ack_learning_if_needed(
+    service: SessionService, session_id: str, step: dict
+) -> dict:
+    if step.get("phase") == "learning":
+        service.ack_learning(session_id, step["action_id"])
+        return service.next_assignment(session_id)
+    return step
+
+
 def test_start_freezes_two_held_out_families_and_all_partitions_are_disjoint():
     store = MemoryStore()
     service = _service(store)
@@ -174,7 +183,12 @@ def test_pause_resume_and_budget_exhaustion_preserve_server_checkpoint():
     clock.value += 19 * 60
     exhausted = service.next_assignment(sid)
     assert exhausted["budget_exhausted"] is True
-    assert store.load_session(sid)["checkpoint"]["resume_phase"] in {"practice", "held_out", "complete"}
+    assert store.load_session(sid)["checkpoint"]["resume_phase"] in {
+        "learning",
+        "practice",
+        "held_out",
+        "complete",
+    }
 
 
 def test_held_out_replay_is_idempotent():
@@ -185,6 +199,7 @@ def test_held_out_replay_is_idempotent():
     # Drive the finite state machine; no test-only production hook is used.
     assignment = service.next_assignment(sid)
     for index in range(30):
+        assignment = _ack_learning_if_needed(service, sid, assignment)
         if assignment.get("phase") == "held_out":
             break
         service.submit(sid, assignment["assignment_id"], f"drive-{index}", "A")
@@ -284,6 +299,7 @@ def test_done_response_embeds_the_same_safe_report():
     sid = service.start_session("done-report", NODE, "30min")["session_id"]
     for index in range(30):
         next_step = service.next_assignment(sid)
+        next_step = _ack_learning_if_needed(service, sid, next_step)
         if next_step.get("done"):
             break
         service.submit(sid, next_step["assignment_id"], f"done-{index}", "A")
@@ -312,16 +328,20 @@ def test_two_services_cannot_accept_different_submissions_for_one_assignment(mon
     second = _service(store)
     sid = first.start_session("concurrent", NODE, "30min")["session_id"]
     assignment = first.next_assignment(sid)
-    barrier = threading.Barrier(2)
+    score_entered = threading.Event()
+    release_score = threading.Event()
     original_score = session_module.score_item
 
-    def synchronized_score(*args, **kwargs):
-        barrier.wait(timeout=5)
+    def blocked_score(*args, **kwargs):
+        score_entered.set()
+        assert release_score.wait(timeout=5)
         return original_score(*args, **kwargs)
 
-    monkeypatch.setattr(session_module, "score_item", synchronized_score)
+    monkeypatch.setattr(session_module, "score_item", blocked_score)
 
-    def submit(service, submission_id, answer):
+    def submit(service, submission_id, answer, started=None):
+        if started is not None:
+            started.set()
         try:
             service.submit(sid, assignment["assignment_id"], submission_id, answer)
             return "accepted"
@@ -329,12 +349,14 @@ def test_two_services_cannot_accept_different_submissions_for_one_assignment(mon
             return f"rejected:{exc.status_code}"
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        outcomes = list(
-            executor.map(
-                lambda args: submit(*args),
-                ((first, "concurrent-a", "A"), (second, "concurrent-b", "B")),
-            )
-        )
+        first_result = executor.submit(submit, first, "concurrent-a", "A")
+        assert score_entered.wait(timeout=5)
+        second_started = threading.Event()
+        second_result = executor.submit(submit, second, "concurrent-b", "B", second_started)
+        assert second_started.wait(timeout=5)
+        assert not second_result.done()
+        release_score.set()
+        outcomes = [first_result.result(timeout=5), second_result.result(timeout=5)]
 
     answer_events = [event for event in store.all_events("concurrent") if event["kind"] == "answer_scored"]
     profile = store.load_student("concurrent")
@@ -390,6 +412,7 @@ def test_actual_no_key_free_practice_is_deferred_without_profile_update():
     sid = service.start_session("offline-free", NODE, "30min")["session_id"]
     assignment = service.next_assignment(sid)
     for index in range(20):
+        assignment = _ack_learning_if_needed(service, sid, assignment)
         if assignment.get("phase") == "practice":
             break
         service.submit(sid, assignment["assignment_id"], f"offline-diag-{index}", "A")
@@ -419,6 +442,7 @@ def test_completed_wrong_held_out_is_needs_reinforcement():
     sid = service.start_session("needs-more", NODE, "30min")["session_id"]
     for index in range(30):
         next_step = service.next_assignment(sid)
+        next_step = _ack_learning_if_needed(service, sid, next_step)
         if next_step.get("done"):
             break
         service.submit(sid, next_step["assignment_id"], f"wrong-{index}", "B")
@@ -436,6 +460,7 @@ def test_resumed_budget_exhaustion_remains_partial_after_completion():
     service.resume_session(sid)
     for index in range(10):
         next_step = service.next_assignment(sid)
+        next_step = _ack_learning_if_needed(service, sid, next_step)
         if next_step.get("done"):
             break
         service.submit(sid, next_step["assignment_id"], f"partial-{index}", "A")
@@ -517,6 +542,7 @@ def test_total_budget_can_pause_after_practice_before_held_out():
     sid = service.start_session("total-budget", NODE, "30min")["session_id"]
     for index in range(20):
         assignment = service.next_assignment(sid)
+        assignment = _ack_learning_if_needed(service, sid, assignment)
         if assignment.get("phase") == "practice":
             break
         service.submit(sid, assignment["assignment_id"], f"budget-diag-{index}", "A")
@@ -593,6 +619,7 @@ def test_completed_report_is_frozen_at_that_sessions_last_event():
         sid = service.start_session(user_id, NODE, "30min")["session_id"]
         for index in range(30):
             step = service.next_assignment(sid)
+            step = _ack_learning_if_needed(service, sid, step)
             if step.get("done"):
                 return sid
             service.submit(sid, step["assignment_id"], f"{prefix}-{index}", answer)

@@ -23,3 +23,14 @@ class SubmitAnswerRequest(StrictRequest):
     assignment_id: str = Field(min_length=1, max_length=128)
     submission_id: str = Field(min_length=1, max_length=128)
     answer: str = Field(max_length=20_000)
+
+
+class LearningAckRequest(StrictRequest):
+    action_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class WatchRequest(StrictRequest):
+    rec_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+    watch_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+    watched_seconds: float = Field(default=0.0, ge=0.0, le=86_400.0)
+    completed: bool = False

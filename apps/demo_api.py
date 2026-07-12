@@ -12,10 +12,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 
 from adapters.store import LocalJsonStore
+from apps.security import RequestGuardMiddleware
+from core.learning.curriculum import CurriculumRuntime
+from core.learning.explanations import environment_explanation_provider
 from core.learning.item_catalog import ItemCatalog
 from core.learning.session_service import SessionError, SessionService
 
-from .demo_schemas import StartSessionRequest, SubmitAnswerRequest
+from .demo_schemas import (
+    LearningAckRequest,
+    StartSessionRequest,
+    SubmitAnswerRequest,
+    WatchRequest,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -30,20 +38,33 @@ def create_app(
     clock: Callable[[], float] = time.time,
     id_factory: Callable[[], str] | None = None,
     llm_grader=None,
+    explanation_provider=None,
+    curriculum=None,
     static_dir: Path | None = DEFAULT_STATIC_DIR,
 ) -> FastAPI:
     catalog = catalog or ItemCatalog.from_default_data()
     store = store or LocalJsonStore()
+    curriculum = curriculum or CurriculumRuntime.from_default_asset()
+    explanation_provider = explanation_provider or environment_explanation_provider()
     service = SessionService(
         catalog,
         store,
         clock=clock,
         id_factory=id_factory,
         llm_grader=llm_grader,
+        explanation_provider=explanation_provider,
+        curriculum=curriculum,
     )
     started_at = datetime.fromtimestamp(float(clock()), timezone.utc).isoformat()
     git_identity = _git_identity()
     app = FastAPI(title="YHer Chemistry Demo", version="2.0.0")
+    app.add_middleware(
+        RequestGuardMiddleware,
+        max_body_bytes=512 * 1024,
+        max_requests=120,
+        window_seconds=60,
+        max_rate_keys=4096,
+    )
     app.state.catalog = catalog
     app.state.store = store
     app.state.session_service = service
@@ -121,6 +142,26 @@ def create_app(
                 request.assignment_id,
                 request.submission_id,
                 request.answer,
+            )
+        except SessionError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @app.post("/api/demo/sessions/{session_id}/learning/ack")
+    def acknowledge_learning(session_id: str, request: LearningAckRequest):
+        try:
+            return service.ack_learning(session_id, request.action_id)
+        except SessionError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @app.post("/api/demo/sessions/{session_id}/watch")
+    def record_watch(session_id: str, request: WatchRequest):
+        try:
+            return service.record_watch(
+                session_id,
+                request.rec_id,
+                request.watch_id,
+                watched_seconds=request.watched_seconds,
+                completed=request.completed,
             )
         except SessionError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

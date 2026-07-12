@@ -8,6 +8,7 @@ import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
@@ -16,6 +17,7 @@ from core.tutor.profile_model import StudentModel
 from engine import mastery, planner, selector
 
 from .events import all_events, append_once, project_student
+from .explanations import generate_explanation
 from .item_catalog import CatalogItem, ItemCatalog
 from .scoring import LLMGrader, score_item
 
@@ -34,6 +36,9 @@ _FORBIDDEN_PUBLIC_KEYS = {
     "analysis",
     "correct_option",
 }
+_PROCESS_LOCKS_GUARD = threading.Lock()
+_PROCESS_SESSION_LOCKS: dict[tuple[str, str], threading.RLock] = {}
+_PROCESS_USER_LOCKS: dict[tuple[str, str], threading.RLock] = {}
 
 
 class SessionError(RuntimeError):
@@ -65,6 +70,8 @@ class SessionService:
         clock: Callable[[], float] = time.time,
         id_factory: Callable[[], str] | None = None,
         llm_grader: LLMGrader | None = None,
+        explanation_provider=None,
+        curriculum=None,
         synthetic: bool = False,
     ):
         self.catalog = catalog
@@ -72,11 +79,13 @@ class SessionService:
         self.clock = clock
         self.id_factory = id_factory or (lambda: secrets.token_hex(16))
         self.llm_grader = llm_grader
+        self.explanation_provider = explanation_provider
+        self.curriculum = curriculum
         self.synthetic = bool(synthetic)
-        self._session_locks: dict[str, threading.RLock] = {}
-        self._session_locks_guard = threading.Lock()
-        self._user_locks: dict[str, threading.RLock] = {}
-        self._user_locks_guard = threading.Lock()
+        root = getattr(store, "root", None)
+        self._store_lock_key = (
+            f"path:{Path(root).resolve()}" if root is not None else f"object:{id(store)}"
+        )
 
     def start_session(
         self,
@@ -168,6 +177,12 @@ class SessionService:
             "asked": {phase: 0 for phase in _PHASE_ORDER},
             "direct_diagnostic_answers": 0,
             "checkpoint": {"resume_phase": "diagnostic"},
+            "learning": {
+                "action_id": _learning_action_id(session_id),
+                "acked": False,
+                "view": None,
+                "recommendation_bindings": {},
+            },
         }
         self._persist_session(session)
         event = {
@@ -197,6 +212,8 @@ class SessionService:
         if session["phase"] == "complete":
             self._ensure_completion_event(session)
             return self._done_view(session)
+        if session["phase"] == "learning":
+            return self._learning_checkpoint(session)
         current_id = session.get("current_assignment_id")
         if current_id:
             current = session["assignments"][current_id]
@@ -220,6 +237,8 @@ class SessionService:
         selection = self._select_for_current_phase(session)
         while selection is None:
             session["phase"] = self._next_phase(session)
+            if session["phase"] == "learning":
+                return self._learning_checkpoint(session)
             if session["phase"] == "complete":
                 self._complete_session(session)
                 return self._done_view(session)
@@ -253,6 +272,308 @@ class SessionService:
         session["current_assignment_id"] = assignment_id
         self._persist_session(session)
         return view
+
+    def ack_learning(self, session_id: str, action_id: str) -> dict[str, Any]:
+        with self._session_lock(session_id):
+            session = self._load_session(session_id)
+            learning = session.get("learning") or {}
+            expected = str(learning.get("action_id") or "")
+            if not expected or str(action_id) != expected:
+                raise AssignmentError("learning action not found in this session")
+            if session["phase"] not in {"learning", "practice", "held_out", "complete"}:
+                raise AssignmentError("learning checkpoint is not ready", status_code=409)
+            event = {
+                "event_id": _learning_event_id("learning_acknowledged", session_id, expected),
+                "kind": "learning_acknowledged",
+                "occurred_at": float(self.clock()),
+                "session_id": session_id,
+                "user_id": session["user_id"],
+                "node": session["node"],
+                "action_id": expected,
+                "synthetic": session["synthetic"],
+            }
+            append_once(self.store, session["user_id"], event)
+            if not learning.get("acked") or session["phase"] == "learning":
+                learning["acked"] = True
+                session["learning"] = learning
+                session["phase"] = self._phase_after_learning(session)
+                session["phase_started_at"] = float(self.clock())
+                self._persist_session(session)
+            return {
+                "accepted": True,
+                "action_id": expected,
+                "phase": session["phase"],
+                "next_action": "next" if session["phase"] != "complete" else "complete",
+                "synthetic": session["synthetic"],
+            }
+
+    def record_watch(
+        self,
+        session_id: str,
+        rec_id: str,
+        watch_id: str,
+        *,
+        watched_seconds: float,
+        completed: bool,
+    ) -> dict[str, Any]:
+        with self._session_lock(session_id):
+            session = self._load_session(session_id)
+            bindings = (session.get("learning") or {}).get("recommendation_bindings") or {}
+            binding = bindings.get(str(rec_id))
+            if binding is None or binding.get("session_id") != session_id:
+                raise AssignmentError("recommendation not found in this session")
+            normalized_watch_id = str(watch_id).strip()
+            if not normalized_watch_id:
+                raise AssignmentError("watch_id is required", status_code=422)
+            seconds = max(0.0, float(watched_seconds))
+            watch_event_id = _watch_event_id(session_id, str(rec_id), normalized_watch_id)
+            existing = next(
+                (
+                    event
+                    for event in all_events(self.store, session["user_id"])
+                    if event.get("event_id") == watch_event_id
+                ),
+                None,
+            )
+            if existing is not None and (
+                float(existing.get("watched_seconds") or 0.0) != seconds
+                or bool(existing.get("completed")) != bool(completed)
+            ):
+                raise AssignmentError("watch retry changed its payload", status_code=409)
+            watch_event = existing or {
+                "event_id": watch_event_id,
+                "kind": "watch_proxy",
+                "occurred_at": float(self.clock()),
+                "session_id": session_id,
+                "user_id": session["user_id"],
+                "node": session["node"],
+                "action_id": (session.get("learning") or {}).get("action_id"),
+                "rec_id": str(rec_id),
+                "watch_id": normalized_watch_id,
+                "watched_seconds": seconds,
+                "completed": bool(completed),
+                "segment_id": binding["segment_id"],
+                "bv": binding["bv"],
+                "p": int(binding["p"]),
+                "synthetic": session["synthetic"],
+            }
+            appended = append_once(self.store, session["user_id"], watch_event)
+            if not appended:
+                persisted = next(
+                    (
+                        event
+                        for event in all_events(self.store, session["user_id"])
+                        if event.get("event_id") == watch_event_id
+                    ),
+                    None,
+                )
+                if persisted is None or any(
+                    persisted.get(key) != watch_event.get(key)
+                    for key in ("rec_id", "watch_id", "watched_seconds", "completed", "bv", "p")
+                ):
+                    raise AssignmentError("watch retry changed its payload", status_code=409)
+                watch_event = persisted
+            seen_event = {
+                "event_id": _seen_event_id(session_id, str(rec_id)),
+                "kind": "seen_segments",
+                "occurred_at": float(self.clock()),
+                "session_id": session_id,
+                "user_id": session["user_id"],
+                "node": session["node"],
+                "rec_id": str(rec_id),
+                "segment_id": binding["segment_id"],
+                "bv": binding["bv"],
+                "p": int(binding["p"]),
+                "synthetic": session["synthetic"],
+            }
+            seen_appended = append_once(
+                self.store,
+                session["user_id"],
+                seen_event,
+            )
+            if not seen_appended:
+                persisted_seen = next(
+                    (
+                        event
+                        for event in all_events(self.store, session["user_id"])
+                        if event.get("event_id") == seen_event["event_id"]
+                    ),
+                    None,
+                )
+                if persisted_seen is None or any(
+                    persisted_seen.get(key) != seen_event.get(key)
+                    for key in ("rec_id", "segment_id", "bv", "p")
+                ):
+                    raise AssignmentError("seen segment event collision", status_code=409)
+            self._save_projection(session["user_id"])
+            return {
+                "accepted": True,
+                "rec_id": str(rec_id),
+                "completed": bool(completed),
+                "next_action": "ack_learning" if completed else "continue_learning",
+            }
+
+    def _learning_checkpoint(self, session: dict[str, Any]) -> dict[str, Any]:
+        learning = session["learning"]
+        if learning.get("view") is not None:
+            return learning["view"]
+        action_id = learning["action_id"]
+        prior = next(
+            (
+                event
+                for event in all_events(self.store, session["user_id"])
+                if event.get("kind") == "learning_checkpoint_ready"
+                and event.get("session_id") == session["session_id"]
+                and event.get("action_id") == action_id
+            ),
+            None,
+        )
+        if prior is not None:
+            learning["view"] = prior["checkpoint"]
+            learning["recommendation_bindings"] = prior.get("recommendation_bindings") or {}
+            self._persist_session(session)
+            return learning["view"]
+
+        explanation_event = next(
+            (
+                event
+                for event in all_events(self.store, session["user_id"])
+                if event.get("kind") == "explanation_generated"
+                and event.get("session_id") == session["session_id"]
+                and event.get("action_id") == action_id
+            ),
+            None,
+        )
+        if explanation_event is None:
+            explanation, explanation_audit = generate_explanation(
+                self.explanation_provider,
+                self._explanation_context(session),
+            )
+            explanation_event = {
+                "event_id": _learning_event_id(
+                    "explanation_generated", session["session_id"], action_id
+                ),
+                "kind": "explanation_generated",
+                "occurred_at": float(self.clock()),
+                "session_id": session["session_id"],
+                "user_id": session["user_id"],
+                "node": session["node"],
+                "action_id": action_id,
+                **explanation_audit,
+                "synthetic": session["synthetic"],
+            }
+            if not append_once(self.store, session["user_id"], explanation_event):
+                explanation_event = next(
+                    event
+                    for event in all_events(self.store, session["user_id"])
+                    if event.get("event_id")
+                    == _learning_event_id(
+                        "explanation_generated", session["session_id"], action_id
+                    )
+                )
+        explanation = explanation_event["public_explanation"]
+
+        recommendation_result = {
+            "recommendations": [],
+            "bindings": {},
+            "rec_served": None,
+        }
+        if self.curriculum is not None:
+            projected = project_student(
+                session["user_id"], all_events(self.store, session["user_id"])
+            )
+            recommendation_result = self.curriculum.recommend(
+                node=session["node"],
+                belief=self._belief(session["user_id"], session["node"]),
+                grade=session["grade"],
+                learning_purpose=session["learning_purpose"],
+                budget=session["budget"],
+                seen_segments=getattr(projected, "seen_segments", []),
+                session_id=session["session_id"],
+                action_id=action_id,
+            )
+        rec_snapshot = recommendation_result.get("rec_served")
+        if rec_snapshot:
+            append_once(
+                self.store,
+                session["user_id"],
+                {
+                    **rec_snapshot,
+                    "kind": "rec_served",
+                    "occurred_at": float(self.clock()),
+                    "user_id": session["user_id"],
+                    "node": session["node"],
+                    "synthetic": session["synthetic"],
+                },
+            )
+        view = {
+            "session_id": session["session_id"],
+            "phase": "learning",
+            "status": "active",
+            "action_id": action_id,
+            "explanation": explanation,
+            "recommendations": recommendation_result.get("recommendations") or [],
+            "timing": self._timing(session),
+            "synthetic": session["synthetic"],
+            "next_action": "ack_learning",
+        }
+        _assert_public_safe(view)
+        bindings = recommendation_result.get("bindings") or {}
+        checkpoint_event = {
+            "event_id": _learning_event_id(
+                "learning_checkpoint_ready", session["session_id"], action_id
+            ),
+            "kind": "learning_checkpoint_ready",
+            "occurred_at": float(self.clock()),
+            "session_id": session["session_id"],
+            "user_id": session["user_id"],
+            "node": session["node"],
+            "action_id": action_id,
+            "checkpoint": view,
+            "recommendation_bindings": bindings,
+            "synthetic": session["synthetic"],
+        }
+        append_once(self.store, session["user_id"], checkpoint_event)
+        learning["view"] = view
+        learning["recommendation_bindings"] = bindings
+        session["learning"] = learning
+        self._persist_session(session)
+        return view
+
+    def _explanation_context(self, session: dict[str, Any]) -> dict[str, Any]:
+        answer_events = {
+            str(event.get("assignment_id")): event
+            for event in all_events(self.store, session["user_id"])
+            if event.get("kind") == "answer_scored"
+            and event.get("session_id") == session["session_id"]
+            and event.get("phase") == "diagnostic"
+        }
+        evidence: list[dict[str, Any]] = []
+        for assignment in session["assignments"].values():
+            if assignment.get("phase") != "diagnostic" or not assignment.get("submitted"):
+                continue
+            event = answer_events.get(str(assignment["assignment_id"])) or {}
+            item = self.catalog.items[assignment["item_id"]]
+            correct = event.get("correct")
+            result = "correct" if correct is True else "incorrect" if correct is False else "deferred"
+            evidence.append(
+                {
+                    "question": item.stem_text,
+                    "difficulty": item.difficulty,
+                    "source": item.source_label,
+                    "criteria": [dict(point) for point in item.rubric],
+                    "expected_response": list(item.answer_values),
+                    "result": result,
+                    "cause_code": event.get("error_code"),
+                    "confidence": event.get("confidence"),
+                }
+            )
+        return {
+            "node": session["node"],
+            "grade": session["grade"],
+            "learning_purpose": session["learning_purpose"],
+            "evidence": evidence,
+        }
 
     def submit(
         self,
@@ -422,16 +743,34 @@ class SessionService:
             else float(session.get("completed_at") or self.clock())
         )
         as_of = datetime.fromtimestamp(now, timezone.utc).isoformat()
+        seven_day_review_at = datetime.fromtimestamp(
+            now + 7 * mastery.DAY_SECONDS, timezone.utc
+        ).isoformat()
+        session_answers = [
+            event
+            for event in events
+            if event.get("kind") == "answer_scored"
+            and event.get("session_id") == session_id
+            and event.get("node") == node
+            and event.get("update_applied") is True
+        ]
+        error_summary, reinforcement_plan = _reinforcement_summary(
+            outcome, held_out_events
+        )
         if record is None:
             summary = {
                 "node": node,
                 "outcome": outcome,
                 "state_label": "当前证据不足",
                 "mastery_probability": None,
+                "belief": None,
                 "delta": None,
                 "evidence_count": 0,
                 "as_of": as_of,
                 "review_due_at": None,
+                "seven_day_review_at": seven_day_review_at,
+                "error_summary": error_summary,
+                "reinforcement_plan": reinforcement_plan,
             }
         else:
             state = mastery.NodeBelief(
@@ -441,14 +780,6 @@ class SessionService:
                 direct_answers=record.direct_answers,
             )
             projected = mastery.get_belief(state, now)
-            session_answers = [
-                event
-                for event in events
-                if event.get("kind") == "answer_scored"
-                and event.get("session_id") == session_id
-                and event.get("node") == node
-                and event.get("update_applied") is True
-            ]
             delta = None
             if session_answers:
                 without_session = [event for event in events if event not in session_answers]
@@ -469,10 +800,19 @@ class SessionService:
                 "outcome": outcome,
                 "state_label": _state_label(int(np.argmax(projected))),
                 "mastery_probability": round(float(projected[mastery.M]), 6),
+                "belief": {
+                    "mastered": round(float(projected[mastery.M]), 6),
+                    "prerequisite_gap": round(float(projected[mastery.P]), 6),
+                    "concept_confusion": round(float(projected[mastery.C]), 6),
+                    "uncertain": round(float(projected[mastery.U]), 6),
+                },
                 "delta": delta,
-                "evidence_count": len(record.evidence),
+                "evidence_count": len(session_answers),
                 "as_of": as_of,
                 "review_due_at": _review_due_at(record.stability, record.last_review_at),
+                "seven_day_review_at": seven_day_review_at,
+                "error_summary": error_summary,
+                "reinforcement_plan": reinforcement_plan,
             }
         return {
             "session_id": session_id,
@@ -624,6 +964,11 @@ class SessionService:
         }
 
     def _phase_after_diagnostic(self, session: dict[str, Any]) -> str:
+        if not (session.get("learning") or {}).get("acked"):
+            return "learning"
+        return self._phase_after_learning(session)
+
+    def _phase_after_learning(self, session: dict[str, Any]) -> str:
         if self._remaining_items(session, "practice"):
             return "practice"
         if self._remaining_items(session, "held_out"):
@@ -633,6 +978,8 @@ class SessionService:
     def _next_phase(self, session: dict[str, Any]) -> str:
         if session["phase"] == "diagnostic":
             return self._phase_after_diagnostic(session)
+        if session["phase"] == "learning":
+            return self._phase_after_learning(session)
         if session["phase"] == "practice":
             return "held_out" if self._remaining_items(session, "held_out") else "complete"
         return "complete"
@@ -699,6 +1046,16 @@ class SessionService:
         session = self.store.load_session(str(session_id))
         if session is None:
             raise SessionNotFound("session not found")
+        if "learning" not in session:
+            phase = str(session.get("phase") or "diagnostic")
+            resume_phase = str((session.get("checkpoint") or {}).get("resume_phase") or "")
+            session["learning"] = {
+                "action_id": _learning_action_id(str(session_id)),
+                "acked": phase in {"practice", "held_out", "complete"}
+                or resume_phase in {"practice", "held_out", "complete"},
+                "view": None,
+                "recommendation_bindings": {},
+            }
         _assert_session_invariants(session)
         return session
 
@@ -713,14 +1070,14 @@ class SessionService:
         return value
 
     def _session_lock(self, session_id: str) -> threading.RLock:
-        key = str(session_id)
-        with self._session_locks_guard:
-            return self._session_locks.setdefault(key, threading.RLock())
+        key = (self._store_lock_key, str(session_id))
+        with _PROCESS_LOCKS_GUARD:
+            return _PROCESS_SESSION_LOCKS.setdefault(key, threading.RLock())
 
     def _user_lock(self, user_id: str) -> threading.RLock:
-        key = str(user_id)
-        with self._user_locks_guard:
-            return self._user_locks.setdefault(key, threading.RLock())
+        key = (self._store_lock_key, str(user_id))
+        with _PROCESS_LOCKS_GUARD:
+            return _PROCESS_USER_LOCKS.setdefault(key, threading.RLock())
 
     def _session_view(self, session: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -799,6 +1156,26 @@ def _session_event_id(kind: str, session_id: str) -> str:
     return hashlib.sha256(material).hexdigest()
 
 
+def _learning_action_id(session_id: str) -> str:
+    material = f"learning-action:v1:{session_id}".encode()
+    return hashlib.sha256(material).hexdigest()[:32]
+
+
+def _learning_event_id(kind: str, session_id: str, action_id: str) -> str:
+    material = f"learning-event:v1:{kind}:{session_id}:{action_id}".encode()
+    return hashlib.sha256(material).hexdigest()
+
+
+def _watch_event_id(session_id: str, rec_id: str, watch_id: str) -> str:
+    material = f"watch-event:v1:{session_id}:{rec_id}:{watch_id}".encode()
+    return hashlib.sha256(material).hexdigest()
+
+
+def _seen_event_id(session_id: str, rec_id: str) -> str:
+    material = f"seen-segment:v1:{session_id}:{rec_id}".encode()
+    return hashlib.sha256(material).hexdigest()
+
+
 def _submission_hash(answer: Any) -> str:
     return hashlib.sha256(str(answer).encode("utf-8")).hexdigest()
 
@@ -872,6 +1249,39 @@ def _state_label(index: int) -> str:
         mastery.C: "思路链条仍需巩固",
         mastery.U: "当前证据不足",
     }[index]
+
+
+def _reinforcement_summary(
+    outcome: str, held_out_events: list[dict[str, Any]]
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if outcome != "needs_reinforcement":
+        return None, None
+    failed = [event for event in held_out_events if event.get("correct") is not True]
+    counts: dict[str, int] = {}
+    for event in failed:
+        code = str(event.get("error_code") or "unresolved_response")
+        counts[code] = counts.get(code, 0) + 1
+    cause_codes = [
+        {"code": code, "count": count}
+        for code, count in sorted(counts.items(), key=lambda row: (-row[1], row[0]))
+    ]
+    steps = [
+        "回到讲解中的变量与因果链，对照本次未通过的判据。",
+        "完成一道同考点、不同题族的有答案反馈练习。",
+        "隔开讲解后，再用未见过的题族做独立验证。",
+    ]
+    return (
+        {
+            "failed_held_out": len(failed),
+            "total_held_out": len(held_out_events),
+            "cause_codes": cause_codes,
+        },
+        {
+            "summary": "本次独立验证未全部通过，当前证据只支持继续补强。",
+            "steps": steps,
+            "next_check": "different_held_out_family",
+        },
+    )
 
 
 def _one_per_family(items) -> list[CatalogItem]:
