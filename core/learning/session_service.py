@@ -487,7 +487,10 @@ class SessionService:
                 belief=self._belief(session["user_id"], session["node"]),
                 grade=session["grade"],
                 learning_purpose=session["learning_purpose"],
-                budget=session["budget"],
+                budget={
+                    **session["budget"],
+                    "session_remaining_minutes": self._timing(session)["remaining_minutes"],
+                },
                 seen_segments=getattr(projected, "seen_segments", []),
                 session_id=session["session_id"],
                 action_id=action_id,

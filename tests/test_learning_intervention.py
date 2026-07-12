@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import importlib
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import json
 from pathlib import Path
+import threading
+import time
 
 import numpy as np
 import pytest
@@ -65,6 +68,15 @@ class FakeCurriculum:
         }
 
 
+class CapturingBudgetCurriculum(FakeCurriculum):
+    def __init__(self):
+        self.budgets: list[dict] = []
+
+    def recommend(self, **kwargs):
+        self.budgets.append(dict(kwargs["budget"]))
+        return super().recommend(**kwargs)
+
+
 class CapturingExplanationProvider:
     def __init__(self, *, fail: bool = False):
         self.fail = fail
@@ -90,7 +102,19 @@ class CapturingExplanationProvider:
         }
 
 
-def test_production_env_reuses_one_client_for_explanations_and_free_response_grading(
+class BlockingExplanationProvider(CapturingExplanationProvider):
+    def __init__(self):
+        super().__init__()
+        self.entered = threading.Event()
+        self.release = threading.Event()
+
+    def generate(self, *, prompt: str, context: dict):
+        self.entered.set()
+        assert self.release.wait(timeout=5)
+        return super().generate(prompt=prompt, context=context)
+
+
+def test_production_env_uses_fast_explanation_model_without_changing_grader_model(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from adapters import llm_client as llm_module
@@ -128,9 +152,11 @@ def test_production_env_reuses_one_client_for_explanations_and_free_response_gra
     )
     service = app.state.session_service
 
-    assert len(FakeLLMClient.instances) == 1
+    assert len(FakeLLMClient.instances) == 2
     assert service.explanation_provider.client is FakeLLMClient.instances[0]
-    assert service.llm_grader.client is FakeLLMClient.instances[0]
+    assert service.llm_grader.client is FakeLLMClient.instances[1]
+    assert FakeLLMClient.instances[0].init_kwargs["model"] == "deepseek-chat"
+    assert "model" not in FakeLLMClient.instances[1].init_kwargs
 
     free_item = CatalogItem(
         item_id="free-item",
@@ -160,8 +186,49 @@ def test_production_env_reuses_one_client_for_explanations_and_free_response_gra
         "usage": {"input_tokens": 120, "output_tokens": 40},
         "cost_yuan": 0.004,
     }
-    assert "写出电子守恒" in FakeLLMClient.instances[0].calls[0][1]["content"]
-    assert "只写了化合价变化" in FakeLLMClient.instances[0].calls[0][1]["content"]
+    assert "写出电子守恒" in FakeLLMClient.instances[1].calls[0][1]["content"]
+    assert "只写了化合价变化" in FakeLLMClient.instances[1].calls[0][1]["content"]
+
+
+def test_slow_explanation_does_not_block_health_or_another_sessions_next() -> None:
+    provider = BlockingExplanationProvider()
+    store = MemoryStore()
+    app = create_app(
+        catalog=_catalog(),
+        store=store,
+        curriculum=FakeCurriculum(),
+        explanation_provider=provider,
+        static_dir=None,
+    )
+    service = app.state.session_service
+    slow_session = service.start_session("slow-provider", NODE, "30min")["session_id"]
+    state = store.load_session(slow_session)
+    state["phase"] = "learning"
+    store.save_session(slow_session, state)
+    other_session = service.start_session("fast-path", NODE, "30min")["session_id"]
+
+    slow_client, fast_client = TestClient(app), TestClient(app)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        slow = executor.submit(
+            slow_client.get, f"/api/demo/sessions/{slow_session}/next"
+        )
+        assert provider.entered.wait(timeout=2)
+        started = time.perf_counter()
+        health = fast_client.get("/health")
+        health_ms = (time.perf_counter() - started) * 1_000
+        started = time.perf_counter()
+        deterministic = fast_client.get(f"/api/demo/sessions/{other_session}/next")
+        deterministic_ms = (time.perf_counter() - started) * 1_000
+        provider.release.set()
+        slow_response = slow.result(timeout=5)
+
+    assert health.status_code == 200
+    assert health_ms < 500
+    assert deterministic.status_code == 200
+    assert deterministic.json()["phase"] == "diagnostic"
+    assert deterministic_ms < 500
+    assert slow_response.status_code == 200
+    assert slow_response.json()["phase"] == "learning"
 
 
 class FailLearningCheckpointSaveStore(MemoryStore):
@@ -316,6 +383,50 @@ def test_explanation_provider_failure_is_honest_and_does_not_block_ack() -> None
     ]
     assert len(generation_events) == 1
     assert generation_events[0]["generation_status"] == "offline_fallback"
+
+
+def test_recommendation_receives_same_full_session_time_as_learning_view() -> None:
+    curriculum = CapturingBudgetCurriculum()
+    service = SessionService(
+        _catalog(), MemoryStore(), clock=lambda: 1_000.0, curriculum=curriculum
+    )
+    session_id = service.start_session(
+        "timed-recommendation", NODE, "30min"
+    )["session_id"]
+
+    checkpoint = _drive_to_learning(service, session_id)
+
+    assert checkpoint["timing"]["remaining_minutes"] == 30.0
+    assert curriculum.budgets == [
+        {
+            **service.store.load_session(session_id)["budget"],
+            "session_remaining_minutes": 30.0,
+        }
+    ]
+
+
+def test_billed_invalid_explanation_retains_usage_and_cost_in_fallback_audit() -> None:
+    module = importlib.import_module("core.learning.explanations")
+
+    class BilledInvalidProvider:
+        def generate(self, **_kwargs):
+            return {
+                "content": "",
+                "usage": {"input_tokens": 3_242, "output_tokens": 1_400},
+                "cost_yuan": 0.018911,
+                "model_returned": "must-not-be-retained",
+            }
+
+    explanation, audit = module.generate_explanation(
+        BilledInvalidProvider(), {"node": NODE, "evidence": []}
+    )
+
+    assert explanation["status"] == "offline_fallback"
+    assert audit["generation_status"] == "offline_fallback"
+    assert audit["usage"] == {"input_tokens": 3_242, "output_tokens": 1_400}
+    assert audit["cost_yuan"] == 0.018911
+    assert "model" not in audit
+    assert "provider" not in audit
 
 
 def test_offline_fallback_is_evidence_bound_and_safe_for_non_redox_nodes() -> None:

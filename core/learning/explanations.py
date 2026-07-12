@@ -52,8 +52,17 @@ def environment_learning_adapters():
         from adapters.llm_client import LLMClient
         from core.learning.grading import ChatRubricGrader
 
-        client = LLMClient(provider="deepseek", api_key=api_key)
-        return ChatExplanationProvider(client), ChatRubricGrader(client)
+        explanation_model = str(
+            os.environ.get("YHER_EXPLANATION_MODEL") or "deepseek-chat"
+        ).strip()
+        explanation_client = LLMClient(
+            provider="deepseek", model=explanation_model, api_key=api_key
+        )
+        grader_client = LLMClient(provider="deepseek", api_key=api_key)
+        return (
+            ChatExplanationProvider(explanation_client),
+            ChatRubricGrader(grader_client),
+        )
     except Exception:  # noqa: BLE001 - startup must retain the offline capability
         return None, None
 
@@ -81,6 +90,7 @@ def generate_explanation(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Return a public explanation and a provider-neutral internal audit payload."""
     prompt = build_explanation_prompt(context)
+    response: Any = None
     try:
         if provider is None:
             raise RuntimeError("offline")
@@ -102,10 +112,14 @@ def generate_explanation(
         return explanation, audit
     except Exception:  # noqa: BLE001 - the learning loop must remain available offline
         explanation = offline_fallback(context)
+        usage = _usage_projection(response.get("usage") if isinstance(response, dict) else None)
+        cost = _nonnegative_float(
+            response.get("cost_yuan") if isinstance(response, dict) else 0.0
+        )
         return explanation, {
             "generation_status": "offline_fallback",
-            "usage": {"input_tokens": 0, "output_tokens": 0},
-            "cost_yuan": 0.0,
+            "usage": usage,
+            "cost_yuan": cost,
             "public_explanation": explanation,
         }
 

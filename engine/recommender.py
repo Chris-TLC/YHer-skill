@@ -542,6 +542,12 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
     recommendations: List[Dict] = []
     served_snap: List[Dict] = []
     budget_sec = rx_minutes * 60
+    try:
+        reason_budget_sec = max(
+            0, int(float(budget.get("session_remaining_minutes")) * 60)
+        )
+    except (TypeError, ValueError, OverflowError):
+        reason_budget_sec = budget_sec
     used_sec = 0
     served_ids = set()
     for n, seg, sc, comp in picks:
@@ -552,7 +558,7 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
         if used_sec + dur > budget_sec:
             continue                           # 超预算截断（宁缺勿滥，断言 7）
         used_sec += dur
-        left_min = max(0, (budget_sec - used_sec) // 60)
+        left_min = max(0, (reason_budget_sec - used_sec) // 60)
         rid = rec_id_factory()
         rec = {
             "rec_id": rid, "node": n,

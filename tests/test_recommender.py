@@ -184,6 +184,23 @@ def test_08_cross_track_reason_has_track_name():
     assert "基础大合集" in out["recommendations"][0]["reason"]
 
 
+def test_reason_uses_full_session_time_remaining_after_allocated_video():
+    out = _run(
+        "高二",
+        "review",
+        B_U,
+        [seg("F1", dur=480)],
+        budget={
+            "mode": "shallow",
+            "rx_minutes": 8,
+            "rx_segments": 1,
+            "session_remaining_minutes": 30,
+        },
+    )
+
+    assert "今天还剩约22分钟" in out["recommendations"][0]["reason"]
+
+
 def test_09_efficacy_v1_is_one():
     """Efficacy v1 恒 1.0 → 快照 efficacy=1.0,排序等价 W_track×Match。"""
     out = _run("高三", "exam_prep", B_U, [seg("F1", seg_type="concept_intro")])
