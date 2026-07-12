@@ -40,16 +40,17 @@ if ! "$PYTHON_BIN" -c 'import fastapi, numpy, openai, uvicorn, yaml' >/dev/null 
   "$PYTHON_BIN" -m pip install --disable-pip-version-check -r "$ROOT_DIR/requirements-demo.txt"
 fi
 
-UVICORN_ARGS=()
-if [[ -f "$ROOT_DIR/.env" ]]; then
-  UVICORN_ARGS+=(--env-file "$ROOT_DIR/.env")
-fi
-
 export PYTHONPATH="$ROOT_DIR${PYTHONPATH:+:$PYTHONPATH}"
 export YHER_ENABLE_PAID_LLM="${YHER_ENABLE_PAID_LLM:-1}"
 
-exec "$PYTHON_BIN" -m uvicorn apps.demo_api:app \
-  --host 127.0.0.1 \
-  --port "${YHER_DEMO_PORT:-8700}" \
-  --workers 1 \
-  "${UVICORN_ARGS[@]}"
+UVICORN_CMD=(
+  "$PYTHON_BIN" -m uvicorn apps.demo_api:app
+  --host 127.0.0.1
+  --port "${YHER_DEMO_PORT:-8700}"
+  --workers 1
+)
+if [[ -f "$ROOT_DIR/.env" ]]; then
+  UVICORN_CMD+=(--env-file "$ROOT_DIR/.env")
+fi
+
+exec "${UVICORN_CMD[@]}"

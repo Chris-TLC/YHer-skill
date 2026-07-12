@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -158,6 +160,42 @@ def test_run_demo_is_a_single_worker_local_canonical_entrypoint() -> None:
     assert "requirements-demo.txt" in script
     for forbidden in ("kill", "pkill", "8504", "8600", "--reload", "0.0.0.0"):
         assert forbidden not in script
+
+
+def test_run_demo_supports_a_clean_checkout_without_an_env_file(tmp_path: Path) -> None:
+    deploy_dir = tmp_path / "deploy"
+    deploy_dir.mkdir()
+    launcher = deploy_dir / "run_demo.sh"
+    launcher.write_bytes(RUN_DEMO.read_bytes())
+    launcher.chmod(0o755)
+
+    fake_python = tmp_path / "python"
+    fake_python.write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"${1:-}\" == \"-c\" ]]; then exit 0; fi\n"
+        "printf '%s\\n' \"$@\"\n",
+        encoding="utf-8",
+    )
+    fake_python.chmod(0o755)
+    environment = {
+        **os.environ,
+        "YHER_PYTHON": str(fake_python),
+        "YHER_ENABLE_PAID_LLM": "0",
+    }
+
+    completed = subprocess.run(
+        [str(launcher)],
+        cwd=tmp_path,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "apps.demo_api:app" in completed.stdout
+    assert "--workers\n1" in completed.stdout
+    assert "--env-file" not in completed.stdout
 
 
 def test_demo_bootstrap_has_a_small_explicit_runtime_dependency_set() -> None:
