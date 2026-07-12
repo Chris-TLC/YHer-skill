@@ -154,7 +154,7 @@ class LLMClient:
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                timeout=300.0,  # 5分钟超时
+                timeout=18.0,
             )
         except Exception as e:
             error_str = str(e).lower()

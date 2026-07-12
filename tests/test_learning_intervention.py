@@ -203,6 +203,39 @@ def test_deepseek_downgrade_guard_only_applies_to_requested_pro_model() -> None:
         client._validate_model("deepseek-chat")
 
 
+def test_openai_compatible_transport_timeout_stays_below_product_deadline() -> None:
+    from types import SimpleNamespace
+
+    from adapters.llm_client import LLMClient
+
+    class CapturingCompletions:
+        def __init__(self):
+            self.kwargs = None
+
+        def create(self, **kwargs):
+            self.kwargs = kwargs
+            return SimpleNamespace(
+                model="deepseek-chat",
+                usage=SimpleNamespace(
+                    prompt_tokens=10,
+                    completion_tokens=5,
+                    prompt_cache_hit_tokens=0,
+                ),
+                choices=[SimpleNamespace(message=SimpleNamespace(content="{}"))],
+            )
+
+    completions = CapturingCompletions()
+    client = object.__new__(LLMClient)
+    client.provider = "deepseek"
+    client.model = "deepseek-chat"
+    client.config = LLMClient.PROVIDER_CONFIGS["deepseek"]
+    client.client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+
+    client._chat_openai([{"role": "user", "content": "test"}], 16, 0.0)
+
+    assert completions.kwargs["timeout"] == 18.0
+
+
 def test_slow_explanation_does_not_block_health_or_another_sessions_next() -> None:
     provider = BlockingExplanationProvider()
     store = MemoryStore()
