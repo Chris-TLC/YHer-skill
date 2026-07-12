@@ -18,6 +18,9 @@ engine/recommender.py — 视频格局层评分制路由器（curriculum layer�
 """
 from __future__ import annotations
 
+import copy
+import hashlib
+import json
 import uuid
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -59,6 +62,48 @@ TOPK = 3                              # 每节点候选 top-k
 DEFAULT_MODE = "full"
 AUTHORIZED_CODEX_REVIEWER = "codex_sol_20260713"
 
+# 真实 curriculum draft 只列轨道 ID；这些是已审批的 v1 路由参数。
+DEFAULT_TRACK_CONFIG = {
+    "foundation": {
+        "audience": {
+            "高一": {"preview": 1.0, "review": 1.0, "exam_prep": 0.6},
+            "高二": {"preview": 1.0, "review": 1.0, "exam_prep": 0.6},
+            "高三": {"preview": 0.6, "review": 0.4, "exam_prep": 0.2},
+        },
+        "diagnostic_unlock": ["U", "P"],
+    },
+    "round1": {
+        "audience": {
+            "高一": {"preview": 0.0, "review": 0.2, "exam_prep": 0.2},
+            "高二": {"preview": 0.2, "review": 0.6, "exam_prep": 0.6},
+            "高三": {"preview": 0.6, "review": 1.0, "exam_prep": 1.0},
+        },
+        "mastery_gate": 0.6,
+    },
+    "sprint": {
+        "audience": {
+            "高一": {"preview": 0.0, "review": 0.2, "exam_prep": 0.6},
+            "高二": {"preview": 0.0, "review": 0.2, "exam_prep": 0.8},
+            "高三": {"preview": 0.2, "review": 0.6, "exam_prep": 1.0},
+        },
+        "mastery_gate": 0.6,
+    },
+    "topical": {
+        "audience": {
+            "高一": {"preview": 0.6, "review": 0.8, "exam_prep": 0.6},
+            "高二": {"preview": 0.6, "review": 0.8, "exam_prep": 0.8},
+            "高三": {"preview": 0.6, "review": 0.8, "exam_prep": 0.8},
+        },
+    },
+    "scene": {
+        "audience": {
+            "高一": {"preview": 0.0, "review": 0.0, "exam_prep": 0.0},
+            "高二": {"preview": 0.0, "review": 0.0, "exam_prep": 0.0},
+            "高三": {"preview": 0.0, "review": 0.0, "exam_prep": 0.0},
+        },
+    },
+}
+
 
 def _unit_interval(value, label: str) -> float:
     try:
@@ -93,9 +138,18 @@ def normalize_profile(grade, learning_purpose) -> Tuple[str, str, List[str]]:
 def load_track_map(raw: Dict) -> Dict:
     """把 YAML 原始结构（tracks/entities 为列表）正规化为 O(1) 查表 dict，并校验：
        · 任一轨道缺 audience 块 → ValueError（断言 14）。
-       · 重复/悬空 ID、越界权重、未完成的 Codex 签字 → ValueError。"""
+       · 重复/悬空 ID、越界权重、未授权 Codex 签字 → ValueError。
+       · 未完成签字的实体进入 neutral_entities，不参与轨道路由。"""
     tracks: Dict[str, Dict] = {}
-    for t in raw.get("tracks", []):
+    for track_row in raw.get("tracks", []):
+        if isinstance(track_row, str):
+            if track_row not in DEFAULT_TRACK_CONFIG:
+                raise ValueError(f"未知 track id: {track_row!r}")
+            t = {"id": track_row, **copy.deepcopy(DEFAULT_TRACK_CONFIG[track_row])}
+        elif isinstance(track_row, dict):
+            t = track_row
+        else:
+            raise ValueError(f"track 必须是 ID 字符串或完整对象，实际 {type(track_row).__name__}")
         tid = t["id"]
         if tid in tracks:
             raise ValueError(f"重复 track id: {tid!r}")
@@ -109,32 +163,42 @@ def load_track_map(raw: Dict) -> Dict:
         if "efficacy" in t:
             _unit_interval(t["efficacy"], f"track {tid!r} efficacy")
         tracks[tid] = {
-            "audience": t["audience"],
+            "audience": copy.deepcopy(t["audience"]),
             "diagnostic_unlock": list(t.get("diagnostic_unlock", [])),
             "mastery_gate": t.get("mastery_gate"),
         }
     entities: Dict[str, Dict] = {}
+    neutral_entities: Dict[str, Dict] = {}
+    seen_entity_ids = set()
     for e in raw.get("entities", []):
         entity_id = e["entity"]
-        if entity_id in entities:
+        if entity_id in seen_entity_ids:
             raise ValueError(f"重复 entity id: {entity_id!r}")
+        seen_entity_ids.add(entity_id)
         if e["track"] not in tracks:
             raise ValueError(f"entity {entity_id!r} 引用不存在的 track {e['track']!r}")
-        reviewer = str(e.get("reviewer", ""))
+        reviewer = str(e.get("reviewer") or "").strip()
         if reviewer.startswith("codex_") and reviewer != AUTHORIZED_CODEX_REVIEWER:
             raise ValueError(f"entity {entity_id!r} reviewer={reviewer} 未授权")
-        if reviewer == AUTHORIZED_CODEX_REVIEWER:
-            if e.get("needs_human") is not False:
-                raise ValueError(f"entity {entity_id!r} 仍 needs_human，拒绝加载")
-            if not str(e.get("evidence", "")).strip():
-                raise ValueError(f"entity {entity_id!r} 缺签字证据")
         if "efficacy" in e:
             _unit_interval(e["efficacy"], f"entity {entity_id!r} efficacy")
-        entities[entity_id] = {
+        evidence = e.get("evidence")
+        signature_complete = (
+            bool(reviewer)
+            and e.get("needs_human") is False
+            and bool(evidence)
+            and (not isinstance(evidence, str) or bool(evidence.strip()))
+        )
+        normalized = {
             "track": e["track"], "reviewer": reviewer,
-            "needs_human": e.get("needs_human"), "evidence": e.get("evidence"),
+            "needs_human": e.get("needs_human"), "evidence": evidence,
         }
+        if signature_complete:
+            entities[entity_id] = normalized
+        else:
+            neutral_entities[entity_id] = normalized
     return {"tracks": tracks, "entities": entities,
+            "neutral_entities": neutral_entities,
             "version": raw.get("version", "curriculum_v1")}
 
 
@@ -366,15 +430,43 @@ def _build_reason(segment: Dict, comp: Dict, budget_left_min: int) -> str:
 # ══════════════════════════════════════════════════════════════════════
 # 主入口：recommend（五段串联 + 多节点汇合 + rec_served 快照）
 # ══════════════════════════════════════════════════════════════════════
+def _optional_business_id(value, label: str) -> Optional[str]:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"{label} 必须是非空字符串")
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError(f"{label} 必须是非空字符串")
+    return normalized
+
+
 def recommend(grade, learning_purpose, target_nodes: Sequence[str],
               beliefs_proj: Dict[str, np.ndarray], segments_by_node: Dict[str, List[Dict]],
               track_map: Dict, budget: Dict, *,
               seen_segments: Optional[set] = None, prereq_map: Optional[Dict] = None,
               efficacy_table: Optional[Dict] = None,
-              rec_id_factory=lambda: uuid.uuid4().hex) -> Dict:
+              rec_id_factory=lambda: uuid.uuid4().hex,
+              session_id: Optional[str] = None,
+              action_id: Optional[str] = None) -> Dict:
     """返回 {recommendations, rec_served, warnings, status}。
        beliefs_proj：调用方已用 get_belief 投影的 {node: np.array}（红线：本模块不碰 .b）。
        budget：planner.session_budget(tier)。seen_segments：已推 (bv,p) 集合（防重复，断言 27）。"""
+    normalized_session_id = _optional_business_id(session_id, "session_id")
+    normalized_action_id = _optional_business_id(action_id, "action_id")
+    if (normalized_session_id is None) != (normalized_action_id is None):
+        raise ValueError("session_id 与 action_id 必须成对提供")
+    if normalized_session_id is not None:
+        business_payload = json.dumps(
+            [normalized_session_id, normalized_action_id],
+            ensure_ascii=False, separators=(",", ":"),
+        )
+        business_event_id = "rec_served:" + hashlib.sha256(
+            business_payload.encode("utf-8")
+        ).hexdigest()
+    else:
+        business_event_id = None
+
     g, q, warnings = normalize_profile(grade, learning_purpose)
     mode = budget.get("mode", DEFAULT_MODE)
     rx_minutes = int(budget.get("rx_minutes", 15))
@@ -492,7 +584,18 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
     if status == "no_segment":
         warnings.append("本次无合适视频段（候选耗尽或全被 gate 排除）")
 
-    rec_served = {"mode": mode, "grade_norm": g, "purpose_norm": q,
+    if business_event_id is None:
+        legacy_basis = served_snap[0]["rec_id"] if served_snap else uuid.uuid4().hex
+        event_id = f"rec_served:legacy:{legacy_basis}"
+        idempotency_mode = "legacy_rec_id"
+    else:
+        event_id = business_event_id
+        idempotency_mode = "business_key"
+    rec_served = {"event_id": event_id,
+                  "session_id": normalized_session_id,
+                  "action_id": normalized_action_id,
+                  "idempotency_mode": idempotency_mode,
+                  "mode": mode, "grade_norm": g, "purpose_norm": q,
                   "served": served_snap, "unserved_topk": unserved[:TOPK]}
     return {"recommendations": recommendations, "rec_served": rec_served,
             "warnings": warnings, "status": status,

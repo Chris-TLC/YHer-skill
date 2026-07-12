@@ -46,11 +46,16 @@ def raw_track_map(entities_extra=None):
                           "高三": {"preview": 0.0, "review": 0.0, "exam_prep": 0.0}}},
         ],
         "entities": [
-            {"entity": "bv:F1", "track": "foundation", "reviewer": "user_chris"},
-            {"entity": "bv:R1", "track": "round1", "reviewer": "user_chris"},
-            {"entity": "bv:S1", "track": "sprint", "reviewer": "user_chris"},
-            {"entity": "bv:T1", "track": "topical", "reviewer": "user_chris"},
-            {"entity": "bv:SC1", "track": "scene", "reviewer": "user_chris"},
+            {"entity": "bv:F1", "track": "foundation", "reviewer": "user_chris",
+             "needs_human": False, "evidence": "fixture:foundation"},
+            {"entity": "bv:R1", "track": "round1", "reviewer": "user_chris",
+             "needs_human": False, "evidence": "fixture:round1"},
+            {"entity": "bv:S1", "track": "sprint", "reviewer": "user_chris",
+             "needs_human": False, "evidence": "fixture:sprint"},
+            {"entity": "bv:T1", "track": "topical", "reviewer": "user_chris",
+             "needs_human": False, "evidence": "fixture:topical"},
+            {"entity": "bv:SC1", "track": "scene", "reviewer": "user_chris",
+             "needs_human": False, "evidence": "fixture:scene"},
         ],
     }
     if entities_extra:
@@ -185,23 +190,59 @@ def test_09_efficacy_v1_is_one():
     assert out["rec_served"]["served"][0]["efficacy"] == 1.0
 
 
-def test_10_authorized_codex_reviewer_requires_closed_review():
-    """2026-07-13 治理翻转：仅允许指定 signer，且必须已关闭人工门并留证据。"""
+def test_10_incomplete_signatures_stay_neutral_and_fall_back():
+    """未签实体保留供审计，但不得激活声明的轨道。"""
+    incomplete = (
+        {"reviewer": "", "needs_human": False, "evidence": "catalog:X"},
+        {"reviewer": "user_chris", "needs_human": True, "evidence": "catalog:X"},
+        {"reviewer": "claude", "evidence": "catalog:X"},
+        {"reviewer": "user_chris", "needs_human": False, "evidence": "  "},
+    )
+    for index, signature in enumerate(incomplete):
+        entity_id = f"bv:UNSIGNED{index}"
+        entity = {"entity": entity_id, "track": "sprint", **signature}
+        track_map = rec.load_track_map(raw_track_map(entities_extra=[entity]))
+
+        assert entity_id not in track_map["entities"]
+        assert entity_id in track_map["neutral_entities"]
+        warnings = []
+        assert rec.resolve_track(seg(f"UNSIGNED{index}"), track_map, warnings) == "foundation"
+        assert warnings
+
+
+def test_10b_complete_user_claude_and_authorized_codex_signatures_activate():
+    """既有人工 signer 与本轮授权 Codex signer 均兼容完整证据。"""
+    signed = [
+        {"entity": "bv:USER", "track": "foundation", "reviewer": "user_chris",
+         "needs_human": False, "evidence": "catalog:user"},
+        {"entity": "bv:CLAUDE", "track": "round1", "reviewer": "claude",
+         "needs_human": False, "evidence": "catalog:claude"},
+        {"entity": "bv:CODEX", "track": "sprint", "reviewer": "codex_sol_20260713",
+         "needs_human": False, "evidence": "catalog:codex"},
+    ]
+    track_map = rec.load_track_map(raw_track_map(entities_extra=signed))
+    assert all(entity["entity"] in track_map["entities"] for entity in signed)
+
+
+def test_10c_authorized_codex_requires_closed_review_and_evidence():
     signed = {"entity": "bv:X", "track": "foundation",
               "reviewer": "codex_sol_20260713", "needs_human": False,
               "evidence": "catalog:name=X; bv=BVX"}
-    assert rec.load_track_map(raw_track_map(entities_extra=[signed]))["entities"]["bv:X"]
-
-    for bad in (
+    for incomplete in (
         {**signed, "needs_human": True},
         {**signed, "evidence": ""},
-        {**signed, "reviewer": "codex_auto"},
     ):
-        try:
-            rec.load_track_map(raw_track_map(entities_extra=[bad]))
-            assert False, f"应拒绝未合规签字: {bad}"
-        except ValueError:
-            pass
+        track_map = rec.load_track_map(raw_track_map(entities_extra=[incomplete]))
+        assert "bv:X" not in track_map["entities"]
+        assert "bv:X" in track_map["neutral_entities"]
+
+    try:
+        rec.load_track_map(raw_track_map(entities_extra=[
+            {**signed, "reviewer": "codex_auto"},
+        ]))
+        assert False, "应拒绝未授权 Codex signer"
+    except ValueError:
+        pass
 
 
 def test_11_fallback_audience_zero_upgraded():
@@ -287,7 +328,8 @@ def test_18_normalize_passthrough():
 def test_19_resolve_bv_over_season():
     """解析优先级:片段同时命中 bv 实体与 season 实体 → bv 精确实体生效。"""
     raw = raw_track_map(entities_extra=[{"entity": "season:99", "track": "round1",
-                                         "reviewer": "user_chris"}])
+                                         "reviewer": "user_chris", "needs_human": False,
+                                         "evidence": "fixture:season-99"}])
     t = rec.load_track_map(raw)
     s = seg("F1", season_id=99)                  # bv:F1→foundation, season:99→round1
     assert rec.resolve_track(s, t) == "foundation"
@@ -397,10 +439,12 @@ def test_28_track_map_rejects_duplicate_or_dangling_ids():
     duplicate_track = raw_track_map()
     duplicate_track["tracks"].append(duplicate_track["tracks"][0].copy())
     duplicate_entity = raw_track_map(entities_extra=[
-        {"entity": "bv:F1", "track": "foundation", "reviewer": "user_chris"}
+        {"entity": "bv:F1", "track": "foundation", "reviewer": "user_chris",
+         "needs_human": False, "evidence": "fixture:duplicate"}
     ])
     dangling = raw_track_map(entities_extra=[
-        {"entity": "bv:X", "track": "missing", "reviewer": "user_chris"}
+        {"entity": "bv:X", "track": "missing", "reviewer": "user_chris",
+         "needs_human": False, "evidence": "fixture:dangling"}
     ])
     for bad in (duplicate_track, duplicate_entity, dangling):
         try:
@@ -459,6 +503,29 @@ def test_32_first_segment_cannot_exceed_entire_budget():
                budget={"mode": "full", "rx_minutes": 10, "rx_segments": 1})
     assert out["recommendations"] == []
     assert out["status"] == "no_segment"
+
+
+def test_33_draft_string_tracks_expand_to_approved_five_track_defaults():
+    draft = raw_track_map()
+    draft["tracks"] = ["foundation", "round1", "sprint", "topical", "scene"]
+    expanded = rec.load_track_map(draft)
+    approved = rec.load_track_map(raw_track_map())
+    assert expanded["tracks"] == approved["tracks"]
+    assert set(rec.DEFAULT_TRACK_CONFIG) == {
+        "foundation", "round1", "sprint", "topical", "scene",
+    }
+    expanded["tracks"]["foundation"]["audience"]["高一"]["preview"] = 0.0
+    reloaded = rec.load_track_map({**draft, "entities": []})
+    assert reloaded["tracks"]["foundation"]["audience"]["高一"]["preview"] == 1.0
+
+
+def test_34_draft_string_tracks_reject_unknown_track_id():
+    draft = {"version": "draft", "tracks": ["foundation", "unknown"], "entities": []}
+    try:
+        rec.load_track_map(draft)
+        assert False, "未知字符串轨道不得被默认生成"
+    except ValueError as exc:
+        assert "unknown" in str(exc)
 
 
 if __name__ == "__main__":

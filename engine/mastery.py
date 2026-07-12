@@ -164,8 +164,14 @@ def sanitize_llm_likelihood(L_raw, confidence: float):
     if (L is None or L.shape != (4,) or not np.all(np.isfinite(L))
             or np.any(L < 0) or L.sum() <= 0):
         return UNIFORM.copy(), True
+    try:
+        conf = float(confidence)
+    except (TypeError, ValueError):
+        return UNIFORM.copy(), True
+    if not np.isfinite(conf):
+        return UNIFORM.copy(), True
     L = L / L.sum()
-    conf = float(np.clip(confidence, 0.0, 1.0))
+    conf = float(np.clip(conf, 0.0, 1.0))
     L = L ** conf                     # 幂次压平
     L = L / L.sum()
     L = _cap_likelihood_ratio(L, LIKELIHOOD_RATIO_CAP)

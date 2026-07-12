@@ -103,6 +103,14 @@ def test_illegal_llm_likelihood_clamped():
 
 
 # ── FSRS 投影：R(t) 单调、幂等、单向 M→C 不碰 P/U、唯一入口 ───────────
+def test_illegal_llm_confidence_clamped_to_zero_information():
+    valid_likelihood = [0.1, 0.2, 0.3, 0.4]
+    for bad_confidence in (None, "high", float("nan"), float("inf"), float("-inf")):
+        L, illegal = m.sanitize_llm_likelihood(valid_likelihood, bad_confidence)
+        assert illegal, bad_confidence
+        assert np.allclose(L, 0.25), (bad_confidence, L)
+
+
 def test_recall_monotonic_decreasing():
     S = 3.0
     rs = [m.recall_probability(t, S) for t in (0, 1, 5, 30, 100)]

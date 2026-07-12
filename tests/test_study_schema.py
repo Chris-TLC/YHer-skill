@@ -88,6 +88,45 @@ def test_mastery_state_row_validates_4dim():
 
 
 # ── 第 5 项 疗效表 ─────────────────────────────────────────────────────
+def test_mastery_state_row_rejects_invalid_probability_distribution():
+    invalid_beliefs = (
+        [0.5, 0.5],
+        [0.25, 0.25, 0.25, float("nan")],
+        [0.25, 0.25, 0.25, float("inf")],
+        [0.5, 0.3, 0.3, -0.1],
+        [0.4, 0.2, 0.2, 0.1],
+        ["not-a-number", 0.2, 0.3, 0.5],
+    )
+    for belief in invalid_beliefs:
+        try:
+            sch.mastery_state_row("u1", "n", belief, S=None, last_review_at=None)
+            assert False, f"应拒绝非法 belief: {belief}"
+        except ValueError:
+            pass
+
+
+def test_mastery_state_row_rejects_invalid_metadata_scalars():
+    valid = [0.25, 0.25, 0.25, 0.25]
+    invalid_kwargs = (
+        {"S": 0.0, "last_review_at": None, "direct_answers": 0},
+        {"S": -1.0, "last_review_at": None, "direct_answers": 0},
+        {"S": float("nan"), "last_review_at": None, "direct_answers": 0},
+        {"S": float("inf"), "last_review_at": None, "direct_answers": 0},
+        {"S": None, "last_review_at": float("nan"), "direct_answers": 0},
+        {"S": None, "last_review_at": float("inf"), "direct_answers": 0},
+        {"S": None, "last_review_at": None, "direct_answers": -1},
+        {"S": None, "last_review_at": None, "direct_answers": 1.5},
+        {"S": None, "last_review_at": None, "direct_answers": "1"},
+        {"S": None, "last_review_at": None, "direct_answers": True},
+    )
+    for kwargs in invalid_kwargs:
+        try:
+            sch.mastery_state_row("u1", "n", valid, **kwargs)
+            assert False, f"应拒绝非法掌握度元数据: {kwargs}"
+        except (TypeError, ValueError):
+            pass
+
+
 def test_efficacy_row_control_arm():
     r = sch.efficacy_row("seg1", "E-过量误判", alpha=3.0, beta=2.0, control_arm=True)
     assert r["alpha"] == 3.0 and r["beta"] == 2.0 and r["control_arm"] is True
