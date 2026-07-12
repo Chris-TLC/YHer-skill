@@ -230,6 +230,18 @@ def test_report_maps_the_canonical_four_state_belief_shape():
     assert 'P: "前置缺口"' in js
 
 
+def test_client_timeout_covers_the_llm_full_response_gate_with_a_bounded_buffer():
+    js = _read(JS)
+    match = re.search(r"controller\.abort\(\); \}, (\d+)\);", js)
+
+    assert match is not None
+    timeout_ms = int(match.group(1))
+    assert 25_000 <= timeout_ms <= 30_000
+    assert 'if (error && error.name === "AbortError")' in js
+    assert 'timeout.status = 408' in js
+    assert "请求超时，答案和进度仍保留在当前页面。" in js
+
+
 def test_question_media_is_restricted_to_same_origin():
     js = _read(JS)
     media_function = js.split("function safeMediaUrl", 1)[1].split("function renderRirZone", 1)[0]
