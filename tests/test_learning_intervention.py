@@ -190,6 +190,19 @@ def test_production_env_uses_fast_explanation_model_without_changing_grader_mode
     assert "只写了化合价变化" in FakeLLMClient.instances[1].calls[0][1]["content"]
 
 
+def test_deepseek_downgrade_guard_only_applies_to_requested_pro_model() -> None:
+    from adapters.llm_client import LLMClient
+
+    client = object.__new__(LLMClient)
+    client.provider = "deepseek"
+    client.model = "deepseek-chat"
+    client._validate_model("deepseek-chat")
+
+    client.model = "deepseek-v4-pro"
+    with pytest.raises(ValueError, match="模型降级"):
+        client._validate_model("deepseek-chat")
+
+
 def test_slow_explanation_does_not_block_health_or_another_sessions_next() -> None:
     provider = BlockingExplanationProvider()
     store = MemoryStore()
