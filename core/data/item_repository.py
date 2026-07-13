@@ -30,7 +30,12 @@ class ItemRepository:
         if self._loaded:
             return
         if self.bank_dir.exists():
-            for f in self.bank_dir.glob("*.jsonl"):
+            files = sorted(self.bank_dir.glob("*.jsonl"))
+            if self.bank_dir.resolve() == ITEM_BANK_DIR.resolve():
+                canonical = sorted(self.bank_dir.glob("chemistry_v3_*.jsonl"))
+                if canonical:
+                    files = canonical
+            for f in files:
                 with open(f, encoding="utf-8") as fp:
                     for line in fp:
                         if not line.strip():
