@@ -50,6 +50,18 @@ H5_RESULT_IDS = (
     "H5_MISCONCEPTION_HIT_RATE_CONTRAST",
     "H5_MISCONCEPTION_HIT_RATE_CONTRAST_CI95",
 )
+H5_LIFECYCLE_DENOMINATOR_FIELDS = (
+    "frozen_provider_count",
+    "collected_provider_count",
+    "qualifying_provider_count",
+    "invalid_calibration_schema_provider_count",
+    "invalid_provider_artifact_count",
+    "missing_provider_count",
+    "missing_required_revision_provider_count",
+    "network_interruption_provider_count",
+    "post_calibration_exclusion_provider_count",
+    "provider_lifecycle_counts",
+)
 PROGRAMMATIC_H5_PENDING_STATUS = "PROGRAMMATIC_COMPLETE_H5_PENDING"
 H5_EVALUATED_STATUS = "COMPLETE_H5_EVALUATED"
 H5_EXCLUDED_STATUS = "COMPLETE_H5_EXCLUDED_PRE_OUTCOME"
@@ -512,6 +524,16 @@ def _validate_artifacts(
             _validate_provider_attempt(record, manifest, provider)
         elif record_type == "llm_sim_excluded_response_accounting":
             _validate_drift_exclusion(record, manifest, provider)
+        elif record_type == "llm_sim_calibration":
+            events = record.get("events")
+            if not isinstance(events, list) or any(
+                not isinstance(event, Mapping)
+                or not isinstance(event.get("correct"), bool)
+                for event in events
+            ):
+                raise H5ContractError(
+                    f"{provider} calibration artifact has invalid scored events"
+                )
         elif record_type == "llm_sim_journey":
             if record.get("model_id") != requested_model:
                 raise H5ContractError(f"{provider} artifact has unapproved model drift")
@@ -890,6 +912,194 @@ def _write_immutable_json(path: Path, record: Mapping[str, Any]) -> None:
             pass
 
 
+def _provider_invalid_evidence(
+    raw_root: Path,
+    provider: str,
+) -> list[dict[str, Any]]:
+    """Hash only the fixed provider-local lifecycle files that are safe to read."""
+
+    lifecycle_relatives = (
+        f"providers/{provider}.json",
+        f"calibration_decisions/{provider}.json",
+        f"providers/{provider}__prompt-v1.json",
+    )
+    root = raw_root.resolve(strict=True)
+    evidence: dict[str, str | None] = {}
+    lifecycle_payloads: list[bytes] = []
+
+    def bind(relative: str, *, include_missing: bool) -> bytes | None:
+        rel = Path(relative)
+        if not relative.strip() or rel.is_absolute() or ".." in rel.parts:
+            return None
+        path = raw_root / rel
+        try:
+            if not path.resolve(strict=False).is_relative_to(root):
+                return None
+            if path.is_symlink():
+                evidence[rel.as_posix()] = None
+                return None
+            if not path.is_file():
+                if include_missing:
+                    evidence[rel.as_posix()] = None
+                return None
+            payload = path.read_bytes()
+        except OSError:
+            evidence[rel.as_posix()] = None
+            return None
+        evidence[rel.as_posix()] = hashlib.sha256(payload).hexdigest()
+        return payload
+
+    for relative in lifecycle_relatives:
+        payload = bind(relative, include_missing=False)
+        if payload is not None:
+            lifecycle_payloads.append(payload)
+    for payload in lifecycle_payloads:
+        try:
+            value = json.loads(payload)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if not isinstance(value, Mapping):
+            continue
+        for key in ("artifacts", "calibration_artifacts"):
+            rows = value.get(key)
+            if not isinstance(rows, list):
+                continue
+            for row in rows:
+                if isinstance(row, Mapping) and isinstance(row.get("path"), str):
+                    bind(str(row["path"]), include_missing=True)
+    return [
+        {"path": relative, "sha256": evidence[relative]}
+        for relative in sorted(evidence)
+    ]
+
+
+def _invalid_provider_row(
+    raw_root: Path,
+    provider: str,
+    *,
+    reason_code: str = "strict_provider_validation_failed",
+) -> dict[str, Any]:
+    evidence = _provider_invalid_evidence(raw_root, provider)
+    by_path = {str(row["path"]): row.get("sha256") for row in evidence}
+    v0_relative = f"providers/{provider}.json"
+    decision_relative = f"calibration_decisions/{provider}.json"
+    return {
+        "provider": provider,
+        "collection_status": "invalid_excluded",
+        "prompt_revision": None,
+        "manifest_path": v0_relative if v0_relative in by_path else None,
+        "manifest_sha256": by_path.get(v0_relative),
+        "model_id": None,
+        "v0_manifest_path": v0_relative if v0_relative in by_path else None,
+        "v0_manifest_sha256": by_path.get(v0_relative),
+        "calibration_decision_path": (
+            decision_relative if decision_relative in by_path else None
+        ),
+        "calibration_decision_sha256": by_path.get(decision_relative),
+        "invalid_reason_code": reason_code,
+        "invalid_evidence": evidence,
+    }
+
+
+def _invalid_provider_reason_code(error: Exception) -> str:
+    if (
+        isinstance(error, H5ContractError)
+        and "calibration artifact has invalid scored events" in str(error)
+    ):
+        return "invalid_calibration_schema"
+    return "strict_provider_validation_failed"
+
+
+def _build_provider_collection_row(
+    raw_root: Path,
+    preparation: Mapping[str, Any],
+    provider: str,
+) -> dict[str, Any]:
+    """Validate one provider, downgrading only provider-local failures."""
+
+    v0_path = raw_root / "providers" / f"{provider}.json"
+    try:
+        decision_result = _validate_rewrite_decision(
+            raw_root, preparation, provider
+        )
+        if not v0_path.is_file():
+            if decision_result is not None:
+                raise H5ContractError(
+                    f"{provider} calibration decision exists without a v0 manifest"
+                )
+            return {
+                "provider": provider,
+                "collection_status": "missing",
+                "prompt_revision": None,
+                "manifest_path": None,
+                "manifest_sha256": None,
+                "model_id": None,
+                "v0_manifest_path": None,
+                "v0_manifest_sha256": None,
+                "calibration_decision_path": None,
+                "calibration_decision_sha256": None,
+            }
+        v0, v0_sha, v0_relative = _validate_provider_manifest(
+            raw_root, preparation, provider, 0
+        )
+        rewrite_marked = any(
+            (
+                v0.get("status") == "calibration_rewrite_required",
+                decision_result is not None
+                and decision_result[0].get("status")
+                == "calibration_rewrite_required",
+            )
+        )
+        if rewrite_marked:
+            _require_v0_rewrite_pair(provider, v0, decision_result)
+        selected_revision = 1 if rewrite_marked else 0
+        if selected_revision == 1:
+            selected_path = raw_root / "providers" / f"{provider}__prompt-v1.json"
+            if not selected_path.is_file():
+                assert decision_result is not None
+                return {
+                    "provider": provider,
+                    "collection_status": "missing_required_revision",
+                    "prompt_revision": 1,
+                    "manifest_path": None,
+                    "manifest_sha256": None,
+                    "model_id": v0.get("model_id"),
+                    "v0_manifest_path": v0_relative,
+                    "v0_manifest_sha256": v0_sha,
+                    "calibration_decision_path": decision_result[2],
+                    "calibration_decision_sha256": decision_result[1],
+                }
+            selected, selected_sha, selected_relative = _validate_provider_manifest(
+                raw_root, preparation, provider, 1
+            )
+            if selected.get("model_id") != v0.get("model_id"):
+                raise H5ContractError(f"{provider} prompt revision has model drift")
+        else:
+            selected, selected_sha, selected_relative = v0, v0_sha, v0_relative
+        return {
+            "provider": provider,
+            "collection_status": "collected",
+            "prompt_revision": selected_revision,
+            "manifest_path": selected_relative,
+            "manifest_sha256": selected_sha,
+            "model_id": selected.get("model_id"),
+            "v0_manifest_path": v0_relative,
+            "v0_manifest_sha256": v0_sha,
+            "calibration_decision_path": (
+                decision_result[2] if decision_result is not None else None
+            ),
+            "calibration_decision_sha256": (
+                decision_result[1] if decision_result is not None else None
+            ),
+        }
+    except (H5ContractError, OSError, TypeError, ValueError) as error:
+        return _invalid_provider_row(
+            raw_root,
+            provider,
+            reason_code=_invalid_provider_reason_code(error),
+        )
+
+
 def _build_collection(
     raw_root: Path | str,
     repo_root: Path | str,
@@ -912,85 +1122,8 @@ def _build_collection(
         )
     provider_rows = []
     for provider in FROZEN_PROVIDERS:
-        v0_path = raw / "providers" / f"{provider}.json"
-        decision_result = _validate_rewrite_decision(raw, preparation, provider)
-        if not v0_path.is_file():
-            if decision_result is not None:
-                raise H5ContractError(
-                    f"{provider} calibration decision exists without a v0 manifest"
-                )
-            provider_rows.append(
-                {
-                    "provider": provider,
-                    "collection_status": "missing",
-                    "prompt_revision": None,
-                    "manifest_path": None,
-                    "manifest_sha256": None,
-                    "model_id": None,
-                    "v0_manifest_path": None,
-                    "v0_manifest_sha256": None,
-                    "calibration_decision_path": None,
-                    "calibration_decision_sha256": None,
-                }
-            )
-            continue
-        v0, v0_sha, v0_relative = _validate_provider_manifest(
-            raw, preparation, provider, 0
-        )
-        rewrite_marked = any(
-            (
-                v0.get("status") == "calibration_rewrite_required",
-                decision_result is not None
-                and decision_result[0].get("status")
-                == "calibration_rewrite_required",
-            )
-        )
-        if rewrite_marked:
-            _require_v0_rewrite_pair(provider, v0, decision_result)
-        rewrite_required = rewrite_marked
-        selected_revision = 1 if rewrite_required else 0
-        if selected_revision == 1:
-            selected_path = raw / "providers" / f"{provider}__prompt-v1.json"
-            if not selected_path.is_file():
-                provider_rows.append(
-                    {
-                        "provider": provider,
-                        "collection_status": "missing_required_revision",
-                        "prompt_revision": 1,
-                        "manifest_path": None,
-                        "manifest_sha256": None,
-                        "model_id": v0.get("model_id"),
-                        "v0_manifest_path": v0_relative,
-                        "v0_manifest_sha256": v0_sha,
-                        "calibration_decision_path": decision_result[2],
-                        "calibration_decision_sha256": decision_result[1],
-                    }
-                )
-                continue
-            selected, selected_sha, selected_relative = _validate_provider_manifest(
-                raw, preparation, provider, 1
-            )
-            if selected.get("model_id") != v0.get("model_id"):
-                raise H5ContractError(f"{provider} prompt revision has model drift")
-        else:
-            selected, selected_sha, selected_relative = v0, v0_sha, v0_relative
         provider_rows.append(
-            {
-                "provider": provider,
-                "collection_status": "collected",
-                "prompt_revision": selected_revision,
-                "manifest_path": selected_relative,
-                "manifest_sha256": selected_sha,
-                "model_id": selected.get("model_id"),
-                "v0_manifest_path": v0_relative,
-                "v0_manifest_sha256": v0_sha,
-                "calibration_decision_path": (
-                    decision_result[2] if decision_result is not None else None
-                ),
-                "calibration_decision_sha256": (
-                    decision_result[1] if decision_result is not None else None
-                ),
-            }
+            _build_provider_collection_row(raw, preparation, provider)
         )
     core = {
         "simulated": True,
@@ -1407,8 +1540,17 @@ def _validate_collection_manifest(
                 ):
                     raise H5ContractError(
                         f"{provider} missing revision bindings changed"
-                    )
+                )
                 validated_rows.append({**dict(row), "v0_manifest": v0})
+        elif status == "invalid_excluded":
+            expected_row = _build_provider_collection_row(
+                raw_root, preparation, provider
+            )
+            if dict(row) != expected_row:
+                raise H5ContractError(
+                    f"{provider} invalid provider evidence binding changed"
+                )
+            validated_rows.append(dict(row))
         else:
             raise H5ContractError(f"{provider} collection status is invalid")
     return collection, preparation, persona_panel, panel, validated_rows
@@ -1558,8 +1700,13 @@ def _provider_analysis(
             {
                 "provider": provider,
                 "collection_status": collection_row.get("collection_status"),
+                "provider_status": None,
+                "failure_category": None,
                 "prompt_revision": collection_row.get("prompt_revision"),
                 "model_id": collection_row.get("model_id"),
+                "manifest_path": collection_row.get("manifest_path"),
+                "manifest_sha256": collection_row.get("manifest_sha256"),
+                "invalid_reason_code": collection_row.get("invalid_reason_code"),
                 "completed_by_arm": {"A": 0, "B": 0},
                 "observed_journeys": 0,
                 "missing_journeys": 100,
@@ -1879,6 +2026,7 @@ def _provider_analysis(
         "provider": provider,
         "collection_status": "collected",
         "provider_status": manifest.get("status"),
+        "failure_category": manifest.get("failure_category"),
         "prompt_revision": collection_row.get("prompt_revision"),
         "model_id": model_id,
         "completed_by_arm": completed_by_arm,
@@ -2350,6 +2498,37 @@ def analyze_collection(
         sum(float(row["cost_yuan"]) for row in ledger_rows), 12
     )
     ledger = {"providers": ledger_rows, "totals": totals}
+    lifecycle_providers: dict[str, list[str]] = {}
+    for row in provider_matrix:
+        collection_status = row.get("collection_status")
+        provider_status = row.get("provider_status")
+        failure_category = row.get("failure_category")
+        if collection_status == "invalid_excluded":
+            category = (
+                "invalid_calibration_schema"
+                if row.get("invalid_reason_code") == "invalid_calibration_schema"
+                else "invalid_provider_artifact"
+            )
+        elif collection_status in {"missing", "missing_required_revision"}:
+            category = str(collection_status)
+        elif provider_status == "excluded_post_calibration":
+            category = "post_calibration_exclusion"
+        elif provider_status in {"interrupted", "interrupted_calibration"} and (
+            failure_category in {"network", "http_status", "circuit"}
+        ):
+            category = "network_interruption"
+        else:
+            category = "collected"
+        lifecycle_providers.setdefault(category, []).append(str(row["provider"]))
+    lifecycle_counts = {
+        category: len(providers)
+        for category, providers in sorted(lifecycle_providers.items())
+    }
+    provider_exclusion_disclosure = {
+        category: providers
+        for category, providers in sorted(lifecycle_providers.items())
+        if category != "collected"
+    }
     denominators = {
         "frozen_provider_count": 6,
         "collected_provider_count": sum(
@@ -2372,6 +2551,23 @@ def analyze_collection(
         ),
         "mapping_required_entries": mapping_coverage.get("required_entries"),
         "mapping_covered_entries": mapping_coverage.get("covered_entries"),
+        "invalid_calibration_schema_provider_count": lifecycle_counts.get(
+            "invalid_calibration_schema", 0
+        ),
+        "invalid_provider_artifact_count": lifecycle_counts.get(
+            "invalid_provider_artifact", 0
+        ),
+        "missing_provider_count": lifecycle_counts.get("missing", 0),
+        "missing_required_revision_provider_count": lifecycle_counts.get(
+            "missing_required_revision", 0
+        ),
+        "network_interruption_provider_count": lifecycle_counts.get(
+            "network_interruption", 0
+        ),
+        "post_calibration_exclusion_provider_count": lifecycle_counts.get(
+            "post_calibration_exclusion", 0
+        ),
+        "provider_lifecycle_counts": lifecycle_counts,
         "excluded_provider_cells": sum(not row["qualifies"] for row in provider_matrix) * 2,
         "excluded_persona_cells": sum(
             100
@@ -2581,6 +2777,7 @@ def analyze_collection(
         "agreement": agreement,
         "ledger": ledger,
         "denominators": denominators,
+        "provider_exclusion_disclosure": provider_exclusion_disclosure,
         "mapping_coverage": mapping_coverage,
         "figures": figures,
         "artifact_manifest": "artifact_manifest.json",
@@ -2948,6 +3145,7 @@ def _validate_final_h5_surface(
             display["raw_hash"] = payload.get("h5_collection_manifest_sha256")
             expected_metrics[result_id] = display
     expected_figures = _prefix_reference_paths(result["figures"], "h5")
+    result_denominators = result.get("denominators") or {}
     if any(
         (
             payload.get("h5_results_sha256") != result.get("h5_results_sha256"),
@@ -2960,6 +3158,13 @@ def _validate_final_h5_surface(
                 payload.get("figures", {}).get(key) != expected_figures[key]
                 for key in ("FIG_PROVIDER_AGREEMENT", "FIG_MANIPULATION_CHECKS")
             ),
+            any(
+                payload.get("denominators", {}).get(field)
+                != result_denominators.get(field)
+                for field in H5_LIFECYCLE_DENOMINATOR_FIELDS
+            ),
+            payload.get("h5_provider_exclusion_disclosure")
+            != result.get("provider_exclusion_disclosure"),
         )
     ):
         raise H5ContractError("final H5 contract conflicts with supplied results")
@@ -3097,6 +3302,11 @@ def merge_h5_results(
     )
     updated["denominators"]["excluded_persona_cells"] = denominators.get(
         "excluded_persona_cells"
+    )
+    for field in H5_LIFECYCLE_DENOMINATOR_FIELDS:
+        updated["denominators"][field] = copy.deepcopy(denominators.get(field))
+    updated["h5_provider_exclusion_disclosure"] = copy.deepcopy(
+        result.get("provider_exclusion_disclosure")
     )
     provenance = result.get("provenance") or {}
     updated["h5_collection_manifest_sha256"] = (

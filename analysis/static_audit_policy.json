@@ -23,5 +23,12 @@
     "unit": "target_stratified_paired_replicate"
   },
   "scope": "post_collection_static_audit_clarification_only",
-  "result_direction_used": false
+  "result_direction_used": false,
+  "h5_provider_schema_lifecycle_clarification": {
+    "adopted_date": "2026-07-14",
+    "scope": "post_collection_schema_lifecycle_clarification",
+    "result_direction_used": false,
+    "h1_h4_decision_rules_modified": false,
+    "rule": "provider_local_schema_or_artifact_validation_failure_is_invalid_excluded_and_hash_bound"
+  }
 }

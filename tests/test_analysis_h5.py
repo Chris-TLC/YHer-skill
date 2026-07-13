@@ -1368,6 +1368,247 @@ def test_collection_is_exact_six_provider_immutable_and_ignores_unlisted_files(
     assert "favorable-extra" not in output.read_text(encoding="utf-8")
 
 
+def test_invalid_calibration_schema_is_excluded_with_bound_raw_evidence(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path, mapped=True)
+    for provider in PROVIDERS:
+        _populate_provider(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    calibration_row = next(
+        row
+        for row in manifest["artifacts"]
+        if row["record_type"] == "llm_sim_calibration"
+    )
+    calibration_path = raw / calibration_row["path"]
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    calibration["events"][0]["correct"] = None
+    _replace_bound_artifact(
+        raw,
+        "deepseek",
+        str(calibration_row["path"]),
+        calibration,
+    )
+    expected_manifest_sha = _file_sha(manifest_path)
+
+    collection_path = raw / "h5_collection_manifest.json"
+    first = finalize_collection(raw, collection_path, repo_root=repo)
+    first_bytes = collection_path.read_bytes()
+    second = finalize_collection(raw, collection_path, repo_root=repo)
+
+    assert second == first
+    assert collection_path.read_bytes() == first_bytes
+    assert [row["provider"] for row in first["providers"]] == list(PROVIDERS)
+    deepseek = first["providers"][0]
+    assert deepseek["collection_status"] == "invalid_excluded"
+    assert deepseek["invalid_reason_code"] == "invalid_calibration_schema"
+    assert deepseek["manifest_path"] == "providers/deepseek.json"
+    assert deepseek["manifest_sha256"] == expected_manifest_sha
+    evidence = {
+        row["path"]: row["sha256"] for row in deepseek["invalid_evidence"]
+    }
+    assert evidence["providers/deepseek.json"] == expected_manifest_sha
+    assert evidence[str(calibration_row["path"])] == _file_sha(calibration_path)
+
+    result = analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    excluded = result["provider_matrix"][0]
+    assert excluded["collection_status"] == "invalid_excluded"
+    assert excluded["qualifies"] is False
+    assert excluded["observed_journeys"] == 0
+    assert "deepseek" not in result["agreement"]["providers"]
+    assert result["metrics"]["H5_QUALIFYING_PROVIDER_COUNT"]["value"] == 5
+    assert result["denominators"]["invalid_calibration_schema_provider_count"] == 1
+    assert result["denominators"]["invalid_provider_artifact_count"] == 0
+    assert result["provider_exclusion_disclosure"] == {
+        "invalid_calibration_schema": ["deepseek"]
+    }
+
+
+def test_forged_provider_manifest_is_excluded_but_global_provenance_still_fails(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import H5ContractError, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path)
+    for provider in PROVIDERS:
+        _provider_manifest(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["config_sha256"] = "f" * 64
+    _write_json(manifest_path, manifest)
+
+    collection = finalize_collection(
+        raw,
+        raw / "collection.json",
+        repo_root=repo,
+    )
+    deepseek = collection["providers"][0]
+    assert deepseek["collection_status"] == "invalid_excluded"
+    assert deepseek["manifest_sha256"] == _file_sha(manifest_path)
+
+    preparation_path = raw / "preparation_manifest.json"
+    preparation = json.loads(preparation_path.read_text(encoding="utf-8"))
+    preparation["config_sha256"] = "e" * 64
+    _write_json(preparation_path, preparation)
+    with pytest.raises(H5ContractError, match="preparation|config"):
+        finalize_collection(raw, raw / "global-forgery.json", repo_root=repo)
+
+
+def test_invalid_v0_cannot_authorize_an_otherwise_valid_v1_revision(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import finalize_collection
+
+    repo, raw = _study_fixture(tmp_path)
+    for provider in PROVIDERS:
+        _provider_manifest(raw, provider)
+    _bind_v0_rewrite(raw, "deepseek")
+    v1_path = raw / "providers/deepseek__prompt-v1.json"
+    _provider_manifest(raw, "deepseek", prompt_revision=1)
+    v0_path = raw / "providers/deepseek.json"
+    v0 = json.loads(v0_path.read_text(encoding="utf-8"))
+    v0["config_sha256"] = "f" * 64
+    _write_json(v0_path, v0)
+
+    collection = finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    row = collection["providers"][0]
+    evidence = {item["path"]: item["sha256"] for item in row["invalid_evidence"]}
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["prompt_revision"] is None
+    assert row["manifest_sha256"] == _file_sha(v0_path)
+    assert evidence["providers/deepseek__prompt-v1.json"] == _file_sha(v1_path)
+
+
+def test_invalid_provider_evidence_forgery_invalidates_frozen_collection(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import H5ContractError, analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path, mapped=True)
+    _populate_provider(raw, "deepseek")
+    for provider in PROVIDERS[1:]:
+        _provider_manifest(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    calibration_row = next(
+        row
+        for row in manifest["artifacts"]
+        if row["record_type"] == "llm_sim_calibration"
+    )
+    calibration_path = raw / calibration_row["path"]
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    calibration["events"][0]["correct"] = None
+    _replace_bound_artifact(
+        raw,
+        "deepseek",
+        str(calibration_row["path"]),
+        calibration,
+    )
+    collection_path = raw / "collection.json"
+    frozen = finalize_collection(raw, collection_path, repo_root=repo)
+    frozen_sha = frozen["collection_sha256"]
+
+    calibration["events"][0]["selected_option"] = "FORGED"
+    _write_json(calibration_path, calibration)
+    with pytest.raises(H5ContractError, match="invalid|evidence|hash|collection"):
+        analyze_collection(
+            collection_path,
+            tmp_path / "h5-output",
+            raw_root=raw,
+            repo_root=repo,
+        )
+    assert json.loads(collection_path.read_text(encoding="utf-8"))[
+        "collection_sha256"
+    ] == frozen_sha
+
+
+def test_h5_lifecycle_denominators_distinguish_provider_exclusion_classes(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import analyze_collection, finalize_collection, merge_h5_results
+    from analysis.paper import _render_integrity_disclosure, _validate_contract
+
+    repo, raw = _study_fixture(tmp_path)
+    _provider_manifest(raw, "deepseek")
+    deepseek_path = raw / "providers/deepseek.json"
+    deepseek = json.loads(deepseek_path.read_text(encoding="utf-8"))
+    deepseek["config_sha256"] = "f" * 64
+    _write_json(deepseek_path, deepseek)
+    # GLM remains genuinely absent.
+    _provider_manifest(raw, "kimi")
+    _bind_v0_rewrite(raw, "kimi")
+    _provider_manifest(raw, "minimax", status="excluded_post_calibration")
+    doubao = _provider_manifest(raw, "doubao", status="interrupted_calibration")
+    doubao["failure_category"] = "network"
+    _write_json(raw / "providers/doubao.json", doubao)
+    _populate_provider(raw, "tongyi")
+
+    collection_path = raw / "collection.json"
+    collection = finalize_collection(raw, collection_path, repo_root=repo)
+    assert [row["collection_status"] for row in collection["providers"]] == [
+        "invalid_excluded",
+        "missing",
+        "missing_required_revision",
+        "collected",
+        "collected",
+        "collected",
+    ]
+    result = analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    assert result["denominators"]["provider_lifecycle_counts"] == {
+        "collected": 1,
+        "invalid_provider_artifact": 1,
+        "missing": 1,
+        "missing_required_revision": 1,
+        "network_interruption": 1,
+        "post_calibration_exclusion": 1,
+    }
+    assert result["provider_exclusion_disclosure"] == {
+        "invalid_provider_artifact": ["deepseek"],
+        "missing": ["glm"],
+        "missing_required_revision": ["kimi"],
+        "network_interruption": ["doubao"],
+        "post_calibration_exclusion": ["minimax"],
+    }
+    paper_root = tmp_path / "paper"
+    paper_root.mkdir()
+    contract, artifacts, _ = _s3_contract_fixture(paper_root)
+    merged = merge_h5_results(
+        contract,
+        tmp_path / "h5-output/h5_results.json",
+        artifact_root=artifacts,
+    )
+    assert merged["denominators"]["provider_lifecycle_counts"] == result[
+        "denominators"
+    ]["provider_lifecycle_counts"]
+    assert merged["h5_provider_exclusion_disclosure"] == result[
+        "provider_exclusion_disclosure"
+    ]
+    disclosure = "\n".join(
+        _render_integrity_disclosure(_validate_contract(merged, artifacts))
+    )
+    assert "H5 provider lifecycle disclosure" in disclosure
+    for label in (
+        "invalid provider artifact",
+        "missing required revision",
+        "network interruption",
+        "post-calibration exclusion",
+    ):
+        assert label in disclosure
+
+
 def test_collection_rejects_qwen_as_a_tongyi_provider_alias(tmp_path: Path) -> None:
     from analysis.h5 import H5ContractError, finalize_collection
 
@@ -1418,8 +1659,11 @@ def test_collection_selects_v1_only_from_a_valid_immutable_v0_decision(
     decision["status"] = "complete"
     _write_json(decision_path, decision)
     output.unlink()
-    with pytest.raises(H5ContractError, match="decision"):
-        finalize_collection(raw, output, repo_root=repo)
+    invalid = finalize_collection(raw, output, repo_root=repo)
+    row = invalid["providers"][0]
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["invalid_reason_code"] == "strict_provider_validation_failed"
+    assert row["manifest_sha256"] == _file_sha(raw / "providers/deepseek.json")
 
 
 def test_collection_rejects_decision_when_v0_did_not_request_a_rewrite(
@@ -1433,8 +1677,10 @@ def test_collection_rejects_decision_when_v0_did_not_request_a_rewrite(
     _rewrite_decision(raw, "deepseek")
     _provider_manifest(raw, "deepseek", prompt_revision=1)
 
-    with pytest.raises(H5ContractError, match="v0.*rewrite|rewrite.*v0"):
-        finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    collection = finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    row = collection["providers"][0]
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["manifest_sha256"] == _file_sha(raw / "providers/deepseek.json")
 
 
 def test_collection_rejects_rewrite_decision_prompt_provenance_drift(
@@ -1457,8 +1703,10 @@ def test_collection_rejects_rewrite_decision_prompt_provenance_drift(
     v0["calibration_decision_sha256"] = decision["decision_sha256"]
     _write_json(v0_path, v0)
 
-    with pytest.raises(H5ContractError, match="provenance"):
-        finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    collection = finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    row = collection["providers"][0]
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["calibration_decision_sha256"] == _file_sha(decision_path)
 
 
 @pytest.mark.parametrize("tamper", ("v0", "decision"))
@@ -1497,11 +1745,11 @@ def test_missing_required_revision_revalidates_bound_v0_and_decision(
 
 
 @pytest.mark.parametrize("failure", ("escape", "hash", "envelope", "drift"))
-def test_collection_rejects_artifact_escape_tamper_envelope_and_model_drift(
+def test_collection_excludes_artifact_escape_tamper_envelope_and_model_drift(
     tmp_path: Path,
     failure: str,
 ) -> None:
-    from analysis.h5 import H5ContractError, finalize_collection
+    from analysis.h5 import finalize_collection
 
     repo, raw = _study_fixture(tmp_path)
     artifact = {
@@ -1543,17 +1791,14 @@ def test_collection_rejects_artifact_escape_tamper_envelope_and_model_drift(
     if failure == "hash":
         artifact["terminal_reason"] = "tampered_without_rehash"
         _write_json(artifact_path, artifact)
-    with pytest.raises(H5ContractError, match={
-        "escape": "path",
-        "hash": "hash",
-        "envelope": "envelope",
-        "drift": "drift",
-    }[failure]):
-        finalize_collection(
-            raw,
-            raw / "h5_collection_manifest.json",
-            repo_root=repo,
-        )
+    collection = finalize_collection(
+        raw,
+        raw / "h5_collection_manifest.json",
+        repo_root=repo,
+    )
+    row = collection["providers"][0]
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["manifest_sha256"] == _file_sha(raw / "providers/deepseek.json")
 
 
 def test_collection_rejects_fully_rehashed_pre_amendment_config_and_panel(
@@ -1642,15 +1887,17 @@ def test_collection_rejects_provider_not_strictly_after_freeze(
     tmp_path: Path,
     run_started_at_utc: str,
 ) -> None:
-    from analysis.h5 import H5ContractError, finalize_collection
+    from analysis.h5 import finalize_collection
 
     repo, raw = _study_fixture(tmp_path)
     manifest = _provider_manifest(raw, "deepseek")
     manifest["run_started_at_utc"] = run_started_at_utc
     _write_json(raw / "providers/deepseek.json", manifest)
 
-    with pytest.raises(H5ContractError, match="run_started_at_utc|freeze|chronology"):
-        finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    collection = finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    row = collection["providers"][0]
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["manifest_sha256"] == _file_sha(raw / "providers/deepseek.json")
 
 
 def test_committed_collection_lock_rejects_self_consistent_outcome_rewrite(
@@ -1828,7 +2075,7 @@ def test_collection_rejects_rehashed_journey_belief_semantic_tamper(
     tamper: str,
 ) -> None:
     from engine import mastery
-    from analysis.h5 import H5ContractError, finalize_collection
+    from analysis.h5 import finalize_collection
 
     repo, raw = _study_fixture(tmp_path, mapped=True)
     _populate_provider(raw, "deepseek")
@@ -1872,8 +2119,10 @@ def test_collection_rejects_rehashed_journey_belief_semantic_tamper(
     manifest["artifact_aggregate_sha256"] = _canonical_sha(manifest["artifacts"])
     _write_json(manifest_path, manifest)
 
-    with pytest.raises(H5ContractError, match="belief|transition|journey semantics"):
-        finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    collection = finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    row = collection["providers"][0]
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["manifest_sha256"] == _file_sha(manifest_path)
 
 
 @pytest.mark.parametrize(
@@ -1890,7 +2139,7 @@ def test_collection_rejects_rehashed_journey_terminal_count_semantic_tamper(
     tmp_path: Path,
     tamper: str,
 ) -> None:
-    from analysis.h5 import H5ContractError, finalize_collection
+    from analysis.h5 import finalize_collection
 
     repo, raw = _study_fixture(tmp_path, mapped=True)
     _populate_provider(raw, "deepseek")
@@ -1930,8 +2179,10 @@ def test_collection_rejects_rehashed_journey_terminal_count_semantic_tamper(
     manifest["artifact_aggregate_sha256"] = _canonical_sha(manifest["artifacts"])
     _write_json(manifest_path, manifest)
 
-    with pytest.raises(H5ContractError, match="journey.*semantics|terminal|count"):
-        finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    collection = finalize_collection(raw, raw / "collection.json", repo_root=repo)
+    row = collection["providers"][0]
+    assert row["collection_status"] == "invalid_excluded"
+    assert row["manifest_sha256"] == _file_sha(manifest_path)
 
 
 def test_analyzer_reports_pre_outcome_mapping_exclusion_and_still_draws_figures(

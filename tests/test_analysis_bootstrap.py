@@ -320,6 +320,11 @@ def test_post_collection_static_audit_policy_is_explicit_and_not_outcome_tuned()
     assert denominator["all_targets_undefined_bootstrap_iteration"] == (
         "record_NA_and_exclude_from_percentile_sample"
     )
+    lifecycle = policy["h5_provider_schema_lifecycle_clarification"]
+    assert lifecycle["adopted_date"] == "2026-07-14"
+    assert lifecycle["scope"] == "post_collection_schema_lifecycle_clarification"
+    assert lifecycle["result_direction_used"] is False
+    assert lifecycle["h1_h4_decision_rules_modified"] is False
 
 
 def test_value_bootstrap_supports_paired_within_row_derived_effects() -> None:

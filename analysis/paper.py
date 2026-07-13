@@ -110,6 +110,18 @@ H5_IDS = (
     "H5_MISCONCEPTION_HIT_RATE_CONTRAST",
     "H5_MISCONCEPTION_HIT_RATE_CONTRAST_CI95",
 )
+H5_LIFECYCLE_DENOMINATOR_FIELDS = (
+    "frozen_provider_count",
+    "collected_provider_count",
+    "qualifying_provider_count",
+    "invalid_calibration_schema_provider_count",
+    "invalid_provider_artifact_count",
+    "missing_provider_count",
+    "missing_required_revision_provider_count",
+    "network_interruption_provider_count",
+    "post_calibration_exclusion_provider_count",
+    "provider_lifecycle_counts",
+)
 PROGRAMMATIC_IDS = H1_IDS + H2_IDS + H3_IDS + H4_IDS
 REQUIRED_FIGURE_IDS = frozenset(
     {
@@ -1367,9 +1379,17 @@ def _validate_replayed_h5_surface(
     replay_denominators = replay_results.get("denominators")
     if not isinstance(replay_denominators, Mapping):
         raise PaperContractError("replayed H5 denominators are missing")
-    for field in ("excluded_provider_cells", "excluded_persona_cells"):
+    for field in (
+        "excluded_provider_cells",
+        "excluded_persona_cells",
+        *H5_LIFECYCLE_DENOMINATOR_FIELDS,
+    ):
         if denominators.get(field) != replay_denominators.get(field):
             raise PaperContractError(f"replayed H5 denominator differs: {field}")
+    if payload.get("h5_provider_exclusion_disclosure") != replay_results.get(
+        "provider_exclusion_disclosure"
+    ):
+        raise PaperContractError("replayed H5 provider disclosure differs")
 
 
 def _prefix_h5_paths(value: object) -> object:
@@ -1727,11 +1747,21 @@ def _validate_reporting_disclosures(
     h5_denominators = h5_results.get("denominators")
     if not isinstance(h5_denominators, Mapping):
         raise PaperContractError("H5 results denominators are missing")
-    for field in ("excluded_provider_cells", "excluded_persona_cells"):
+    for field in (
+        "excluded_provider_cells",
+        "excluded_persona_cells",
+        *H5_LIFECYCLE_DENOMINATOR_FIELDS,
+    ):
         if denominators.get(field) != h5_denominators.get(field):
             raise PaperContractError(
                 f"contract H5 denominator differs from H5 results: {field}"
             )
+    if payload.get("h5_provider_exclusion_disclosure") != h5_results.get(
+        "provider_exclusion_disclosure"
+    ):
+        raise PaperContractError(
+            "contract H5 provider disclosure differs from H5 results"
+        )
 
 
 def _validate_item_type_diagnostics(metrics: Mapping[str, Any]) -> None:
@@ -2101,6 +2131,22 @@ def _render_integrity_disclosure(validated: ValidatedContract) -> list[str]:
         "iterations. This clarification was adopted from static review, not from any "
         f"result direction; the binder verified policy artifact `{policy['path']}`."
     )
+    lifecycle = denominators.get("provider_lifecycle_counts")
+    lifecycle_disclosure = None
+    if isinstance(lifecycle, Mapping):
+        lifecycle_disclosure = (
+            "**H5 provider lifecycle disclosure.** Of the six frozen providers: "
+            "invalid calibration schema="
+            f"{int(lifecycle.get('invalid_calibration_schema', 0))}; invalid provider "
+            f"artifact={int(lifecycle.get('invalid_provider_artifact', 0))}; "
+            f"missing={int(lifecycle.get('missing', 0))}; missing required revision="
+            f"{int(lifecycle.get('missing_required_revision', 0))}; network interruption="
+            f"{int(lifecycle.get('network_interruption', 0))}; post-calibration exclusion="
+            f"{int(lifecycle.get('post_calibration_exclusion', 0))}; other collected="
+            f"{int(lifecycle.get('collected', 0))}. Invalid, missing, interrupted, and "
+            "post-calibration-excluded providers do not enter qualifying-provider metrics. "
+            "Provider identities and immutable evidence are bound in `h5/h5_results.json`."
+        )
     metrics = validated.payload["metrics"]
     diagnostic_parts = []
     for label, result_id in zip(
@@ -2120,7 +2166,11 @@ def _render_integrity_disclosure(validated: ValidatedContract) -> list[str]:
         + ". ".join(diagnostic_parts)
         + "."
     )
-    return [exclusion, "", audit, "", diagnostic]
+    disclosures = [exclusion, "", audit]
+    if lifecycle_disclosure is not None:
+        disclosures.extend(("", lifecycle_disclosure))
+    disclosures.extend(("", diagnostic))
+    return disclosures
 
 
 def _decision_cells(
