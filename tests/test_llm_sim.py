@@ -303,6 +303,87 @@ def test_catalog_target_aliases_use_only_the_frozen_mechanical_normalization():
     assert {persona.target_node for persona in personas} == {"Target/alias"}
 
 
+def test_calibration_ready_targets_use_only_the_panel_candidate_contract():
+    from experiments.llm_sim.panel import (
+        calibration_ready_target_nodes,
+        is_calibration_candidate,
+    )
+    from experiments.llm_sim.personas import build_personas
+
+    valid = [_item(f"good-{index}", node="Good") for index in range(4)]
+    duplicate_family = _item("good-duplicate", node="Good")
+    duplicate_family.family_id = valid[0].family_id
+    invalid_item_id = _item("placeholder", node="Bad")
+    invalid_item_id.item_id = ""
+    invalid_family = _item("bad-family", node="Bad")
+    invalid_family.family_id = ""
+    invalid_scoring = _item("bad-numeric", node="Bad")
+    invalid_scoring.scoring_mode = "numeric"
+    invalid_options = _item("bad-options", node="Bad")
+    invalid_options.options = {}
+    invalid_answer = _item("bad-answer", node="Bad")
+    invalid_answer.answer_values = ("Z",)
+    bad_valid = [_item(f"bad-{index}", node="Bad") for index in range(3)]
+
+    class Catalog:
+        items = {
+            item.item_id or "missing-id": item
+            for item in (
+                *valid,
+                duplicate_family,
+                invalid_item_id,
+                invalid_family,
+                invalid_scoring,
+                invalid_options,
+                invalid_answer,
+                *bad_valid,
+            )
+        }
+
+        def open_nodes(self):
+            return {"Good": 5, "Bad": 9}
+
+        def for_node(self, node, *, deterministic_only=False):
+            return tuple(
+                item for item in self.items.values() if node in item.node_ids
+            )
+
+    catalog = Catalog()
+    assert all(is_calibration_candidate(item) for item in valid)
+    assert not any(
+        is_calibration_candidate(item)
+        for item in (
+            invalid_item_id,
+            invalid_family,
+            invalid_scoring,
+            invalid_options,
+            invalid_answer,
+        )
+    )
+    assert calibration_ready_target_nodes(
+        catalog, catalog.open_nodes()
+    ) == frozenset({"Good"})
+    with pytest.raises(ValueError, match="25 persona pairs are required"):
+        build_personas(
+            [
+                {
+                    "node_id": "Good",
+                    "common_failures": [
+                        {
+                            "cause": f"cause-{index}",
+                            "symptom": "symptom",
+                            "diagnostic_question": "question",
+                        }
+                        for index in range(24)
+                    ],
+                }
+            ],
+            pair_count=25,
+            eligible_nodes={"Good"},
+            seed_derivation_version="yher-llm-persona-v2",
+        )
+
+
 def test_panel_freezes_before_first_provider_response_and_has_stable_hash(tmp_path: Path):
     from experiments.llm_sim.panel import freeze_manipulation_panel, load_frozen_panel
 
@@ -812,6 +893,64 @@ def test_production_50_persona_snapshot_and_paths_are_frozen_pre_observation(tmp
         for arm in ("A", "B")
     }
     assert len(journey_paths) == 100
+
+
+def test_production_persona_calibration_preflight_is_ready_and_byte_stable(
+    tmp_path: Path,
+):
+    from experiments.llm_sim.runner import LLMSimulationRunner
+    from experiments.llm_sim.store import SimulationStore
+
+    stores = [
+        SimulationStore(tmp_path / name / "sim_store")
+        for name in ("first", "second")
+    ]
+    runners = [
+        LLMSimulationRunner(
+            store=store,
+            repo_root=tmp_path / "protected_repo",
+        )
+        for store in stores
+    ]
+    preparations = [runner.prepare() for runner in runners]
+    panels = [store.read_json("manipulation_panel.json") for store in stores]
+
+    assert all(len(runner.personas) == 50 for runner in runners)
+    assert all(
+        len({persona.pair_id for persona in runner.personas}) == 25
+        for runner in runners
+    )
+    assert all(
+        persona.target_node != "同分异构体"
+        for runner in runners
+        for persona in runner.personas
+    )
+    for preparation, panel in zip(preparations, panels):
+        assert preparation["provider_observations"] == 0
+        assert preparation["mapped_count"] == 0
+        assert preparation["excluded_pre_outcome_count"] == 50
+        assert len(panel["annotations"]) == 50
+        assert all(
+            row["calibration_status"] == "ready"
+            and len(row["calibration_items"]) == 4
+            and len(
+                {item["family_id"] for item in row["calibration_items"]}
+            )
+            == 4
+            for row in panel["annotations"]
+        )
+        assert all(
+            row["mapping_status"] == "excluded_pre_outcome"
+            for row in panel["annotations"]
+        )
+    for relative in (
+        "manipulation_panel.json",
+        "persona_panel.json",
+        "preparation_manifest.json",
+    ):
+        assert (stores[0].root / relative).read_bytes() == (
+            stores[1].root / relative
+        ).read_bytes()
 
 
 def test_tampered_persona_snapshot_fails_before_transport(tmp_path: Path):
@@ -1586,6 +1725,19 @@ def test_preparation_and_provider_manifest_bind_git_code_config_and_seed(tmp_pat
         assert isinstance(manifest["code_matches_head"], bool)
         assert manifest["analysis_plan_commit"] == runner.config.analysis_plan_commit
         assert manifest["analysis_plan_is_ancestor"] is True
+        assert (
+            manifest["h5_analysis_plan_commit"]
+            == runner.config.h5_analysis_plan_commit
+        )
+        assert (
+            manifest["h5_analysis_plan_sha256"]
+            == runner.config.h5_analysis_plan_sha256
+        )
+        assert (
+            manifest["h5_analysis_plan_committed_at_utc"]
+            == runner.config.h5_analysis_plan_committed_at_utc
+        )
+        assert manifest["h5_analysis_plan_verified"] is True
         assert len(manifest["official_input_sha256"]) == 64
         assert manifest["config_sha256"] == runner.config.sha256
         assert manifest["study_seed"] == runner.study_seed
@@ -1630,6 +1782,18 @@ def test_live_fails_closed_when_code_or_head_changed_after_prepare(monkeypatch, 
         lambda _root: json.loads(json.dumps(current)),
     )
     monkeypatch.setattr(runner_module, "analysis_plan_is_ancestor", lambda *_args: True)
+    monkeypatch.setattr(
+        runner_module,
+        "verify_frozen_document_commit",
+        lambda _root, **kwargs: {
+            "commit": kwargs["commit"],
+            "path": kwargs["relative_path"],
+            "sha256": kwargs["sha256"],
+            "committed_at_utc": kwargs["committed_at_utc"],
+            "is_ancestor": True,
+            "verified": True,
+        },
+    )
     transport = FakeTransport()
     runner = LLMSimulationRunner(
         catalog=FakeCatalog(),
@@ -1685,6 +1849,18 @@ def test_official_live_transport_requires_scoped_code_byte_equal_to_head_before_
         lambda _root: json.loads(json.dumps(current)),
     )
     monkeypatch.setattr(runner_module, "analysis_plan_is_ancestor", lambda *_args: True)
+    monkeypatch.setattr(
+        runner_module,
+        "verify_frozen_document_commit",
+        lambda _root, **kwargs: {
+            "commit": kwargs["commit"],
+            "path": kwargs["relative_path"],
+            "sha256": kwargs["sha256"],
+            "committed_at_utc": kwargs["committed_at_utc"],
+            "is_ancestor": True,
+            "verified": True,
+        },
+    )
     monkeypatch.setattr(
         runner_module,
         "load_live_environment",
@@ -1903,7 +2079,12 @@ def test_prompt_v1_requires_matching_immutable_rewrite_required_v0_before_transp
 
 
 def test_frozen_llm_config_exposes_exact_s2_grid():
-    from experiments.llm_sim.config import load_frozen_config
+    from experiments.llm_sim.config import (
+        FROZEN_H5_ANALYSIS_PLAN_COMMIT,
+        FROZEN_H5_ANALYSIS_PLAN_COMMITTED_AT_UTC,
+        FROZEN_H5_ANALYSIS_PLAN_SHA256,
+        load_frozen_config,
+    )
 
     config = load_frozen_config()
     assert config.run_id == "llm-personas-v1"
@@ -1921,9 +2102,62 @@ def test_frozen_llm_config_exposes_exact_s2_grid():
     assert isinstance(config.manipulation_bootstrap_seed, int)
     assert config.provider_policy["max_attempts"] == 3
     assert config.frozen_pre_observation_utc.endswith("Z")
-    assert config.persona_seed_derivation_version == "yher-llm-persona-v1"
+    assert config.persona_seed_derivation_version == "yher-llm-persona-v2"
+    assert config.h5_analysis_plan_commit == FROZEN_H5_ANALYSIS_PLAN_COMMIT
+    assert config.h5_analysis_plan_sha256 == FROZEN_H5_ANALYSIS_PLAN_SHA256
+    assert (
+        config.h5_analysis_plan_committed_at_utc
+        == FROZEN_H5_ANALYSIS_PLAN_COMMITTED_AT_UTC
+    )
+    assert config.frozen_pre_observation_utc == config.h5_analysis_plan_committed_at_utc
     assert config.prompt_version == "yher-llm-persona-prompt-v1"
     assert config.manipulation_mapping_policy == "explicit_machine_annotation_only"
+
+
+def test_h5_amendment_provenance_is_recomputed_from_git_commit():
+    from experiments.llm_sim.config import load_frozen_config
+    from experiments.llm_sim.provenance import (
+        collect_code_provenance,
+        verify_frozen_document_commit,
+    )
+
+    config = load_frozen_config()
+    repo_root = Path(__file__).resolve().parents[1]
+    head = collect_code_provenance(repo_root)["git_head"]
+    proof = verify_frozen_document_commit(
+        repo_root,
+        commit=config.h5_analysis_plan_commit,
+        relative_path="experiments/h5_analysis_plan.md",
+        sha256=config.h5_analysis_plan_sha256,
+        committed_at_utc=config.h5_analysis_plan_committed_at_utc,
+        head=head,
+    )
+    assert proof == {
+        "commit": config.h5_analysis_plan_commit,
+        "path": "experiments/h5_analysis_plan.md",
+        "sha256": config.h5_analysis_plan_sha256,
+        "committed_at_utc": config.h5_analysis_plan_committed_at_utc,
+        "is_ancestor": True,
+        "verified": True,
+    }
+    with pytest.raises(RuntimeError, match="blob hash"):
+        verify_frozen_document_commit(
+            repo_root,
+            commit=config.h5_analysis_plan_commit,
+            relative_path="experiments/h5_analysis_plan.md",
+            sha256="0" * 64,
+            committed_at_utc=config.h5_analysis_plan_committed_at_utc,
+            head=head,
+        )
+    with pytest.raises(RuntimeError, match="commit time"):
+        verify_frozen_document_commit(
+            repo_root,
+            commit=config.h5_analysis_plan_commit,
+            relative_path="experiments/h5_analysis_plan.md",
+            sha256=config.h5_analysis_plan_sha256,
+            committed_at_utc="2099-01-01T00:00:00Z",
+            head=head,
+        )
 
 
 def test_formal_design_check_requires_exact_frozen_grid():

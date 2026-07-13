@@ -12,6 +12,11 @@ from typing import Any, Mapping
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "experiments" / "config" / "llm_sim_v1.json"
 FROZEN_RUN_ID = "llm-personas-v1"
+FROZEN_H5_ANALYSIS_PLAN_COMMIT = "289be3bc4634336a8598ad80c0de084afdeba51d"
+FROZEN_H5_ANALYSIS_PLAN_SHA256 = (
+    "3ac258fe1d819cc857162588dead3d03e0ba414771269bf04f8ce9ec0ad99260"
+)
+FROZEN_H5_ANALYSIS_PLAN_COMMITTED_AT_UTC = "2026-07-13T18:59:52Z"
 
 
 def canonical_json_bytes(value: Any) -> bytes:
@@ -45,6 +50,18 @@ class LLMSimConfig:
     @property
     def analysis_plan_commit(self) -> str:
         return str(self.raw["analysis_plan_commit"])
+
+    @property
+    def h5_analysis_plan_commit(self) -> str:
+        return str(self.raw["h5_analysis_plan_commit"])
+
+    @property
+    def h5_analysis_plan_sha256(self) -> str:
+        return str(self.raw["h5_analysis_plan_sha256"])
+
+    @property
+    def h5_analysis_plan_committed_at_utc(self) -> str:
+        return str(self.raw["h5_analysis_plan_committed_at_utc"])
 
     @property
     def persona_seed_derivation_version(self) -> str:
@@ -135,6 +152,9 @@ def _validate(value: Mapping[str, Any]) -> None:
         "schema_version",
         "run_id",
         "analysis_plan_commit",
+        "h5_analysis_plan_commit",
+        "h5_analysis_plan_sha256",
+        "h5_analysis_plan_committed_at_utc",
         "persona_seed_derivation_version",
         "prompt_version",
         "frozen_pre_observation_utc",
@@ -163,8 +183,8 @@ def _validate(value: Mapping[str, Any]) -> None:
     expected_providers = ("deepseek", "glm", "kimi", "minimax", "doubao", "tongyi")
     if tuple(value["providers"]) != expected_providers:
         raise ValueError("S2 providers differ from the frozen six-provider grid")
-    if not str(value["persona_seed_derivation_version"]).strip():
-        raise ValueError("persona_seed_derivation_version must be non-empty")
+    if str(value["persona_seed_derivation_version"]) != "yher-llm-persona-v2":
+        raise ValueError("persona_seed_derivation_version differs from the frozen amendment")
     if not str(value["prompt_version"]).strip():
         raise ValueError("prompt_version must be non-empty")
     if not 0 < int(value["minimum_complete_per_cell"]) <= int(value["persona_count"]):
@@ -194,3 +214,16 @@ def _validate(value: Mapping[str, Any]) -> None:
         raise ValueError("semantic target-option inference is forbidden")
     if not __import__("re").fullmatch(r"[0-9a-f]{40}", str(value["analysis_plan_commit"])):
         raise ValueError("analysis_plan_commit must be a full lowercase git SHA")
+    if str(value["h5_analysis_plan_commit"]) != FROZEN_H5_ANALYSIS_PLAN_COMMIT:
+        raise ValueError("h5_analysis_plan_commit differs from the frozen amendment")
+    if str(value["h5_analysis_plan_sha256"]) != FROZEN_H5_ANALYSIS_PLAN_SHA256:
+        raise ValueError("h5_analysis_plan_sha256 differs from the frozen amendment")
+    if (
+        str(value["h5_analysis_plan_committed_at_utc"])
+        != FROZEN_H5_ANALYSIS_PLAN_COMMITTED_AT_UTC
+    ):
+        raise ValueError(
+            "h5_analysis_plan_committed_at_utc differs from the frozen amendment"
+        )
+    if timestamp != FROZEN_H5_ANALYSIS_PLAN_COMMITTED_AT_UTC:
+        raise ValueError("frozen_pre_observation_utc must equal the amendment commit time")

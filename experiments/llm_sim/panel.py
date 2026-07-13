@@ -6,9 +6,12 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 from .models import Persona, StudyPanel
+
+
+CALIBRATION_ITEMS_PER_PERSONA = 4
 
 
 def _canonical(value: Any) -> bytes:
@@ -193,6 +196,58 @@ def _catalog_items(catalog: Any, node: str) -> list[Any]:
     ]
 
 
+def _calibration_candidate_fields(item: Any) -> dict[str, Any] | None:
+    item_id = str(_item_value(item, "item_id", ""))
+    family_id = str(_item_value(item, "family_id", ""))
+    raw_options = _item_value(item, "options", {}) or {}
+    if not isinstance(raw_options, Mapping):
+        return None
+    options = {
+        str(key).strip().upper(): str(value)
+        for key, value in raw_options.items()
+    }
+    answer = _answer_key(item)
+    scoring_mode = str(_item_value(item, "scoring_mode", ""))
+    if (
+        not item_id
+        or not family_id
+        or scoring_mode != "mcq"
+        or not options
+        or answer not in options
+    ):
+        return None
+    return {
+        "item_id": item_id,
+        "family_id": family_id,
+        "answer_key": answer,
+        "options": options,
+    }
+
+
+def is_calibration_candidate(item: Any) -> bool:
+    """Return whether an item passes the frozen pre-observation MCQ gate."""
+
+    return _calibration_candidate_fields(item) is not None
+
+
+def calibration_ready_target_nodes(
+    catalog: Any,
+    open_targets: Iterable[str],
+) -> frozenset[str]:
+    """Return open targets with four family-distinct calibration candidates."""
+
+    ready: set[str] = set()
+    for target in sorted({str(value) for value in open_targets}):
+        families = {
+            str(candidate["family_id"])
+            for item in _catalog_items(catalog, target)
+            if (candidate := _calibration_candidate_fields(item)) is not None
+        }
+        if len(families) >= CALIBRATION_ITEMS_PER_PERSONA:
+            ready.add(target)
+    return frozenset(ready)
+
+
 def _annotation_for_persona(
     persona: Persona,
     catalog: Any,
@@ -202,22 +257,13 @@ def _annotation_for_persona(
     failure_id = persona.failure_id or fallback_failure_id or ""
     candidates: list[dict[str, Any]] = []
     for item in _catalog_items(catalog, persona.target_node):
-        item_id = str(_item_value(item, "item_id", ""))
-        family_id = str(_item_value(item, "family_id", ""))
-        options = {
-            str(k).strip().upper(): str(v)
-            for k, v in (_item_value(item, "options", {}) or {}).items()
-        }
-        answer = _answer_key(item)
-        scoring_mode = str(_item_value(item, "scoring_mode", ""))
-        if (
-            not item_id
-            or not family_id
-            or scoring_mode != "mcq"
-            or not options
-            or answer not in options
-        ):
+        candidate = _calibration_candidate_fields(item)
+        if candidate is None:
             continue
+        item_id = str(candidate["item_id"])
+        family_id = str(candidate["family_id"])
+        answer = str(candidate["answer_key"])
+        options = dict(candidate["options"])
         target_option = _explicit_mapping(
             item,
             failure_id,
@@ -252,9 +298,9 @@ def _annotation_for_persona(
             continue
         calibration_items.append(row)
         selected_families.add(row["family_id"])
-        if len(calibration_items) == 4:
+        if len(calibration_items) == CALIBRATION_ITEMS_PER_PERSONA:
             break
-    calibration_ready = len(calibration_items) == 4
+    calibration_ready = len(calibration_items) == CALIBRATION_ITEMS_PER_PERSONA
     mapped_items = [
         row for row in calibration_items if row["mapping_status"] == "mapped"
     ]

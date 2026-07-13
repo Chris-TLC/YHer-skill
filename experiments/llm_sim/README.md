@@ -17,6 +17,16 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. \
   --output-root data/sim_store/llm_personas/llm-personas-v1
 ```
 
+Before any provider observation, the `yher-llm-persona-v2` mechanical
+amendment restricts persona targets to open catalog nodes with at least four
+family-distinct valid MCQ calibration items. It uses the same item predicate as
+panel construction and never consults annotation mappings or outcomes. The
+ingestion protocol and `llm-personas-v1` run id remain v1; only the persona
+derivation sub-version changes, with zero provider observations under v1.
+The dated amendment is frozen at commit
+`289be3bc4634336a8598ad80c0de084afdeba51d`; preparation and provider manifests
+bind that commit, its H5-plan blob hash, and its UTC commit time.
+
 The frozen panel accepts only an explicit machine mapping from a KG
 `common_failure` identifier to an incorrect option. It never infers a mapping
 from option text, symptoms, model rationales, or observed answers. With the

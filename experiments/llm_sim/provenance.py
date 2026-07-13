@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -101,6 +102,73 @@ def analysis_plan_is_ancestor(
     if completed.returncode == 1:
         return False
     raise RuntimeError("cannot verify frozen analysis-plan ancestry")
+
+
+def verify_frozen_document_commit(
+    repo_root: str | Path,
+    *,
+    commit: str,
+    relative_path: str,
+    sha256: str,
+    committed_at_utc: str,
+    head: str,
+) -> dict[str, Any]:
+    """Rebuild a frozen document proof from git rather than trusting metadata."""
+
+    root = Path(repo_root).expanduser().resolve(strict=True)
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise RuntimeError("frozen document commit is invalid")
+    if not re.fullmatch(r"[0-9a-f]{40}", head):
+        raise RuntimeError("frozen document HEAD is invalid")
+    if not re.fullmatch(r"[0-9a-f]{64}", sha256):
+        raise RuntimeError("frozen document blob hash is invalid")
+    relative = Path(relative_path)
+    if relative.is_absolute() or ".." in relative.parts or relative.as_posix() != relative_path:
+        raise RuntimeError("frozen document path is invalid")
+    try:
+        object_type = subprocess.run(
+            ["git", "cat-file", "-t", commit],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        blob = subprocess.run(
+            ["git", "show", f"{commit}:{relative_path}"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        ).stdout
+        epoch = int(
+            subprocess.run(
+                ["git", "show", "-s", "--format=%ct", commit],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+        )
+    except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("cannot verify frozen document commit") from exc
+    if object_type != "commit":
+        raise RuntimeError("frozen document object is not a commit")
+    if hashlib.sha256(blob).hexdigest() != sha256:
+        raise RuntimeError("frozen document blob hash mismatch")
+    actual_time = datetime.fromtimestamp(epoch, timezone.utc).isoformat().replace(
+        "+00:00", "Z"
+    )
+    if actual_time != committed_at_utc:
+        raise RuntimeError("frozen document commit time mismatch")
+    if not analysis_plan_is_ancestor(root, commit, head):
+        raise RuntimeError("frozen document commit is not an ancestor of HEAD")
+    return {
+        "commit": commit,
+        "path": relative_path,
+        "sha256": sha256,
+        "committed_at_utc": committed_at_utc,
+        "is_ancestor": True,
+        "verified": True,
+    }
 
 
 def collect_official_input_provenance(

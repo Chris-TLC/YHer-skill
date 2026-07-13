@@ -21,7 +21,9 @@ from experiments.s0_census import normalize_kg_label, protected_filesystem_finge
 from .models import Persona
 from .config import FROZEN_RUN_ID, LLMSimConfig, load_frozen_config
 from .panel import (
+    CALIBRATION_ITEMS_PER_PERSONA,
     annotation_map_hash,
+    calibration_ready_target_nodes,
     derive_manipulation_panel,
     freeze_manipulation_panel,
     load_frozen_panel,
@@ -32,6 +34,7 @@ from .provenance import (
     analysis_plan_is_ancestor,
     collect_code_provenance,
     collect_official_input_provenance,
+    verify_frozen_document_commit,
 )
 from .store import SimulationStore
 from .transport import (
@@ -48,7 +51,6 @@ from .transport import (
 
 
 FIXED_LADDER = (0.25, 0.50, 0.75, 1.00)
-CALIBRATION_ITEMS_PER_PERSONA = 4
 
 
 class CircuitOpenError(RuntimeError):
@@ -149,9 +151,14 @@ class LLMSimulationRunner:
         )
         self.repo_root = Path(repo_root).resolve(strict=False) if repo_root else Path(__file__).resolve().parents[2]
         self.code_root = Path(__file__).resolve().parents[2]
+        open_targets = set(catalog.open_nodes())
+        calibration_targets = calibration_ready_target_nodes(
+            catalog,
+            open_targets,
+        )
         persona_build_kwargs = {
             "pair_count": self.config.pair_count,
-            "eligible_nodes": set(catalog.open_nodes()),
+            "eligible_nodes": open_targets & set(calibration_targets),
             "seed_derivation_version": self.config.persona_seed_derivation_version,
         }
         if personas is None:
@@ -283,6 +290,7 @@ class LLMSimulationRunner:
         )
         if not plan_is_ancestor:
             raise RuntimeError("frozen analysis-plan commit is not an ancestor of S2 HEAD")
+        h5_plan_proof = self._h5_analysis_plan_proof(provenance_before["git_head"])
         summary = {
             "simulated": True,
             "run_id": self.config.run_id,
@@ -303,6 +311,12 @@ class LLMSimulationRunner:
             "code_files": provenance_before["code_files"],
             "analysis_plan_commit": self.config.analysis_plan_commit,
             "analysis_plan_is_ancestor": plan_is_ancestor,
+            "h5_analysis_plan_commit": h5_plan_proof["commit"],
+            "h5_analysis_plan_sha256": h5_plan_proof["sha256"],
+            "h5_analysis_plan_committed_at_utc": h5_plan_proof[
+                "committed_at_utc"
+            ],
+            "h5_analysis_plan_verified": h5_plan_proof["verified"],
             "persona_seed_derivation_version": (
                 self.config.persona_seed_derivation_version
             ),
@@ -341,6 +355,10 @@ class LLMSimulationRunner:
                 "code_files",
                 "analysis_plan_commit",
                 "analysis_plan_is_ancestor",
+                "h5_analysis_plan_commit",
+                "h5_analysis_plan_sha256",
+                "h5_analysis_plan_committed_at_utc",
+                "h5_analysis_plan_verified",
                 "persona_seed_derivation_version",
                 "prompt_version",
                 "official_input_sha256",
@@ -1428,6 +1446,7 @@ class LLMSimulationRunner:
             self.config.analysis_plan_commit,
             current["git_head"],
         )
+        h5_plan_proof = self._h5_analysis_plan_proof(current["git_head"])
         if any(
             (
                 preparation.get("panel_sha256") != panel.get("panel_sha256"),
@@ -1442,6 +1461,13 @@ class LLMSimulationRunner:
                 != self.config.analysis_plan_commit,
                 preparation.get("analysis_plan_is_ancestor") is not True,
                 not plan_is_ancestor,
+                preparation.get("h5_analysis_plan_commit")
+                != h5_plan_proof["commit"],
+                preparation.get("h5_analysis_plan_sha256")
+                != h5_plan_proof["sha256"],
+                preparation.get("h5_analysis_plan_committed_at_utc")
+                != h5_plan_proof["committed_at_utc"],
+                preparation.get("h5_analysis_plan_verified") is not True,
             )
         ):
             raise RuntimeError("S2 frozen preparation does not match the live run")
@@ -1457,6 +1483,20 @@ class LLMSimulationRunner:
             raise RuntimeError(
                 "frozen analysis-plan commit must be an ancestor before live transport"
             )
+        if preparation.get("h5_analysis_plan_verified") is not True:
+            raise RuntimeError(
+                "frozen H5 amendment commit must be verified before live transport"
+            )
+
+    def _h5_analysis_plan_proof(self, head: str) -> dict[str, Any]:
+        return verify_frozen_document_commit(
+            self.code_root,
+            commit=self.config.h5_analysis_plan_commit,
+            relative_path="experiments/h5_analysis_plan.md",
+            sha256=self.config.h5_analysis_plan_sha256,
+            committed_at_utc=self.config.h5_analysis_plan_committed_at_utc,
+            head=head,
+        )
 
     @staticmethod
     def _assert_bytecode_disabled_for_http() -> None:
@@ -2137,6 +2177,11 @@ class LLMSimulationRunner:
             "persona_seed_derivation_version": (
                 self.config.persona_seed_derivation_version
             ),
+            "h5_analysis_plan_commit": preparation.get("h5_analysis_plan_commit"),
+            "h5_analysis_plan_sha256": preparation.get("h5_analysis_plan_sha256"),
+            "h5_analysis_plan_committed_at_utc": preparation.get(
+                "h5_analysis_plan_committed_at_utc"
+            ),
             "arms": list(arms),
             "max_items": int(max_items),
             "calibration_artifacts": calibration_artifacts,
@@ -2181,6 +2226,11 @@ class LLMSimulationRunner:
             "study_seed": self.study_seed,
             "persona_seed_derivation_version": (
                 self.config.persona_seed_derivation_version
+            ),
+            "h5_analysis_plan_commit": preparation.get("h5_analysis_plan_commit"),
+            "h5_analysis_plan_sha256": preparation.get("h5_analysis_plan_sha256"),
+            "h5_analysis_plan_committed_at_utc": preparation.get(
+                "h5_analysis_plan_committed_at_utc"
             ),
         }
         if not isinstance(artifacts, list) or any(
@@ -2361,6 +2411,7 @@ class LLMSimulationRunner:
         calibration_attempt_count: int = 0,
         failure_category: str | None = None,
     ) -> dict[str, Any]:
+        preparation = self._preparation_manifest or {}
         panel_rows = list((self._panel or {}).get("annotations") or ())
         mapped_personas = sum(
             row.get("mapping_status") == "mapped" for row in panel_rows
@@ -2460,6 +2511,14 @@ class LLMSimulationRunner:
                 "code_matches_head"
             ),
             "analysis_plan_commit": self.config.analysis_plan_commit,
+            "h5_analysis_plan_commit": preparation.get("h5_analysis_plan_commit"),
+            "h5_analysis_plan_sha256": preparation.get("h5_analysis_plan_sha256"),
+            "h5_analysis_plan_committed_at_utc": preparation.get(
+                "h5_analysis_plan_committed_at_utc"
+            ),
+            "h5_analysis_plan_verified": preparation.get(
+                "h5_analysis_plan_verified"
+            ),
             "analysis_plan_is_ancestor": (self._preparation_manifest or {}).get(
                 "analysis_plan_is_ancestor"
             ),

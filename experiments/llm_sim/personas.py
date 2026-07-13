@@ -101,7 +101,7 @@ def build_personas(
     *,
     pair_count: int = 25,
     seed: int = 2026071302,
-    seed_derivation_version: str = "yher-llm-persona-v1",
+    seed_derivation_version: str = "yher-llm-persona-v2",
     eligible_nodes: set[str] | frozenset[str] | None = None,
 ) -> list[Persona]:
     """Build exactly ``pair_count * 2`` pre-observation persona rows.
