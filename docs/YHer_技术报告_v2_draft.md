@@ -168,7 +168,7 @@ final `computer-use` 的 12 个 session JSON 均为 `item_overlap=[]`、`family_
 
 手机 DevTools 在清除 filter 后 console 为 0 messages；唯一 `/.well-known/appspecific/...` 404 是 Chrome DevTools 自身探针，排除后没有应用 HTTP failure。所有截图非空，无可见横向溢出或不连贯重叠。机械门与内容门仍需分开：本轮内容 PASS 只签 verified standard solution 边界内的 authoritative projection，不等于自由化学事实生成；端点是非流式 JSON，也没有首 token <5 s 声明。
 
-从 `START_MARKER` 起按 `event_id` 去重的全夜成本为 203 个付费事件、362,300 input tokens、123,101 output tokens、CNY 1.111179196。j12 offline fallback 成本为 0；成本账本是工程运行记录，不是学生规模或效果指标。
+从 `START_MARKER` 起按 `event_id` 去重的全夜成本为 205 个付费事件、365,380 input tokens、123,706 output tokens、CNY 1.115468720。j12 offline fallback 成本为 0；最终全错补证旅程新增 2 个付费事件。成本账本是工程运行记录，不是学生规模或效果指标。
 
 M7 另外建立 24 个 `SYNTHETIC_DEMO` 场景。场景层严格覆盖 30/60/120 分钟 × `verified/needs_reinforcement/partial/paused` × 每组合 2 个；8 个场景含两个 session、16 个含一个 session，共 32 episodes。计划覆盖 28 个节点，但当前开放节点只有 27 个；“化学反应速率”因答案信任门后不足五个确定题族，被重放为预期关闭。
 

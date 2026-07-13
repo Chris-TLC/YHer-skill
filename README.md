@@ -110,7 +110,7 @@ adapters/store/local_json.py
 - API fresh run `20260712T224150Z`（服务 SHA `ce0700f`）中，确定性接口 p95 为 6.704 ms，低于 500 ms 门；LLM 全文最大 16.497 s，低于 20 s 门；
 - 提交前响应泄漏扫描未发现答案、模型名或凭据字段；
 - 12 个 final session JSON 的 `item_overlap=[]`、`family_overlap=[]`、`out_of_r5=[]`；手机 DevTools 清除 filter 后 console 为 0 messages；唯一 `/.well-known/appspecific/...` 404 是 Chrome DevTools 探针，不是应用请求失败；
-- 第 12 条使用隔离的 8701 `offline_fallback`，practice 诚实 deferred，provider 成本为 0。全夜累计 203 个付费事件，362,300 input tokens、123,101 output tokens、CNY 1.111179196。
+- 第 12 条使用隔离的 8701 `offline_fallback`，practice 诚实 deferred，provider 成本为 0。连同最终全错补证旅程，全夜累计 205 个付费事件，365,380 input tokens、123,706 output tokens、CNY 1.115468720。
 
 post-fix 内容审查在 authoritative projection 范围内为 PASS：无 key-insight 残句；strong 轨迹只有难度支架而无错误支架；错误轨迹显示服务端真实错题数，并且在同一高难 anchor 上严格长于全对轨迹；步骤与答案只来自 verified standard solution，未使用比喻。这里签的是 evidence-bound 目标，不宣称模型可自由生成可靠化学事实，也不声称非流式端点达到首 token 门。
 
