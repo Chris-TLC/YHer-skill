@@ -314,26 +314,21 @@ def _annotation_for_persona(
     }
 
 
-def freeze_manipulation_panel(
+def derive_manipulation_panel(
     *,
     personas: Sequence[Persona | Mapping[str, Any]],
     catalog: Any,
     annotation_map: Mapping[str, Any] | None = None,
     annotation_map_source: str | Path | None = None,
-    output_path: str | Path,
     study_seed: int,
     failure_id: str | None = None,
 ) -> dict[str, Any]:
-    """Create an immutable panel before any provider observation.
+    """Mechanically derive the complete frozen panel without writing it.
 
     ``mapping_status=excluded_pre_outcome`` is intentionally a first-class
     result.  A missing distractor annotation is never repaired with a textual
     or semantic guess after seeing a provider response.
     """
-
-    path = Path(output_path).expanduser().resolve(strict=False)
-    if any(part in {"local_store", "study_logs"} for part in path.parts):
-        raise ValueError("manipulation panel cannot be written under local_store")
     normalized = [_persona(value, failure_id) for value in personas]
     if not normalized:
         raise ValueError("at least one persona is required")
@@ -353,6 +348,11 @@ def freeze_manipulation_panel(
     ]
     persona_payload = [persona.to_dict() for persona in sorted(normalized, key=lambda value: value.persona_id)]
     core = {
+        "simulated": True,
+        "persona_id": "llm-sim-study:manipulation-panel",
+        "provider": "study_design",
+        "model_id": "no-provider-observation",
+        "record_type": "llm_sim_manipulation_panel",
         "schema_version": "yher.llm_sim.manipulation_panel.v1",
         "frozen": True,
         "observation_started": False,
@@ -370,7 +370,32 @@ def freeze_manipulation_panel(
         ),
         "annotations": rows,
     }
-    record = {**core, "panel_sha256": _sha(core)}
+    return {**core, "panel_sha256": _sha(core)}
+
+
+def freeze_manipulation_panel(
+    *,
+    personas: Sequence[Persona | Mapping[str, Any]],
+    catalog: Any,
+    annotation_map: Mapping[str, Any] | None = None,
+    annotation_map_source: str | Path | None = None,
+    output_path: str | Path,
+    study_seed: int,
+    failure_id: str | None = None,
+) -> dict[str, Any]:
+    """Create an immutable panel before any provider observation."""
+
+    path = Path(output_path).expanduser().resolve(strict=False)
+    if any(part in {"local_store", "study_logs"} for part in path.parts):
+        raise ValueError("manipulation panel cannot be written under local_store")
+    record = derive_manipulation_panel(
+        personas=personas,
+        catalog=catalog,
+        annotation_map=annotation_map,
+        annotation_map_source=annotation_map_source,
+        study_seed=study_seed,
+        failure_id=failure_id,
+    )
     if path.is_file():
         existing = load_frozen_panel(path)
         if existing == record:
@@ -394,6 +419,15 @@ def freeze_manipulation_panel(
 def load_frozen_panel(path: str | Path) -> dict[str, Any]:
     candidate = Path(path)
     record = json.loads(candidate.read_text(encoding="utf-8"))
+    required_envelope = {
+        "simulated": True,
+        "persona_id": "llm-sim-study:manipulation-panel",
+        "provider": "study_design",
+        "model_id": "no-provider-observation",
+        "record_type": "llm_sim_manipulation_panel",
+    }
+    if any(record.get(key) != value for key, value in required_envelope.items()):
+        raise ValueError("manipulation panel is missing the simulated-data envelope")
     if record.get("frozen") is not True:
         raise ValueError("manipulation panel is not frozen")
     if record.get("observation_started") is not False:

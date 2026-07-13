@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Sequence
 
@@ -43,6 +44,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.live and not sys.dont_write_bytecode:
+        parser.error("live S2 requires Python -B or PYTHONDONTWRITEBYTECODE=1 from process start")
+    if args.live and args.max_items is not None:
+        parser.error("live S2 max_items is frozen by config and cannot be overridden")
     config = load_frozen_config()
     store = SimulationStore(Path(args.output_root))
     annotation_map = (
@@ -80,7 +85,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             runner.run_provider(
                 provider,
                 model=model_overrides.get(provider),
-                max_items=args.max_items or config.max_items,
+                max_items=config.max_items,
                 resume=not args.no_resume,
                 prompt_revision=args.prompt_revision,
             )

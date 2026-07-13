@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -45,11 +47,21 @@ class SimulationStore:
             raise ValueError("simulation path cannot target local_store or study_logs")
         return path
 
-    def write_json(self, relative: str | Path, record: Mapping[str, Any]) -> Path:
+    def write_json(
+        self,
+        relative: str | Path,
+        record: Mapping[str, Any],
+        *,
+        immutable: bool = False,
+    ) -> Path:
         self._validate_envelope(record)
         path = self._path(relative)
-        path.parent.mkdir(parents=True, exist_ok=True)
         payload = json.dumps(dict(record), ensure_ascii=False, sort_keys=True, indent=2).encode("utf-8") + b"\n"
+        if immutable and path.exists():
+            if path.read_bytes() == payload:
+                return path
+            raise FileExistsError(f"immutable simulation artifact already exists: {relative}")
+        path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
         try:
             temporary.write_bytes(payload)
@@ -72,6 +84,12 @@ class SimulationStore:
 
     def exists(self, relative: str | Path) -> bool:
         return self._path(relative).is_file()
+
+    def file_sha256(self, relative: str | Path) -> str:
+        path = self._path(relative)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        return hashlib.sha256(path.read_bytes()).hexdigest()
 
     def journey_relative_path(
         self,
@@ -115,6 +133,54 @@ class SimulationStore:
             provider, persona_id, prompt_revision
         ).with_suffix(".partial.json")
 
+    def excluded_response_relative_path(
+        self,
+        provider: str,
+        persona_id: str,
+        *,
+        phase: str,
+        position: int,
+        prompt_revision: int = 0,
+        arm: str | None = None,
+        sequence: int | None = None,
+    ) -> Path:
+        if int(position) < 1:
+            raise ValueError("excluded response position must be positive")
+        revision = f"__prompt-v{int(prompt_revision)}" if prompt_revision else ""
+        arm_suffix = f"__arm-{_safe_component(arm)}" if arm else ""
+        sequence_suffix = (
+            f"__attempt-{int(sequence):03d}" if sequence is not None else ""
+        )
+        if sequence is not None and int(sequence) < 1:
+            raise ValueError("excluded response sequence must be positive")
+        filename = (
+            f"{_safe_component(persona_id)}__phase-{_safe_component(phase)}"
+            f"{arm_suffix}__position-{int(position):03d}{sequence_suffix}{revision}.json"
+        )
+        return Path("excluded_responses") / _safe_component(provider) / filename
+
+    def attempt_relative_path(
+        self,
+        provider: str,
+        persona_id: str,
+        *,
+        phase: str,
+        position: int,
+        attempt_number: int,
+        prompt_revision: int = 0,
+        arm: str | None = None,
+    ) -> Path:
+        if int(position) < 1 or int(attempt_number) < 1:
+            raise ValueError("attempt position and number must be positive")
+        revision = f"__prompt-v{int(prompt_revision)}" if prompt_revision else ""
+        arm_suffix = f"__arm-{_safe_component(arm)}" if arm else ""
+        filename = (
+            f"{_safe_component(persona_id)}__phase-{_safe_component(phase)}"
+            f"{arm_suffix}__position-{int(position):03d}"
+            f"__attempt-{int(attempt_number):03d}{revision}.json"
+        )
+        return Path("attempts") / _safe_component(provider) / filename
+
     @staticmethod
     def _validate_envelope(record: Mapping[str, Any]) -> None:
         if record.get("simulated") is not True:
@@ -129,6 +195,7 @@ class SimulationStore:
 
 def _safe_component(value: str) -> str:
     text = str(value).strip()
-    if not text or text in {".", ".."} or any(char in text for char in "/\\"):
+    if not text:
         raise ValueError("unsafe simulation path component")
-    return text.replace(":", "_").replace("|", "_")
+    encoded = base64.urlsafe_b64encode(text.encode("utf-8")).decode("ascii").rstrip("=")
+    return "id-" + encoded

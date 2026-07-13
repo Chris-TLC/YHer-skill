@@ -101,6 +101,7 @@ def build_personas(
     *,
     pair_count: int = 25,
     seed: int = 2026071302,
+    seed_derivation_version: str = "yher-llm-persona-v1",
     eligible_nodes: set[str] | frozenset[str] | None = None,
 ) -> list[Persona]:
     """Build exactly ``pair_count * 2`` pre-observation persona rows.
@@ -112,6 +113,8 @@ def build_personas(
 
     if pair_count < 1:
         raise ValueError("pair_count must be positive")
+    if not str(seed_derivation_version).strip():
+        raise ValueError("seed_derivation_version must be non-empty")
     eligible = {str(node) for node in eligible_nodes} if eligible_nodes is not None else None
     rows = _failure_rows(kg, eligible)
     if len(rows) < pair_count:
@@ -123,7 +126,7 @@ def build_personas(
     for pair_index, (node_id, failure_index, failure, source_node_id) in enumerate(rows[:pair_count]):
         failure_id = f"{source_node_id}#failure-{failure_index:02d}"
         material = (
-            f"yher-llm-persona-v1|{seed}|{pair_index}|{node_id}|"
+            f"{seed_derivation_version}|{seed}|{pair_index}|{node_id}|"
             f"{source_node_id}|{failure_index}"
         )
         pair_seed = int.from_bytes(hashlib.sha256(material.encode("utf-8")).digest()[:8], "big")

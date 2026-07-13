@@ -12,9 +12,13 @@ from typing import Any, Mapping, Sequence
 
 CODE_PATTERNS = (
     "experiments/llm_sim/*.py",
+    "experiments/config/llm_sim_v1.json",
+    "experiments/h5_analysis_plan.md",
     "experiments/s0_census.py",
     "engine/mastery.py",
     "engine/selector.py",
+    "core/data/item_bank_v4.py",
+    "core/data/knowledge_repository.py",
     "core/learning/scoring.py",
     "core/learning/item_catalog.py",
 )
@@ -29,19 +33,6 @@ def collect_code_provenance(repo_root: str | Path) -> dict[str, Any]:
         files.update(path for path in root.glob(pattern) if path.is_file())
     if not files:
         raise RuntimeError("S2 provenance code set is empty")
-    rows = [
-        {
-            "path": path.relative_to(root).as_posix(),
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        }
-        for path in sorted(files)
-    ]
-    payload = json.dumps(
-        rows,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
     try:
         completed = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -55,11 +46,61 @@ def collect_code_provenance(repo_root: str | Path) -> dict[str, Any]:
     git_head = completed.stdout.strip()
     if not re.fullmatch(r"[0-9a-f]{40}", git_head):
         raise RuntimeError("S2 git HEAD is not a full lowercase commit SHA")
+    rows = []
+    for path in sorted(files):
+        relative = path.relative_to(root).as_posix()
+        working_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        try:
+            head_bytes = subprocess.run(
+                ["git", "show", f"{git_head}:{relative}"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+            ).stdout
+            head_sha: str | None = hashlib.sha256(head_bytes).hexdigest()
+        except subprocess.CalledProcessError:
+            head_sha = None
+        rows.append(
+            {
+                "path": relative,
+                "sha256": working_sha,
+                "head_sha256": head_sha,
+                "matches_head": head_sha == working_sha,
+            }
+        )
+    working_payload = _canonical_bytes(
+        [{"path": row["path"], "sha256": row["sha256"]} for row in rows]
+    )
+    head_payload = _canonical_bytes(
+        [{"path": row["path"], "sha256": row["head_sha256"]} for row in rows]
+    )
+    working_sha = hashlib.sha256(working_payload).hexdigest()
     return {
         "git_head": git_head,
-        "code_sha256": hashlib.sha256(payload).hexdigest(),
+        "code_sha256": working_sha,
+        "working_code_sha256": working_sha,
+        "head_code_sha256": hashlib.sha256(head_payload).hexdigest(),
+        "code_matches_head": all(row["matches_head"] for row in rows),
         "code_files": rows,
     }
+
+
+def analysis_plan_is_ancestor(
+    repo_root: str | Path,
+    analysis_plan_commit: str,
+    git_head: str,
+) -> bool:
+    root = Path(repo_root).expanduser().resolve(strict=True)
+    completed = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", analysis_plan_commit, git_head],
+        cwd=root,
+        capture_output=True,
+    )
+    if completed.returncode == 0:
+        return True
+    if completed.returncode == 1:
+        return False
+    raise RuntimeError("cannot verify frozen analysis-plan ancestry")
 
 
 def collect_official_input_provenance(
@@ -171,11 +212,15 @@ def _value(value: Any, key: str, default: Any) -> Any:
 
 
 def _sha256_json(value: Any) -> str:
-    payload = json.dumps(
+    payload = _canonical_bytes(value)
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _canonical_bytes(value: Any) -> bytes:
+    return json.dumps(
         value,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
         default=str,
     ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()

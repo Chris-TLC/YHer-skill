@@ -123,7 +123,6 @@ class HTTPProviderTransport:
         cls,
         provider: str,
         *,
-        model: str | None = None,
         environment: Mapping[str, str] | None = None,
         repo_root: str | Path | None = None,
     ) -> "HTTPProviderTransport":
@@ -174,7 +173,9 @@ class HTTPProviderTransport:
             raw = json.loads(body.decode("utf-8"))
             choice = raw["choices"][0]
             content = choice.get("message", {}).get("content", "")
-            returned_model = str(raw.get("model") or model)
+            returned_model = str(raw.get("model") or "").strip()
+            if not returned_model:
+                raise ProviderProtocolError()
             usage = raw.get("usage") or {}
             input_tokens = max(0, int(usage.get("prompt_tokens") or usage.get("input_tokens") or 0))
             output_tokens = max(0, int(usage.get("completion_tokens") or usage.get("output_tokens") or 0))
