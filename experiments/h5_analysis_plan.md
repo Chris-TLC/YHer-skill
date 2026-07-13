@@ -124,3 +124,34 @@ available. Missing access, rate limits, structural incompleteness, manipulation
 failure, and model drift are reported rather than replaced. No extra personas,
 providers, prompt revisions, annotation mapping, or calibration items may be added
 after the first live response to improve H5.
+
+## Amendment 2026-07-14: Pre-Observation Calibration Feasibility Gate
+
+This amendment was written before a canonical S2 preparation and before every live
+provider response. The draft `yher-llm-persona-v1` cohort had zero provider
+observations. A read-only preflight found that its `同分异构体` pair had only three
+family-distinct valid MCQ calibration items, while the frozen manipulation protocol
+requires four. Leaving that pair in place would make both strength strata
+structurally incomplete before any provider behavior was observed.
+
+Persona derivation therefore advances to `yher-llm-persona-v2`. Before applying the
+existing target-round-robin failure selection, it mechanically retains only open
+catalog targets with at least four family-distinct calibration candidates. A
+candidate must have a non-empty item ID and family ID, MCQ scoring, a non-empty option
+mapping, and an answer key present in that mapping. This is the exact predicate used
+later to construct the four calibration items. It does not inspect target-option
+annotations, provider output, response quality, hypothesis direction, or any outcome.
+
+Under the frozen production catalog this gate retains 26 of 27 open targets. It
+removes only the draft pair anchored to
+`同分异构体-手性碳原子判断#failure-00` and, through the unchanged deterministic
+round-robin rule, adds `铁及其化合物-制备与转化#failure-00`. The resulting cohort remains
+25 weak/strong pairs and 50 personas; every persona has exactly four distinct
+calibration families. The absence of a mechanical target-option mapping is unchanged:
+H5 remains `excluded_pre_outcome` with a null decision, while any collected behavior
+may be reported only descriptively.
+
+The implementation configuration and preparation manifest must name this amendment's
+commit, content hash, and freeze time. They must also record the v2 persona derivation
+version. No v1 panel, preparation artifact, provider response, or result may be
+silently reused under v2.
