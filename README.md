@@ -21,7 +21,7 @@ YHer 是一个面向上海高中化学的证据约束学习闭环：用真题做
 
 要求 Python 3.11 或更新版本。启动脚本会在仓库内自举 `.venv-demo`，安装 [requirements-demo.txt](requirements-demo.txt) 中固定版本的最小依赖，并以单 worker 监听本机回环地址。
 
-离线模式不会调用付费 LLM：
+`run_demo.sh` 默认允许已配置的付费 LLM 通道。要做零网络、零付费的离线复现，必须显式关闭：
 
 ```bash
 cd yihuier-chemistry-skill
@@ -34,7 +34,7 @@ YHER_ENABLE_PAID_LLM=0 ./deploy/run_demo.sh
 curl -fsS http://127.0.0.1:8700/health | python3 -m json.tool
 ```
 
-如果本机环境显式设置 `YHER_ENABLE_PAID_LLM=1` 且存在 DeepSeek 凭据，讲解和少量自由作答可使用 provider；凭据缺失、超时或输出不合格时，系统保留确定性主链并诚实降级。不要把密钥写入代码、日志、截图或报告。
+默认启动在存在 DeepSeek 凭据时，讲解和少量自由作答可使用 provider；凭据缺失、显式设置 `YHER_ENABLE_PAID_LLM=0`、超时或输出不合格时，系统保留确定性主链并诚实降级。不要把密钥写入代码、日志、截图或报告。
 
 ## 架构
 
@@ -70,7 +70,7 @@ adapters/store/local_json.py
 
 ## 2026-07-13 数据快照
 
-以下数字来自当前分支 SHA `4157f74` 的 `/health`、正式数据文件和签字配置。它们描述的是本机快照，不是用户规模。
+以下数字来自已审计实现 SHA `d62aad4` 的 `/health`、正式数据文件和签字配置。它们描述的是本机快照，不是用户规模；后续纯文档提交不改变这组运行时事实。
 
 | 资产/门 | 当前事实 | 权威路径 |
 |---|---:|---|
@@ -102,14 +102,14 @@ adapters/store/local_json.py
 
 本次收官快照的 fresh 证据：
 
-- 仓库离线套件：557/557；
+- 仓库离线套件：569/569；
 - 根五引擎契约：119/119；
-- 桌面 1280×800 与手机 390×844 浏览器旅程：12/12，`failures=[]`；
-- 确定性接口最近一次矩阵 p95 为 6.439 ms，低于 500 ms 门；
+- 自动化桌面 1280×800 与手机 390×844 浏览器旅程：12/12，`failures=[]`；合同另要求的 final `computer-use` 人工矩阵仍在收口，不能用自动化数量替代；
+- API fresh run `20260712T224150Z`（服务 SHA `ce0700f`）中，确定性接口 p95 为 6.704 ms，低于 500 ms 门；LLM 全文最大 16.497 s，低于 20 s 门；
 - 提交前响应泄漏扫描未发现答案、模型名或凭据字段；
 - 同一 session 的诊断/练习/held-out item 与 family 均不相交。
 
-这里的 `failures=[]` 只表示浏览器机械门通过。内容二审当前仍为 `PARTIAL`：首题计数和前置题标题正在修正；公开讲解是 DeepSeek 辅助的 verified standard-solution authoritative projection，需求 #3“自由动态深讲”尚未签为全面达标。
+这里的 `failures=[]` 只表示对应自动化浏览器机械门通过。后续实现已关闭首题计数、前置标题、100 字残句和错误层级不驱动支架四个问题；post-fix 真实 UI 已核到完整零基础起点、难度支架、两错额外支架，以及 strong 3/3 后完成 practice + 2 held-out 的 verified 旅程。公开讲解仍严格定位为 DeepSeek 辅助的 verified standard-solution authoritative projection，不宣称模型可自由生成可靠化学事实。
 
 安装开发依赖后可运行：
 
@@ -128,8 +128,8 @@ python3 -m pytest tests/test_synthetic_scenarios.py -q
 场景计划覆盖 28 个专题，但当前可实际启动的只有上述 27 个；“化学反应速率”被重放器验证为预期关闭。合成重放使用独立 `/tmp` store、零网络、零付费调用，绝不与真实或 QA 事件混写。
 
 ```bash
-python3 -m demo.synthetic_scenarios.validate
-python3 -m demo.synthetic_scenarios.replay \
+.venv-demo/bin/python -m demo.synthetic_scenarios.validate
+.venv-demo/bin/python -m demo.synthetic_scenarios.replay \
   --output /tmp/yher_synthetic_demo_replays/readme_run
 ```
 
