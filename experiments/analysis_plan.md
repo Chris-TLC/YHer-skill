@@ -82,14 +82,13 @@ both failure and rerun remain in the audit log.
   positions use target-local items.
 
 Fixed-arm selection chooses the nearest available empirical difficulty. Ties are
-resolved by `(absolute_distance, seeded_stable_family_rank, item_id)`, where the family
-rank is derived from the journey's SHA-256 item-order seed and is fixed within an
-epoch. A missing difficulty is never synthesized. Within each node pool, two families
-are reserved for held-out scoring as specified below. Remaining families are traversed
-in seeded shuffled epochs: every
+resolved exactly by `(absolute_distance, family_id, item_id)`. A missing difficulty is
+never synthesized. Within each node pool, two families are reserved for held-out
+scoring as specified below. Remaining families are traversed in seeded shuffled epochs: every
 available family is used once before a family can recur, with one item per family per
 epoch and stable `item_id` tie-breaking inside a family. A new seeded shuffle begins
-only after an epoch is exhausted. Each journey records exact-item repeat fraction,
+only after an epoch is exhausted. The shuffle defines reproducible epoch construction
+but never replaces or overrides the fixed B/C selection tuple. Each journey records exact-item repeat fraction,
 family repeat fraction, unique-item count, unique-family count, and actual administered
 count. The required full-grid estimand is explicitly named **empirical with-replacement
 stress**, not independent-item evidence. Sparse-pool repetition is disclosed rather
@@ -219,36 +218,35 @@ reported.
 
 ## Hypothesis Decisions
 
-- **H1 supported:** at checkpoint 15 under the matched generator, Arm A's `P`
-  correct-convergence point estimate is at least 0.50 and the 95% CI for A minus B is
-  strictly above 0. **Partially supported:** exactly one condition holds, or both point
-  estimates are in the predicted direction but the rescue CI includes 0. **Not
-  supported:** Arm A is below 0.50 and the rescue point estimate is non-positive.
-  Arm B near zero is reported as observed and is never tuned into existence. The
-  no-repeat sensitivity is co-reported; a non-positive rescue direction there
-  downgrades an otherwise supported result to partially supported.
-- **H2 supported:** at checkpoint 9 under the matched generator, the 95% CI for Arm C
-  minus Arm A `C` misdiagnosis is strictly above 0 and the upper 95% bound for Arm A
-  minus Arm B is below +0.05. **Partially supported:** only one of the harm and no-harm
-  criteria holds. **Not supported:** the harm point estimate is non-positive or Arm A
-  is inferior to B by at least 0.05 at the point estimate. The no-repeat sensitivity
-  is co-reported; a non-positive harm direction there downgrades an otherwise
-  supported result to partially supported.
-- **H3 supported:** the matched-condition Arm A minus Arm B overall terminal-accuracy
-  CI lower bound is at least 0 and Arm A's median convergence time is no longer than
-  B's at checkpoint 15. **Partially supported:** one criterion holds. **Not supported:**
-  both point directions favor B. This result is subordinate and not the headline.
-- **H4 supported:** under misspecification, both H1 rescue and H2 harm point contrasts
-  retain their predicted positive directions. **Partially supported:** one persists.
-  **Not supported:** neither persists. Significance is not required for this direction
-  check; degradation in every primary point estimate is reported with its bootstrap CI.
-- **H5 supported:** at least five providers complete at least 45 of 50 personas in
-  both arms, the predeclared weak/strong accuracy bands pass, and the target-misconception
-  hit-rate contrast over each item's random-wrong-option baseline has a 95% CI strictly
-  above 0 after at most one pre-observation prompt rewrite. **Partially supported:**
-  four providers meet completion and manipulation gates, or only one manipulation gate
-  passes. **Not supported:** fewer than four providers qualify or neither manipulation
-  gate passes. Fleiss kappa is reported descriptively without a post hoc cutoff, and
+- **H1:** apply these branches in order. **Supported if and only if** at checkpoint 15
+  under the matched generator Arm A's `P` correct-convergence point estimate is at
+  least 0.50 and the 95% CI for A minus B is strictly above 0. **Not supported if and
+  only if** Arm A is below 0.50 and the rescue point estimate is non-positive.
+  **Partially supported otherwise.** Arm B near zero and the no-repeat sensitivity are
+  reported unchanged and never tuned into existence.
+- **H2:** apply these branches in order. **Supported if and only if** at checkpoint 9
+  under the matched generator the 95% CI for Arm C minus Arm A `C` misdiagnosis is
+  strictly above 0 and the upper 95% bound for Arm A minus Arm B is below +0.05.
+  **Not supported if and only if** the harm point estimate is non-positive or Arm A is
+  inferior to B by at least 0.05 at the point estimate. **Partially supported
+  otherwise.** The no-repeat sensitivity is co-reported unchanged.
+- **H3:** apply these branches in order. **Supported if and only if** the matched-condition
+  Arm A minus Arm B overall terminal-accuracy CI lower bound is at least 0 and Arm A's
+  median convergence time is no longer than B's at checkpoint 15. **Not supported if
+  and only if** both point directions favor B. **Partially supported otherwise.** This
+  result is subordinate and not the headline.
+- **H4:** apply these branches in order. **Supported if and only if** under
+  misspecification both H1 rescue and H2 harm point contrasts retain their predicted
+  positive directions. **Not supported if and only if** neither persists. **Partially
+  supported otherwise.** Significance is not required for this direction check;
+  degradation in every primary point estimate is reported with its bootstrap CI.
+- **H5:** apply these branches in order. **Supported if and only if** at least five
+  providers complete at least 45 of 50 personas in both arms, the predeclared
+  weak/strong accuracy bands pass, and the target-misconception hit-rate contrast over
+  each item's random-wrong-option baseline has a 95% CI strictly above 0 after at most
+  one pre-observation prompt rewrite. **Not supported if and only if** fewer than four
+  providers qualify or neither manipulation gate passes. **Partially supported
+  otherwise.** Fleiss kappa is reported descriptively without a post hoc cutoff, and
   provider/persona exclusions are fully disclosed.
 
 ## Honest Reporting And Stopping
@@ -264,3 +262,15 @@ cells, provider failures, and disagreement with the T0 pilot will be reported
 unchanged. The pilot is hypothesis-generating; it will not be pooled with the
 confirmatory estimates. Negative results trigger interpretation and limitations, not
 parameter tuning or hidden exclusions.
+
+## Amendment 2026-07-13: Static Review Clarifications
+
+This dated amendment follows the S0 static census and specification review but
+precedes every confirmatory simulated response outcome. It is based only on review of
+the frozen task contract, not on observed H1-H5 results. The original pre-data freeze
+remains preserved in git at `ef0fabc03284c40696821d2345fe34826d5b75f7`.
+
+The review restored the contract's exact fixed-arm tie-break
+`(absolute_distance, family_id, item_id)` and made the H1-H5 decision branches ordered,
+mutually exhaustive, and explicit. No hypothesis threshold, sample size, generator,
+analysis set, or negative-result rule changed.
