@@ -274,3 +274,32 @@ The review restored the contract's exact fixed-arm tie-break
 `(absolute_distance, family_id, item_id)` and made the H1-H5 decision branches ordered,
 mutually exhaustive, and explicit. No hypothesis threshold, sample size, generator,
 analysis set, or negative-result rule changed.
+
+## Amendment 2026-07-13: Pre-Collection Runner Review
+
+This second dated amendment also precedes every confirmatory simulated response
+outcome. It resolves implementation-level reproducibility and isolation ambiguities
+found during independent runner review; it does not change any hypothesis, arm,
+threshold, sample size, generator distribution, analysis set, or reporting branch.
+
+The response-noise generator is seeded directly with the first 128 bits of SHA-256 of
+the exact replicate string specified in `Seeds And Reproducibility`, with no suffix.
+Independent misspecification-parameter substreams use the same replicate string plus
+the literal suffixes `|slip`, `|guess`, and `|ability`. Arm-specific item ordering
+continues to use `|arm|purpose`. Held-out outcomes continue to use the separately
+specified arm-free `yher-heldout-outcome-v1|...|family_id` material. Each record stores
+enough seed material or version metadata to audit these derivations.
+
+The static timestamp in the machine-readable configuration is labeled
+`config_frozen_at_utc`; it is never presented as a data-collection time. Each execution
+also binds a stable `run_started_at_utc` value. Before execution, the runner verifies
+that repository HEAD and the annotated experiment tag resolve to the supplied runner
+commit and that all frozen experiment/engine paths are clean relative to that commit.
+
+Simulation records are written only below
+`data/sim_store/confirmatory/<run_id>` (or the dedicated audit temp root). A shard is
+promoted to its resumable path only after its protected-filesystem guard passes, and
+its manifest carries a successful isolation attestation. Unattested shards from an
+interrupted or failed guard are never resumable. Data execution requires Python
+bytecode writes to be disabled from process start (`python -B` or
+`PYTHONDONTWRITEBYTECODE=1`).
