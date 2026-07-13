@@ -6,6 +6,10 @@ import copy
 import hashlib
 import inspect
 import json
+import random
+import subprocess
+import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
@@ -90,6 +94,19 @@ def _fake_pools():
     )
 
 
+def _fake_context(*, input_digest: str = "f"):
+    from experiments.confirmatory.models import CatalogContext
+
+    return CatalogContext(
+        targets={"Target": _fake_pools()},
+        h1_h2_eligible_targets=("Target",),
+        h1_h2_excluded_targets=(),
+        input_sha256={
+            "fake_catalog": {"path": "fake", "sha256": input_digest * 64}
+        },
+    )
+
+
 def _spec(*, truth: str = "P", condition: str = "matched", replicate: int = 0):
     from experiments.confirmatory.models import UnitSpec
 
@@ -114,6 +131,76 @@ def test_sha256_seed_derivation_uses_exact_first_128_bits() -> None:
     assert material == "yher-confirmatory-v1|20260713|Target|P|matched|0"
     expected = int.from_bytes(hashlib.sha256(material.encode("utf-8")).digest()[:16], "big")
     assert seed128(material) == expected
+
+
+def test_shared_response_noise_consumes_exact_frozen_replicate_seed() -> None:
+    from experiments.confirmatory.randomness import SharedResponseStreams, seed128
+
+    material = "yher-confirmatory-v1|20260713|Target|P|matched|0"
+    streams = SharedResponseStreams.build(material, 3, _test_config())
+
+    expected_rng = random.Random(seed128(material))
+    assert streams.response_noise == tuple(expected_rng.random() for _ in range(3))
+
+
+@pytest.mark.parametrize(
+    "field_path",
+    (
+        ("analysis_plan_commit",),
+        ("arms",),
+        ("bootstrap_seed",),
+        ("budgets",),
+        ("c_probe_interval",),
+        ("census_seed",),
+        ("census_analysis_plan_commit",),
+        ("conditions",),
+        ("config_frozen_at_utc",),
+        ("fixed_difficulty_ladder",),
+        ("gap_threshold",),
+        ("held_out_families",),
+        ("master_seed",),
+        ("max_items",),
+        ("minimum_direct_answers",),
+        ("minimum_prerequisite_families",),
+        ("misspecified", "ability_offset_clip"),
+        ("misspecified", "ability_offset_sd"),
+        ("misspecified", "guess_range"),
+        ("misspecified", "probability_clip"),
+        ("misspecified", "slip_range"),
+        ("provider",),
+        ("replicates",),
+        ("run_id",),
+        ("schema_version",),
+        ("seed_derivation_version",),
+        ("stop_budget_items",),
+        ("truth_states",),
+    ),
+)
+def test_every_scientific_config_field_is_frozen(field_path: tuple[str, ...]) -> None:
+    from experiments.confirmatory.config import ConfirmatoryConfig, load_frozen_config
+    from experiments.confirmatory.runner import validate_definition
+
+    raw = copy.deepcopy(dict(load_frozen_config().raw))
+    parent = raw
+    for field in field_path[:-1]:
+        parent = parent[field]
+    field = field_path[-1]
+    current = parent[field]
+    if isinstance(current, list):
+        parent[field] = list(reversed(current))
+    elif isinstance(current, int):
+        parent[field] = current + 1
+    elif isinstance(current, float):
+        parent[field] = current + 0.01
+    else:
+        parent[field] = f"{current}-mutated"
+
+    try:
+        changed = ConfirmatoryConfig.from_mapping(raw)
+    except ValueError:
+        return
+    with pytest.raises(ValueError, match="frozen confirmatory config"):
+        validate_definition(changed, _fake_context())
 
 
 def test_family_epoch_is_seeded_stable_and_exhausts_families_before_repeat() -> None:
@@ -173,7 +260,10 @@ def test_real_production_calls_and_arm_role_contracts(monkeypatch: pytest.Monkey
     total_administered = sum(row["actual_administered_count"] for row in paired)
 
     assert dynamic_calls["observe"] == total_administered
-    assert dynamic_calls["should_stop"] == total_administered
+    expected_stop_calls = total_administered + sum(
+        row["actual_administered_count"] == 25 for row in paired
+    )
+    assert dynamic_calls["should_stop"] == expected_stop_calls
     assert dynamic_calls["select_next"] == journeys["A"]["actual_administered_count"]
     assert journeys["A"]["call_counters"]["selector_select_next"] == journeys["A"]["actual_administered_count"]
     assert journeys["B"]["call_counters"]["selector_select_next"] == 0
@@ -282,7 +372,7 @@ def test_production_confidence_gate_and_item_25_reason_are_distinct(
     assert journey["actual_administered_count"] == 25
     assert journey["terminal_reason"] == "budget_exhausted"
     assert journey["converged"] is False
-    assert budgets_seen == [26] * 25
+    assert budgets_seen == [25] * 25 + [26]
 
     monkeypatch.setattr(
         simulation.selector,
@@ -330,6 +420,22 @@ def test_held_out_outcomes_are_paired_never_administered_and_do_not_update() -> 
     before = posterior.copy()
     score_held_out(posterior, pools.held_out_items, {"held-0": True, "held-1": False})
     assert np.array_equal(posterior, before)
+
+
+def test_matched_brier_is_explicitly_internal_calibration_only() -> None:
+    from experiments.confirmatory.simulation import run_journey
+
+    journey = run_journey(
+        _fake_pools(),
+        _spec(condition="matched"),
+        _test_config(),
+        "B",
+        {},
+    )
+
+    assert {
+        view["held_out_brier_interpretation"] for view in journey["views"]
+    } == {"internal_calibration_only"}
 
 
 def test_repeat_counters_match_recorded_items_and_families() -> None:
@@ -507,9 +613,11 @@ def test_bounded_fake_execution_is_worker_and_resume_byte_identical(
         "limit_shards": 2,
         "runner_commit": "a" * 40,
         "experiment_tag": "test-only-no-tag-created",
+        "run_started_at_utc": "2026-07-13T13:20:00Z",
         "context": context,
         "repo_root": repo,
         "temp_root": temp_root,
+        "verify_repository_binding": False,
     }
     first = execute(output_root=temp_root / "first", workers=1, **common)
     second = execute(output_root=temp_root / "second", workers=3, **common)
@@ -542,3 +650,240 @@ def test_bounded_fake_execution_is_worker_and_resume_byte_identical(
     assert journey["provenance"]["experiment_tag"] == "test-only-no-tag-created"
     assert journey["provenance"]["input_sha256"] == context.input_sha256
     assert all(event["provenance"] == journey["provenance"] for event in journey["events"])
+    manifest = json.loads(Path(resumed["manifest"]).read_text(encoding="utf-8"))
+    assert manifest["run_started_at_utc"] == "2026-07-13T13:20:00Z"
+    assert manifest["config_frozen_at_utc"] == config.raw["config_frozen_at_utc"]
+    assert "created_at_utc" not in manifest
+
+
+@pytest.mark.parametrize("changed_field", ("runner_commit", "experiment_tag", "input"))
+def test_resume_rewrites_shards_when_frozen_provenance_changes(
+    tmp_path: Path,
+    changed_field: str,
+) -> None:
+    from experiments.confirmatory.config import load_frozen_config
+    from experiments.confirmatory.models import CatalogContext
+    from experiments.confirmatory.runner import execute
+    from experiments.confirmatory.storage import read_shard_records
+
+    config = load_frozen_config()
+    context = CatalogContext(
+        targets={"Target": _fake_pools()},
+        h1_h2_eligible_targets=("Target",),
+        h1_h2_excluded_targets=(),
+        input_sha256={"fake_catalog": {"path": "fake", "sha256": "f" * 64}},
+    )
+    repo = tmp_path / "repo"
+    temp_root = tmp_path / "yher_sprint2"
+    output_root = temp_root / "resume-provenance"
+    common = {
+        "config": config,
+        "output_root": output_root,
+        "run_id": "fake-smoke",
+        "workers": 1,
+        "limit_shards": 1,
+        "experiment_tag": "test-only-no-tag-created",
+        "run_started_at_utc": "2026-07-13T13:20:00Z",
+        "context": context,
+        "repo_root": repo,
+        "temp_root": temp_root,
+        "verify_repository_binding": False,
+    }
+
+    execute(runner_commit="a" * 40, resume=False, **common)
+    changed = dict(common)
+    changed["runner_commit"] = "a" * 40
+    if changed_field == "runner_commit":
+        changed["runner_commit"] = "b" * 40
+    elif changed_field == "experiment_tag":
+        changed["experiment_tag"] = "test-only-second-tag"
+    else:
+        changed["context"] = _fake_context(input_digest="e")
+    resumed = execute(resume=True, **changed)
+
+    assert resumed["written"] == 1
+    assert resumed["skipped"] == 0
+    shard = next(Path(resumed["manifest"]).parent.glob("shard-*.jsonl"))
+    records = read_shard_records(shard)
+    assert {row["provenance"]["runner_commit"] for row in records} == {
+        changed["runner_commit"]
+    }
+    assert {row["provenance"]["experiment_tag"] for row in records} == {
+        changed["experiment_tag"]
+    }
+    assert {json.dumps(row["provenance"]["input_sha256"], sort_keys=True) for row in records} == {
+        json.dumps(changed["context"].input_sha256, sort_keys=True)
+    }
+
+
+def _fake_execute_args(tmp_path: Path) -> dict[str, object]:
+    temp_root = tmp_path / "yher_sprint2"
+    return {
+        "config": __import__(
+            "experiments.confirmatory.config", fromlist=["load_frozen_config"]
+        ).load_frozen_config(),
+        "output_root": temp_root / "confirmatory",
+        "run_id": "fake-smoke",
+        "workers": 1,
+        "resume": False,
+        "limit_shards": 1,
+        "runner_commit": "a" * 40,
+        "experiment_tag": "test-only-no-tag-created",
+        "run_started_at_utc": "2026-07-13T13:20:00Z",
+        "context": _fake_context(),
+        "repo_root": tmp_path / "repo",
+        "temp_root": temp_root,
+        "verify_repository_binding": False,
+    }
+
+
+def test_failed_isolation_guard_leaves_no_resumable_shard(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from experiments.confirmatory import runner
+    from experiments.s0_census import ProtectedWriteError
+
+    @contextmanager
+    def failing_guard(*args, **kwargs):
+        yield {
+            "before": {"digest": "a" * 64, "coverage": ["fake"]},
+            "after": {"digest": "b" * 64, "coverage": ["fake"]},
+            "unchanged": False,
+        }
+        raise ProtectedWriteError("injected protected write")
+
+    monkeypatch.setattr(runner, "guarded_simulation_run", failing_guard)
+    args = _fake_execute_args(tmp_path)
+    output = Path(args["output_root"]) / str(args["run_id"])
+
+    with pytest.raises(ProtectedWriteError, match="injected protected write"):
+        runner.execute(**args)
+
+    assert not list(output.glob("shard-*.jsonl"))
+    assert not (output / "manifest.json").exists()
+
+
+def test_resume_rebuilds_shard_without_successful_isolation_attestation(
+    tmp_path: Path,
+) -> None:
+    from experiments.confirmatory.runner import execute
+
+    args = _fake_execute_args(tmp_path)
+    first = execute(**args)
+    shard = next(Path(first["manifest"]).parent.glob("shard-*.jsonl"))
+    lines = shard.read_bytes().splitlines(keepends=True)
+    shard_manifest = json.loads(lines[0])
+    assert shard_manifest["protected_filesystem_assertion"]["unchanged"] is True
+    shard_manifest.pop("protected_filesystem_assertion")
+    shard.write_bytes(
+        json.dumps(
+            shard_manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        + b"\n"
+        + b"".join(lines[1:])
+    )
+
+    resumed = execute(**{**args, "resume": True})
+
+    assert resumed["written"] == 1
+    assert resumed["skipped"] == 0
+
+
+@pytest.mark.parametrize("run_id", (".", ".."))
+def test_run_id_rejects_path_segments(tmp_path: Path, run_id: str) -> None:
+    from experiments.confirmatory.runner import execute
+
+    with pytest.raises(ValueError, match="run_id"):
+        execute(**{**_fake_execute_args(tmp_path), "run_id": run_id})
+
+
+def test_repository_outputs_are_confined_to_confirmatory_root(tmp_path: Path) -> None:
+    from experiments.confirmatory.runner import execute
+
+    args = _fake_execute_args(tmp_path)
+    bad_root = Path(args["repo_root"]) / "data" / "sim_store" / "census"
+    with pytest.raises(ValueError, match="confirmatory"):
+        execute(**{**args, "output_root": bad_root})
+
+
+def test_data_execution_requires_bytecode_disabled_from_process_start(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from experiments.confirmatory.runner import execute
+
+    monkeypatch.setattr(sys, "dont_write_bytecode", False)
+    with pytest.raises(RuntimeError, match="python -B"):
+        execute(**_fake_execute_args(tmp_path))
+
+
+def test_run_start_cannot_predate_config_freeze(tmp_path: Path) -> None:
+    from experiments.confirmatory.runner import execute
+
+    with pytest.raises(ValueError, match="predate config freeze"):
+        execute(
+            **{
+                **_fake_execute_args(tmp_path),
+                "run_started_at_utc": "2026-07-13T13:00:00Z",
+            }
+        )
+
+
+def test_repository_binding_requires_annotated_tag_head_and_clean_frozen_paths(
+    tmp_path: Path,
+) -> None:
+    from experiments.confirmatory.runner import verify_repository_binding
+    from experiments.confirmatory.provenance import FROZEN_REPOSITORY_PATHS
+
+    assert "core/data/item_bank_v4.py" in FROZEN_REPOSITORY_PATHS
+    assert "core/learning/scoring.py" in FROZEN_REPOSITORY_PATHS
+
+    repo = tmp_path / "binding-repo"
+    repo.mkdir()
+
+    def git(*args: str) -> str:
+        completed = subprocess.run(
+            ("git", *args),
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return completed.stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.invalid")
+    git("config", "user.name", "Confirmatory Test")
+    frozen = repo / "frozen.txt"
+    frozen.write_text("frozen\n", encoding="utf-8")
+    dependency = repo / "core" / "data" / "item_bank_v4.py"
+    dependency.parent.mkdir(parents=True)
+    dependency.write_text("frozen dependency\n", encoding="utf-8")
+    git("add", "frozen.txt", "core/data/item_bank_v4.py")
+    git("commit", "-qm", "freeze")
+    commit = git("rev-parse", "HEAD")
+    git("tag", "-a", "experiment-freeze-test", "-m", "freeze test")
+
+    evidence = verify_repository_binding(
+        repo,
+        runner_commit=commit,
+        experiment_tag="experiment-freeze-test",
+        analysis_plan_commit=commit,
+        frozen_paths=("frozen.txt", "core/data/item_bank_v4.py"),
+    )
+    assert evidence["head"] == evidence["tag_commit"] == commit
+    assert evidence["tag_type"] == "tag"
+
+    dependency.write_text("dirty dependency\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="frozen worktree"):
+        verify_repository_binding(
+            repo,
+            runner_commit=commit,
+            experiment_tag="experiment-freeze-test",
+            analysis_plan_commit=commit,
+            frozen_paths=("frozen.txt", "core/data/item_bank_v4.py"),
+        )

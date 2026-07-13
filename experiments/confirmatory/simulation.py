@@ -221,12 +221,21 @@ def run_journey(
         if arm in {"B", "C"}:
             fixed_seen_families.add(selected.family_id)
         call_counters["selector_should_stop"] += 1
-        confidence_stop = production_confidence_stop(
+        policy_stop = production_confidence_stop(
             node,
             spec.target_node,
             asked=position,
-            stop_budget_items=config.stop_budget_items,
+            stop_budget_items=config.max_items,
         )
+        confidence_stop = policy_stop
+        if position == config.max_items:
+            call_counters["selector_should_stop"] += 1
+            confidence_stop = production_confidence_stop(
+                node,
+                spec.target_node,
+                asked=position,
+                stop_budget_items=config.stop_budget_items,
+            )
         event = {
             **envelope,
             "record_type": "confirmatory_event",
@@ -253,7 +262,8 @@ def run_journey(
             "direct_answers_before": direct_before,
             "direct_answers_after": direct_after,
             "eig": eig,
-            "production_should_stop": bool(confidence_stop),
+            "production_should_stop": bool(policy_stop),
+            "production_confidence_should_stop": bool(confidence_stop),
         }
         events.append(event)
         snapshots[position] = {
@@ -382,6 +392,11 @@ def _build_views(
                     budget, ""
                 ),
                 "held_out_outcomes": outcomes,
+                "held_out_brier_interpretation": (
+                    "internal_calibration_only"
+                    if spec.condition == "matched"
+                    else "misspecified_stress_condition"
+                ),
                 **held_out_score,
                 **prefix_repeats,
             }

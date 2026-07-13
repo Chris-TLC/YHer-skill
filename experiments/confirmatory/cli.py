@@ -25,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-id", default="confirmatory-v1")
     parser.add_argument("--runner-commit")
     parser.add_argument("--experiment-tag")
+    parser.add_argument("--run-started-at-utc")
     parser.add_argument("--config", type=Path)
     return parser
 
@@ -35,8 +36,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.validate_only:
         print(json.dumps(validate_definition(config), ensure_ascii=False, sort_keys=True))
         return 0
-    if not args.runner_commit or not args.experiment_tag:
-        raise SystemExit("data execution requires --runner-commit and --experiment-tag")
+    if not args.runner_commit or not args.experiment_tag or not args.run_started_at_utc:
+        raise SystemExit(
+            "data execution requires --runner-commit, --experiment-tag, and "
+            "--run-started-at-utc"
+        )
     result = execute(
         config,
         output_root=args.output_root,
@@ -46,6 +50,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         limit_shards=args.limit_shards,
         runner_commit=args.runner_commit,
         experiment_tag=args.experiment_tag,
+        run_started_at_utc=args.run_started_at_utc,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0

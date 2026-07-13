@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -37,7 +38,12 @@ def load_catalog_context(
         require_simulated_event_envelope(record)
     census = summary.get("census") or {}
     _validate_census_contract(census, records, config)
-    input_sha256 = _validate_and_collect_inputs(summary, summary_path, records_path)
+    input_sha256 = _validate_and_collect_inputs(
+        summary,
+        summary_path,
+        records_path,
+        config=config,
+    )
 
     catalog = ItemCatalog.from_default_data()
     open_nodes = catalog.open_nodes()
@@ -201,30 +207,51 @@ def _validate_census_contract(
             raise ValueError(f"S0 census {field} must remain {value}")
     if len(records) != 27:
         raise ValueError("S0 prerequisite records must contain all 27 open nodes")
-    if str(config.raw["analysis_plan_commit"]) != str(
+    if str(config.raw["census_analysis_plan_commit"]) != str(
         records[0].get("provenance", {}).get("analysis_plan_commit")
     ):
-        raise ValueError("config analysis-plan commit differs from S0 provenance")
+        raise ValueError("config census-plan commit differs from S0 provenance")
 
 
 def _validate_and_collect_inputs(
     summary: Mapping[str, Any],
     summary_path: Path,
     records_path: Path,
+    *,
+    config,
 ) -> dict[str, dict[str, str]]:
     provenance = summary.get("provenance") or {}
+    census_plan_commit = str(provenance.get("analysis_plan_commit", ""))
+    if census_plan_commit != str(config.raw["census_analysis_plan_commit"]):
+        raise ValueError("S0 summary census-plan commit differs from frozen config")
     output: dict[str, dict[str, str]] = {}
     for name, metadata in sorted((provenance.get("input_sha256") or {}).items()):
         path = Path(str(metadata["path"]))
         if not path.is_absolute():
             path = REPO_ROOT / path
-        actual = _sha256(path)
+        actual = (
+            _git_blob_sha256(census_plan_commit, str(metadata["path"]))
+            if name == "analysis_plan"
+            else _sha256(path)
+        )
         if actual != str(metadata["sha256"]):
             raise ValueError(f"confirmatory input hash changed: {name}")
         output[str(name)] = {
             "path": _display_path(path),
             "sha256": actual,
+            **(
+                {
+                    "source_kind": "git_blob",
+                    "source_commit": census_plan_commit,
+                }
+                if name == "analysis_plan"
+                else {"source_kind": "working_tree"}
+            ),
         }
+    output["confirmatory_analysis_plan"] = {
+        "path": "experiments/analysis_plan.md",
+        "sha256": _sha256(REPO_ROOT / "experiments" / "analysis_plan.md"),
+    }
     for name, path in (
         ("census_summary", summary_path),
         ("census_records", records_path),
@@ -247,6 +274,19 @@ def _read_jsonl(path: Path) -> Iterable[dict[str, Any]]:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _git_blob_sha256(commit: str, relative_path: str) -> str:
+    if Path(relative_path).is_absolute() or ".." in Path(relative_path).parts:
+        raise ValueError("historical input path must be repository-relative")
+    completed = subprocess.run(
+        ("git", "-C", str(REPO_ROOT), "show", f"{commit}:{relative_path}"),
+        check=False,
+        capture_output=True,
+    )
+    if completed.returncode != 0:
+        raise ValueError("cannot read historical S0 analysis-plan blob")
+    return hashlib.sha256(completed.stdout).hexdigest()
 
 
 def _display_path(path: Path) -> str:

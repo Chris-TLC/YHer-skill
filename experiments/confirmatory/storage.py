@@ -41,12 +41,24 @@ def write_shards_atomic(
 
     def write_one(entry: tuple[str, Sequence[Mapping[str, Any]]]) -> str:
         shard_id, rows = entry
+        model_ids = sorted({str(record["model_id"]) for record in rows})
+        expected_manifest = {
+            **metadata,
+            "shard_id": shard_id,
+            "model_id": ";".join(model_ids)
+            if model_ids
+            else "programmatic-empty-shard",
+        }
         path = require_simulation_output_path(
             output / _shard_filename(shard_id),
             repo_root=repo_root,
             temp_root=temp_root,
         )
-        if resume and validate_shard(path, config_sha256=config_sha256):
+        if resume and validate_shard(
+            path,
+            config_sha256=config_sha256,
+            expected_manifest=expected_manifest,
+        ):
             return "skipped"
         content = build_shard_bytes(
             shard_id,
@@ -62,7 +74,11 @@ def write_shards_atomic(
                 handle.write(content)
                 handle.flush()
                 os.fsync(handle.fileno())
-            if not validate_shard(temporary, config_sha256=config_sha256):
+            if not validate_shard(
+                temporary,
+                config_sha256=config_sha256,
+                expected_manifest=expected_manifest,
+            ):
                 raise ValueError(f"temporary shard validation failed: {shard_id}")
             os.replace(temporary, path)
         finally:
@@ -94,6 +110,7 @@ def build_shard_bytes(
     payload = b"".join(canonical_json_bytes(record) + b"\n" for record in sorted_records)
     model_ids = sorted({str(record["model_id"]) for record in sorted_records})
     manifest = {
+        **dict(manifest_metadata or {}),
         "simulated": True,
         "persona_id": f"confirmatory-shard:{shard_id}",
         "provider": "programmatic",
@@ -103,13 +120,18 @@ def build_shard_bytes(
         "config_sha256": config_sha256,
         "record_count": len(sorted_records),
         "records_sha256": hashlib.sha256(payload).hexdigest(),
-        **dict(manifest_metadata or {}),
     }
     require_simulated_event_envelope(manifest)
     return canonical_json_bytes(manifest) + b"\n" + payload
 
 
-def validate_shard(path: str | Path, *, config_sha256: str) -> bool:
+def validate_shard(
+    path: str | Path,
+    *,
+    config_sha256: str,
+    expected_manifest: Mapping[str, Any] | None = None,
+    require_isolation_attestation: bool = False,
+) -> bool:
     candidate = Path(path)
     if not candidate.is_file():
         return False
@@ -123,6 +145,17 @@ def validate_shard(path: str | Path, *, config_sha256: str) -> bool:
             return False
         if manifest.get("config_sha256") != config_sha256:
             return False
+        for key, expected in (expected_manifest or {}).items():
+            if manifest.get(key) != expected:
+                return False
+        if require_isolation_attestation:
+            assertion = manifest.get("protected_filesystem_assertion")
+            if not isinstance(assertion, Mapping):
+                return False
+            if assertion.get("unchanged") is not True:
+                return False
+            if assertion.get("before_sha256") != assertion.get("after_sha256"):
+                return False
         payload = b"".join(lines[1:])
         if manifest.get("records_sha256") != hashlib.sha256(payload).hexdigest():
             return False
@@ -139,6 +172,14 @@ def validate_shard(path: str | Path, *, config_sha256: str) -> bool:
 def read_shard_records(path: str | Path) -> list[dict[str, Any]]:
     lines = Path(path).read_text(encoding="utf-8").splitlines()
     return [json.loads(line) for line in lines[1:] if line.strip()]
+
+
+def read_shard_manifest(path: str | Path) -> dict[str, Any]:
+    with Path(path).open(encoding="utf-8") as handle:
+        value = json.loads(handle.readline())
+    if not isinstance(value, dict):
+        raise ValueError("shard manifest must be an object")
+    return value
 
 
 def shard_file_path(output_dir: str | Path, shard_id: str) -> Path:

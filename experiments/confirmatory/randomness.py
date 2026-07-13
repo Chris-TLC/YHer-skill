@@ -53,7 +53,7 @@ class SharedResponseStreams:
 
     @classmethod
     def build(cls, base_material: str, max_items: int, config) -> "SharedResponseStreams":
-        response_rng = random.Random(seed128(f"{base_material}|response-noise"))
+        response_rng = random.Random(seed128(base_material))
         slip_rng = random.Random(seed128(f"{base_material}|slip"))
         guess_rng = random.Random(seed128(f"{base_material}|guess"))
         ability_rng = random.Random(seed128(f"{base_material}|ability"))

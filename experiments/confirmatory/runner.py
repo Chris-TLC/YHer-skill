@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -11,11 +10,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from experiments.s0_census import guarded_simulation_run, require_simulation_output_path
+from experiments.s0_census import guarded_simulation_run
 
 from .catalog import load_catalog_context
 from .config import REPO_ROOT
 from .models import CatalogContext, UnitSpec
+from . import provenance
 from .simulation import production_model_id, run_paired_unit
 from .storage import (
     read_shard_records,
@@ -24,6 +24,8 @@ from .storage import (
     write_run_manifest_atomic,
     write_shards_atomic,
 )
+
+verify_repository_binding = provenance.verify_repository_binding
 
 
 @dataclass(frozen=True)
@@ -41,7 +43,7 @@ class ShardSpec:
 
 
 def validate_definition(config, context: CatalogContext | None = None) -> dict[str, Any]:
-    _assert_frozen_config(config)
+    provenance.assert_frozen_config(config)
     catalog_context = context or load_catalog_context(config)
     return {
         "open_nodes": len(catalog_context.targets),
@@ -89,41 +91,32 @@ def execute(
     limit_shards: int | None,
     runner_commit: str,
     experiment_tag: str,
+    run_started_at_utc: str,
     context: CatalogContext | None = None,
     repo_root: str | Path = REPO_ROOT,
     temp_root: str | Path = "/tmp/yher_sprint2",
+    verify_repository_binding: bool = True,
 ) -> dict[str, Any]:
-    sys.dont_write_bytecode = True
-    with guarded_simulation_run(repo_root) as isolation:
-        result = _execute_guarded(
-            config,
-            output_root=output_root,
-            run_id=run_id,
-            workers=workers,
-            resume=resume,
-            limit_shards=limit_shards,
-            runner_commit=runner_commit,
-            experiment_tag=experiment_tag,
-            context=context,
-            repo_root=repo_root,
-            temp_root=temp_root,
+    if not sys.dont_write_bytecode:
+        raise RuntimeError(
+            "confirmatory data execution requires python -B or "
+            "PYTHONDONTWRITEBYTECODE=1 from process start"
         )
-    assertion = {
-        "before_sha256": isolation["before"]["digest"],
-        "after_sha256": isolation["after"]["digest"],
-        "unchanged": isolation["unchanged"],
-        "coverage": isolation["before"]["coverage"],
-    }
-    manifest_path = Path(result["manifest"])
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest["protected_filesystem_assertion"] = assertion
-    write_run_manifest_atomic(
-        manifest,
-        output_dir=manifest_path.parent,
+    return _execute_guarded(
+        config,
+        output_root=output_root,
+        run_id=run_id,
+        workers=workers,
+        resume=resume,
+        limit_shards=limit_shards,
+        runner_commit=runner_commit,
+        experiment_tag=experiment_tag,
+        run_started_at_utc=run_started_at_utc,
+        context=context,
         repo_root=repo_root,
         temp_root=temp_root,
+        verify_repository_binding=verify_repository_binding,
     )
-    return {**result, "protected_filesystem_assertion": assertion}
 
 
 def _execute_guarded(
@@ -136,22 +129,38 @@ def _execute_guarded(
     limit_shards: int | None,
     runner_commit: str,
     experiment_tag: str,
+    run_started_at_utc: str,
     context: CatalogContext | None = None,
     repo_root: str | Path = REPO_ROOT,
     temp_root: str | Path = "/tmp/yher_sprint2",
+    verify_repository_binding: bool = True,
 ) -> dict[str, Any]:
-    if not re.fullmatch(r"[A-Za-z0-9._-]+", run_id):
-        raise ValueError("run_id may contain only letters, numbers, dot, underscore, and dash")
+    if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?", run_id):
+        raise ValueError("run_id must be one safe non-dot path segment")
     if not re.fullmatch(r"[0-9a-f]{40}", runner_commit):
         raise ValueError("runner_commit must be a full lowercase git SHA")
     if not experiment_tag.strip():
         raise ValueError("experiment_tag must be supplied at execution")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z", run_started_at_utc):
+        raise ValueError("run_started_at_utc must be an explicit UTC ISO-8601 timestamp")
+    provenance.validate_run_timestamp(config, run_started_at_utc)
     if workers < 1:
         raise ValueError("workers must be positive")
+    repository_binding = (
+        provenance.verify_repository_binding(
+            repo_root,
+            runner_commit=runner_commit,
+            experiment_tag=experiment_tag,
+            analysis_plan_commit=str(config.raw["analysis_plan_commit"]),
+        )
+        if verify_repository_binding
+        else {"verified": False, "reason": "test_only_injected_context"}
+    )
     catalog_context = context or load_catalog_context(config)
     validation = validate_definition(config, catalog_context)
-    output = require_simulation_output_path(
-        Path(output_root) / run_id,
+    output = provenance.confirmatory_output_path(
+        output_root,
+        run_id=run_id,
         repo_root=repo_root,
         temp_root=temp_root,
     )
@@ -163,6 +172,9 @@ def _execute_guarded(
     model_id = production_model_id(runner_commit)
     manifest_metadata = {
         "analysis_plan_commit": str(config.raw["analysis_plan_commit"]),
+        "census_analysis_plan_commit": str(
+            config.raw["census_analysis_plan_commit"]
+        ),
         "runner_commit": runner_commit,
         "experiment_tag": experiment_tag,
         "config_sha256": config.sha256,
@@ -171,8 +183,10 @@ def _execute_guarded(
         "bootstrap_seed": int(config.raw["bootstrap_seed"]),
         "census_seed": int(config.raw["census_seed"]),
         "input_sha256": catalog_context.input_sha256,
-        "created_at_utc": str(config.raw["artifact_created_at_utc"]),
+        "config_frozen_at_utc": str(config.raw["config_frozen_at_utc"]),
+        "run_started_at_utc": run_started_at_utc,
         "repository_head": runner_commit,
+        "repository_binding": repository_binding,
     }
     totals = {"written": 0, "skipped": 0}
     for start in range(0, len(specs), workers):
@@ -186,26 +200,33 @@ def _execute_guarded(
                     shard_file_path(output, spec.shard_id),
                     config=config,
                     shard_spec=spec,
+                    model_id=model_id,
+                    provenance=manifest_metadata,
                 )
             )
         ]
         totals["skipped"] += len(batch) - len(pending)
-        with ThreadPoolExecutor(max_workers=workers) as executor:
-            built = list(
-                executor.map(
-                    lambda spec: (
-                        spec.shard_id,
-                        build_shard_records(
-                            spec,
-                            config=config,
-                            context=catalog_context,
-                            model_id=model_id,
-                            provenance=manifest_metadata,
-                        ),
-                    ),
-                    pending,
-                )
-            )
+        built: list[tuple[str, list[dict[str, Any]]]] = []
+        assertion: dict[str, Any] | None = None
+        if pending:
+            with guarded_simulation_run(repo_root) as isolation:
+                with ThreadPoolExecutor(max_workers=workers) as executor:
+                    built = list(
+                        executor.map(
+                            lambda spec: (
+                                spec.shard_id,
+                                build_shard_records(
+                                    spec,
+                                    config=config,
+                                    context=catalog_context,
+                                    model_id=model_id,
+                                    provenance=manifest_metadata,
+                                ),
+                            ),
+                            pending,
+                        )
+                    )
+            assertion = provenance.isolation_assertion(isolation)
         if built:
             result = write_shards_atomic(
                 dict(built),
@@ -215,7 +236,10 @@ def _execute_guarded(
                 resume=False,
                 repo_root=repo_root,
                 temp_root=temp_root,
-                manifest_metadata=manifest_metadata,
+                manifest_metadata={
+                    **manifest_metadata,
+                    "protected_filesystem_assertion": assertion,
+                },
             )
             totals["written"] += result["written"]
         for spec in pending:
@@ -223,6 +247,8 @@ def _execute_guarded(
                 shard_file_path(output, spec.shard_id),
                 config=config,
                 shard_spec=spec,
+                model_id=model_id,
+                provenance=manifest_metadata,
             ):
                 raise ValueError(f"written shard is incomplete: {spec.shard_id}")
 
@@ -239,6 +265,9 @@ def _execute_guarded(
     full_shard_count = len(catalog_context.targets) * len(config.truth_states) * len(
         config.conditions
     )
+    run_isolation = provenance.aggregate_isolation_assertions(
+        [shard_file_path(output, spec.shard_id) for spec in specs]
+    )
     manifest = {
         "simulated": True,
         "persona_id": f"confirmatory-run:{run_id}",
@@ -253,6 +282,7 @@ def _execute_guarded(
         "expected_journey_count": len(specs) * config.replicates * len(config.arms),
         "shards": shard_entries,
         "validation": validation,
+        "protected_filesystem_assertion": run_isolation,
         **manifest_metadata,
     }
     manifest_path = write_run_manifest_atomic(
@@ -266,6 +296,7 @@ def _execute_guarded(
         "selected_shards": len(specs),
         "manifest": str(manifest_path),
         "status": manifest["status"],
+        "protected_filesystem_assertion": run_isolation,
     }
 
 
@@ -304,6 +335,8 @@ def validate_shard_records(
     *,
     config,
     shard_spec: ShardSpec,
+    model_id: str | None = None,
+    provenance: Mapping[str, Any] | None = None,
 ) -> None:
     rows = list(records)
     expected_count = config.replicates * len(config.arms)
@@ -318,6 +351,10 @@ def validate_shard_records(
     for row in rows:
         if row.get("record_type") != "confirmatory_journey":
             raise ValueError("shard contains a non-journey record")
+        if model_id is not None and row.get("model_id") != model_id:
+            raise ValueError("journey model_id differs from the frozen runner")
+        if provenance is not None and row.get("provenance") != dict(provenance):
+            raise ValueError("journey provenance differs from the frozen run")
         if (
             row.get("target_node"),
             row.get("truth"),
@@ -332,12 +369,17 @@ def validate_shard_records(
         actual_keys.add(key)
         actual = int(row["actual_administered_count"])
         events = list(row["events"])
+        if provenance is not None and any(
+            event.get("provenance") != dict(provenance) for event in events
+        ):
+            raise ValueError("event provenance differs from the frozen run")
         if actual != len(events):
             raise ValueError("actual administered count differs from event count")
         counters = row["call_counters"]
         if int(counters["mastery_observe"]) != actual:
             raise ValueError("observe calls must equal administrations")
-        if int(counters["selector_should_stop"]) != actual:
+        expected_stop_calls = actual + int(actual == config.max_items)
+        if int(counters["selector_should_stop"]) != expected_stop_calls:
             raise ValueError("should_stop calls must equal administrations")
         expected_select = actual if row["arm"] == "A" else 0
         if int(counters["selector_select_next"]) != expected_select:
@@ -350,43 +392,34 @@ def validate_shard_records(
         raise ValueError("shard is missing a replicate/arm pairing")
 
 
-def _complete_shard(path: Path, *, config, shard_spec: ShardSpec) -> bool:
-    if not validate_shard(path, config_sha256=config.sha256):
+def _complete_shard(
+    path: Path,
+    *,
+    config,
+    shard_spec: ShardSpec,
+    model_id: str,
+    provenance: Mapping[str, Any],
+) -> bool:
+    expected_manifest = {
+        **dict(provenance),
+        "shard_id": shard_spec.shard_id,
+        "model_id": model_id,
+    }
+    if not validate_shard(
+        path,
+        config_sha256=config.sha256,
+        expected_manifest=expected_manifest,
+        require_isolation_attestation=True,
+    ):
         return False
     try:
         validate_shard_records(
             read_shard_records(path),
             config=config,
             shard_spec=shard_spec,
+            model_id=model_id,
+            provenance=provenance,
         )
     except (KeyError, TypeError, ValueError):
         return False
     return True
-
-
-def _assert_frozen_config(config) -> None:
-    exact = {
-        "truth_states": ("M", "P", "C", "U"),
-        "arms": ("A", "B", "C"),
-        "conditions": ("matched", "misspecified"),
-        "budgets": (9, 15, 25),
-    }
-    for field, expected in exact.items():
-        if tuple(getattr(config, field)) != expected:
-            raise ValueError(f"frozen confirmatory {field} changed")
-    scalar = {
-        "replicates": 50,
-        "max_items": 25,
-        "stop_budget_items": 26,
-        "master_seed": 20260713,
-    }
-    for field, expected in scalar.items():
-        if int(getattr(config, field)) != expected:
-            raise ValueError(f"frozen confirmatory {field} changed")
-    if tuple(float(value) for value in config.raw["fixed_difficulty_ladder"]) != (
-        0.25,
-        0.5,
-        0.75,
-        1.0,
-    ):
-        raise ValueError("frozen fixed difficulty ladder changed")
