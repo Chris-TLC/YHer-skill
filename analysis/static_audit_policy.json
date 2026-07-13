@@ -1,0 +1,27 @@
+{
+  "schema_version": "yher.analysis-static-audit.v1",
+  "adopted_date": "2026-07-14",
+  "basis": "independent_static_review_before_result_interpretation",
+  "frozen_analysis_plan_modified": false,
+  "conditional_metric_zero_denominator": {
+    "all_targets_undefined_bootstrap_iteration": "record_NA_and_exclude_from_percentile_sample",
+    "bootstrap_target_iteration": "record_NA_and_exclude_target_for_that_iteration",
+    "disclose": [
+      "point_undefined_target_count",
+      "point_undefined_target_ids",
+      "attempted_iterations",
+      "defined_iterations",
+      "all_targets_undefined_iterations",
+      "undefined_target_iterations"
+    ],
+    "point_target": "record_NA_and_exclude_from_conditional_mean",
+    "redraw_until_defined": false
+  },
+  "bootstrap": {
+    "attempted_iterations": 10000,
+    "seed": 2026071301,
+    "unit": "target_stratified_paired_replicate"
+  },
+  "scope": "post_collection_static_audit_clarification_only",
+  "result_direction_used": false
+}
