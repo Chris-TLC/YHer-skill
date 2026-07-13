@@ -1,0 +1,11 @@
+{
+  "collection_lock_sha256": "490a0bfb5f124ad0a2d71f56da7e49ca890ceec5c8899d2ff4adf4d391c64215",
+  "collection_sha256": "01fe1839a629ec0f86b36dab2283e35ccf6dbd4e8febd1d7803dda834afb282e",
+  "config_sha256": "e25b7455b511f0b67a7bf04592c1de6d168fb44a36d37be5585cc4cdff06dc27",
+  "h5_analysis_plan_commit": "289be3bc4634336a8598ad80c0de084afdeba51d",
+  "preparation_sha256": "00a953b73db9be89819fad573aa83e50b500b909ea7643afc81f7d3cb7b4300d",
+  "record_type": "llm_sim_h5_collection_lock",
+  "run_id": "llm-personas-v1",
+  "s2_git_head": "e60b26aa731a388d510a65689fade44821ed8f53",
+  "schema_version": "yher.h5.collection_lock.v1"
+}
