@@ -21,12 +21,14 @@ YHer 是一个面向上海高中化学的证据约束学习闭环：用真题做
 
 要求 Python 3.11 或更新版本。启动脚本会在仓库内自举 `.venv-demo`，安装 [requirements-demo.txt](requirements-demo.txt) 中固定版本的最小依赖，并以单 worker 监听本机回环地址。
 
-`run_demo.sh` 默认允许已配置的付费 LLM 通道。要做零网络、零付费的离线复现，必须显式关闭：
+`run_demo.sh` 默认允许已配置的付费 LLM 通道。要做零 provider LLM 调用、零付费的确定性复现，必须显式关闭：
 
 ```bash
 cd yihuier-chemistry-skill
 YHER_ENABLE_PAID_LLM=0 ./deploy/run_demo.sh
 ```
+
+首次启动若缺少依赖，脚本可能通过 `pip` 联网安装；只有已准备好 `.venv-demo` 或本地依赖缓存时，上述运行流程才同时满足外网隔离。
 
 打开 [http://127.0.0.1:8700](http://127.0.0.1:8700)。健康检查：
 
@@ -111,12 +113,13 @@ adapters/store/local_json.py
 
 这里的 `failures=[]` 只表示对应自动化浏览器机械门通过。后续实现已关闭首题计数、前置标题、100 字残句和错误层级不驱动支架四个问题；post-fix 真实 UI 已核到完整零基础起点、难度支架、两错额外支架，以及 strong 3/3 后完成 practice + 2 held-out 的 verified 旅程。公开讲解仍严格定位为 DeepSeek 辅助的 verified standard-solution authoritative projection，不宣称模型可自由生成可靠化学事实。
 
-安装开发依赖后可运行：
+创建同一套 runtime/dev 虚拟环境后可运行：
 
 ```bash
-python3 -m pip install -r requirements-dev.txt
-python3 -m pytest tests -q
-python3 -m pytest tests/test_synthetic_scenarios.py -q
+python3 -m venv .venv-demo
+.venv-demo/bin/python -m pip install -r requirements-demo.txt -r requirements-dev.txt
+.venv-demo/bin/python -m pytest tests -q
+.venv-demo/bin/python -m pytest tests/test_synthetic_scenarios.py -q
 ```
 
 完整 QA 证据保存在本机交付目录 `/tmp/yher_demo_overnight/`，该目录不是仓库运行依赖。
