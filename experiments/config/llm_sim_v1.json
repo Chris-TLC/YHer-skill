@@ -1,0 +1,27 @@
+{
+  "schema_version": "yher.llm_sim.config.v1",
+  "run_id": "llm-personas-v1",
+  "analysis_plan_commit": "6c559b6f2f8cbe9ab61808c351df3743dca1a0be",
+  "persona_seed_derivation_version": "yher-llm-persona-v1",
+  "prompt_version": "yher-llm-persona-prompt-v1",
+  "study_seed": 2026071302,
+  "pair_count": 25,
+  "persona_count": 50,
+  "arms": ["A", "B"],
+  "providers": ["deepseek", "glm", "kimi", "minimax", "doubao", "tongyi"],
+  "max_items": 15,
+  "minimum_complete_per_cell": 45,
+  "maximum_prompt_rewrites": 1,
+  "accuracy_bands": {
+    "weak_upper_exclusive": 0.4,
+    "strong_lower_exclusive": 0.75
+  },
+  "manipulation_mapping_policy": "explicit_machine_annotation_only",
+  "provider_policy": {
+    "max_attempts": 3,
+    "failure_threshold": 3,
+    "base_backoff_seconds": 1.0,
+    "max_backoff_seconds": 30.0,
+    "cooldown_seconds": 120.0
+  }
+}
