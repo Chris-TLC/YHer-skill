@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -246,6 +247,19 @@ def test_real_prerequisite_census_matches_frozen_sanity() -> None:
     )
 
 
+def test_build_provenance_binds_v4_service_exclusions() -> None:
+    from core.data.item_bank_v4 import V4_SERVICE_EXCLUSIONS
+    from experiments.s0_census import REPO_ROOT, build_provenance
+
+    digest = hashlib.sha256(V4_SERVICE_EXCLUSIONS.read_bytes()).hexdigest()
+    provenance = build_provenance()
+
+    assert provenance["input_sha256"]["v4_service_exclusions"] == {
+        "path": V4_SERVICE_EXCLUSIONS.relative_to(REPO_ROOT).as_posix(),
+        "sha256": digest,
+    }
+
+
 def test_census_artifacts_wrap_every_json_record_with_envelope_and_provenance(
     tmp_path: Path,
 ) -> None:
@@ -290,3 +304,45 @@ def test_census_artifacts_wrap_every_json_record_with_envelope_and_provenance(
         assert record["model_id"] == "deterministic-census-v1"
         assert record["provenance"] == provenance
     assert "eligible targets: 1/1" in worklog.read_text(encoding="utf-8")
+
+
+def test_worklog_names_all_four_structurally_excluded_targets(tmp_path: Path) -> None:
+    from experiments.s0_census import write_census_artifacts
+
+    excluded = [
+        "化学计量（摩尔/阿伏伽德罗）",
+        "原子结构",
+        "基本操作",
+        "物质分类",
+    ]
+    repo = tmp_path / "repo"
+    temp_root = tmp_path / "yher_sprint2"
+    worklog = temp_root / "WORKLOG.md"
+    census = {
+        "open_node_count": 27,
+        "h1_h2_eligible_count": 23,
+        "structurally_prerequisite_free_count": 4,
+        "insufficient_prerequisite_coverage_count": 0,
+        "h1_h2_eligible_nodes": [],
+        "h1_h2_excluded_nodes": excluded,
+        "nodes": [],
+    }
+    provenance = {
+        "repository_head": "a" * 40,
+        "analysis_plan_commit": "b" * 40,
+        "config_sha256": "c" * 64,
+        "input_sha256": {"kg": "d" * 64, "r5": "e" * 64},
+    }
+
+    write_census_artifacts(
+        census,
+        provenance,
+        output_dir=repo / "data" / "sim_store" / "census",
+        worklog_path=worklog,
+        repo_root=repo,
+        temp_root=temp_root,
+    )
+
+    rendered = worklog.read_text(encoding="utf-8")
+    assert "excluded targets:" in rendered
+    assert all(name in rendered for name in excluded)

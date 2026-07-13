@@ -334,6 +334,9 @@ def write_census_artifacts(
         f"{census['structurally_prerequisite_free_count']}\n"
         "- insufficient prerequisite-family exclusions: "
         f"{census['insufficient_prerequisite_coverage_count']}\n"
+        "- excluded targets: "
+        + ", ".join(str(node) for node in census.get("h1_h2_excluded_nodes", ()))
+        + "\n"
         f"- analysis-plan commit: {provenance['analysis_plan_commit']}\n"
         f"- config sha256: {provenance['config_sha256']}\n"
         f"- records: {records_path}\n"
@@ -346,12 +349,17 @@ def write_census_artifacts(
 def build_provenance(repo_root: str | Path = REPO_ROOT) -> dict[str, Any]:
     """Bind the census to git state, frozen analysis plan, inputs, and baseline."""
     repository = Path(repo_root).expanduser().resolve(strict=False)
-    from core.data.item_bank_v4 import V4_MANIFEST, V4_USABILITY_R5
+    from core.data.item_bank_v4 import (
+        V4_MANIFEST,
+        V4_SERVICE_EXCLUSIONS,
+        V4_USABILITY_R5,
+    )
     from core.learning.item_catalog import DEFAULT_KG_MANIFEST, DEFAULT_V3_MANIFEST
 
     analysis_plan = repository / "experiments" / "analysis_plan.md"
     input_paths = {
         "v4_manifest": Path(V4_MANIFEST),
+        "v4_service_exclusions": Path(V4_SERVICE_EXCLUSIONS),
         "r5_usability": Path(V4_USABILITY_R5),
         "trusted_v3_manifest": Path(DEFAULT_V3_MANIFEST),
         "kg_manifest": Path(DEFAULT_KG_MANIFEST),
