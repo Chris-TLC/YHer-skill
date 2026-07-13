@@ -59,6 +59,10 @@ H5_LIFECYCLE_DENOMINATOR_FIELDS = (
     "missing_provider_count",
     "missing_required_revision_provider_count",
     "network_interruption_provider_count",
+    "model_drift_exclusion_provider_count",
+    "provider_configuration_exclusion_provider_count",
+    "pre_outcome_design_exclusion_provider_count",
+    "technical_interruption_provider_count",
     "post_calibration_exclusion_provider_count",
     "provider_lifecycle_counts",
 )
@@ -582,7 +586,7 @@ def _validate_artifacts(
         exclusion_keys.add(key)
     if set(drift_attempts) != exclusion_keys:
         raise H5ContractError(f"{provider} typed drift attempt lacks exclusion accounting")
-    return validated
+    return [dict(record) for record in records]
 
 
 def _validate_journey_semantics(
@@ -669,22 +673,29 @@ def _validate_provider_attempt(
     requested = str(manifest.get("model_id") or "")
     returned = record.get("returned_model_id")
     status = record.get("status")
-    common = all(
-        (
-            record.get("schema_version") == "yher.llm_sim.provider_attempt.v1",
-            record.get("requested_model_id") == requested,
-            record.get("panel_sha256") == manifest.get("panel_sha256"),
-            record.get("prompt_revision") == manifest.get("prompt_revision"),
-            record.get("run_started_at_utc") == manifest.get("run_started_at_utc"),
-            record.get("phase") in {"calibration", "journey"},
-            record.get("arm") in {None, "A", "B"},
-            int(record.get("position", -1)) >= 1,
-            int(record.get("attempt_number", -1)) >= 1,
-            int(record.get("retry_number", -1)) >= 0,
-            bool(str(record.get("item_id") or "")),
-            _usage_is_valid(record),
+    try:
+        common = all(
+            (
+                record.get("record_type") == "llm_sim_provider_attempt",
+                record.get("schema_version") == "yher.llm_sim.provider_attempt.v1",
+                record.get("run_id") == manifest.get("run_id"),
+                record.get("requested_model_id") == requested,
+                record.get("panel_sha256") == manifest.get("panel_sha256"),
+                record.get("prompt_version") == manifest.get("prompt_version"),
+                record.get("prompt_revision") == manifest.get("prompt_revision"),
+                record.get("run_started_at_utc")
+                == manifest.get("run_started_at_utc"),
+                record.get("phase") in {"calibration", "journey"},
+                record.get("arm") in {None, "A", "B"},
+                int(record.get("position", -1)) >= 1,
+                int(record.get("attempt_number", -1)) >= 1,
+                int(record.get("retry_number", -1)) >= 0,
+                bool(str(record.get("item_id") or "")),
+                _usage_is_valid(record),
+            )
         )
-    )
+    except (TypeError, ValueError, OverflowError):
+        common = False
     if status == "response":
         outcome = all(
             (
@@ -812,7 +823,8 @@ def _validate_provider_manifest(
         raise H5ContractError(
             f"{provider} run_started_at_utc must be strictly after the frozen amendment"
         )
-    _validate_artifacts(raw_root, manifest, provider)
+    records = _validate_artifacts(raw_root, manifest, provider)
+    _validated_provider_accounting(records, manifest, provider)
     return manifest, sha, relative
 
 
@@ -822,9 +834,10 @@ def _validate_rewrite_decision(
     provider: str,
 ) -> tuple[dict[str, Any], str, str] | None:
     relative = f"calibration_decisions/{provider}.json"
-    path, relative = _relative_path(raw_root, relative, "calibration decision")
-    if not path.is_file():
+    candidate = raw_root / relative
+    if not candidate.is_file() and not candidate.is_symlink():
         return None
+    path, relative = _relative_path(raw_root, relative, "calibration decision")
     decision, _, sha = _read_json(path, f"{provider} calibration decision")
     _require_envelope(decision, f"{provider} calibration decision", provider=provider)
     _internal_hash(decision, "decision_sha256", f"{provider} calibration decision")
@@ -924,7 +937,7 @@ def _provider_invalid_evidence(
         f"providers/{provider}__prompt-v1.json",
     )
     root = raw_root.resolve(strict=True)
-    evidence: dict[str, str | None] = {}
+    evidence: dict[str, tuple[str | None, str]] = {}
     lifecycle_payloads: list[bytes] = []
 
     def bind(relative: str, *, include_missing: bool) -> bytes | None:
@@ -933,20 +946,28 @@ def _provider_invalid_evidence(
             return None
         path = raw_root / rel
         try:
-            if not path.resolve(strict=False).is_relative_to(root):
-                return None
             if path.is_symlink():
-                evidence[rel.as_posix()] = None
+                target = os.readlink(path)
+                evidence[rel.as_posix()] = (
+                    hashlib.sha256(os.fsencode(target)).hexdigest(),
+                    "symlink",
+                )
+                return None
+            if not path.resolve(strict=False).is_relative_to(root):
+                evidence[rel.as_posix()] = (
+                    hashlib.sha256(os.fsencode(relative)).hexdigest(),
+                    "escaped",
+                )
                 return None
             if not path.is_file():
                 if include_missing:
-                    evidence[rel.as_posix()] = None
+                    evidence[rel.as_posix()] = (None, "missing")
                 return None
             payload = path.read_bytes()
         except OSError:
-            evidence[rel.as_posix()] = None
+            evidence[rel.as_posix()] = (None, "unreadable")
             return None
-        evidence[rel.as_posix()] = hashlib.sha256(payload).hexdigest()
+        evidence[rel.as_posix()] = (hashlib.sha256(payload).hexdigest(), "file")
         return payload
 
     for relative in lifecycle_relatives:
@@ -968,7 +989,11 @@ def _provider_invalid_evidence(
                 if isinstance(row, Mapping) and isinstance(row.get("path"), str):
                     bind(str(row["path"]), include_missing=True)
     return [
-        {"path": relative, "sha256": evidence[relative]}
+        {
+            "path": relative,
+            "sha256": evidence[relative][0],
+            "kind": evidence[relative][1],
+        }
         for relative in sorted(evidence)
     ]
 
@@ -1022,7 +1047,7 @@ def _build_provider_collection_row(
         decision_result = _validate_rewrite_decision(
             raw_root, preparation, provider
         )
-        if not v0_path.is_file():
+        if not v0_path.is_file() and not v0_path.is_symlink():
             if decision_result is not None:
                 raise H5ContractError(
                     f"{provider} calibration decision exists without a v0 manifest"
@@ -1055,7 +1080,7 @@ def _build_provider_collection_row(
         selected_revision = 1 if rewrite_marked else 0
         if selected_revision == 1:
             selected_path = raw_root / "providers" / f"{provider}__prompt-v1.json"
-            if not selected_path.is_file():
+            if not selected_path.is_file() and not selected_path.is_symlink():
                 assert decision_result is not None
                 return {
                     "provider": provider,
@@ -1092,7 +1117,7 @@ def _build_provider_collection_row(
                 decision_result[1] if decision_result is not None else None
             ),
         }
-    except (H5ContractError, OSError, TypeError, ValueError) as error:
+    except (H5ContractError, OSError, TypeError, ValueError, OverflowError) as error:
         return _invalid_provider_row(
             raw_root,
             provider,
@@ -1116,7 +1141,7 @@ def _build_collection(
         raw / "providers/qwen__prompt-v1.json",
         raw / "calibration_decisions/qwen.json",
     )
-    if any(path.is_file() for path in qwen_alias_paths):
+    if any(path.is_file() or path.is_symlink() for path in qwen_alias_paths):
         raise H5ContractError(
             "qwen is not a provider alias; use provider=tongyi and retain qwen only in model_id"
         )
@@ -1509,7 +1534,13 @@ def _validate_collection_manifest(
                 )
             ):
                 raise H5ContractError(f"{provider} revision zero bypasses v0 rewrite")
-            validated_rows.append({**dict(row), "manifest": manifest})
+            validated_rows.append(
+                {
+                    **dict(row),
+                    "manifest": manifest,
+                    "v0_manifest": v0,
+                }
+            )
         elif status in {"missing", "missing_required_revision"}:
             if status == "missing" and any(
                 row.get(key) is not None
@@ -1517,9 +1548,16 @@ def _validate_collection_manifest(
             ):
                 raise H5ContractError(f"{provider} missing row names an observation")
             if status == "missing":
-                if (raw_root / "providers" / f"{provider}.json").is_file() or (
-                    raw_root / "calibration_decisions" / f"{provider}.json"
-                ).is_file():
+                if (
+                    (raw_root / "providers" / f"{provider}.json").is_file()
+                    or (raw_root / "providers" / f"{provider}.json").is_symlink()
+                    or (
+                        raw_root / "calibration_decisions" / f"{provider}.json"
+                    ).is_file()
+                    or (
+                        raw_root / "calibration_decisions" / f"{provider}.json"
+                    ).is_symlink()
+                ):
                     raise H5ContractError(f"{provider} missing row now has an observation")
                 validated_rows.append(dict(row))
             else:
@@ -1536,7 +1574,12 @@ def _validate_collection_manifest(
                     or decision_result is None
                     or row.get("calibration_decision_path") != decision_result[2]
                     or row.get("calibration_decision_sha256") != decision_result[1]
-                    or (raw_root / "providers" / f"{provider}__prompt-v1.json").is_file()
+                    or (
+                        raw_root / "providers" / f"{provider}__prompt-v1.json"
+                    ).is_file()
+                    or (
+                        raw_root / "providers" / f"{provider}__prompt-v1.json"
+                    ).is_symlink()
                 ):
                     raise H5ContractError(
                         f"{provider} missing revision bindings changed"
@@ -1675,132 +1718,181 @@ def _event_accounting(
     }
 
 
-def _provider_analysis(
-    *,
+def _empty_provider_accounting(status: str) -> dict[str, Any]:
+    return {
+        "requests": 0,
+        "responses": 0,
+        "retries": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_yuan": 0.0,
+        "failed_requests": 0,
+        "drift_count": 0,
+        "failure_reasons": {},
+        "excluded_response_count": 0,
+        "accounting_status": status,
+    }
+
+
+def _invalid_provider_accounting(
     raw_root: Path,
     collection_row: Mapping[str, Any],
-    preparation: Mapping[str, Any],
-    personas: Sequence[Mapping[str, Any]],
-    panel: Mapping[str, Any],
-    mapping_available: bool,
-) -> tuple[
-    dict[str, Any],
-    dict[str, str],
-    dict[str, dict[str, float | int]],
-    dict[str, float | int],
-]:
-    provider = str(collection_row["provider"])
-    persona_ids = tuple(str(row["persona_id"]) for row in personas)
-    persona_set = set(persona_ids)
-    subjects = tuple(
-        f"{persona_id}|{arm}" for persona_id in persona_ids for arm in ("A", "B")
-    )
-    if collection_row.get("collection_status") != "collected":
-        return (
-            {
-                "provider": provider,
-                "collection_status": collection_row.get("collection_status"),
-                "provider_status": None,
-                "failure_category": None,
-                "prompt_revision": collection_row.get("prompt_revision"),
-                "model_id": collection_row.get("model_id"),
-                "manifest_path": collection_row.get("manifest_path"),
-                "manifest_sha256": collection_row.get("manifest_sha256"),
-                "invalid_reason_code": collection_row.get("invalid_reason_code"),
-                "completed_by_arm": {"A": 0, "B": 0},
-                "observed_journeys": 0,
-                "missing_journeys": 100,
-                "structural_incomplete_journeys": 0,
-                "weak_accuracy": None,
-                "strong_accuracy": None,
-                "weak_accuracy_gate": False,
-                "strong_accuracy_gate": False,
-                "target_gate_measurable": mapping_available,
-                "target_gate_pass": False,
-                "target_contrast": None,
-                "formal_design_match": False,
-                "calibration_grid_valid": False,
-                "calibration_structural_personas": 50,
-                "drift_count": 0,
-                "technical_valid": False,
-                "raw_complete": False,
-                "qualifies": False,
-                "exclusion_reasons": [str(collection_row.get("collection_status"))],
-            },
-            {subject: "NC" for subject in subjects},
-            {},
-            {
-                "requests": 0,
-                "responses": 0,
-                "retries": 0,
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "cost_yuan": 0.0,
-                "failed_requests": 0,
-                "drift_count": 0,
-                "failure_reasons": {},
-            },
-        )
-    manifest = collection_row["manifest"]
-    model_id = str(manifest.get("model_id") or "")
-    records = _artifact_records(raw_root, provider, manifest)
-    accounting = _event_accounting(records, provider, model_id)
-    response_attempts = {
-        (
-            str(record.get("persona_id") or ""),
-            str(record.get("phase") or ""),
-            record.get("arm"),
-            int(record.get("position", -1)),
-            str(record.get("item_id") or ""),
-        )
-        for record in records
-        if record.get("record_type") == "llm_sim_provider_attempt"
-        and record.get("status") == "response"
+    provider: str,
+) -> dict[str, Any]:
+    """Recover incurred cost only from attempt bytes bound into the collection."""
+
+    bound = {
+        str(row.get("path") or ""): row
+        for row in collection_row.get("invalid_evidence") or ()
+        if isinstance(row, Mapping)
+        and row.get("kind") == "file"
+        and isinstance(row.get("sha256"), str)
     }
-    for record in records:
-        if record.get("record_type") not in {
-            "llm_sim_calibration",
-            "llm_sim_journey",
-        }:
-            continue
-        if record.get("record_type") == "llm_sim_calibration":
-            continue
-        if str(record.get("persona_id") or "") not in persona_set:
-            continue
-        raw_events = record.get("events") or []
-        phase = (
-            "calibration"
-            if record.get("record_type") == "llm_sim_calibration"
-            else "journey"
-        )
-        arm = record.get("arm") if phase == "journey" else None
-        for event in raw_events:
-            key = (
-                str(record.get("persona_id") or ""),
-                phase,
-                arm,
-                int(event.get("position", -1)),
-                str(event.get("item_id") or ""),
-            )
-            if key not in response_attempts:
-                raise H5ContractError(
-                    f"{provider} outcome event lacks a manifest-bound response attempt"
-                )
-    manifest_accounting = manifest.get("accounting")
-    if not isinstance(manifest_accounting, Mapping):
-        raise H5ContractError(f"{provider} manifest accounting is missing")
-    for key in (
-        "requests",
-        "responses",
-        "retries",
-        "failed_requests",
-        "input_tokens",
-        "output_tokens",
+    attempts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    invalid_attempt_count = 0
+    for relative in (
+        f"providers/{provider}.json",
+        f"providers/{provider}__prompt-v1.json",
     ):
-        if int(manifest_accounting.get(key, -1)) != int(accounting[key]):
-            raise H5ContractError(f"{provider} manifest {key} accounting mismatch")
-    if not math.isclose(
-        float(manifest_accounting.get("cost_yuan", -1.0)),
+        manifest_evidence = bound.get(relative)
+        if manifest_evidence is None:
+            continue
+        try:
+            manifest_path, _ = _relative_path(raw_root, relative, "invalid manifest")
+            if manifest_path.is_symlink():
+                continue
+            manifest, _, manifest_sha = _read_json(
+                manifest_path, f"{provider} invalid provider manifest"
+            )
+            if manifest_sha != manifest_evidence.get("sha256"):
+                continue
+            _require_envelope(
+                manifest, f"{provider} invalid provider manifest", provider=provider
+            )
+        except (H5ContractError, OSError, TypeError, ValueError, OverflowError):
+            continue
+        artifacts = manifest.get("artifacts")
+        if not isinstance(artifacts, list):
+            continue
+        for artifact in artifacts:
+            if (
+                not isinstance(artifact, Mapping)
+                or artifact.get("record_type") != "llm_sim_provider_attempt"
+            ):
+                continue
+            artifact_relative = str(artifact.get("path") or "")
+            if artifact_relative in seen:
+                continue
+            artifact_evidence = bound.get(artifact_relative)
+            if artifact_evidence is None:
+                invalid_attempt_count += 1
+                continue
+            try:
+                path, normalized = _relative_path(
+                    raw_root, artifact_relative, "invalid provider attempt"
+                )
+                if path.is_symlink():
+                    raise H5ContractError("invalid provider attempt cannot be a symlink")
+                record, _, sha = _read_json(path, f"{provider} invalid provider attempt")
+                if any(
+                    (
+                        normalized != artifact_relative,
+                        sha != artifact.get("sha256"),
+                        sha != artifact_evidence.get("sha256"),
+                    )
+                ):
+                    raise H5ContractError("invalid provider attempt hash differs")
+                _require_envelope(
+                    record, f"{provider} invalid provider attempt", provider=provider
+                )
+                _validate_provider_attempt(record, manifest, provider)
+            except (H5ContractError, OSError, TypeError, ValueError, OverflowError):
+                invalid_attempt_count += 1
+                continue
+            seen.add(artifact_relative)
+            attempts.append(record)
+    if not attempts:
+        return _empty_provider_accounting("unavailable")
+    accounting = _event_accounting(attempts, provider, "")
+    status = (
+        "validated_manifest_bound_attempts"
+        if invalid_attempt_count == 0
+        else "partial_validated_manifest_bound_attempts"
+    )
+    return {
+        "requests": int(accounting["requests"]),
+        "responses": int(accounting["responses"]),
+        "retries": int(accounting["retries"]),
+        "input_tokens": int(accounting["input_tokens"]),
+        "output_tokens": int(accounting["output_tokens"]),
+        "cost_yuan": float(accounting["cost_yuan"]),
+        "failed_requests": int(accounting["failed_requests"]),
+        "drift_count": int(accounting["drift_count"]),
+        "failure_reasons": dict(accounting["failure_reasons"]),
+        "excluded_response_count": int(accounting["excluded_response_count"]),
+        "accounting_status": status,
+    }
+
+
+def _validated_provider_accounting(
+    records: Sequence[Mapping[str, Any]],
+    manifest: Mapping[str, Any],
+    provider: str,
+) -> dict[str, Any]:
+    """Reconstruct billing from typed attempts and verify the manifest claim."""
+
+    model_id = str(manifest.get("model_id") or "")
+    accounting = _event_accounting(records, provider, model_id)
+    try:
+        response_attempts = {
+            (
+                str(record.get("persona_id") or ""),
+                str(record.get("phase") or ""),
+                record.get("arm"),
+                int(record.get("position", -1)),
+                str(record.get("item_id") or ""),
+            )
+            for record in records
+            if record.get("record_type") == "llm_sim_provider_attempt"
+            and record.get("status") == "response"
+        }
+        for record in records:
+            record_type = record.get("record_type")
+            if record_type not in {"llm_sim_calibration", "llm_sim_journey"}:
+                continue
+            phase = "calibration" if record_type == "llm_sim_calibration" else "journey"
+            arm = record.get("arm") if phase == "journey" else None
+            for event in record.get("events") or ():
+                key = (
+                    str(record.get("persona_id") or ""),
+                    phase,
+                    arm,
+                    int(event.get("position", -1)),
+                    str(event.get("item_id") or ""),
+                )
+                if key not in response_attempts:
+                    raise H5ContractError(
+                        f"{provider} outcome event lacks a manifest-bound response attempt"
+                    )
+        manifest_accounting = manifest.get("accounting")
+        if not isinstance(manifest_accounting, Mapping):
+            raise H5ContractError(f"{provider} manifest accounting is missing")
+        for key in (
+            "requests",
+            "responses",
+            "retries",
+            "failed_requests",
+            "input_tokens",
+            "output_tokens",
+        ):
+            if int(manifest_accounting.get(key, -1)) != int(accounting[key]):
+                raise H5ContractError(f"{provider} manifest {key} accounting mismatch")
+        claimed_cost = float(manifest_accounting.get("cost_yuan", -1.0))
+    except (TypeError, ValueError, OverflowError) as error:
+        raise H5ContractError(f"{provider} manifest accounting is invalid") from error
+    if not math.isfinite(claimed_cost) or not math.isclose(
+        claimed_cost,
         float(accounting["cost_yuan"]),
         rel_tol=0.0,
         abs_tol=1e-10,
@@ -1825,9 +1917,188 @@ def _provider_analysis(
         "drift_count": int(accounting["drift_count"]),
         "failure_reasons": dict(accounting["failure_reasons"]),
         "excluded_response_count": int(accounting["excluded_response_count"]),
+        "accounting_status": "validated_manifest_bound_attempts",
     }
     if any(int(ledger[key]) < 0 for key in ("requests", "responses", "retries")):
         raise H5ContractError(f"{provider} manifest accounting cannot be negative")
+    return ledger
+
+
+def _merge_validated_provider_accounting(
+    ledgers: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    if not ledgers:
+        return _empty_provider_accounting("unavailable")
+    failure_reasons: dict[str, int] = {}
+    for ledger in ledgers:
+        for reason, count in (ledger.get("failure_reasons") or {}).items():
+            key = str(reason)
+            failure_reasons[key] = failure_reasons.get(key, 0) + int(count)
+    merged = {
+        key: sum(int(ledger.get(key) or 0) for ledger in ledgers)
+        for key in (
+            "requests",
+            "responses",
+            "retries",
+            "input_tokens",
+            "output_tokens",
+            "failed_requests",
+            "drift_count",
+            "excluded_response_count",
+        )
+    }
+    return {
+        **merged,
+        "cost_yuan": round(
+            sum(float(ledger.get("cost_yuan") or 0.0) for ledger in ledgers),
+            12,
+        ),
+        "failure_reasons": failure_reasons,
+        "accounting_status": "validated_manifest_bound_attempts",
+    }
+
+
+def _validated_collection_row_accounting(
+    raw_root: Path,
+    collection_row: Mapping[str, Any],
+    provider: str,
+) -> dict[str, Any]:
+    status = collection_row.get("collection_status")
+    manifests: list[Mapping[str, Any]] = []
+    if status == "missing_required_revision":
+        v0_manifest = collection_row.get("v0_manifest")
+        if not isinstance(v0_manifest, Mapping):
+            raise H5ContractError(f"{provider} missing revision lacks its bound v0 manifest")
+        manifests.append(v0_manifest)
+    elif status == "collected":
+        if collection_row.get("prompt_revision") == 1:
+            v0_manifest = collection_row.get("v0_manifest")
+            if not isinstance(v0_manifest, Mapping):
+                raise H5ContractError(f"{provider} prompt revision lacks its bound v0 manifest")
+            manifests.append(v0_manifest)
+        manifest = collection_row.get("manifest")
+        if not isinstance(manifest, Mapping):
+            raise H5ContractError(f"{provider} collected row lacks its selected manifest")
+        manifests.append(manifest)
+    else:
+        raise H5ContractError(f"{provider} collection row has no validated accounting")
+    ledgers = []
+    for manifest in manifests:
+        records = _artifact_records(raw_root, provider, manifest)
+        ledgers.append(_validated_provider_accounting(records, manifest, provider))
+    return _merge_validated_provider_accounting(ledgers)
+
+
+def _excluded_provider_analysis_result(
+    collection_row: Mapping[str, Any],
+    personas: Sequence[Mapping[str, Any]],
+    *,
+    mapping_available: bool,
+    ledger: Mapping[str, Any],
+    reason_code: str | None = None,
+) -> tuple[
+    dict[str, Any],
+    dict[str, str],
+    dict[str, dict[str, float | int]],
+    dict[str, Any],
+]:
+    provider = str(collection_row["provider"])
+    status = "invalid_excluded" if reason_code else str(
+        collection_row.get("collection_status")
+    )
+    subjects = tuple(
+        f"{row['persona_id']}|{arm}" for row in personas for arm in ("A", "B")
+    )
+    manifest = collection_row.get("manifest")
+    manifest = manifest if isinstance(manifest, Mapping) else {}
+    return (
+        {
+            "provider": provider,
+            "collection_status": status,
+            "provider_status": manifest.get("status"),
+            "failure_category": manifest.get("failure_category"),
+            "exclusion_reason": manifest.get("exclusion_reason"),
+            "prompt_revision": collection_row.get("prompt_revision"),
+            "model_id": collection_row.get("model_id"),
+            "manifest_path": collection_row.get("manifest_path"),
+            "manifest_sha256": collection_row.get("manifest_sha256"),
+            "invalid_reason_code": reason_code
+            or collection_row.get("invalid_reason_code"),
+            "completed_by_arm": {"A": 0, "B": 0},
+            "observed_journeys": 0,
+            "missing_journeys": 100,
+            "structural_incomplete_journeys": 0,
+            "weak_accuracy": None,
+            "strong_accuracy": None,
+            "weak_accuracy_gate": False,
+            "strong_accuracy_gate": False,
+            "target_gate_measurable": mapping_available,
+            "target_gate_pass": False,
+            "target_contrast": None,
+            "formal_design_match": False,
+            "calibration_grid_valid": False,
+            "calibration_structural_personas": 50,
+            "drift_count": int(ledger.get("drift_count") or 0),
+            "technical_valid": False,
+            "raw_complete": False,
+            "qualifies": False,
+            "exclusion_reasons": [status],
+        },
+        {subject: "NC" for subject in subjects},
+        {},
+        dict(ledger),
+    )
+
+
+def _provider_analysis(
+    *,
+    raw_root: Path,
+    collection_row: Mapping[str, Any],
+    preparation: Mapping[str, Any],
+    personas: Sequence[Mapping[str, Any]],
+    panel: Mapping[str, Any],
+    mapping_available: bool,
+) -> tuple[
+    dict[str, Any],
+    dict[str, str],
+    dict[str, dict[str, float | int]],
+    dict[str, float | int],
+]:
+    provider = str(collection_row["provider"])
+    persona_ids = tuple(str(row["persona_id"]) for row in personas)
+    persona_set = set(persona_ids)
+    if collection_row.get("collection_status") != "collected":
+        if collection_row.get("collection_status") == "invalid_excluded":
+            ledger = _invalid_provider_accounting(raw_root, collection_row, provider)
+        elif collection_row.get("collection_status") == "missing_required_revision":
+            ledger = _validated_collection_row_accounting(
+                raw_root, collection_row, provider
+            )
+        else:
+            ledger = _empty_provider_accounting("not_collected")
+        return _excluded_provider_analysis_result(
+            collection_row,
+            personas,
+            mapping_available=mapping_available,
+            ledger=ledger,
+        )
+    manifest = collection_row["manifest"]
+    model_id = str(manifest.get("model_id") or "")
+    records = _artifact_records(raw_root, provider, manifest)
+    ledger = _validated_collection_row_accounting(raw_root, collection_row, provider)
+    accounting = _event_accounting(records, provider, model_id)
+    response_attempts = {
+        (
+            str(record.get("persona_id") or ""),
+            str(record.get("phase") or ""),
+            record.get("arm"),
+            int(record.get("position", -1)),
+            str(record.get("item_id") or ""),
+        )
+        for record in records
+        if record.get("record_type") == "llm_sim_provider_attempt"
+        and record.get("status") == "response"
+    }
 
     journeys: dict[tuple[str, str], Mapping[str, Any]] = {}
     calibration_records: dict[str, list[Mapping[str, Any]]] = {}
@@ -2027,6 +2298,7 @@ def _provider_analysis(
         "collection_status": "collected",
         "provider_status": manifest.get("status"),
         "failure_category": manifest.get("failure_category"),
+        "exclusion_reason": manifest.get("exclusion_reason"),
         "prompt_revision": collection_row.get("prompt_revision"),
         "model_id": model_id,
         "completed_by_arm": completed_by_arm,
@@ -2352,14 +2624,36 @@ def analyze_collection(
     ] = {}
     ledger_rows = []
     for collection_row in provider_rows:
-        matrix, ratings, contrast, ledger = _provider_analysis(
-            raw_root=raw,
-            collection_row=collection_row,
-            preparation=preparation,
-            personas=personas,
-            panel=panel,
-            mapping_available=mapping_available,
-        )
+        try:
+            matrix, ratings, contrast, ledger = _provider_analysis(
+                raw_root=raw,
+                collection_row=collection_row,
+                preparation=preparation,
+                personas=personas,
+                panel=panel,
+                mapping_available=mapping_available,
+            )
+        except (H5ContractError, OSError, TypeError, ValueError, OverflowError):
+            provider = str(collection_row["provider"])
+            try:
+                ledger = _validated_collection_row_accounting(
+                    raw, collection_row, provider
+                )
+            except (
+                H5ContractError,
+                OSError,
+                TypeError,
+                ValueError,
+                OverflowError,
+            ):
+                ledger = _empty_provider_accounting("unavailable")
+            matrix, ratings, contrast, ledger = _excluded_provider_analysis_result(
+                collection_row,
+                personas,
+                mapping_available=mapping_available,
+                ledger=ledger,
+                reason_code="analysis_provider_validation_failed",
+            )
         provider_matrix.append(matrix)
         provider = str(matrix["provider"])
         if matrix["collection_status"] == "collected":
@@ -2503,6 +2797,7 @@ def analyze_collection(
         collection_status = row.get("collection_status")
         provider_status = row.get("provider_status")
         failure_category = row.get("failure_category")
+        exclusion_reason = row.get("exclusion_reason")
         if collection_status == "invalid_excluded":
             category = (
                 "invalid_calibration_schema"
@@ -2513,12 +2808,24 @@ def analyze_collection(
             category = str(collection_status)
         elif provider_status == "excluded_post_calibration":
             category = "post_calibration_exclusion"
-        elif provider_status in {"interrupted", "interrupted_calibration"} and (
-            failure_category in {"network", "http_status", "circuit"}
-        ):
-            category = "network_interruption"
-        else:
+        elif provider_status == "excluded_model_drift" or failure_category == "model_id_drift":
+            category = "model_drift_exclusion"
+        elif provider_status == "excluded_pre_outcome":
+            category = (
+                "provider_configuration_exclusion"
+                if exclusion_reason == "provider_configuration_unavailable"
+                else "pre_outcome_design_exclusion"
+            )
+        elif provider_status in {"interrupted", "interrupted_calibration"}:
+            category = (
+                "network_interruption"
+                if failure_category in {"network", "circuit"}
+                else "technical_interruption"
+            )
+        elif provider_status in {"complete", "partial"}:
             category = "collected"
+        else:
+            category = "technical_interruption"
         lifecycle_providers.setdefault(category, []).append(str(row["provider"]))
     lifecycle_counts = {
         category: len(providers)
@@ -2563,6 +2870,18 @@ def analyze_collection(
         ),
         "network_interruption_provider_count": lifecycle_counts.get(
             "network_interruption", 0
+        ),
+        "model_drift_exclusion_provider_count": lifecycle_counts.get(
+            "model_drift_exclusion", 0
+        ),
+        "provider_configuration_exclusion_provider_count": lifecycle_counts.get(
+            "provider_configuration_exclusion", 0
+        ),
+        "pre_outcome_design_exclusion_provider_count": lifecycle_counts.get(
+            "pre_outcome_design_exclusion", 0
+        ),
+        "technical_interruption_provider_count": lifecycle_counts.get(
+            "technical_interruption", 0
         ),
         "post_calibration_exclusion_provider_count": lifecycle_counts.get(
             "post_calibration_exclusion", 0

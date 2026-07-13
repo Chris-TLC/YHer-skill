@@ -1393,6 +1393,18 @@ def test_invalid_calibration_schema_is_excluded_with_bound_raw_evidence(
         calibration,
     )
     expected_manifest_sha = _file_sha(manifest_path)
+    expected_cost = round(
+        sum(
+            float(
+                json.loads((raw / row["path"]).read_text(encoding="utf-8"))[
+                    "cost_yuan"
+                ]
+            )
+            for row in manifest["artifacts"]
+            if row["record_type"] == "llm_sim_provider_attempt"
+        ),
+        12,
+    )
 
     collection_path = raw / "h5_collection_manifest.json"
     first = finalize_collection(raw, collection_path, repo_root=repo)
@@ -1430,6 +1442,12 @@ def test_invalid_calibration_schema_is_excluded_with_bound_raw_evidence(
     assert result["provider_exclusion_disclosure"] == {
         "invalid_calibration_schema": ["deepseek"]
     }
+    ledger = next(
+        row for row in result["ledger"]["providers"] if row["provider"] == "deepseek"
+    )
+    assert ledger["cost_yuan"] == expected_cost
+    assert ledger["requests"] > 0
+    assert ledger["accounting_status"] == "validated_manifest_bound_attempts"
 
 
 def test_forged_provider_manifest_is_excluded_but_global_provenance_still_fails(
@@ -1528,6 +1546,75 @@ def test_invalid_provider_evidence_forgery_invalidates_frozen_collection(
     assert json.loads(collection_path.read_text(encoding="utf-8"))[
         "collection_sha256"
     ] == frozen_sha
+
+
+def test_invalid_provider_lifecycle_symlink_retarget_invalidates_collection(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import H5ContractError, analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path)
+    for provider in PROVIDERS:
+        _provider_manifest(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    base = json.loads(manifest_path.read_text(encoding="utf-8"))
+    first_target = raw / "invalid-deepseek-a.json"
+    second_target = raw / "invalid-deepseek-b.json"
+    first = {**base, "config_sha256": "f" * 64}
+    second = {**base, "config_sha256": "e" * 64}
+    _write_json(first_target, first)
+    _write_json(second_target, second)
+    manifest_path.unlink()
+    manifest_path.symlink_to(first_target)
+
+    collection_path = raw / "collection.json"
+    collection = finalize_collection(raw, collection_path, repo_root=repo)
+    deepseek = collection["providers"][0]
+    assert deepseek["collection_status"] == "invalid_excluded"
+    evidence = {row["path"]: row for row in deepseek["invalid_evidence"]}
+    assert evidence["providers/deepseek.json"]["kind"] == "symlink"
+    assert isinstance(evidence["providers/deepseek.json"]["sha256"], str)
+
+    manifest_path.unlink()
+    manifest_path.symlink_to(second_target)
+    with pytest.raises(H5ContractError, match="invalid|evidence|binding|collection"):
+        analyze_collection(
+            collection_path,
+            tmp_path / "h5-output",
+            raw_root=raw,
+            repo_root=repo,
+        )
+
+
+def test_broken_provider_lifecycle_symlink_is_bound_and_retarget_invalidates_collection(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import H5ContractError, analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path)
+    for provider in PROVIDERS:
+        _provider_manifest(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest_path.unlink()
+    manifest_path.symlink_to(raw / "missing-deepseek-a.json")
+
+    collection_path = raw / "collection.json"
+    collection = finalize_collection(raw, collection_path, repo_root=repo)
+    deepseek = collection["providers"][0]
+    assert deepseek["collection_status"] == "invalid_excluded"
+    evidence = {row["path"]: row for row in deepseek["invalid_evidence"]}
+    assert evidence["providers/deepseek.json"]["kind"] == "symlink"
+    assert isinstance(evidence["providers/deepseek.json"]["sha256"], str)
+
+    manifest_path.unlink()
+    manifest_path.symlink_to(raw / "missing-deepseek-b.json")
+    with pytest.raises(H5ContractError, match="invalid|evidence|binding|collection"):
+        analyze_collection(
+            collection_path,
+            tmp_path / "h5-output",
+            raw_root=raw,
+            repo_root=repo,
+        )
 
 
 def test_h5_lifecycle_denominators_distinguish_provider_exclusion_classes(
@@ -1666,6 +1753,40 @@ def test_collection_selects_v1_only_from_a_valid_immutable_v0_decision(
     assert row["manifest_sha256"] == _file_sha(raw / "providers/deepseek.json")
 
 
+def test_prompt_rewrite_provider_ledger_sums_bound_v0_and_v1_attempts(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path, mapped=True)
+    _populate_provider(raw, "deepseek")
+    for provider in PROVIDERS[1:]:
+        _provider_manifest(raw, provider)
+    v0_path = raw / "providers/deepseek.json"
+    v0 = json.loads(v0_path.read_text(encoding="utf-8"))
+    _bind_v0_rewrite(raw, "deepseek")
+    v1 = _provider_manifest(raw, "deepseek", prompt_revision=1)
+
+    collection_path = raw / "collection.json"
+    frozen = finalize_collection(raw, collection_path, repo_root=repo)
+    assert frozen["providers"][0]["prompt_revision"] == 1
+    result = analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    ledger = result["ledger"]["providers"][0]
+    assert ledger["requests"] == (
+        int(v0["accounting"]["requests"]) + int(v1["accounting"]["requests"])
+    )
+    assert ledger["cost_yuan"] == pytest.approx(
+        float(v0["accounting"]["cost_yuan"])
+        + float(v1["accounting"]["cost_yuan"])
+    )
+    assert ledger["accounting_status"] == "validated_manifest_bound_attempts"
+
+
 def test_collection_rejects_decision_when_v0_did_not_request_a_rewrite(
     tmp_path: Path,
 ) -> None:
@@ -1742,6 +1863,34 @@ def test_missing_required_revision_revalidates_bound_v0_and_decision(
             raw_root=raw,
             repo_root=repo,
         )
+
+
+def test_missing_required_revision_ledger_retains_bound_v0_attempt_cost(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path, mapped=True)
+    _populate_provider(raw, "deepseek")
+    for provider in PROVIDERS[1:]:
+        _provider_manifest(raw, provider)
+    v0_path = raw / "providers/deepseek.json"
+    v0 = json.loads(v0_path.read_text(encoding="utf-8"))
+    _bind_v0_rewrite(raw, "deepseek")
+
+    collection_path = raw / "collection.json"
+    frozen = finalize_collection(raw, collection_path, repo_root=repo)
+    assert frozen["providers"][0]["collection_status"] == "missing_required_revision"
+    result = analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    ledger = result["ledger"]["providers"][0]
+    assert ledger["requests"] == int(v0["accounting"]["requests"])
+    assert ledger["cost_yuan"] == pytest.approx(float(v0["accounting"]["cost_yuan"]))
+    assert ledger["accounting_status"] == "validated_manifest_bound_attempts"
 
 
 @pytest.mark.parametrize("failure", ("escape", "hash", "envelope", "drift"))
@@ -2472,7 +2621,7 @@ def test_typed_model_drift_is_accounted_excluded_and_never_enters_agreement(
 def test_analyzer_reconstructs_attempt_accounting_and_rejects_claimed_request_tamper(
     tmp_path: Path,
 ) -> None:
-    from analysis.h5 import H5ContractError, analyze_collection, finalize_collection
+    from analysis.h5 import analyze_collection, finalize_collection
 
     repo, raw = _study_fixture(tmp_path, mapped=True)
     for provider in PROVIDERS:
@@ -2482,18 +2631,21 @@ def test_analyzer_reconstructs_attempt_accounting_and_rejects_claimed_request_ta
     manifest["accounting"]["requests"] += 1
     _write_json(manifest_path, manifest)
     collection = raw / "collection.json"
-    finalize_collection(raw, collection, repo_root=repo)
-
-    with pytest.raises(H5ContractError, match="requests accounting mismatch"):
-        analyze_collection(
-            collection, tmp_path / "h5-output", raw_root=raw, repo_root=repo
-        )
+    frozen = finalize_collection(raw, collection, repo_root=repo)
+    assert frozen["providers"][0]["collection_status"] == "invalid_excluded"
+    result = analyze_collection(
+        collection, tmp_path / "h5-output", raw_root=raw, repo_root=repo
+    )
+    deepseek = result["provider_matrix"][0]
+    assert deepseek["collection_status"] == "invalid_excluded"
+    assert deepseek["qualifies"] is False
+    assert deepseek["observed_journeys"] == 0
 
 
 def test_analyzer_rejects_outcome_event_without_manifest_bound_response_attempt(
     tmp_path: Path,
 ) -> None:
-    from analysis.h5 import H5ContractError, analyze_collection, finalize_collection
+    from analysis.h5 import analyze_collection, finalize_collection
 
     repo, raw = _study_fixture(tmp_path, mapped=True)
     for provider in PROVIDERS:
@@ -2526,13 +2678,222 @@ def test_analyzer_rejects_outcome_event_without_manifest_bound_response_attempt(
     manifest["artifact_aggregate_sha256"] = _canonical_sha(manifest["artifacts"])
     _write_json(manifest_path, manifest)
     collection = raw / "collection.json"
-    finalize_collection(raw, collection, repo_root=repo)
-
-    with pytest.raises(H5ContractError, match="attempt|outcome"):
-        analyze_collection(
-            collection, tmp_path / "h5-output", raw_root=raw, repo_root=repo
-        )
+    frozen = finalize_collection(raw, collection, repo_root=repo)
+    assert frozen["providers"][0]["collection_status"] == "invalid_excluded"
+    result = analyze_collection(
+        collection, tmp_path / "h5-output", raw_root=raw, repo_root=repo
+    )
+    assert result["provider_matrix"][0]["collection_status"] == "invalid_excluded"
+    assert result["provider_matrix"][0]["qualifies"] is False
     assert attempt_record["response_received"] is True
+
+
+def test_nonfinite_attempt_integer_is_invalid_excluded_not_global_failure(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import finalize_collection
+
+    repo, raw = _study_fixture(tmp_path)
+    for provider in PROVIDERS:
+        _populate_provider(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    attempt_row = next(
+        row
+        for row in manifest["artifacts"]
+        if row["record_type"] == "llm_sim_provider_attempt"
+    )
+    attempt_path = raw / attempt_row["path"]
+    attempt = json.loads(attempt_path.read_text(encoding="utf-8"))
+    attempt["position"] = 1e400
+    _replace_bound_artifact(raw, "deepseek", str(attempt_row["path"]), attempt)
+
+    collection = finalize_collection(
+        raw,
+        raw / "collection.json",
+        repo_root=repo,
+    )
+    assert collection["providers"][0]["collection_status"] == "invalid_excluded"
+
+
+def test_invalid_provider_cost_recovery_excludes_attempt_from_another_run(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path, mapped=True)
+    for provider in PROVIDERS:
+        _populate_provider(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    attempt_row = next(
+        row
+        for row in manifest["artifacts"]
+        if row["record_type"] == "llm_sim_provider_attempt"
+    )
+    attempt_path = raw / attempt_row["path"]
+    attempt = json.loads(attempt_path.read_text(encoding="utf-8"))
+    excluded_cost = float(attempt["cost_yuan"])
+    attempt["run_id"] = "another-run"
+    _replace_bound_artifact(raw, "deepseek", str(attempt_row["path"]), attempt)
+
+    collection_path = raw / "collection.json"
+    frozen = finalize_collection(raw, collection_path, repo_root=repo)
+    assert frozen["providers"][0]["collection_status"] == "invalid_excluded"
+    result = analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    ledger = result["ledger"]["providers"][0]
+    claimed_cost = float(manifest["accounting"]["cost_yuan"])
+    assert ledger["cost_yuan"] == pytest.approx(claimed_cost - excluded_cost)
+    assert ledger["requests"] == int(manifest["accounting"]["requests"]) - 1
+    assert ledger["accounting_status"] == (
+        "partial_validated_manifest_bound_attempts"
+    )
+
+
+def test_analysis_only_duplicate_journey_is_provider_local_invalid_exclusion(
+    tmp_path: Path,
+) -> None:
+    from analysis.h5 import analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path, mapped=True)
+    for provider in PROVIDERS:
+        _populate_provider(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    journey_row = next(
+        row
+        for row in manifest["artifacts"]
+        if row["record_type"] == "llm_sim_journey"
+    )
+    journey = json.loads((raw / journey_row["path"]).read_text(encoding="utf-8"))
+    duplicate = _artifact_row(raw, "journeys/deepseek/duplicate.json", journey)
+    manifest["artifacts"].append(duplicate)
+    manifest["artifact_aggregate_sha256"] = _canonical_sha(manifest["artifacts"])
+    _write_json(manifest_path, manifest)
+    collection_path = raw / "collection.json"
+    frozen = finalize_collection(raw, collection_path, repo_root=repo)
+    assert frozen["providers"][0]["collection_status"] == "collected"
+
+    result = analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    deepseek = result["provider_matrix"][0]
+    assert deepseek["collection_status"] == "invalid_excluded"
+    assert deepseek["invalid_reason_code"] == "analysis_provider_validation_failed"
+    assert deepseek["qualifies"] is False
+    ledger = result["ledger"]["providers"][0]
+    assert ledger["cost_yuan"] > 0
+    assert ledger["accounting_status"] == "validated_manifest_bound_attempts"
+
+
+@pytest.mark.parametrize(
+    (
+        "provider_status",
+        "failure_category",
+        "exclusion_reason",
+        "expected_category",
+    ),
+    (
+        (
+            "excluded_model_drift",
+            "model_id_drift",
+            None,
+            "model_drift_exclusion",
+        ),
+        (
+            "excluded_pre_outcome",
+            None,
+            "provider_configuration_unavailable",
+            "provider_configuration_exclusion",
+        ),
+        (
+            "excluded_pre_outcome",
+            None,
+            None,
+            "pre_outcome_design_exclusion",
+        ),
+        (
+            "interrupted_calibration",
+            "unexpected",
+            None,
+            "technical_interruption",
+        ),
+        (
+            "interrupted_calibration",
+            "http_status",
+            None,
+            "technical_interruption",
+        ),
+        ("interrupted_calibration", "network", None, "network_interruption"),
+    ),
+)
+def test_provider_lifecycle_discloses_non_network_exclusions(
+    tmp_path: Path,
+    provider_status: str,
+    failure_category: str,
+    exclusion_reason: str | None,
+    expected_category: str,
+) -> None:
+    from analysis.h5 import analyze_collection, finalize_collection
+
+    repo, raw = _study_fixture(tmp_path)
+    for provider in PROVIDERS:
+        _provider_manifest(raw, provider)
+    manifest_path = raw / "providers/deepseek.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["status"] = provider_status
+    manifest["failure_category"] = failure_category
+    manifest["exclusion_reason"] = exclusion_reason
+    _write_json(manifest_path, manifest)
+    collection_path = raw / "collection.json"
+    finalize_collection(raw, collection_path, repo_root=repo)
+    result = analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    assert result["provider_exclusion_disclosure"][expected_category] == ["deepseek"]
+    assert result["denominators"][f"{expected_category}_provider_count"] == 1
+
+
+def test_provider_local_analysis_fallback_handles_missing_manifest_row(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import analysis.h5 as h5
+
+    repo, raw = _study_fixture(tmp_path)
+    for provider in PROVIDERS[1:]:
+        _provider_manifest(raw, provider)
+    collection_path = raw / "collection.json"
+    h5.finalize_collection(raw, collection_path, repo_root=repo)
+    original = h5._provider_analysis
+
+    def fail_one(**kwargs):
+        if kwargs["collection_row"]["provider"] == "deepseek":
+            raise h5.H5ContractError("provider-local analysis failure")
+        return original(**kwargs)
+
+    monkeypatch.setattr(h5, "_provider_analysis", fail_one)
+    result = h5.analyze_collection(
+        collection_path,
+        tmp_path / "h5-output",
+        raw_root=raw,
+        repo_root=repo,
+    )
+    deepseek = result["provider_matrix"][0]
+    assert deepseek["collection_status"] == "invalid_excluded"
+    assert deepseek["invalid_reason_code"] == "analysis_provider_validation_failed"
+    assert result["ledger"]["providers"][0]["accounting_status"] == "unavailable"
 
 
 def test_protocol_invalid_received_response_is_counted_but_technically_excluded(
@@ -2655,7 +3016,11 @@ def test_calibration_grid_is_rebuilt_from_frozen_panel_and_structural_defects_ex
     )
     assert deepseek["calibration_grid_valid"] is False
     assert deepseek["raw_complete"] is False
-    assert "calibration_structure" in deepseek["exclusion_reasons"]
+    if defect in {"wrong_order", "extra"}:
+        assert deepseek["collection_status"] == "invalid_excluded"
+        assert deepseek["exclusion_reasons"] == ["invalid_excluded"]
+    else:
+        assert "calibration_structure" in deepseek["exclusion_reasons"]
     assert result["denominators"]["structural_calibration_personas"] >= 1
 
 

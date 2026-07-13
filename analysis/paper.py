@@ -119,6 +119,10 @@ H5_LIFECYCLE_DENOMINATOR_FIELDS = (
     "missing_provider_count",
     "missing_required_revision_provider_count",
     "network_interruption_provider_count",
+    "model_drift_exclusion_provider_count",
+    "provider_configuration_exclusion_provider_count",
+    "pre_outcome_design_exclusion_provider_count",
+    "technical_interruption_provider_count",
     "post_calibration_exclusion_provider_count",
     "provider_lifecycle_counts",
 )
@@ -2141,7 +2145,14 @@ def _render_integrity_disclosure(validated: ValidatedContract) -> list[str]:
             f"artifact={int(lifecycle.get('invalid_provider_artifact', 0))}; "
             f"missing={int(lifecycle.get('missing', 0))}; missing required revision="
             f"{int(lifecycle.get('missing_required_revision', 0))}; network interruption="
-            f"{int(lifecycle.get('network_interruption', 0))}; post-calibration exclusion="
+            f"{int(lifecycle.get('network_interruption', 0))}; model-drift exclusion="
+            f"{int(lifecycle.get('model_drift_exclusion', 0))}; provider-configuration "
+            "exclusion="
+            f"{int(lifecycle.get('provider_configuration_exclusion', 0))}; pre-outcome "
+            "design exclusion="
+            f"{int(lifecycle.get('pre_outcome_design_exclusion', 0))}; technical "
+            f"interruption={int(lifecycle.get('technical_interruption', 0))}; "
+            "post-calibration exclusion="
             f"{int(lifecycle.get('post_calibration_exclusion', 0))}; other collected="
             f"{int(lifecycle.get('collected', 0))}. Invalid, missing, interrupted, and "
             "post-calibration-excluded providers do not enter qualifying-provider metrics. "

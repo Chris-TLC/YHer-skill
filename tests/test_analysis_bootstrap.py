@@ -325,6 +325,18 @@ def test_post_collection_static_audit_policy_is_explicit_and_not_outcome_tuned()
     assert lifecycle["scope"] == "post_collection_schema_lifecycle_clarification"
     assert lifecycle["result_direction_used"] is False
     assert lifecycle["h1_h4_decision_rules_modified"] is False
+    assert lifecycle["analysis_stage_provider_failure"] == "invalid_excluded"
+    assert lifecycle["invalid_provider_cost_accounting"] == (
+        "validated_manifest_bound_attempts_or_explicitly_unavailable"
+    )
+    assert lifecycle["symlink_evidence_binding"] == "link_target_sha256"
+    assert lifecycle["pre_outcome_design_exclusion"] == (
+        "separate_from_provider_configuration"
+    )
+    assert lifecycle["http_status_interruption"] == "technical_not_network"
+    assert lifecycle["prompt_revision_cost_accounting"] == (
+        "sum_validated_manifest_bound_v0_and_selected_revision_attempts"
+    )
 
 
 def test_value_bootstrap_supports_paired_within_row_derived_effects() -> None:
