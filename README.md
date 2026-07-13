@@ -106,12 +106,13 @@ adapters/store/local_json.py
 
 - 仓库离线套件：569/569；
 - 根五引擎契约：119/119；
-- 自动化桌面 1280×800 与手机 390×844 浏览器旅程：12/12，`failures=[]`；合同另要求的 final `computer-use` 人工矩阵仍在收口，不能用自动化数量替代；
+- 自动化桌面 1280×800 与手机 390×844 浏览器旅程：12/12，`failures=[]`；独立 final `computer-use` 人工矩阵也完成 12/12，桌面/手机 6/6，保留 `cu_final_j01..j12` 的 learning/report 共 24 张截图；
 - API fresh run `20260712T224150Z`（服务 SHA `ce0700f`）中，确定性接口 p95 为 6.704 ms，低于 500 ms 门；LLM 全文最大 16.497 s，低于 20 s 门；
 - 提交前响应泄漏扫描未发现答案、模型名或凭据字段；
-- 同一 session 的诊断/练习/held-out item 与 family 均不相交。
+- 12 个 final session JSON 的 `item_overlap=[]`、`family_overlap=[]`、`out_of_r5=[]`；手机 DevTools 清除 filter 后 console 为 0 messages；唯一 `/.well-known/appspecific/...` 404 是 Chrome DevTools 探针，不是应用请求失败；
+- 第 12 条使用隔离的 8701 `offline_fallback`，practice 诚实 deferred，provider 成本为 0。全夜累计 203 个付费事件，362,300 input tokens、123,101 output tokens、CNY 1.111179196。
 
-这里的 `failures=[]` 只表示对应自动化浏览器机械门通过。后续实现已关闭首题计数、前置标题、100 字残句和错误层级不驱动支架四个问题；post-fix 真实 UI 已核到完整零基础起点、难度支架、两错额外支架，以及 strong 3/3 后完成 practice + 2 held-out 的 verified 旅程。公开讲解仍严格定位为 DeepSeek 辅助的 verified standard-solution authoritative projection，不宣称模型可自由生成可靠化学事实。
+post-fix 内容审查在 authoritative projection 范围内为 PASS：无 key-insight 残句；strong 轨迹只有难度支架而无错误支架；错误轨迹显示服务端真实错题数，并且在同一高难 anchor 上严格长于全对轨迹；步骤与答案只来自 verified standard solution，未使用比喻。这里签的是 evidence-bound 目标，不宣称模型可自由生成可靠化学事实，也不声称非流式端点达到首 token 门。
 
 创建同一套 runtime/dev 虚拟环境后可运行：
 

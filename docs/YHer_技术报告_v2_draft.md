@@ -10,7 +10,7 @@ YHer 的当前问题不是“如何做一个万能 AI 老师”，而是更窄�
 
 本轮把此前分散的三条链收敛为一个学生入口、一个 FastAPI 应用、一套 R5/v4 题源和一个事件日志。canonical 路径不再使用浏览器本地判分、固定 `0.78/0.42` mastery、首题复测或固定 `+0.16` 提升。服务端冻结诊断、练习和 held-out 三个集合，用四状态 belief、EIG 选择器、时间预算、签字视频路由和 FSRS 复习状态完成闭环。
 
-这一结果仍只能称为 pre-alpha。自动化浏览器门已覆盖桌面和手机 12/12 条旅程且 `failures=[]`，离线测试为 569/569，根五引擎契约为 119/119。post-fix 真实 UI 已关闭首题计数、前置标题、100 字残句和错误层级支架四个内容问题；但合同另要求的 final `computer-use` 人工矩阵仍在收口。公开讲解是 DeepSeek 辅助的、以 verified standard solution 为权威来源的投影，不是模型自由生成化学推理。
+这一结果仍只能称为 pre-alpha。自动化浏览器门与独立 final `computer-use` 人工矩阵均覆盖桌面和手机 12/12 条旅程，离线测试为 569/569，根五引擎契约为 119/119。post-fix 真实 UI 已关闭首题计数、前置标题、100 字残句和错误层级支架四个内容问题，并在 authoritative projection 范围内通过内容复签。公开讲解是 DeepSeek 辅助的、以 verified standard solution 为权威来源的投影，不是模型自由生成化学推理。
 
 ## 2. 产品定义、用户旅程与当前能力边界
 
@@ -111,7 +111,7 @@ M6 内容审计发现，早期 provider 自由讲解会产生 `NaClO3`、`6FeCl2
 - 全对/错题数量由服务端 result summary 决定；
 - provider、模型名、prompt、usage 和 cost 只留内部事件。
 
-这保证“讲解不越过标准解”。`d62aad4` 进一步避免截断 key insight，把难度支架与真实错题数支架分开；post-fix 真实 UI 的 j01 已看到完整起点、难度支架和两错额外支架，j03 已完成 strong 3/3、practice 与两个 held-out 并得到 verified 结局。该证据支持受约束 authoritative projection 的当前范围，不支持把系统宣传为已经可靠掌握自由化学事实生成。
+这保证“讲解不越过标准解”。`d62aad4` 进一步避免截断 key insight，把难度支架与真实错题数支架分开。post-fix 复签确认：没有 key-insight 残句；strong 轨迹有难度支架而无错误支架；错误轨迹引用精确的服务端真实错题数，并在同一高难 anchor 上严格长于全对轨迹；步骤与答案只来自 verified standard solution，`analogy_used=false`。j03 完成 diagnostic 3/3、practice 1/1 与 held-out 2/2，结局为 verified。该证据支持受约束 authoritative projection 的当前范围，不支持把系统宣传为已经可靠掌握自由化学事实生成。
 
 held-out 完成后，报告从 session 前基线和本 session 截止事件重算 belief。通过时 outcome 为 `verified`；任一独立验证失败时为 `needs_reinforcement`；经历预算耗尽再完成时为 `partial`。失败报告列出错误码计数、不同题族补强步骤和下一次验证约束，不使用“提分”“治愈”或长期疗效话术。
 
@@ -156,7 +156,7 @@ M6 的机械验证结果：
 
 - 仓库离线套件 569/569；
 - 根五引擎 119/119；
-- 自动化桌面 1280×800 与手机 390×844 共 12 条浏览器旅程，12/12，`failures=[]`；合同点名的 final `computer-use` 人工矩阵仍在收口，不能用自动化数量替代；
+- 自动化桌面 1280×800 与手机 390×844 共 12 条浏览器旅程，12/12，`failures=[]`；独立 final `computer-use` 人工矩阵也完成 12/12，桌面/手机 6/6，保留 `cu_final_j01..j12` 的 learning/report 共 24 张截图；
 - 覆盖全对、全错、交替、中途暂停、断点恢复、错误态和连续 session；
 - console 无 error，未出现意外 4xx/5xx、水平溢出或公式资源缺失；
 - API fresh run `20260712T224150Z`（服务 SHA `ce0700f`）中，确定性样本 p95 为 6.704 ms，低于 500 ms 门；LLM 全文最大 16.497 s，低于 20 s 门；端点为非流式 JSON，因此不声称首 token <5 s；
@@ -164,7 +164,11 @@ M6 的机械验证结果：
 - item/family 三分区交集为空，服务题属于当前 R5；
 - 同用户两次 session 的画像和 seen segment 连续性成立。
 
-机械门不等于内容门。post-fix 真实 UI 已关闭首题计数、前置标题、100 字残句和错误层级支架问题；这里签的是有 verified standard solution 边界的 authoritative projection，不是自由化学事实生成。`failures=[]` 也不覆盖尚在收口的 final `computer-use` 人工矩阵。
+final `computer-use` 的 12 个 session JSON 均为 `item_overlap=[]`、`family_overlap=[]`、`out_of_r5=[]`。j03 strong 为 diagnostic 3/3 全对 + practice 1/1 + held-out 2/2，结局 verified；j04 weak 的 diagnostic 正确/错误为 5/10，practice 错，held-out 正确/错误为 1/1，诚实给出 needs_reinforcement；j05 pause/resume 的 diagnostic 正确/错误为 3/6，practice deferred，held-out 为 0/2。j06 与 j07 使用同一用户完成连续两次 session：第一次 3/3 diagnostic + 1/1 practice + 2/2 held-out 并 verified；第二次 diagnostic 正确/错误为 1/4、practice 错、held-out 正确/错误为 1/1，画像延续且结局随新证据降为 needs_reinforcement。j08-j11 是 390×844 mobile 错误轨迹，每条均为 diagnostic 正确/错误 4/2、practice 错、held-out 0/2；j12 在隔离 8701 上验证 `offline_fallback`、practice deferred 和零 provider 成本。
+
+手机 DevTools 在清除 filter 后 console 为 0 messages；唯一 `/.well-known/appspecific/...` 404 是 Chrome DevTools 自身探针，排除后没有应用 HTTP failure。所有截图非空，无可见横向溢出或不连贯重叠。机械门与内容门仍需分开：本轮内容 PASS 只签 verified standard solution 边界内的 authoritative projection，不等于自由化学事实生成；端点是非流式 JSON，也没有首 token <5 s 声明。
+
+从 `START_MARKER` 起按 `event_id` 去重的全夜成本为 203 个付费事件、362,300 input tokens、123,101 output tokens、CNY 1.111179196。j12 offline fallback 成本为 0；成本账本是工程运行记录，不是学生规模或效果指标。
 
 M7 另外建立 24 个 `SYNTHETIC_DEMO` 场景。场景层严格覆盖 30/60/120 分钟 × `verified/needs_reinforcement/partial/paused` × 每组合 2 个；8 个场景含两个 session、16 个含一个 session，共 32 episodes。计划覆盖 28 个节点，但当前开放节点只有 27 个；“化学反应速率”因答案信任门后不足五个确定题族，被重放为预期关闭。
 
@@ -178,10 +182,9 @@ M7 另外建立 24 个 `SYNTHETIC_DEMO` 场景。场景层严格覆盖 30/60/120
 
 当前最合理的后续顺序不是扩科或继续扩大题库，而是：
 
-1. 收口 final `computer-use` 人工矩阵，并保留逐旅程截图、console/network 与结局证据；
-2. 由可信化学教师抽查开放节点、标准解投影和失败补强建议；
-3. 建立未成年人同意、最小化、保留与删除规则后，再做小规模真实可用性测试；
-4. 把 synthetic、QA 和 founder data 从所有真实效果分析中永久排除；
-5. 只有得到独立 held-out 和跨日证据后，才讨论学习效果或商业化。
+1. 由可信化学教师抽查开放节点、标准解投影和失败补强建议；
+2. 建立未成年人同意、最小化、保留与删除规则后，再做小规模真实可用性测试；
+3. 把 synthetic、QA 和 founder data 从所有真实效果分析中永久排除；
+4. 只有得到独立 held-out 和跨日证据后，才讨论学习效果或商业化。
 
-这份 v2 是工程事实初稿。它刻意保留 pre-alpha、authoritative projection、人工矩阵未收口和 27 节点边界，因为一个可复查的有限系统比一个无法证伪的“AI 私教”叙事更有价值。
+这份 v2 是工程事实初稿。它刻意保留 pre-alpha、authoritative projection 和 27 节点边界，因为一个可复查的有限系统比一个无法证伪的“AI 私教”叙事更有价值。
