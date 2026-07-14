@@ -5,12 +5,16 @@ from dataclasses import replace
 import json
 from pathlib import Path
 
+import matplotlib
+import matplotlib.pyplot as plt
 import pytest
 
 from analysis.dataset import DatasetContractError
 from analysis.metrics import AnalysisEvent, AnalysisRow
 from analysis.no_repeat import NoRepeatSet
 from analysis.results import (
+    _FIGURE_RC,
+    _plot_misspecification_by_item_type,
     build_results,
     replace_results_contract,
     write_results,
@@ -122,6 +126,48 @@ def _no_repeat() -> dict[int, NoRepeatSet]:
         15: NoRepeatSet(15, ("T1", "T2"), 2, "hash-15"),
         25: NoRepeatSet(25, (), 0, "hash-25"),
     }
+
+
+def test_item_type_figure_footer_is_complete_and_inside_canvas() -> None:
+    rows = (
+        {
+            "item_type": "mcq",
+            "generator_minus_production": 0.10,
+            "gap_ci_low": 0.08,
+            "gap_ci_high": 0.12,
+            "event_count": 123_456,
+            "journey_count": 54_321,
+            "n_target": 27,
+        },
+        {
+            "item_type": "numeric",
+            "generator_minus_production": 0.17,
+            "gap_ci_low": 0.14,
+            "gap_ci_high": 0.20,
+            "event_count": 123_456,
+            "journey_count": 54_321,
+            "n_target": 27,
+        },
+    )
+
+    with matplotlib.rc_context(_FIGURE_RC):
+        figure = _plot_misspecification_by_item_type(rows)
+        try:
+            figure.canvas.draw()
+            footer = figure.texts[-1]
+            footer_lines = footer.get_text().splitlines()
+            footer_box = footer.get_window_extent(figure.canvas.get_renderer())
+            canvas_box = figure.bbox
+
+            assert footer_box.x0 >= canvas_box.x0
+            assert footer_box.x1 <= canvas_box.x1
+            assert footer_box.y0 >= canvas_box.y0
+            assert footer_box.y1 <= canvas_box.y1
+            assert len(footer_lines) == 4
+            assert footer_lines[2].startswith("MCQ: 123,456 events")
+            assert footer_lines[3].startswith("Numeric: 123,456 events")
+        finally:
+            plt.close(figure)
 
 
 def test_results_are_generated_from_registry_with_companion_data_and_stable_hashes(
@@ -406,6 +452,8 @@ def test_results_are_generated_from_registry_with_companion_data_and_stable_hash
     assert "95% CI" in item_type_svg
     assert "journey-cluster" in item_type_svg
     assert "diagnostic only" in item_type_svg
+    assert "estimand. MCQ:" not in item_type_svg
+    assert "targets, Numeric:" not in item_type_svg
 
     with (first / "tables/misspecification_by_item_type.csv").open(
         encoding="utf-8", newline=""

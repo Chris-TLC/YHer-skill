@@ -115,6 +115,16 @@ def to_csl_references(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
 _FENCE_OPEN = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 _ATX_HEADING = re.compile(r"^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*$")
 _BIBLIOGRAPHY_ENTRY = re.compile(r"^\s*(?:\d+[.)]|[-+*])\s+\S", re.MULTILINE)
+_YAU_MACHINE_AUDIT_BEGIN = re.compile(
+    r"^[ \t]*<!-- BEGIN YAU MACHINE AUDIT -->[ \t]*$", re.MULTILINE
+)
+_YAU_MACHINE_AUDIT_END = re.compile(
+    r"^[ \t]*<!-- END YAU MACHINE AUDIT -->[ \t]*$", re.MULTILINE
+)
+_YAU_MACHINE_AUDIT = re.compile(
+    rf"{_YAU_MACHINE_AUDIT_BEGIN.pattern}.*?{_YAU_MACHINE_AUDIT_END.pattern}",
+    re.MULTILINE | re.DOTALL,
+)
 
 
 def _markdown_headings(source: str) -> list[tuple[int, int, str]]:
@@ -150,8 +160,22 @@ def _markdown_headings(source: str) -> list[tuple[int, int, str]]:
     return headings
 
 
-def prepare_markdown(source: str) -> str:
-    """Remove the terminal hand-written bibliography so citeproc owns it once."""
+def prepare_markdown(source: str, *, profile: str | None = None) -> str:
+    """Prepare one publication profile while retaining machine audit in source."""
+    if profile == "yau":
+        audit_starts = list(_YAU_MACHINE_AUDIT_BEGIN.finditer(source))
+        audit_ends = list(_YAU_MACHINE_AUDIT_END.finditer(source))
+        if audit_starts or audit_ends:
+            if (
+                len(audit_starts) != 1
+                or len(audit_ends) != 1
+                or audit_starts[0].start() >= audit_ends[0].start()
+            ):
+                raise RenderError(
+                    "Yau machine audit markers must appear exactly once in "
+                    "BEGIN/END order"
+                )
+            source = _YAU_MACHINE_AUDIT.sub("", source, count=1)
     headings = _markdown_headings(source)
     references = [heading for heading in headings if heading[2].casefold() == "references"]
     if len(references) == 1:
@@ -175,8 +199,8 @@ def css_for_profile(profile: str) -> str:
         heading_gap = "0.42em"
         figure_height = "58mm"
     else:
-        font_size = "10.5pt"
-        line_height = "1.38"
+        font_size = "10pt"
+        line_height = "1.30"
         page_margin = "16mm 18mm 17mm"
         heading_gap = "0.62em"
         figure_height = "86mm"
@@ -545,7 +569,7 @@ def render_paper(
     if profile == "yau" and expected_pages not in (None, 4):
         raise RenderError("the yau profile requires an exact four-page gate")
 
-    prepared = prepare_markdown(source)
+    prepared = prepare_markdown(source, profile=profile)
     csl_references = to_csl_references(_load_reference_payload(references_path))
     output_path = output_path.resolve()
     input_path = input_path.resolve()
@@ -577,7 +601,7 @@ def render_paper(
             [
                 pandoc,
                 "--from",
-                "markdown",
+                "markdown+tex_math_single_backslash",
                 "--to",
                 "html5",
                 "--standalone",

@@ -2150,19 +2150,22 @@ def _plot_misspecification_by_item_type(
     axis.set_title("Misspecified generator gap by administered item type")
     axis.grid(axis="y", color="#d9d9d9", linewidth=0.6)
     axis.legend(frameon=False)
-    counts = ", ".join(
+    counts = [
         f"{labels[str(row['item_type'])]}: {int(row['event_count']):,} events / "
-        f"{int(row['journey_count']):,} journeys / {int(row['n_target']):,} targets"
+        f"{int(row['journey_count']):,} journeys / {int(row['n_target']):,} targets."
         for row in rows
-    )
+    ]
     _add_figure_footer(
         figure,
-        "Misspecified condition; target-stratified 10,000-resample "
-        "journey-cluster bootstrap; 95% CI; diagnostic only, not an item-type "
-        "H1/H2 estimand. "
-        + counts
-        + ".",
-        bottom=0.18,
+        "\n".join(
+            (
+                "Misspecified condition; target-stratified 10,000-resample "
+                "journey-cluster bootstrap; 95% CI.",
+                "diagnostic only, not an item-type H1/H2 estimand.",
+                *counts,
+            )
+        ),
+        bottom=0.23,
     )
     return figure
 

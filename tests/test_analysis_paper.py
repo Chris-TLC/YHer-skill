@@ -1769,6 +1769,10 @@ def test_contract_pngs_are_copied_with_deterministic_names_and_relative_links(
     assert yau_selected.index("::: {.figure-grid}") < yau_selected.index("![")
     assert yau_selected.rindex("\n:::") > yau_selected.rindex("![")
     assert ")\n\n![" in yau_selected
+    assert "![C-state misdiagnosis across item budgets]" in yau_selected
+    assert "![P-state rescue across item budgets]" in yau_selected
+    assert "FIG_" not in yau_selected
+    assert " png]" not in yau_selected
     assert all(not Path(link).is_absolute() for link in main_links + yau_links)
     assert all(link.startswith("publication-assets/") for link in main_links + yau_links)
 

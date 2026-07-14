@@ -143,6 +143,17 @@ REQUIRED_FIGURE_IDS = frozenset(
         "FIG_MANIPULATION_CHECKS",
     }
 )
+FIGURE_DISPLAY_LABELS = {
+    "FIG_P_RESCUE": "P-state rescue across item budgets",
+    "FIG_C_PROBE_HARM": "C-state misdiagnosis across item budgets",
+    "FIG_MATCHED_VS_MISSPECIFIED": "Matched-to-misspecified contrast degradation",
+    "FIG_CONFUSION_MATRICES": "Four-state confusion matrices",
+    "FIG_HELDOUT_BRIER": "Held-out predictive calibration",
+    "FIG_CONVERGENCE_DISTRIBUTION": "Convergence-time distribution",
+    "FIG_MISSPECIFICATION_BY_ITEM_TYPE": "Misspecified generator gap by item type",
+    "FIG_PROVIDER_AGREEMENT": "Provider agreement",
+    "FIG_MANIPULATION_CHECKS": "LLM-persona manipulation checks",
+}
 YAU_PROGRAMMATIC_IDS = (
     "H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS",
     "H1_P_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS",
@@ -2597,8 +2608,10 @@ def _render_figure_links(
                 continue
             destination = output_dir / reference.output_name
             relative = Path(os.path.relpath(destination, manuscript_dir)).as_posix()
-            detail = "/".join(reference.key_path) if reference.key_path else "png"
-            label = f"{figure_id} {detail}"
+            label = FIGURE_DISPLAY_LABELS[figure_id]
+            if figure_id == "FIG_CONFUSION_MATRICES":
+                detail = "/".join(reference.key_path)
+                label = f"{label} ({detail.removesuffix('_png')})"
             lines.append(f"![{label}]({relative})")
     if not grid or not lines:
         return lines

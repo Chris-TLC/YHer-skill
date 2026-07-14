@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
 import subprocess
 import sys
@@ -14,6 +15,18 @@ from scripts import render_paper_pdf as paper_pdf
 
 
 SCRIPT = Path(__file__).parents[1] / "scripts/render_paper_pdf.py"
+PANDOC = Path(shutil.which("pandoc") or "/opt/homebrew/bin/pandoc")
+CHROME = Path(
+    os.environ.get(
+        "PAPER_CHROME",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    )
+)
+PDFINFO = Path(shutil.which("pdfinfo") or "/opt/homebrew/bin/pdfinfo")
+PDFTOTEXT = Path(shutil.which("pdftotext") or "/opt/homebrew/bin/pdftotext")
+BOUND_RENDER_TOOLS_AVAILABLE = all(
+    path.is_file() for path in (PANDOC, CHROME, PDFINFO, PDFTOTEXT)
+)
 
 
 def test_renderer_cli_advertises_reproducible_inputs_and_gates() -> None:
@@ -114,6 +127,44 @@ def test_prepare_markdown_preserves_terminal_non_bibliography_heading() -> None:
     source = "# Paper\n\n## References\n\nReferences are discussed here.\n"
 
     assert paper_pdf.prepare_markdown(source) == source
+
+
+def test_prepare_markdown_omits_yau_machine_audit_from_pdf_source() -> None:
+    source = (
+        "# Four-page paper\n\nVisible results.\n\n"
+        "<!-- BEGIN YAU MACHINE AUDIT -->\n"
+        "machine-only provenance\n"
+        "<!-- END YAU MACHINE AUDIT -->\n\n"
+        "Visible discussion.\n"
+    )
+
+    prepared = paper_pdf.prepare_markdown(source, profile="yau")
+
+    assert "Visible results." in prepared
+    assert "machine-only provenance" not in prepared
+    assert "Visible discussion." in prepared
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "<!-- BEGIN YAU MACHINE AUDIT -->\nunclosed\n",
+        "orphan\n<!-- END YAU MACHINE AUDIT -->\n",
+        (
+            "<!-- END YAU MACHINE AUDIT -->\nreversed\n"
+            "<!-- BEGIN YAU MACHINE AUDIT -->\n"
+        ),
+        (
+            "<!-- BEGIN YAU MACHINE AUDIT -->\none\n"
+            "<!-- END YAU MACHINE AUDIT -->\n"
+            "<!-- BEGIN YAU MACHINE AUDIT -->\ntwo\n"
+            "<!-- END YAU MACHINE AUDIT -->\n"
+        ),
+    ),
+)
+def test_prepare_markdown_rejects_malformed_yau_machine_audit(source: str) -> None:
+    with pytest.raises(paper_pdf.RenderError, match="Yau machine audit"):
+        paper_pdf.prepare_markdown(source, profile="yau")
 
 
 def test_yau_css_is_one_column_except_for_references_and_compacts_figures() -> None:
@@ -260,6 +311,9 @@ def test_render_paper_runs_pandoc_chrome_and_poppler_before_promotion(
             assert kwargs["input"] == "# Paper\n\nEvidence [@example2026].\n"
             assert kwargs["text"] is True
             assert "--standalone" in command
+            assert command[command.index("--from") + 1] == (
+                "markdown+tex_math_single_backslash"
+            )
             assert "--citeproc" in command
             assert "--mathml" in command
             bibliography = Path(command[command.index("--bibliography") + 1])
@@ -428,6 +482,71 @@ def test_pandoc_fenced_div_matches_figure_grid_css() -> None:
     assert result.returncode == 0, result.stderr
     assert '<div class="figure-grid">' in result.stdout
     assert ".figure-grid {" in paper_pdf.css_for_profile("yau")
+
+
+@pytest.mark.skipif(
+    not BOUND_RENDER_TOOLS_AVAILABLE,
+    reason="Pandoc, Chrome, and Poppler are required for bound-paper rendering",
+)
+def test_bound_main_manuscript_fits_release_page_gate(tmp_path: Path) -> None:
+    repository = SCRIPT.parents[1]
+
+    result = paper_pdf.render_paper(
+        profile="main",
+        input_path=repository / "docs/paper/main.md",
+        output_path=tmp_path / "main.pdf",
+        references_path=repository / "docs/paper/references.json",
+        pandoc=str(PANDOC),
+        chrome=str(CHROME),
+        pdfinfo=str(PDFINFO),
+        pdftotext=str(PDFTOTEXT),
+    )
+
+    assert 8 <= result.pages <= 12
+    rendered_text = subprocess.run(
+        [str(PDFTOTEXT), "-layout", str(result.output_path), "-"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert "𝛾" in rendered_text
+    assert "∣" in rendered_text
+
+
+@pytest.mark.skipif(
+    not BOUND_RENDER_TOOLS_AVAILABLE,
+    reason="Pandoc, Chrome, and Poppler are required for bound-paper rendering",
+)
+def test_bound_yau_manuscript_is_exactly_four_pages(tmp_path: Path) -> None:
+    repository = SCRIPT.parents[1]
+
+    result = paper_pdf.render_paper(
+        profile="yau",
+        input_path=repository / "docs/paper/yau_award_4page.md",
+        output_path=tmp_path / "yau.pdf",
+        references_path=repository / "docs/paper/references.json",
+        pandoc=str(PANDOC),
+        chrome=str(CHROME),
+        pdfinfo=str(PDFINFO),
+        pdftotext=str(PDFTOTEXT),
+        expected_pages=4,
+    )
+
+    assert result.pages == 4
+    rendered_text = subprocess.run(
+        [str(PDFTOTEXT), "-layout", str(result.output_path), "-"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    for required in (
+        "Machine integrity summary",
+        "H1: A P convergence",
+        "0 qualifying providers",
+        "metric_registry.json",
+    ):
+        assert required in rendered_text
+    assert "H1_P_A_CORRECT_CONVERGENCE_MATCHED" not in rendered_text
 
 
 def test_makefile_offers_full_and_yau_pdf_targets() -> None:
