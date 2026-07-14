@@ -28,9 +28,9 @@ the Pilot section and must never be copied into this contract.
 {
   "analysis_artifact": "metric_registry.json",
   "analysis_artifact_sha256": "3493b2687cecaa91b0ef7ae25f0dacdaa3ea05a5405c79a4321814d5fa092a7c",
-  "analysis_code_committed_at_utc": "2026-07-13T23:47:43Z",
+  "analysis_code_committed_at_utc": "2026-07-14T07:46:08Z",
   "analysis_code_files": {
-    "Makefile": "a808d376c84c81d650320d3b4280e9bdd3d5c69d8d13f9b0ea18290fe874eb21",
+    "Makefile": "c89d68544cf7d4acef9fae5e474db306fecc2ad1973a468c9495aa2a9a6481b3",
     "analysis/__init__.py": "175aca3f66b2c1ec1fa58701eb84df30a37936eb71735bb1f97a9a696bb1025a",
     "analysis/__main__.py": "0f7d54f3fbb1f79a85eb8110f11793db99da6f3c61ee979de5abe9a1b5f3fdb3",
     "analysis/bootstrap.py": "314c755f8e76684c8760429cc36726d999cfe6862d2dd3eaebf5d988b1a097a8",
@@ -41,11 +41,11 @@ the Pilot section and must never be copied into this contract.
     "analysis/hypotheses.py": "7acad4287c1543b063850d062a16f4bd2fc410d19c379ab8444ce0682b18b296",
     "analysis/metrics.py": "2ba37927bd4f322ba7fb14246bfe97f4e952c86e8ddca31c6e5e1ae8844abd8c",
     "analysis/no_repeat.py": "8f9052a957ae19f45c088240c3b09b5ccb8f454a77ab79c89be040de8f7eb44a",
-    "analysis/paper.py": "14833f0979a58a5403a6afdf4092500e69d0a4fc422661d61f5abda28b33fb5d",
+    "analysis/paper.py": "2667a9d632cef7536e9a3dfda072abb6c6cc4de7dd2ffb7fc8a5cd3e567b0991",
     "analysis/prepare.py": "40739d2f2fcec61bedac2f8a492e74dff33b11087ce76057c0aec2979ceb980d",
     "analysis/provenance.py": "4755a9caba48d7268f5d26a597505db5f7ba3c4ef6657df23471a72a651c41f9",
     "analysis/registry.py": "42d5f1b648054f286794a5fcf4f1015366434f3ea6f58142601dbbb5b74078d2",
-    "analysis/results.py": "5a01cd2db2f64ddefa014d802fe95aa4a24d8ea63e1a720d23dc7714468116c5",
+    "analysis/results.py": "3625810b6044cd155bb4b30f7e15ac8e5a35ca84e4e11c12c104675e52ad63d4",
     "analysis/runner.py": "59248b669f6a528c6131f9a4aaf32c5b4d4455a7df7de430475f57ae48bca975",
     "analysis/static_audit_policy.json": "373d8f2d4e69a0b27e326fa1ac2cbfda87cabe22416806ec83c71261b1a40132",
     "analysis/views.py": "331c6489fe46dd3f3b7ef66fef125a85ec38b436a5d57ded7bd3d93066f79b06",
@@ -74,27 +74,27 @@ the Pilot section and must never be copied into this contract.
     "experiments/s0_census.py": "895fef010ffdf5ffb1db054f62bb69550aafccaa798ed48be214c5f0126fdb49",
     "requirements.txt": "c3a24ffb0285a3dbc5efae5e6b60e951552656eb76fe1ae06899b29d1aa83ed6",
     "tests/test_analysis_bootstrap.py": "7b4876cb588c5fb480723246eeb5ccc78cf5127523a93d142f31284cb9c8e1da",
-    "tests/test_analysis_cli_contract.py": "f69ef0a2687458ae123871350d89f009706957d48e2fe00a4aeb6fd61c58118e",
+    "tests/test_analysis_cli_contract.py": "d4df09297865b632c2629b3adac4ceabdf9b6bd03024c073b1c725afa2400038",
     "tests/test_analysis_contracts.py": "355ad2ef96f41471da66670df2d5d1bf8e40f9e4c6f270a134d8da6d018bbba8",
     "tests/test_analysis_h5.py": "dd67e0204795b6ae0ab96aad1e0070795bdfa994057dcf9adff1040fff57b087",
     "tests/test_analysis_hypotheses.py": "7f5cc88312779004147fb43fcdfaf6ba171d775210ac372893e336676f1da26a",
     "tests/test_analysis_ingest.py": "20da62153023f1e0458f1088a5e6139d951fc57d1ace8b20839f9b557774b08a",
     "tests/test_analysis_metrics.py": "bc7636260ac3425a3bbef242ce811eb2566d36e24415197efbf75655b34373db",
     "tests/test_analysis_no_repeat.py": "df088f3c445f43d31890168d2c8e685c7c673d773cf354cd9f2c231b40e8c990",
-    "tests/test_analysis_paper.py": "a9cf075bd7a8f24d8ceb7dbccfc8de7567a89827b7fb4addeb062f340cdb8a0f",
-    "tests/test_analysis_pipeline.py": "875614f41c4603f1c0974e314bca1fddf23764b5ea02371a4ea6625cf87e9b3e",
+    "tests/test_analysis_paper.py": "d6d7ac9c333a0251d748ec602f855eec1d6551f4dc37834295b56fccf9f57c2a",
+    "tests/test_analysis_pipeline.py": "2470cd6753a8270151249c0be5510f2b25ade2e841f8aa62a1279159d0024d77",
     "tests/test_analysis_prepare.py": "ecac9216436ac21d96a54b71428950085d22dfcfc6d67c93194da532f199dfcb",
     "tests/test_analysis_provenance.py": "04cd1b947c7f75ec57113217c91eacce4d50ddbca1326de16993e9159f8ff1ce",
     "tests/test_analysis_registry.py": "ab1d9f85f1a7273a2a0512806487ae77d1f5b4ea05f7d23e7e1e38bd2627cde7",
     "tests/test_analysis_views.py": "44f60dead3206ffc748f979cd02d00059005428f76c41ee91826669b70920604"
   },
-  "analysis_code_sha256": "afa4f2489d36636b6c378dbc23b8904df42600a8ee145e494c4914228f83fa91",
-  "analysis_commit": "dd8f745971e579af7db7797ee3ef06c47bcbf67a",
+  "analysis_code_sha256": "a4b9dc6178e83dd09e00bec726cf6b2bbf52ab3636938b7747ce23df8ac66b1e",
+  "analysis_commit": "768785c9f3abedeb751da31cc1bfd5845cc5cebe",
   "analysis_plan_commit": "6c559b6f2f8cbe9ab61808c351df3743dca1a0be",
   "analysis_plan_sha256": "662e6844dfbabf8942d787d6b7c2ef37d92c995f22e5968563fa0d9861317fd5",
   "analysis_timestamp_policy": "analysis_code_commit_time_for_byte_determinism",
   "artifact_manifest": "artifact_manifest.json",
-  "artifact_manifest_sha256": "6afef8f3f2fa210e7ce36c2f4e46091fea0d84ed1b862c65db4018cb7ea568a2",
+  "artifact_manifest_sha256": "9f12367064cf5e79ef2e2863e28d04ce7c5081063b6144047035b7d82c7037b5",
   "conditional_metric_audit": {
     "confusion.decision.matched.b15.arm_A.C.C": {
       "all_targets_undefined_iterations": 0,
@@ -28468,7 +28468,7 @@ the Pilot section and must never be copied into this contract.
         "annotation_map_sha256": null,
         "collection_sha256": "01fe1839a629ec0f86b36dab2283e35ccf6dbd4e8febd1d7803dda834afb282e",
         "evidence_path": "h5/h5_results.json",
-        "evidence_sha256": "672a596f5d804f5c003b9510c24517001b0cbf1ccaa1681f24950ed0ca5cc48e",
+        "evidence_sha256": "8f8368aa7dc32062d747c73031435dc9ae5ff7191f9a4f2077a1e0d918bc3b4f",
         "mapping_covered_entries": 0,
         "mapping_required_entries": 0,
         "minimum_completed_personas_per_qualifying_cell": 0,
@@ -28543,11 +28543,11 @@ the Pilot section and must never be copied into this contract.
       },
       "decision_png": {
         "path": "figures/confusion_decision.png",
-        "sha256": "88d019df783a01e4b8d011f01cb98cf1297b3fd524a8ea69a6138c4904943e6f"
+        "sha256": "319d6c8848565ed8c455face21483d07c10c77d4d91e2d54ebd5b2e5ead063bc"
       },
       "decision_svg": {
         "path": "figures/confusion_decision.svg",
-        "sha256": "8bab46f59f677e5c5beae3fc7961691a0016c09bda85bf19d35608404f2e836a"
+        "sha256": "785f1c2ebef6d2dc1e8d7d8fd5953ce97f7bada21fd802a13b2863102c4c08b0"
       },
       "terminal_data": {
         "path": "figures/confusion_terminal.csv",
@@ -28555,11 +28555,11 @@ the Pilot section and must never be copied into this contract.
       },
       "terminal_png": {
         "path": "figures/confusion_terminal.png",
-        "sha256": "b90478a1b5cad4cceb1d7100c791272814ba13e8e162996006439f2b4cfaaa4f"
+        "sha256": "a6bee34a938458f6e22bfd1a82adb77164f467d4d8f5beb2434983fdaeaad788"
       },
       "terminal_svg": {
         "path": "figures/confusion_terminal.svg",
-        "sha256": "c642057b651137556f117b5de2360eae942fbb06f53ad7579abdf5f535df9eb6"
+        "sha256": "1501a02273c5b1c82f3a731cdc26558fe7694c324c94cc618640d2296133b2c5"
       }
     },
     "FIG_CONVERGENCE_DISTRIBUTION": {
@@ -28569,11 +28569,11 @@ the Pilot section and must never be copied into this contract.
       },
       "png": {
         "path": "figures/convergence_distribution.png",
-        "sha256": "757302794915b89f6cf51d55879586f3e7f277441241e9511f09ab4a9094b9fd"
+        "sha256": "4faa7143705d5fba470fe341ef1721a8a766151ec71c7b59e4152bb4459388a3"
       },
       "svg": {
         "path": "figures/convergence_distribution.svg",
-        "sha256": "d0c6acded523c1f7979190c8226bc6af1596027fe5592074fda959b82982dade"
+        "sha256": "d413724e8b15542790eac9afa50623e5b5b5a0de0c27096b47ccf9acfc53358d"
       }
     },
     "FIG_C_PROBE_HARM": {
@@ -28583,11 +28583,11 @@ the Pilot section and must never be copied into this contract.
       },
       "png": {
         "path": "figures/c_misdiagnosis.png",
-        "sha256": "a86dbd9207a3b70e453d20677029faa8308f45c74f5739cd8f30fb822acf691b"
+        "sha256": "e5e22d30fb2cef6c4492ef128005e910d8c31d89ef6b6fdfa2dc904b3259c9b8"
       },
       "svg": {
         "path": "figures/c_misdiagnosis.svg",
-        "sha256": "7d5609bf45a746bc28650e37b1a7e16e10a7f04dd4cae4026e79fc58385e16e2"
+        "sha256": "f827bcbab5083029c17569e0d8507455058b57c7fae662ee9da76ad5f9efd6ba"
       }
     },
     "FIG_HELDOUT_BRIER": {
@@ -28597,11 +28597,11 @@ the Pilot section and must never be copied into this contract.
       },
       "png": {
         "path": "figures/held_out_brier.png",
-        "sha256": "4b1a355f863edaaac4cdd9f2cf0fdaf328e81ef6b5fecfb292d4dc10410af67a"
+        "sha256": "1bd60bc4ec0ccdb796de19271a558d71c7b5a00d035fab41ae720c73fb5ea0dd"
       },
       "svg": {
         "path": "figures/held_out_brier.svg",
-        "sha256": "3dbea7fa45f0b9e66f80c146bf4f5b984a72f9ffe660527ce6c32282bb4c164d"
+        "sha256": "44019d1893ddf191ffac35bcd0a2c4ea3a873b627e698b4054d5a6c4c1b0a8e9"
       }
     },
     "FIG_MANIPULATION_CHECKS": {
@@ -28621,11 +28621,11 @@ the Pilot section and must never be copied into this contract.
       },
       "png": {
         "path": "figures/matched_vs_misspecified.png",
-        "sha256": "23baa63530b65c4a3d7fa5774badaa7bb9d0978426ee633a12f1a733afb1e013"
+        "sha256": "39c4270e4169612d1323da030ceb2a28fc10c9d0036dd5753f55d2abf4843792"
       },
       "svg": {
         "path": "figures/matched_vs_misspecified.svg",
-        "sha256": "1dd79d3461ad0a3a2e550c80a4fa61bdf0cc3d60108d5e18c677dbb96dc6cad5"
+        "sha256": "496711ed4f7148357d04e241b2877f5cad59aea8fc3cf947d380be5be4859e17"
       }
     },
     "FIG_MISSPECIFICATION_BY_ITEM_TYPE": {
@@ -28635,11 +28635,11 @@ the Pilot section and must never be copied into this contract.
       },
       "png": {
         "path": "figures/misspecification_by_item_type.png",
-        "sha256": "36f3e884275efa833c253689ba015b517cc03bac08059684e898606470eed812"
+        "sha256": "1b8a8458a7d4eb7f58f8abaa4e1fb92547a151c981448a585cb77873036eaa2d"
       },
       "svg": {
         "path": "figures/misspecification_by_item_type.svg",
-        "sha256": "65ee9a1546fe4dfd2b7ff69941a7b601470a2f696206909943eac934b908b83e"
+        "sha256": "63b76e749a1bdbd10a04c44c24a19b79a3b081964fa45b832bbd0d0f98d43ef5"
       }
     },
     "FIG_PROVIDER_AGREEMENT": {
@@ -28659,17 +28659,17 @@ the Pilot section and must never be copied into this contract.
       },
       "png": {
         "path": "figures/p_rescue.png",
-        "sha256": "0a60c7affaf03cc8ac4309c1958e487299ecfae900b5b497051f0e8582fcb5f6"
+        "sha256": "c36a768491392adc49912f69f32b903bc5a5202c9e0e6cf9a69fc4ce950672b0"
       },
       "svg": {
         "path": "figures/p_rescue.svg",
-        "sha256": "69460ebd989f511c54c171faa07f550ac69804a3ea33bbdfad36a782a406aaf9"
+        "sha256": "45c0d2c977706397474868994dda815b8cf21a302bf87fea984f8f1a3c55e16b"
       }
     }
   },
   "h5_analysis_code_sha256": "5506469366c101e25107720d71ecf2443d67b5fd1e9b92f8b3fa21528e27e232",
-  "h5_artifact_manifest_internal_sha256": "d7c899f31abd1cfd421413a76cf55091dd6ccc4fb7ba2965739769b6a67955d6",
-  "h5_artifact_manifest_sha256": "d0945b923b4bd643fd29490f5ef2006c7d0eb4d3f01e688e8a4bc604284eae8d",
+  "h5_artifact_manifest_internal_sha256": "8171ddb84a06f113b3064378da0f2ab756f5869a7b1f82b1a2d10fbe31d048b0",
+  "h5_artifact_manifest_sha256": "8a102455787f8f07e0684086b08e6e4ac35cdd1b189e4b6b0ac5b3fdc7ee9fe9",
   "h5_collection_manifest_sha256": "01fe1839a629ec0f86b36dab2283e35ccf6dbd4e8febd1d7803dda834afb282e",
   "h5_provider_exclusion_disclosure": {
     "invalid_calibration_schema": [
@@ -28685,8 +28685,8 @@ the Pilot section and must never be copied into this contract.
       "tongyi"
     ]
   },
-  "h5_results_file_sha256": "672a596f5d804f5c003b9510c24517001b0cbf1ccaa1681f24950ed0ca5cc48e",
-  "h5_results_sha256": "a4e1a54383e4481b537d8198dd32ed15a0d089627d91fb25a5fe931548259d27",
+  "h5_results_file_sha256": "8f8368aa7dc32062d747c73031435dc9ae5ff7191f9a4f2077a1e0d918bc3b4f",
+  "h5_results_sha256": "a0fd1a2a208a0fdc5e7dbe6988d76c426702d9634b6b34ce158e7b987a2c09fe",
   "hypotheses": {
     "H1": {
       "analysis_status": "complete",
@@ -28743,7 +28743,7 @@ the Pilot section and must never be copied into this contract.
         "annotation_map_sha256": null,
         "collection_sha256": "01fe1839a629ec0f86b36dab2283e35ccf6dbd4e8febd1d7803dda834afb282e",
         "evidence_path": "h5/h5_results.json",
-        "evidence_sha256": "672a596f5d804f5c003b9510c24517001b0cbf1ccaa1681f24950ed0ca5cc48e",
+        "evidence_sha256": "8f8368aa7dc32062d747c73031435dc9ae5ff7191f9a4f2077a1e0d918bc3b4f",
         "mapping_covered_entries": 0,
         "mapping_required_entries": 0,
         "minimum_completed_personas_per_qualifying_cell": 0,
@@ -29437,7 +29437,7 @@ the Pilot section and must never be copied into this contract.
   },
   "raw_hash": "f485293432047f90264c9cde726866a85f1bbecaf7c1c6c38aecc5afe91f9791",
   "results_artifact": "results.json",
-  "results_artifact_sha256": "b20de76fc12cd9e7e5fb150f7971327e165f4a8995d863e92a93ffb180c444bc",
+  "results_artifact_sha256": "50c44a67155d551a422b86a7182fb2fefdc685d2abd15956597527b76ab06055",
   "run_id": "confirmatory-v1",
   "runner_commit": "33536b4a810d297166e4f1c0f036bb9c70f1a979",
   "schema_version": "yher.paper-results.v1",

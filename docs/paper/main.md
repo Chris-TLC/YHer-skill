@@ -3,9 +3,7 @@
 ## A Confirmatory Evaluation Protocol for Prerequisite-Probe Timing in High-School Chemistry
 
 <!-- BEGIN PAPER GENERATED STATUS -->
-**Manuscript status:** pre-results draft; not submitted, published, or externally
-released. Confirmatory values and H1-H5 decisions are `PENDING_S3` in
-[`results_contract.md`](results_contract.md).
+**Manuscript status:** confirmatory result binding complete; H1-H4 were evaluated and H5 was excluded pre-outcome with machine-bound evidence. All result values and decisions in the generated sections come from the validated machine contract.
 <!-- END PAPER GENERATED STATUS -->
 
 ## Abstract
@@ -36,9 +34,7 @@ it is not evidence about human learners. Confirmatory conclusions are admitted o
 through the machine-generated results contract.
 
 <!-- BEGIN PAPER GENERATED ABSTRACT FINDINGS EN -->
-**Confirmatory findings:** this block is owned by the validated paper binder and is
-populated only after the programmatic and H5 lifecycle is complete or H5 is excluded
-pre-outcome with machine-bound evidence.
+**Confirmatory findings.** H1=partially_supported (complete); H2=not_supported (complete); H3=supported (complete); H4=supported (complete); H5=not evaluated (excluded pre-outcome). H1 A rate=0.128696; rescue 95% CI=[0.103478, 0.138261]. H2 harm 95% CI=[0.023478, 0.089565]; no-harm 95% CI=[0.072174, 0.122609]. These are simulated finite-budget results, not evidence of human learning or educational efficacy.
 <!-- END PAPER GENERATED ABSTRACT FINDINGS EN -->
 
 ## 1. Introduction
@@ -327,47 +323,111 @@ interval.
 ## 6. Results Contract
 
 <!-- BEGIN PAPER GENERATED RESULTS -->
-**Confirmatory status: PENDING.** No confirmatory estimate or hypothesis decision is
-available in this draft.
+The table and audit records below are generated directly from the validated results contract. No confirmatory value in this section is hand-entered.
 
-The canonical machine surface is
-[`results_contract.md`](results_contract.md). The following required outputs remain
-unpopulated:
+**Machine exclusion disclosure.** 1,600 intended journeys were excluded from every estimand. Reasons: `structural_failure` (1,600). Arms: Arm C (1,600). Affected targets: `化学计量（摩尔/阿伏伽德罗）`, `原子结构`, `基本操作`, `物质分类`.
 
-| Question | Required generated IDs | Status |
-|---|---|---|
-| H1 P rescue | `H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS`, `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS_CI95` | PENDING |
-| H1 no-repeat | `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT_CI95` | PENDING |
-| H2 fixed-probe harm | `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95` | PENDING |
-| H2 no-harm | `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95` | PENDING |
-| H3 adaptive sanity | `H3_A_MINUS_B_TERMINAL_ACCURACY_MATCHED_B15_FULL_SET_CI95` | PENDING |
-| H4 misspecification | `H4_H1_RESCUE_MISSPECIFIED_B15_ELIGIBLE_STRESS`, `H4_H2_HARM_MISSPECIFIED_B9_ELIGIBLE_STRESS` | PENDING |
-| H5 personas | `H5_QUALIFYING_PROVIDER_COUNT`, `H5_MISCONCEPTION_HIT_RATE_CONTRAST_CI95` | PENDING |
+**Machine post-collection static audit policy.** The independently reviewed conditional-metric rule records undefined target/draw denominators as NA, uses no denominator redraw, and discloses attempted and defined bootstrap iterations. This clarification was adopted from static review, not from any result direction; the binder verified policy artifact `static_audit_policy.json`.
 
-No sentence in this manuscript may convert a pending cell into a qualitative claim.
-After S3 population, the text must follow the frozen supported/partially-supported/
-not-supported branches, including null, reversed, or imprecise outcomes.
+**H5 excluded-cell disclosure.** 12 excluded provider cells and 464 excluded persona cells.
+
+**H5 provider lifecycle disclosure.** Of the six frozen providers: invalid calibration schema=3; invalid provider artifact=0; missing=0; missing required revision=0; network interruption=1; model-drift exclusion=0; provider-configuration exclusion=0; pre-outcome design exclusion=0; technical interruption=0; post-calibration exclusion=2; other collected=0. Invalid, missing, interrupted, and post-calibration-excluded providers do not enter qualifying-provider metrics. Immutable evidence is bound in `h5/h5_results.json`.
+
+**H5 provider identities by lifecycle.** invalid calibration schema: `deepseek`, `glm`, `kimi`; network interruption: `doubao`; post calibration exclusion: `minimax`, `tongyi`. Immutable evidence is bound in `h5/h5_results.json`.
+
+**Machine item-type generator diagnostic.** Because administered journeys are mixed trajectories, these probability-gap summaries are generator diagnostics, not item-type H1/H2 outcome estimands. MCQ gap=-0.005756; 95% CI [-0.007220, -0.004277]; 152,853 events / 15,400 journeys / 27 targets. Numeric gap=0.082579; 95% CI [0.080117, 0.085107]; 5,238 events / 3,694 journeys / 13 targets.
+
+| Hypothesis | Analysis status | Decision | Machine branch |
+|---|---|---|---|
+| H1 | complete | partially_supported | `mixed` |
+| H2 | complete | not_supported | `a_inferior` |
+| H3 | complete | supported | `supported` |
+| H4 | complete | supported | `supported` |
+| H5 | excluded pre-outcome | not evaluated | `excluded_pre_outcome` |
+
+### Machine display records
+
+**H1.**
+- result `H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS` / registry `p_rescue.full.matched.b15.arm_A`: value=0.128696; ci95=[0.112174, 0.145217]; numerator=148; denominator=1150; n_target=23; n_pair=1150.
+- result `H1_P_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS` / registry `p_rescue.full.matched.b15.arm_B`: value=0.007826; ci95=[0.003478, 0.013043]; numerator=9; denominator=1150; n_target=23; n_pair=1150.
+- result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS` / registry `h1.primary.matched.b15.rescue_A_minus_B`: value=0.120870; ci95=[0.103478, 0.138261]; numerator=139; denominator=1150; n_target=23; n_pair=1150.
+- result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS_CI95` / registry `h1.primary.matched.b15.rescue_A_minus_B`: value=[0.103478, 0.138261]; numerator=139; denominator=1150; n_target=23; n_pair=1150.
+- result `H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT` / registry `h1.no_repeat.matched.b15.arm_A`: value=0.005000; ci95=[0, 0.015000]; numerator=1; denominator=200; n_target=4; n_pair=200.
+- result `H1_P_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT` / registry `h1.no_repeat.matched.b15.arm_B`: value=0; ci95=[0, 0]; numerator=0; denominator=200; n_target=4; n_pair=200.
+- result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT` / registry `h1.no_repeat.matched.b15.rescue_A_minus_B`: value=0.005000; ci95=[0, 0.015000]; numerator=1; denominator=200; n_target=4; n_pair=200.
+- result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT_CI95` / registry `h1.no_repeat.matched.b15.rescue_A_minus_B`: value=[0, 0.015000]; numerator=1; denominator=200; n_target=4; n_pair=200.
+
+**H2.**
+- result `H2_C_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `c_misdiagnosis.full.matched.b9.arm_A`: value=0.373913; ci95=[0.346087, 0.401739]; numerator=430; denominator=1150; n_target=23; n_pair=1150.
+- result `H2_C_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `c_misdiagnosis.full.matched.b9.arm_B`: value=0.276522; ci95=[0.250435, 0.302609]; numerator=318; denominator=1150; n_target=23; n_pair=1150.
+- result `H2_C_C_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `c_misdiagnosis.full.matched.b9.arm_C`: value=0.430435; ci95=[0.401739, 0.459130]; numerator=495; denominator=1150; n_target=23; n_pair=1150.
+- result `H2_C_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.arm_A`: value=0.417778; ci95=[0.373333, 0.462222]; numerator=188; denominator=450; n_target=9; n_pair=450.
+- result `H2_C_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.arm_B`: value=0.284444; ci95=[0.242222, 0.326667]; numerator=128; denominator=450; n_target=9; n_pair=450.
+- result `H2_C_C_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.arm_C`: value=0.437778; ci95=[0.393333, 0.482222]; numerator=197; denominator=450; n_target=9; n_pair=450.
+- result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `h2.primary.matched.b9.harm_C_minus_A`: value=0.056522; ci95=[0.023478, 0.089565]; numerator=65; denominator=1150; n_target=23; n_pair=1150.
+- result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95` / registry `h2.primary.matched.b9.harm_C_minus_A`: value=[0.023478, 0.089565]; numerator=65; denominator=1150; n_target=23; n_pair=1150.
+- result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `h2.primary.matched.b9.no_harm_A_minus_B`: value=0.097391; ci95=[0.072174, 0.122609]; numerator=112; denominator=1150; n_target=23; n_pair=1150.
+- result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95` / registry `h2.primary.matched.b9.no_harm_A_minus_B`: value=[0.072174, 0.122609]; numerator=112; denominator=1150; n_target=23; n_pair=1150.
+- result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.harm_C_minus_A`: value=0.020000; ci95=[-0.033333, 0.075556]; numerator=9; denominator=450; n_target=9; n_pair=450.
+- result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95` / registry `h2.no_repeat.matched.b9.harm_C_minus_A`: value=[-0.033333, 0.075556]; numerator=9; denominator=450; n_target=9; n_pair=450.
+- result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.no_harm_A_minus_B`: value=0.133333; ci95=[0.091111, 0.175556]; numerator=60; denominator=450; n_target=9; n_pair=450.
+- result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95` / registry `h2.no_repeat.matched.b9.no_harm_A_minus_B`: value=[0.091111, 0.175556]; numerator=60; denominator=450; n_target=9; n_pair=450.
+
+**H3.**
+- result `H3_A_MINUS_B_TERMINAL_ACCURACY_MATCHED_B15_FULL_SET` / registry `h3.matched.b15.terminal_accuracy_A_minus_B`: value=0.100370; ci95=[0.088889, 0.111852]; numerator=542; denominator=5400; n_target=27; n_pair=5400.
+- result `H3_A_MINUS_B_TERMINAL_ACCURACY_MATCHED_B15_FULL_SET_CI95` / registry `h3.matched.b15.terminal_accuracy_A_minus_B`: value=[0.088889, 0.111852]; numerator=542; denominator=5400; n_target=27; n_pair=5400.
+- result `H3_A_MEDIAN_CONVERGENCE_ITEMS_MATCHED_B15_FULL_SET` / registry `h3.matched.b15.time_to_confidence.arm_A`: value=8; ci95=[8, 8]; numerator=50613; denominator=5400; n_target=27; n_pair=5400.
+- result `H3_B_MEDIAN_CONVERGENCE_ITEMS_MATCHED_B15_FULL_SET` / registry `h3.matched.b15.time_to_confidence.arm_B`: value=11; ci95=[10, 11]; numerator=55139; denominator=5400; n_target=27; n_pair=5400.
+
+**H4.**
+- result `H4_H1_RESCUE_MISSPECIFIED_B15_ELIGIBLE_STRESS` / registry `h4.misspecified.b15.rescue_A_minus_B`: value=0.120870; ci95=[0.101739, 0.140000]; numerator=139; denominator=1150; n_target=23; n_pair=1150.
+- result `H4_H2_HARM_MISSPECIFIED_B9_ELIGIBLE_STRESS` / registry `h4.misspecified.b9.harm_C_minus_A`: value=0.069565; ci95=[0.036522, 0.102609]; numerator=80; denominator=1150; n_target=23; n_pair=1150.
+- result `H4_H1_MATCHED_TO_MISSPECIFIED_DEGRADATION` / registry `h4.degradation.h1_rescue.matched_minus_misspecified`: value=0.000000; ci95=[-0.026087, 0.025217]; numerator=0; denominator=1150; n_target=23; n_pair=1150.
+- result `H4_H2_MATCHED_TO_MISSPECIFIED_DEGRADATION` / registry `h4.degradation.h2_harm.matched_minus_misspecified`: value=-0.013043; ci95=[-0.060000, 0.034783]; numerator=-15; denominator=1150; n_target=23; n_pair=1150.
+- result `H4_H2_NO_HARM_MISSPECIFIED_B9_ELIGIBLE_STRESS` / registry `h4.misspecified.b9.no_harm_A_minus_B`: value=0.080870; ci95=[0.054783, 0.106957]; numerator=93; denominator=1150; n_target=23; n_pair=1150.
+- result `H4_H2_NO_HARM_MATCHED_TO_MISSPECIFIED_DEGRADATION` / registry `h4.degradation.h2_no_harm.matched_minus_misspecified`: value=0.016522; ci95=[-0.020870, 0.053043]; numerator=19; denominator=1150; n_target=23; n_pair=1150.
+- result `H4_H1_RESCUE_MISSPECIFIED_B15_COMMON_SUPPORT` / registry `h1.no_repeat.misspecified.b15.rescue_A_minus_B`: value=0.005000; ci95=[0, 0.015000]; numerator=1; denominator=200; n_target=4; n_pair=200.
+- result `H4_H1_RESCUE_MISSPECIFIED_B15_COMMON_SUPPORT_CI95` / registry `h1.no_repeat.misspecified.b15.rescue_A_minus_B`: value=[0, 0.015000]; numerator=1; denominator=200; n_target=4; n_pair=200.
+- result `H4_H2_HARM_MISSPECIFIED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.misspecified.b9.harm_C_minus_A`: value=0.028889; ci95=[-0.022222, 0.080056]; numerator=13; denominator=450; n_target=9; n_pair=450.
+- result `H4_H2_HARM_MISSPECIFIED_B9_COMMON_SUPPORT_CI95` / registry `h2.no_repeat.misspecified.b9.harm_C_minus_A`: value=[-0.022222, 0.080056]; numerator=13; denominator=450; n_target=9; n_pair=450.
+- result `H4_H2_A_MINUS_B_MISDIAGNOSIS_MISSPECIFIED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.misspecified.b9.no_harm_A_minus_B`: value=0.113333; ci95=[0.068889, 0.160000]; numerator=51; denominator=450; n_target=9; n_pair=450.
+- result `H4_H2_A_MINUS_B_MISDIAGNOSIS_MISSPECIFIED_B9_COMMON_SUPPORT_CI95` / registry `h2.no_repeat.misspecified.b9.no_harm_A_minus_B`: value=[0.068889, 0.160000]; numerator=51; denominator=450; n_target=9; n_pair=450.
+- result `H4_MCQ_GENERATOR_MINUS_PRODUCTION_MISSPECIFIED_DIAGNOSTIC` / registry `misspecification.item_type.mcq.generator_minus_production`: value=-0.005756; ci95=[-0.007220, -0.004277]; numerator=-869.942501; denominator=152853; n_target=27; n_pair=15400.
+- result `H4_NUMERIC_GENERATOR_MINUS_PRODUCTION_MISSPECIFIED_DIAGNOSTIC` / registry `misspecification.item_type.numeric.generator_minus_production`: value=0.082579; ci95=[0.080117, 0.085107]; numerator=550.308891; denominator=5238; n_target=13; n_pair=3694.
+
+**H5.**
+No outcome estimate was generated because the analysis was excluded pre-outcome; the decision table records this as not evaluated.
+
+Source artifact: `metric_registry.json` (`sha256:3493b2687cecaa91b0ef7ae25f0dacdaa3ea05a5405c79a4321814d5fa092a7c`). Publication PNG bytes were copied only after contract hash verification.
+
+### Verified publication figures
+
+![Four-state confusion matrices (decision)](generated/fig-confusion-matrices-decision-png-319d6c884856.png)
+![Four-state confusion matrices (terminal)](generated/fig-confusion-matrices-terminal-png-a6bee34a9384.png)
+![Convergence-time distribution](generated/fig-convergence-distribution-png-4faa7143705d.png)
+![C-state misdiagnosis across item budgets](generated/fig-c-probe-harm-png-e5e22d30fb2c.png)
+![Held-out predictive calibration](generated/fig-heldout-brier-png-1bd60bc4ec0c.png)
+![LLM-persona manipulation checks](generated/fig-manipulation-checks-png-240a29d8ba3e.png)
+![Matched-to-misspecified contrast degradation](generated/fig-matched-vs-misspecified-png-39c4270e4169.png)
+![Misspecified generator gap by item type](generated/fig-misspecification-by-item-type-png-1b8a8458a7d4.png)
+![Provider agreement](generated/fig-provider-agreement-png-c13d964f0b61.png)
+![P-state rescue across item budgets](generated/fig-p-rescue-png-c36a76849139.png)
 <!-- END PAPER GENERATED RESULTS -->
 
 ## 7. Discussion
 
 <!-- BEGIN PAPER GENERATED DISCUSSION -->
-The discussion is intentionally conditional until S3 populates the contract.
+**H1.** The frozen P-state rescue criterion was partially supported. Some required evidence favored rescue, but the full conjunction did not pass; the paper therefore makes no full-support claim.
 
-- If H1 is supported, the result will show a finite-budget advantage for
-  belief-triggered prerequisite evidence under the tested model and catalog. It will
-  not show asymptotic necessity or human validity.
-- If H1 is not supported, the confirmatory production-bound result overrides the T0
-  expectation; the pilot remains a hypothesis-generating failure analysis.
-- If H2 is supported, the interpretation concerns timing policy: prerequisite probes
-  can be informative for P while a fixed quota can harm C classification.
-- If H2 is not supported or reverses, the paper will report that the pilot's harm
-  pattern did not survive the production catalog and paired design.
-- H3 cannot become the headline because adaptive testing efficiency is established
-  prior art.
-- H4 can reveal model sensitivity but cannot establish realism.
-- H5 can support only a qualified statement about simulated behavior among provider
-  cells that passed the predeclared manipulation and completion gates.
+**H2.** The criterion was not supported. The fixed-quota harm contrast remained positive, but the belief-triggered arm failed the no-harm requirement relative to the local-only arm; this is not a reversal of the fixed-quota pattern.
+
+**H3.** The subordinate adaptive sanity check was supported. It remains secondary because adaptive-testing efficiency is established prior art.
+
+**H4.** Under the frozen misspecification stress, both predicted directions persisted. This result describes sensitivity to one declared perturbation family and cannot establish behavioral realism.
+
+**H5.** The LLM-persona hypothesis was excluded pre-outcome because its machine mapping gate was unavailable. It was not evaluated and is not reported as a negative finding.
+
+These findings remain limited to simulated, finite-budget diagnosis in the tested catalog. They do not establish structural non-identifiability, human validity, learning gains, or educational efficacy.
 <!-- END PAPER GENERATED DISCUSSION -->
 
 ## 8. Contribution Statement and AI Use

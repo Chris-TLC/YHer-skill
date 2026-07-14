@@ -1,8 +1,46 @@
 # Defense Pack: Prerequisite-Probe Timing Under Item Budgets
 
 <!-- BEGIN PAPER GENERATED DEFENSE DIGEST -->
-**Machine digest status: UNBOUND.** The controller must rerun S3 with final code
-provenance before `analysis.paper` may populate this block.
+**Machine-bound final result digest.** H1=partially_supported; H2=not_supported; H3=supported; H4=supported; H5=not evaluated (excluded pre-outcome).
+
+- **H1:** A=148/1,150 (12.87%); B=9/1,150 (0.78%); A-B=+12.09 pp (95% CI 10.35 to 13.83 pp); common-support A-B=+0.50 pp (95% CI 0.00 to 1.50 pp).
+- **H2:** A=37.39%; B=27.65%; C=43.04%; stress C-A=+5.65 pp (95% CI 2.35 to 8.96 pp); stress A-B=+9.74 pp (95% CI 7.22 to 12.26 pp); common-support C-A=+2.00 pp (95% CI -3.33 to 7.56 pp); common-support A-B=+13.33 pp (95% CI 9.11 to 17.56 pp).
+- **H3:** A-B terminal accuracy=+10.04 pp (95% CI 8.89 to 11.19 pp); median convergence A=8, B=11 items.
+- **H4:** misspecified H1 rescue=+12.09 pp (95% CI 10.17 to 14.00 pp); misspecified H2 fixed-probe harm=+6.96 pp (95% CI 3.65 to 10.26 pp).
+- **H5 lifecycle:** frozen providers=6; collected providers=3; qualifying providers=0; 12 excluded provider cells and 464 excluded persona cells; invalid calibration schema=3 (deepseek, glm, kimi); network interruption=1 (doubao); post calibration exclusion=2 (minimax, tongyi).
+- **H5 collection accounting:** requests=10,849; input tokens=5,571,972; output tokens=1,201,999; CNY 103.51977121. These are collection records, not H5 outcome evidence.
+
+<!-- BEGIN DEFENSE MACHINE AUDIT -->
+result `H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS` / registry `p_rescue.full.matched.b15.arm_A`: value=0.128696; ci95=[0.112174, 0.145217]; denominator=1150
+result `H1_P_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS` / registry `p_rescue.full.matched.b15.arm_B`: value=0.007826; ci95=[0.003478, 0.013043]; denominator=1150
+result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS` / registry `h1.primary.matched.b15.rescue_A_minus_B`: value=0.120870; ci95=[0.103478, 0.138261]; denominator=1150
+result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS_CI95` / registry `h1.primary.matched.b15.rescue_A_minus_B`: value=[0.103478, 0.138261]; denominator=1150
+result `H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT` / registry `h1.no_repeat.matched.b15.arm_A`: value=0.005000; ci95=[0, 0.015000]; denominator=200
+result `H1_P_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT` / registry `h1.no_repeat.matched.b15.arm_B`: value=0; ci95=[0, 0]; denominator=200
+result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT` / registry `h1.no_repeat.matched.b15.rescue_A_minus_B`: value=0.005000; ci95=[0, 0.015000]; denominator=200
+result `H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT_CI95` / registry `h1.no_repeat.matched.b15.rescue_A_minus_B`: value=[0, 0.015000]; denominator=200
+result `H2_C_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `c_misdiagnosis.full.matched.b9.arm_A`: value=0.373913; ci95=[0.346087, 0.401739]; denominator=1150
+result `H2_C_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `c_misdiagnosis.full.matched.b9.arm_B`: value=0.276522; ci95=[0.250435, 0.302609]; denominator=1150
+result `H2_C_C_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `c_misdiagnosis.full.matched.b9.arm_C`: value=0.430435; ci95=[0.401739, 0.459130]; denominator=1150
+result `H2_C_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.arm_A`: value=0.417778; ci95=[0.373333, 0.462222]; denominator=450
+result `H2_C_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.arm_B`: value=0.284444; ci95=[0.242222, 0.326667]; denominator=450
+result `H2_C_C_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.arm_C`: value=0.437778; ci95=[0.393333, 0.482222]; denominator=450
+result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `h2.primary.matched.b9.harm_C_minus_A`: value=0.056522; ci95=[0.023478, 0.089565]; denominator=1150
+result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95` / registry `h2.primary.matched.b9.harm_C_minus_A`: value=[0.023478, 0.089565]; denominator=1150
+result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS` / registry `h2.primary.matched.b9.no_harm_A_minus_B`: value=0.097391; ci95=[0.072174, 0.122609]; denominator=1150
+result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95` / registry `h2.primary.matched.b9.no_harm_A_minus_B`: value=[0.072174, 0.122609]; denominator=1150
+result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.harm_C_minus_A`: value=0.020000; ci95=[-0.033333, 0.075556]; denominator=450
+result `H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95` / registry `h2.no_repeat.matched.b9.harm_C_minus_A`: value=[-0.033333, 0.075556]; denominator=450
+result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT` / registry `h2.no_repeat.matched.b9.no_harm_A_minus_B`: value=0.133333; ci95=[0.091111, 0.175556]; denominator=450
+result `H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95` / registry `h2.no_repeat.matched.b9.no_harm_A_minus_B`: value=[0.091111, 0.175556]; denominator=450
+result `H3_A_MINUS_B_TERMINAL_ACCURACY_MATCHED_B15_FULL_SET` / registry `h3.matched.b15.terminal_accuracy_A_minus_B`: value=0.100370; ci95=[0.088889, 0.111852]; denominator=5400
+result `H3_A_MINUS_B_TERMINAL_ACCURACY_MATCHED_B15_FULL_SET_CI95` / registry `h3.matched.b15.terminal_accuracy_A_minus_B`: value=[0.088889, 0.111852]; denominator=5400
+result `H3_A_MEDIAN_CONVERGENCE_ITEMS_MATCHED_B15_FULL_SET` / registry `h3.matched.b15.time_to_confidence.arm_A`: value=8; ci95=[8, 8]; denominator=5400
+result `H3_B_MEDIAN_CONVERGENCE_ITEMS_MATCHED_B15_FULL_SET` / registry `h3.matched.b15.time_to_confidence.arm_B`: value=11; ci95=[10, 11]; denominator=5400
+result `H4_H1_RESCUE_MISSPECIFIED_B15_ELIGIBLE_STRESS` / registry `h4.misspecified.b15.rescue_A_minus_B`: value=0.120870; ci95=[0.101739, 0.140000]; denominator=1150
+result `H4_H2_HARM_MISSPECIFIED_B9_ELIGIBLE_STRESS` / registry `h4.misspecified.b9.harm_C_minus_A`: value=0.069565; ci95=[0.036522, 0.102609]; denominator=1150
+H5 lifecycle evidence `h5/h5_results.json` (sha256:8f8368aa7dc32062d747c73031435dc9ae5ff7191f9a4f2077a1e0d918bc3b4f).
+<!-- END DEFENSE MACHINE AUDIT -->
 <!-- END PAPER GENERATED DEFENSE DIGEST -->
 
 Pilot observations may explain why hypotheses were chosen, but they are not
@@ -71,10 +109,10 @@ confirmatory evidence and must never be pooled with confirmatory results.
   S4-S5 and hard gates H-A through H-H.
 - **[E22] H5 lifecycle and accounting:** [`results_contract.md`](results_contract.md),
   JSON paths `hypotheses.H5`, `denominators.provider_lifecycle_counts`, and
-  `h5_provider_exclusion_disclosure`; `/tmp/yher_sprint2/h5_results/h5_results.json`,
+  `h5_provider_exclusion_disclosure`; `/tmp/yher_sprint2/h5_results_768785c/h5_results.json`,
   JSON paths `status`, `hypothesis`, `denominators`, and
   `provider_exclusion_disclosure`; and
-  `/tmp/yher_sprint2/h5_results/provider_ledger.json`, JSON path `totals`.
+  `/tmp/yher_sprint2/h5_results_768785c/provider_ledger.json`, JSON path `totals`.
 
 ## 1. What is the exact research question?
 
