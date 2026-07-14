@@ -348,7 +348,7 @@ class SessionService:
                 "occurred_at": float(self.clock()),
                 "session_id": session_id,
                 "user_id": session["user_id"],
-                "node": session["node"],
+                "node": str(binding.get("node") or session["node"]),
                 "action_id": (session.get("learning") or {}).get("action_id"),
                 "rec_id": str(rec_id),
                 "watch_id": normalized_watch_id,
@@ -381,7 +381,7 @@ class SessionService:
                 "occurred_at": float(self.clock()),
                 "session_id": session_id,
                 "user_id": session["user_id"],
-                "node": session["node"],
+                "node": str(binding.get("node") or session["node"]),
                 "rec_id": str(rec_id),
                 "segment_id": binding["segment_id"],
                 "bv": binding["bv"],
@@ -484,19 +484,38 @@ class SessionService:
             projected = project_student(
                 session["user_id"], all_events(self.store, session["user_id"])
             )
-            recommendation_result = self.curriculum.recommend(
-                node=session["node"],
-                belief=self._belief(session["user_id"], session["node"]),
-                grade=session["grade"],
-                learning_purpose=session["learning_purpose"],
-                budget={
-                    **session["budget"],
-                    "session_remaining_minutes": self._timing(session)["remaining_minutes"],
-                },
-                seen_segments=getattr(projected, "seen_segments", []),
-                session_id=session["session_id"],
-                action_id=action_id,
+            recommendation_budget = {
+                **session["budget"],
+                "session_remaining_minutes": self._timing(session)["remaining_minutes"],
+            }
+            multi_node_recommend = getattr(
+                self.curriculum, "recommend_multi_node", None
             )
+            if callable(multi_node_recommend):
+                target_nodes, beliefs = self._recommendation_targets(
+                    session, projected, recommendation_budget
+                )
+                recommendation_result = multi_node_recommend(
+                    target_nodes=target_nodes,
+                    beliefs=beliefs,
+                    grade=session["grade"],
+                    learning_purpose=session["learning_purpose"],
+                    budget=recommendation_budget,
+                    seen_segments=getattr(projected, "seen_segments", []),
+                    session_id=session["session_id"],
+                    action_id=action_id,
+                )
+            else:
+                recommendation_result = self.curriculum.recommend(
+                    node=session["node"],
+                    belief=self._belief(session["user_id"], session["node"]),
+                    grade=session["grade"],
+                    learning_purpose=session["learning_purpose"],
+                    budget=recommendation_budget,
+                    seen_segments=getattr(projected, "seen_segments", []),
+                    session_id=session["session_id"],
+                    action_id=action_id,
+                )
         rec_snapshot = recommendation_result.get("rec_served")
         if rec_snapshot:
             append_once(
@@ -1043,6 +1062,40 @@ class SessionService:
         )
         return mastery.get_belief(state, float(self.clock()))
 
+    def _recommendation_targets(
+        self,
+        session: dict[str, Any],
+        projected: StudentModel,
+        budget: dict[str, Any],
+    ) -> tuple[list[str], dict[str, np.ndarray]]:
+        records = projected.subject("chemistry").kg_mastery
+        candidate_nodes = {str(session["node"]), *(str(node) for node in records)}
+        now = float(self.clock())
+        beliefs: dict[str, np.ndarray] = {}
+        for node in candidate_nodes:
+            record = records.get(node)
+            if record is None:
+                beliefs[node] = np.full(4, 0.25)
+                continue
+            state = mastery.NodeBelief(
+                b=np.asarray(record.belief, dtype=float),
+                S=record.stability,
+                last_review_at=record.last_review_at,
+                direct_answers=record.direct_answers,
+            )
+            beliefs[node] = mastery.get_belief(state, now)
+        ordered = sorted(
+            candidate_nodes,
+            key=lambda node: (
+                float(beliefs[node][mastery.M]),
+                -_belief_entropy(beliefs[node]),
+                node,
+            ),
+        )
+        cap = max(1, int(budget.get("target_nodes") or 1))
+        selected = ordered[:cap]
+        return selected, {node: beliefs[node] for node in selected}
+
     def _save_projection(self, user_id: str) -> dict[str, Any]:
         with self._user_lock(user_id):
             model = project_student(user_id, all_events(self.store, user_id))
@@ -1226,6 +1279,12 @@ def _watch_event_id(session_id: str, rec_id: str, watch_id: str) -> str:
 def _seen_event_id(session_id: str, rec_id: str) -> str:
     material = f"seen-segment:v1:{session_id}:{rec_id}".encode()
     return hashlib.sha256(material).hexdigest()
+
+
+def _belief_entropy(belief: np.ndarray) -> float:
+    positive = np.asarray(belief, dtype=float)
+    positive = positive[positive > 0]
+    return float(-np.sum(positive * np.log(positive)))
 
 
 def _submission_hash(answer: Any) -> str:

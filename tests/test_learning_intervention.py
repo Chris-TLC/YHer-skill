@@ -26,7 +26,7 @@ from apps.demo_api import create_app
 NODE = "氧化还原反应"
 
 
-def _catalog() -> ItemCatalog:
+def _catalog(node: str = NODE) -> ItemCatalog:
     return ItemCatalog.from_items(
         [
             CatalogItem(
@@ -34,7 +34,7 @@ def _catalog() -> ItemCatalog:
                 family_id=f"family-{index}",
                 aligned_item_id=f"v3-{index}",
                 alignment_status="auto_inherited",
-                node_ids=(NODE,),
+                node_ids=(node,),
                 stem_blocks=({"para": [{"type": "text", "text": f"question {index}"}]},),
                 stem_text=f"question {index}",
                 stem_hash=f"hash-{index}",
@@ -80,6 +80,24 @@ class CapturingBudgetCurriculum(FakeCurriculum):
     def recommend(self, **kwargs):
         self.budgets.append(dict(kwargs["budget"]))
         return super().recommend(**kwargs)
+
+
+class CapturingMultiNodeCurriculum(FakeCurriculum):
+    def __init__(self):
+        self.multi_calls: list[dict] = []
+        self.single_calls: list[dict] = []
+
+    def recommend(self, **kwargs):
+        self.single_calls.append(kwargs)
+        return super().recommend(**kwargs)
+
+    def recommend_multi_node(self, **kwargs):
+        self.multi_calls.append(kwargs)
+        return super().recommend(
+            session_id=kwargs["session_id"],
+            action_id=kwargs["action_id"],
+            budget=kwargs["budget"],
+        )
 
 
 class CapturingExplanationProvider:
@@ -326,13 +344,43 @@ class LosingWatchAppendStore(MemoryStore):
         return super().append_event_once(user_id, event)
 
 
-def _drive_to_learning(service: SessionService, session_id: str) -> dict:
+def _drive_to_learning(
+    service: SessionService, session_id: str, *, answer: str = "A"
+) -> dict:
     for index in range(20):
         step = service.next_assignment(session_id)
         if step.get("phase") == "learning":
             return step
-        service.submit(session_id, step["assignment_id"], f"diag-{index}", "A")
+        service.submit(session_id, step["assignment_id"], f"diag-{index}", answer)
     raise AssertionError("diagnosis never reached learning checkpoint")
+
+
+def _append_profile_observation(
+    store: MemoryStore,
+    *,
+    user_id: str,
+    node: str,
+    likelihood: list[float],
+    event_id: str,
+) -> None:
+    store.append_event(
+        user_id,
+        {
+            "event_id": event_id,
+            "kind": "answer_scored",
+            "occurred_at": 900.0,
+            "session_id": f"prior-{event_id}",
+            "user_id": user_id,
+            "node": node,
+            "phase": "diagnostic",
+            "correct": False,
+            "confidence": 1.0,
+            "likelihood": likelihood,
+            "update_applied": True,
+            "is_direct": True,
+            "synthetic": False,
+        },
+    )
 
 
 def test_learning_checkpoint_blocks_practice_until_explicit_idempotent_ack() -> None:
@@ -836,6 +884,71 @@ def test_recommendation_receives_same_full_session_time_as_learning_view() -> No
     ]
 
 
+def test_session_selects_multi_node_targets_by_projected_weakness_and_entropy() -> None:
+    user_id = "multi-target-order"
+    store = MemoryStore()
+    curriculum = CapturingMultiNodeCurriculum()
+    _append_profile_observation(
+        store,
+        user_id=user_id,
+        node="低掌握节点",
+        likelihood=[0.05, 0.85, 0.05, 0.05],
+        event_id="profile-low-pm",
+    )
+    _append_profile_observation(
+        store,
+        user_id=user_id,
+        node="同掌握高熵节点",
+        likelihood=[0.10, 0.30, 0.30, 0.30],
+        event_id="profile-high-entropy",
+    )
+    _append_profile_observation(
+        store,
+        user_id=user_id,
+        node="同掌握低熵节点",
+        likelihood=[0.10, 0.80, 0.05, 0.05],
+        event_id="profile-low-entropy",
+    )
+    service = SessionService(
+        _catalog(), store, clock=lambda: 1_000.0, curriculum=curriculum
+    )
+    session_id = service.start_session(user_id, NODE, "6h")["session_id"]
+
+    _drive_to_learning(service, session_id)
+
+    assert curriculum.single_calls == []
+    assert len(curriculum.multi_calls) == 1
+    call = curriculum.multi_calls[0]
+    assert call["target_nodes"] == ["低掌握节点", "同掌握高熵节点"]
+    assert list(call["beliefs"]) == call["target_nodes"]
+    assert len(call["target_nodes"]) == call["budget"]["target_nodes"] == 2
+
+
+def test_session_keeps_nonweak_profile_target_when_weak_nodes_do_not_fill_cap() -> None:
+    user_id = "multi-target-fill"
+    store = MemoryStore()
+    curriculum = CapturingMultiNodeCurriculum()
+    _append_profile_observation(
+        store,
+        user_id=user_id,
+        node="已掌握但仍可补充节点",
+        likelihood=[0.90, 0.04, 0.03, 0.03],
+        event_id="profile-nonweak",
+    )
+    service = SessionService(
+        _catalog(), store, clock=lambda: 1_000.0, curriculum=curriculum
+    )
+    session_id = service.start_session(user_id, NODE, "6h")["session_id"]
+
+    _drive_to_learning(service, session_id, answer="B")
+
+    assert curriculum.single_calls == []
+    assert curriculum.multi_calls[0]["target_nodes"] == [
+        NODE,
+        "已掌握但仍可补充节点",
+    ]
+
+
 def test_billed_invalid_explanation_retains_usage_and_cost_in_fallback_audit() -> None:
     module = importlib.import_module("core.learning.explanations")
 
@@ -1290,6 +1403,40 @@ def test_default_runtime_keeps_all_exact_chunks_and_serves_by_segment_id() -> No
     assert "t=3" in recommendation["url"]
 
 
+def test_multi_node_runtime_resolves_source_metadata_by_node_and_segment_id() -> None:
+    other_node = "有机推断"
+    payload = _runtime_payload()
+    current_source = payload["segments_by_node"][NODE][0]
+    current_source["value"] = "当前节点专属价值"
+    shared_for_other = copy.deepcopy(current_source)
+    shared_for_other["value"] = "另一节点同片段价值"
+    payload["segments_by_node"][other_node].insert(0, shared_for_other)
+    runtime = _curriculum_class().from_payload(payload)
+    store = MemoryStore()
+    user_id = "node-specific-source"
+    _append_profile_observation(
+        store,
+        user_id=user_id,
+        node=other_node,
+        likelihood=[0.10, 0.70, 0.10, 0.10],
+        event_id="profile-other-node",
+    )
+    service = SessionService(
+        _catalog(), store, clock=lambda: 1_000.0, curriculum=runtime
+    )
+    session_id = service.start_session(user_id, NODE, "6h")["session_id"]
+
+    checkpoint = _drive_to_learning(service, session_id, answer="B")
+
+    bindings = store.load_session(session_id)["learning"]["recommendation_bindings"]
+    current_rec = next(
+        row for row in checkpoint["recommendations"] if NODE in row["reason"]
+    )
+    assert current_rec["value"] == "当前节点专属价值"
+    assert bindings[current_rec["rec_id"]].get("node") == NODE
+    assert {binding.get("node") for binding in bindings.values()} == {NODE, other_node}
+
+
 def test_runtime_builder_drops_catalog_rows_without_authoritative_duration(tmp_path: Path) -> None:
     import yaml
     from scripts.build_curriculum_runtime import build_runtime
@@ -1612,6 +1759,9 @@ def test_watch_is_bound_to_opaque_rec_and_projects_seen_segments_across_sessions
     first_session = service.start_session("watcher", NODE, "30min")["session_id"]
     checkpoint = _drive_to_learning(service, first_session)
     rec_id = checkpoint["recommendations"][0]["rec_id"]
+    legacy_session = store.load_session(first_session)
+    legacy_session["learning"]["recommendation_bindings"][rec_id].pop("node", None)
+    store.save_session(first_session, legacy_session)
 
     watched = service.record_watch(
         first_session,
@@ -1638,6 +1788,8 @@ def test_watch_is_bound_to_opaque_rec_and_projects_seen_segments_across_sessions
     events = store.all_events("watcher")
     assert len([event for event in events if event["kind"] == "watch_proxy"]) == 1
     assert len([event for event in events if event["kind"] == "seen_segments"]) == 1
+    assert next(event for event in events if event["kind"] == "watch_proxy")["node"] == NODE
+    assert next(event for event in events if event["kind"] == "seen_segments")["node"] == NODE
     projected = project_student("watcher", events).to_dict()
     assert projected["seen_segments"] == [{"bv": "SIGNED", "p": 1}]
 
@@ -1697,7 +1849,13 @@ def _api_client() -> TestClient:
     return TestClient(app)
 
 
-def _api_drive_to_learning(client: TestClient, session_id: str, first: dict) -> dict:
+def _api_drive_to_learning(
+    client: TestClient,
+    session_id: str,
+    first: dict,
+    *,
+    answer: str = "A",
+) -> dict:
     step = first
     for index in range(20):
         if step.get("phase") == "learning":
@@ -1707,7 +1865,7 @@ def _api_drive_to_learning(client: TestClient, session_id: str, first: dict) -> 
             json={
                 "assignment_id": step["assignment_id"],
                 "submission_id": f"api-diag-{index}",
-                "answer": "A",
+                "answer": answer,
             },
         )
         assert submitted.status_code == 200
@@ -1763,6 +1921,85 @@ def test_api_requires_learning_ack_and_watch_is_bound_to_issued_rec() -> None:
         "practice",
         "held_out",
     }
+
+
+def test_default_runtime_api_serves_and_records_two_diagnosed_weak_nodes() -> None:
+    current_node = "烯烃"
+    profile_node = "卤代烃"
+    user_id = "default-multi-node"
+    store = MemoryStore()
+    runtime = _curriculum_class().from_default_asset()
+    _append_profile_observation(
+        store,
+        user_id=user_id,
+        node=profile_node,
+        likelihood=[0.10, 0.70, 0.10, 0.10],
+        event_id="profile-halogenated",
+    )
+    app = create_app(
+        catalog=_catalog(current_node),
+        store=store,
+        curriculum=runtime,
+        static_dir=None,
+    )
+    client = TestClient(app)
+    started = client.post(
+        "/api/demo/sessions",
+        json={"user_id": user_id, "node": current_node, "budget_tier": "6h"},
+    )
+    assert started.status_code == 201
+    start_payload = started.json()
+
+    checkpoint = _api_drive_to_learning(
+        client,
+        start_payload["session_id"],
+        start_payload["assignment"],
+        answer="B",
+    )
+
+    rec_event = next(
+        event for event in store.all_events(user_id) if event["kind"] == "rec_served"
+    )
+    served = rec_event["served"]
+    served_nodes = {row["node"] for row in served}
+    assert served_nodes == {current_node, profile_node}
+    assert len({(row["bv"], row["p"]) for row in served}) == len(served)
+    for node in served_nodes:
+        eligible_ids = {
+            row["segment_id"] for row in runtime.eligible_segments(node)
+        }
+        assert any(
+            row["node"] == node and row["segment_id"] in eligible_ids
+            for row in served
+        )
+    assert all(row["has_time_anchor"] is True for row in checkpoint["recommendations"])
+    assert all(row["watch_scope"] == "exact_segment" for row in checkpoint["recommendations"])
+    assert all(
+        "互补" in row["reason"] and current_node in row["reason"] and profile_node in row["reason"]
+        for row in checkpoint["recommendations"]
+    )
+
+    profile_rec = next(
+        row for row in checkpoint["recommendations"] if profile_node in row["reason"].split("。", 1)[0]
+    )
+    watched = client.post(
+        f"/api/demo/sessions/{start_payload['session_id']}/watch",
+        json={
+            "rec_id": profile_rec["rec_id"],
+            "watch_id": "cross-node-watch",
+            "watched_seconds": 60,
+            "completed": False,
+        },
+    )
+    assert watched.status_code == 200
+    watch_event = next(
+        event for event in store.all_events(user_id) if event["kind"] == "watch_proxy"
+    )
+    seen_event = next(
+        event for event in store.all_events(user_id) if event["kind"] == "seen_segments"
+    )
+    assert watch_event["node"] == profile_node
+    assert seen_event["node"] == profile_node
 
 
 def test_canonical_api_rejects_hostile_origin_and_oversized_body() -> None:

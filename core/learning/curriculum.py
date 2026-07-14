@@ -116,44 +116,78 @@ class CurriculumRuntime:
         session_id: str,
         action_id: str,
     ) -> dict[str, Any]:
-        candidates = self.eligible_segments(node)
+        return self.recommend_multi_node(
+            target_nodes=[str(node)],
+            beliefs={str(node): np.asarray(belief, dtype=float)},
+            grade=grade,
+            learning_purpose=learning_purpose,
+            budget=budget,
+            seen_segments=seen_segments,
+            session_id=session_id,
+            action_id=action_id,
+        )
+
+    def recommend_multi_node(
+        self,
+        *,
+        target_nodes: Iterable[str],
+        beliefs: dict[str, np.ndarray],
+        grade: str,
+        learning_purpose: str,
+        budget: dict[str, Any],
+        seen_segments: Iterable[Any],
+        session_id: str,
+        action_id: str,
+    ) -> dict[str, Any]:
+        ordered_nodes: list[str] = []
+        for value in target_nodes:
+            node = str(value).strip()
+            if node and node not in ordered_nodes:
+                ordered_nodes.append(node)
+
         budget_seconds = max(0, int(float(budget.get("rx_minutes") or 0) * 60))
-        engine_candidates = copy.deepcopy(candidates)
-        for segment in engine_candidates:
-            full_duration = max(1, int(
-                segment.get("full_video_duration_sec")
-                or segment.get("duration_sec")
-                or 1
-            ))
-            segment["full_video_duration_sec"] = full_duration
-            anchor = _usable_anchor(str(node), segment)
-            if anchor is not None:
-                start, end = float(anchor["start_sec"]), float(anchor["end_sec"])
-                segment["start_sec"], segment["end_sec"] = start, end
-                segment["duration_sec"] = end - start
-            else:
-                segment.pop("start_sec", None)
-                segment.pop("end_sec", None)
-            if (
-                budget_seconds > 0
-                and full_duration > budget_seconds
-                and anchor is None
-            ):
-                # Video-level recommendation: allocate the first N minutes and
-                # disclose the complete duration; no synthetic timestamp/deep link.
-                segment["duration_sec"] = budget_seconds
-                segment["watch_scope"] = "from_start_within_session_budget"
+        candidates_by_node: dict[str, list[dict[str, Any]]] = {}
+        source_by_node_segment: dict[tuple[str, str], dict[str, Any]] = {}
         runtime_map = copy.deepcopy(self.track_map)
-        for segment in engine_candidates:
-            entity = segment["signed_entity"]
-            # The pure recommender currently resolves exact BV then season. A
-            # runtime-only alias preserves its API while the adapter proves the
-            # originating BV belongs to an active signed series/season.
-            alias = f"bv:{segment['bv']}"
-            if alias not in runtime_map["entities"]:
-                runtime_map["entities"][alias] = copy.deepcopy(
-                    runtime_map["entities"][entity]
+        for node in ordered_nodes:
+            engine_candidates = copy.deepcopy(self.eligible_segments(node))
+            for segment in engine_candidates:
+                full_duration = max(
+                    1,
+                    int(
+                        segment.get("full_video_duration_sec")
+                        or segment.get("duration_sec")
+                        or 1
+                    ),
                 )
+                segment["full_video_duration_sec"] = full_duration
+                anchor = _usable_anchor(node, segment)
+                if anchor is not None:
+                    start, end = float(anchor["start_sec"]), float(anchor["end_sec"])
+                    segment["start_sec"], segment["end_sec"] = start, end
+                    segment["duration_sec"] = end - start
+                else:
+                    segment.pop("start_sec", None)
+                    segment.pop("end_sec", None)
+                if (
+                    budget_seconds > 0
+                    and full_duration > budget_seconds
+                    and anchor is None
+                ):
+                    # Legacy whole-video rows stay range-free and disclose that
+                    # only the session-budget prefix was allocated.
+                    segment["duration_sec"] = budget_seconds
+                    segment["watch_scope"] = "from_start_within_session_budget"
+                source_by_node_segment[(node, str(segment["segment_id"]))] = segment
+                entity = segment["signed_entity"]
+                # The pure recommender resolves exact BV then season. This
+                # runtime-only alias proves the BV belongs to an active signed row.
+                alias = f"bv:{segment['bv']}"
+                if alias not in runtime_map["entities"]:
+                    runtime_map["entities"][alias] = copy.deepcopy(
+                        runtime_map["entities"][entity]
+                    )
+            candidates_by_node[node] = engine_candidates
 
         normalized_seen = _normalize_seen(seen_segments)
         sequence = 0
@@ -167,9 +201,9 @@ class CurriculumRuntime:
         result = recommender.recommend(
             grade,
             learning_purpose,
-            [str(node)],
-            {str(node): np.asarray(belief, dtype=float)},
-            {str(node): engine_candidates},
+            ordered_nodes,
+            {node: np.asarray(beliefs[node], dtype=float) for node in ordered_nodes},
+            candidates_by_node,
             runtime_map,
             dict(budget),
             seen_segments=normalized_seen,
@@ -177,12 +211,12 @@ class CurriculumRuntime:
             session_id=str(session_id),
             action_id=str(action_id),
         )
-        by_segment_id = {str(row["segment_id"]): row for row in engine_candidates}
         public: list[dict[str, Any]] = []
         bindings: dict[str, dict[str, Any]] = {}
         for served in result["recommendations"]:
-            source = by_segment_id[str(served["segment_id"])]
-            anchor = _usable_anchor(str(node), source)
+            served_node = str(served["node"])
+            source = source_by_node_segment[(served_node, str(served["segment_id"]))]
+            anchor = _usable_anchor(served_node, source)
             start = int(float(anchor["start_sec"])) if anchor else None
             url = _bilibili_url(source["bv"], source["p"], start)
             rec_id = str(served["rec_id"])
@@ -224,6 +258,7 @@ class CurriculumRuntime:
                 "rec_id": rec_id,
                 "session_id": str(session_id),
                 "action_id": str(action_id),
+                "node": served_node,
                 "bv": source["bv"],
                 "p": source["p"],
                 "segment_id": str(source.get("segment_id") or f"{source['bv']}#P{source['p']:03d}"),
