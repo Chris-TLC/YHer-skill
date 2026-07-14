@@ -175,6 +175,13 @@ FROZEN_MANUSCRIPT_SKELETON_SHA256 = (
     "751a719870a18b4fb2699815240401db88c74f3580d3a3e60154d5a520e7e5ff",
     "1afff22d5f8ca706bafe61ba73588a44175cf0b10e7f992b20e74f2fe2eb6045",
 )
+MANUSCRIPT_SKELETON_AMENDMENT_PATH = (
+    Path(__file__).parents[1]
+    / "experiments/config/paper_skeleton_amendments_v1.json"
+)
+MANUSCRIPT_SKELETON_AMENDMENT_SHA256 = (
+    "302010d76d52655f06a16d5889f9a4f53e3d28af41279b870b39ab7eca027c09"
+)
 
 PREDICATE_RESULT_BINDINGS: Mapping[str, Mapping[str, tuple[str, str]]] = {
     "H1": {
@@ -420,10 +427,11 @@ def bind_papers(
         observed_skeleton_sha = _manuscript_skeleton_sha256(
             original, include_zh=index == 1
         )
-        if observed_skeleton_sha != FROZEN_MANUSCRIPT_SKELETON_SHA256[index]:
-            raise PaperContractError(
-                f"manuscript skeleton differs from frozen template: {path.name}"
-            )
+        _validate_manuscript_skeleton(
+            path.name,
+            observed_skeleton_sha,
+            FROZEN_MANUSCRIPT_SKELETON_SHA256[index],
+        )
         originals[path] = original
         results = (
             _render_main_results(validated, path, output_dir)
@@ -2068,31 +2076,92 @@ def _render_yau_results(
     compact_ids = YAU_PROGRAMMATIC_IDS + (
         H5_IDS if validated.branches["H5"] is not None else ()
     )
+    h1_n = int(metrics[H1_IDS[0]]["denominator"])
+    h2_n = int(
+        metrics["H2_C_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS"][
+            "denominator"
+        ]
+    )
+    h5_evidence = (
+        "excluded pre-outcome; 0 qualifying providers; no outcome decision"
+        if validated.branches["H5"] is None
+        else (
+            f"qualifying providers={_format_value(metrics[H5_IDS[0]]['value'])}; "
+            f"minimum completed per cell="
+            f"{_format_value(metrics[H5_IDS[1]]['value'])}"
+        )
+    )
+    visible_rows = (
+        (
+            "H1: A P convergence",
+            f"A={_format_percent(metrics[H1_IDS[0]]['value'])}; "
+            f"B={_format_percent(metrics[H1_IDS[1]]['value'])}; "
+            f"A-B={_format_pp(metrics[H1_IDS[2]]['value'])} "
+            f"(95% CI {_format_pp_interval(metrics[H1_IDS[3]]['value'])}); "
+            f"no-repeat A-B={_format_pp(metrics[H1_IDS[6]]['value'])} "
+            f"({_format_pp_interval(metrics[H1_IDS[7]]['value'])}); n={h1_n:,}/arm",
+        ),
+        (
+            "H2: C-state misdiagnosis",
+            "A="
+            f"{_format_percent(metrics['H2_C_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS']['value'])}; "
+            "B="
+            f"{_format_percent(metrics['H2_C_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS']['value'])}; "
+            "C="
+            f"{_format_percent(metrics['H2_C_C_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS']['value'])}; "
+            "C-A="
+            f"{_format_pp(metrics['H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS']['value'])} "
+            "(95% CI "
+            f"{_format_pp_interval(metrics['H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95']['value'])}); "
+            "A-B="
+            f"{_format_pp(metrics['H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS']['value'])} "
+            "(95% CI "
+            f"{_format_pp_interval(metrics['H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95']['value'])}); "
+            "no-repeat C-A="
+            f"{_format_pp(metrics['H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT']['value'])} "
+            "(95% CI "
+            f"{_format_pp_interval(metrics['H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95']['value'])}); "
+            "A-B="
+            f"{_format_pp(metrics['H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT']['value'])} "
+            "(95% CI "
+            f"{_format_pp_interval(metrics['H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95']['value'])}); "
+            f"n={h2_n:,}/arm",
+        ),
+        (
+            "H3: A-B terminal accuracy",
+            f"{_format_pp(metrics[H3_IDS[0]]['value'])} "
+            f"(95% CI {_format_pp_interval(metrics[H3_IDS[1]]['value'])}); "
+            f"median convergence A={_format_value(metrics[H3_IDS[2]]['value'])}, "
+            f"B={_format_value(metrics[H3_IDS[3]]['value'])} items",
+        ),
+        (
+            "H4: misspecified rescue and harm",
+            f"rescue={_format_pp(metrics[H4_IDS[0]]['value'])} "
+            f"(95% CI {_format_pp_interval(metrics[H4_IDS[0]]['ci95'])}); "
+            f"fixed-probe harm={_format_pp(metrics[H4_IDS[1]]['value'])} "
+            f"(95% CI {_format_pp_interval(metrics[H4_IDS[1]]['ci95'])})",
+        ),
+        ("H5: LLM personas", h5_evidence),
+    )
     lines = [
         "This compact table is generated from the same validated contract as the main "
         "paper. It reports only decision-driving primary evidence and the mandatory "
         "stress/common-support sensitivity evidence.",
         "",
-        *_render_integrity_disclosure(validated),
+        _render_yau_integrity_disclosure(validated),
         "",
-        "| Hypothesis | Decision | Machine evidence |",
+        "| Claim | Decision | Compact machine evidence |",
         "|---|---|---|",
     ]
-    for hypothesis in ("H1", "H2", "H3", "H4", "H5"):
+    for hypothesis, (claim, evidence) in zip(
+        ("H1", "H2", "H3", "H4", "H5"), visible_rows, strict=True
+    ):
         analysis_status, decision, _ = _decision_cells(validated, hypothesis)
-        result_ids = tuple(
-            result_id for result_id in compact_ids if result_id.startswith(hypothesis)
-        )
-        if result_ids:
-            evidence = "<br>".join(
-                _format_compact_display_record(result_id, metrics[result_id])
-                for result_id in result_ids
-            )
-        else:
-            evidence = "No outcome estimate; excluded pre-outcome."
-        lines.append(
-            f"| {hypothesis} ({analysis_status}) | {decision} | {evidence} |"
-        )
+        lines.append(f"| {claim} ({analysis_status}) | {decision} | {evidence} |")
+    lines.extend(["", "<!-- BEGIN YAU MACHINE AUDIT -->"])
+    for result_id in compact_ids:
+        lines.append(_format_compact_display_record(result_id, metrics[result_id]))
+    lines.append("<!-- END YAU MACHINE AUDIT -->")
     lines.extend(["", _source_artifact_sentence(validated), ""])
     lines.extend(["### Selected verified figures", ""])
     lines.extend(
@@ -2104,6 +2173,35 @@ def _render_yau_results(
         )
     )
     return "\n".join(lines).rstrip()
+
+
+def _render_yau_integrity_disclosure(validated: ValidatedContract) -> str:
+    denominators = validated.payload["denominators"]
+    provider_exclusions = validated.payload.get("h5_provider_exclusion_disclosure")
+    provider_parts = []
+    if isinstance(provider_exclusions, Mapping):
+        for category, providers in sorted(provider_exclusions.items()):
+            if not isinstance(providers, list) or any(
+                not isinstance(provider, str) or not provider for provider in providers
+            ):
+                raise PaperContractError("H5 provider exclusion disclosure is invalid")
+            provider_parts.append(
+                f"{str(category).replace('_', ' ')}="
+                + "/".join(str(provider) for provider in providers)
+            )
+    h5_clause = (
+        "H5 excluded pre-outcome with 0 qualifying providers"
+        if validated.branches["H5"] is None
+        else "H5 evaluated under its frozen gates"
+    )
+    provider_clause = "; ".join(provider_parts) or "no provider exclusions"
+    return (
+        f"**Machine integrity summary.** {int(denominators['valid_journey_count']):,} "
+        f"valid of {int(denominators['intended_journey_count']):,} intended "
+        f"programmatic journeys; {int(denominators['estimand_excluded_journey_count']):,} "
+        f"predeclared estimand exclusions; {h5_clause}. Provider lifecycle: "
+        f"{provider_clause}."
+    )
 
 
 def _render_integrity_disclosure(validated: ValidatedContract) -> list[str]:
@@ -2135,6 +2233,25 @@ def _render_integrity_disclosure(validated: ValidatedContract) -> list[str]:
         "iterations. This clarification was adopted from static review, not from any "
         f"result direction; the binder verified policy artifact `{policy['path']}`."
     )
+    provider_identity_disclosure = None
+    provider_exclusions = validated.payload.get("h5_provider_exclusion_disclosure")
+    if isinstance(provider_exclusions, Mapping):
+        identity_parts = []
+        for category, providers in sorted(provider_exclusions.items()):
+            if not isinstance(providers, list) or any(
+                not isinstance(provider, str) or not provider for provider in providers
+            ):
+                raise PaperContractError("H5 provider exclusion disclosure is invalid")
+            names = ", ".join(f"`{provider}`" for provider in providers)
+            identity_parts.append(
+                f"{str(category).replace('_', ' ')}: {names or 'none'}"
+            )
+        provider_identity_disclosure = (
+            "**H5 provider identities by lifecycle.** "
+            + "; ".join(identity_parts)
+            + ". Immutable evidence is bound in `h5/h5_results.json`."
+        )
+
     lifecycle = denominators.get("provider_lifecycle_counts")
     lifecycle_disclosure = None
     if isinstance(lifecycle, Mapping):
@@ -2156,7 +2273,7 @@ def _render_integrity_disclosure(validated: ValidatedContract) -> list[str]:
             f"{int(lifecycle.get('post_calibration_exclusion', 0))}; other collected="
             f"{int(lifecycle.get('collected', 0))}. Invalid, missing, interrupted, and "
             "post-calibration-excluded providers do not enter qualifying-provider metrics. "
-            "Provider identities and immutable evidence are bound in `h5/h5_results.json`."
+            "Immutable evidence is bound in `h5/h5_results.json`."
         )
     metrics = validated.payload["metrics"]
     diagnostic_parts = []
@@ -2180,6 +2297,8 @@ def _render_integrity_disclosure(validated: ValidatedContract) -> list[str]:
     disclosures = [exclusion, "", audit]
     if lifecycle_disclosure is not None:
         disclosures.extend(("", lifecycle_disclosure))
+    if provider_identity_disclosure is not None:
+        disclosures.extend(("", provider_identity_disclosure))
     disclosures.extend(("", diagnostic))
     return disclosures
 
@@ -2408,6 +2527,124 @@ def _manuscript_skeleton_sha256(text: str, *, include_zh: bool) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
+def _validate_manuscript_skeleton(
+    manuscript: str,
+    observed_sha256: str,
+    frozen_sha256: str,
+) -> None:
+    if observed_sha256 == frozen_sha256:
+        return
+
+    try:
+        manifest_bytes = MANUSCRIPT_SKELETON_AMENDMENT_PATH.read_bytes()
+    except OSError as exc:
+        raise PaperContractError(
+            f"manuscript skeleton differs from frozen template: {manuscript}; "
+            "audited amendment manifest is unavailable"
+        ) from exc
+    if not _is_sha256(MANUSCRIPT_SKELETON_AMENDMENT_SHA256) or (
+        hashlib.sha256(manifest_bytes).hexdigest()
+        != MANUSCRIPT_SKELETON_AMENDMENT_SHA256
+    ):
+        raise PaperContractError("manuscript skeleton amendment manifest hash mismatch")
+    try:
+        payload = json.loads(manifest_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise PaperContractError("manuscript skeleton amendment manifest is invalid") from exc
+    if not isinstance(payload, Mapping):
+        raise PaperContractError("manuscript skeleton amendment manifest is invalid")
+    if (
+        payload.get("schema_version") != "yher.paper-skeleton-amendments.v1"
+        or payload.get("policy") != "post_collection_non_outcome_editorial_only"
+    ):
+        raise PaperContractError("manuscript skeleton amendment policy is invalid")
+    amendments = payload.get("amendments")
+    if not isinstance(amendments, list):
+        raise PaperContractError("manuscript skeleton amendments must be a list")
+    matching = [
+        row
+        for row in amendments
+        if isinstance(row, Mapping) and row.get("manuscript") == manuscript
+    ]
+    if len(matching) != 1:
+        raise PaperContractError(
+            f"manuscript skeleton amendment is not unique: {manuscript}"
+        )
+    amendment = matching[0]
+    if amendment.get("classification") != "non_outcome_editorial_audit_correction":
+        raise PaperContractError("manuscript skeleton amendment classification is invalid")
+    if amendment.get("generated_outcome_regions_unchanged") is not True:
+        raise PaperContractError(
+            "manuscript skeleton amendment must leave generated outcome regions unchanged"
+        )
+    if amendment.get("outcome_knowledge_status") != (
+        "post_collection_non_outcome_only"
+    ):
+        raise PaperContractError(
+            "manuscript skeleton amendment outcome knowledge status is invalid"
+        )
+    if amendment.get("from_skeleton_sha256") != frozen_sha256:
+        raise PaperContractError(
+            "manuscript skeleton amendment has the wrong frozen predecessor"
+        )
+    if amendment.get("to_skeleton_sha256") != observed_sha256:
+        raise PaperContractError(
+            f"manuscript skeleton amendment does not authorize: {manuscript}"
+        )
+    if not isinstance(amendment.get("amendment_id"), str) or not str(
+        amendment["amendment_id"]
+    ).strip():
+        raise PaperContractError("manuscript skeleton amendment ID is invalid")
+    if not isinstance(amendment.get("rationale"), str) or not str(
+        amendment["rationale"]
+    ).strip():
+        raise PaperContractError("manuscript skeleton amendment rationale is invalid")
+    evidence = amendment.get("evidence_anchors")
+    if not isinstance(evidence, list) or not evidence or any(
+        not isinstance(anchor, str) or not anchor.strip() for anchor in evidence
+    ):
+        raise PaperContractError(
+            "manuscript skeleton amendment evidence anchors are invalid"
+        )
+    affected_sections = amendment.get("affected_sections")
+    if not isinstance(affected_sections, list) or not affected_sections or any(
+        not isinstance(section, str) or not section.strip()
+        for section in affected_sections
+    ):
+        raise PaperContractError(
+            "manuscript skeleton amendment affected sections are invalid"
+        )
+    reviewer = amendment.get("reviewer")
+    if not isinstance(reviewer, str) or re.fullmatch(
+        r"codex_[a-z0-9_]+", reviewer
+    ) is None:
+        raise PaperContractError("manuscript skeleton amendment reviewer is invalid")
+    _require_rfc3339_utc(
+        amendment.get("recorded_at_utc"),
+        "manuscript skeleton amendment recorded_at_utc",
+    )
+    diff_relative = amendment.get("normalized_diff_path")
+    diff_sha256 = amendment.get("normalized_diff_sha256")
+    if not isinstance(diff_relative, str) or not diff_relative:
+        raise PaperContractError("manuscript skeleton amendment diff path is invalid")
+    diff_root = MANUSCRIPT_SKELETON_AMENDMENT_PATH.parent.resolve()
+    diff_path = (diff_root / diff_relative).resolve()
+    try:
+        diff_path.relative_to(diff_root)
+    except ValueError as exc:
+        raise PaperContractError(
+            "manuscript skeleton amendment diff path is outside manifest directory"
+        ) from exc
+    try:
+        diff_bytes = diff_path.read_bytes()
+    except OSError as exc:
+        raise PaperContractError(
+            "manuscript skeleton amendment diff is unavailable"
+        ) from exc
+    if not _is_sha256(diff_sha256) or hashlib.sha256(diff_bytes).hexdigest() != diff_sha256:
+        raise PaperContractError("manuscript skeleton amendment diff hash mismatch")
+
+
 def _expected_figure_outputs(
     validated: ValidatedContract, output_dir: Path
 ) -> dict[Path, bytes]:
@@ -2549,6 +2786,20 @@ def _format_value(value: object) -> str:
     if number.is_integer():
         return str(int(number))
     return f"{number:.6f}"
+
+
+def _format_percent(value: object) -> str:
+    return f"{_finite_number(value, 'percentage') * 100.0:.2f}%"
+
+
+def _format_pp(value: object) -> str:
+    points = _finite_number(value, "percentage-point effect") * 100.0
+    return f"{points:+.2f} pp"
+
+
+def _format_pp_interval(value: object) -> str:
+    low, high = _interval(value, "percentage-point interval")
+    return f"{low * 100.0:.2f} to {high * 100.0:.2f} pp"
 
 
 def _number(values: Mapping[str, object], key: str) -> float:

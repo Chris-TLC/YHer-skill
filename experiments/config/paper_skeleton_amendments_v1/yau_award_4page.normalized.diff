@@ -1,0 +1,27 @@
+--- frozen-original/yau_award_4page.md
++++ current/yau_award_4page.md
+@@ -94,5 +94,7 @@
+-Computerized adaptive testing, expected-information item selection, simulation of
+-item-selection rules, Bayesian knowledge tracing, and spaced-repetition scheduling
+-are established areas [@lord1971; @weiss1982; @weiss-kingsbury1984; @barrada2010;
+-@han2018; @corbett-anderson1994; @pelanek2017; @tabibian2019; @ye2022]. Adaptive
+-selection alone is not this project's contribution.
++Computerized adaptive testing, adaptive item-selection rules, Bayesian knowledge
++tracing, and spaced-repetition scheduling are established areas [@lord1971;
++@weiss1982; @weiss-kingsbury1984; @barrada2010; @han2018;
++@corbett-anderson1994; @pelanek2017; @tabibian2019; @ye2022]. The production policy
++uses an expected-information calculation, but this particular entropy calculation is
++not claimed as a literature contribution. Adaptive selection alone is not this
++project's contribution.
+@@ -199,5 +201,6 @@
+-requirements, defined quality and honesty gates, made go/no-go decisions, and owns
+-interpretation. AI systems proposed designs, implemented automation, and drafted
+-analysis and prose under those gates. Commits, an experiment tag, hashes, seeds,
+-tests, provenance envelopes, and isolation attestations form the audit layer. The
+-dated evidence is indexed in [`decision_log.md`](decision_log.md).
++requirements and defined the pre-outcome quality and honesty gates documented in
++[`decision_log.md`](decision_log.md). AI systems proposed designs, implemented
++automation, executed the simulation and analysis, and drafted the current
++interpretation and prose under those gates. Commits, an experiment tag, hashes, seeds,
++tests, provenance envelopes, and isolation attestations form the audit layer. Final
++interpretation and any submission decision remain pending student review.

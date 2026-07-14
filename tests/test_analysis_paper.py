@@ -348,7 +348,10 @@ def _sync_fixture_provenance_artifacts(
                     "excluded_persona_cells": payload["denominators"].get(
                         "excluded_persona_cells"
                     ),
-                }
+                },
+                "provider_exclusion_disclosure": payload.get(
+                    "h5_provider_exclusion_disclosure"
+                ),
             },
             sort_keys=True,
             indent=2,
@@ -763,6 +766,11 @@ def _valid_payload(artifact_root: Path, *, h5: str = "excluded") -> dict[str, ob
             else "h5/merged_artifact_manifest.json"
         ),
         "h5_collection_manifest_sha256": "8" * 64,
+        "h5_provider_exclusion_disclosure": {
+            "invalid_calibration_schema": ["deepseek", "glm", "kimi"],
+            "network_interruption": ["doubao"],
+            "post_calibration_exclusion": ["minimax", "tongyi"],
+        },
         "analysis_artifact_sha256": registry_sha,
         "metrics": metrics,
         "hypotheses": hypotheses,
@@ -1089,16 +1097,25 @@ def test_binder_machine_renders_exclusion_and_static_audit_disclosures(
 
     bind_papers(contract, artifacts, main, yau)
 
-    for manuscript in (main, yau):
-        text = manuscript.read_text(encoding="utf-8")
-        assert "1,600" in text
-        assert "structural_failure_item_pool" in text
-        assert "Arm C" in text
-        for target in ("Target Alpha", "Target Beta", "Target Delta", "Target Gamma"):
-            assert target in text
-        assert "post-collection static audit" in text
-        assert "no denominator redraw" in text
-        assert "result direction" in text
+    main_text = main.read_text(encoding="utf-8")
+    assert "1,600" in main_text
+    assert "structural_failure_item_pool" in main_text
+    assert "Arm C" in main_text
+    for target in ("Target Alpha", "Target Beta", "Target Delta", "Target Gamma"):
+        assert target in main_text
+    assert "post-collection static audit" in main_text
+    assert "no denominator redraw" in main_text
+    assert "result direction" in main_text
+    assert "invalid calibration schema: `deepseek`, `glm`, `kimi`" in main_text
+    assert "network interruption: `doubao`" in main_text
+    assert "post calibration exclusion: `minimax`, `tongyi`" in main_text
+
+    yau_text = yau.read_text(encoding="utf-8")
+    assert "Machine integrity summary" in yau_text
+    assert "1,600 predeclared estimand exclusions" in yau_text
+    assert "invalid calibration schema=deepseek/glm/kimi" in yau_text
+    assert "network interruption=doubao" in yau_text
+    assert "post calibration exclusion=minimax/tongyi" in yau_text
 
 
 def test_binder_labels_interval_bound_item_type_outputs_as_diagnostics_only(
@@ -1108,16 +1125,16 @@ def test_binder_labels_interval_bound_item_type_outputs_as_diagnostics_only(
 
     bind_papers(contract, artifacts, main, yau)
 
-    for manuscript in (main, yau):
-        text = manuscript.read_text(encoding="utf-8")
-        assert "item-type generator diagnostic" in text
-        assert "mixed trajectories" in text
-        assert "not item-type H1/H2 outcome estimands" in text
-        assert "MCQ gap=0.040000" in text
-        assert "95% CI [0.020000, 0.060000]" in text
-        assert "12,000 events / 1,100 journeys / 23 targets" in text
-        assert "Numeric gap=0.120000" in text
-        assert "2,400 events / 800 journeys / 23 targets" in text
+    text = main.read_text(encoding="utf-8")
+    assert "item-type generator diagnostic" in text
+    assert "mixed trajectories" in text
+    assert "not item-type H1/H2 outcome estimands" in text
+    assert "MCQ gap=0.040000" in text
+    assert "95% CI [0.020000, 0.060000]" in text
+    assert "12,000 events / 1,100 journeys / 23 targets" in text
+    assert "Numeric gap=0.120000" in text
+    assert "2,400 events / 800 journeys / 23 targets" in text
+    assert "item-type generator diagnostic" not in yau.read_text(encoding="utf-8")
 
     payload = load_results_contract(contract)
     diagnostic = payload["metrics"][
@@ -1512,6 +1529,20 @@ def test_binding_is_idempotent_and_yau_is_a_compact_consistent_publication_surfa
     assert main_ids == REQUIRED_PROGRAMMATIC_IDS | H5_IDS
     assert yau_ids == YAU_PROGRAMMATIC_IDS | H5_IDS
     assert yau_ids < main_ids
+    assert "<!-- BEGIN YAU MACHINE AUDIT -->" in yau_results
+    assert "<!-- END YAU MACHINE AUDIT -->" in yau_results
+    visible_yau_results = yau_results.split("<!-- BEGIN YAU MACHINE AUDIT -->", 1)[0]
+    assert "H1: A P convergence" in visible_yau_results
+    assert "H2: C-state misdiagnosis" in visible_yau_results
+    assert "H3: A-B terminal accuracy" in visible_yau_results
+    assert "H4: misspecified rescue" in visible_yau_results
+    assert "no-repeat C-A=" in visible_yau_results
+    assert "fixed-probe harm=" in visible_yau_results
+    assert re.search(
+        r"fixed-probe harm=\+[^\n]+\(95% CI [^)]+\)", visible_yau_results
+    )
+    assert "H1_P_A_CORRECT_CONVERGENCE" not in visible_yau_results
+    assert "H2_C_C_MINUS_A_MISDIAGNOSIS" not in visible_yau_results
 
     for result_id in yau_ids:
         record = payload["metrics"][result_id]
@@ -1636,6 +1667,233 @@ def test_binder_rejects_hand_filled_claim_outside_generated_regions(
     with pytest.raises(PaperContractError, match="skeleton"):
         bind_papers(contract, artifacts, main, yau, check=True)
     assert main.read_bytes() == forged
+
+
+def _authorize_skeleton_amendment(
+    monkeypatch: pytest.MonkeyPatch,
+    manifest: Path,
+    *,
+    manuscript: str,
+    frozen_sha256: str,
+    amended_sha256: str,
+    classification: str = "non_outcome_editorial_audit_correction",
+) -> dict[str, object]:
+    normalized_diff = manifest.with_name(f"{manifest.stem}.{manuscript}.patch")
+    normalized_diff.write_text(
+        "--- frozen/manuscript\n+++ amended/manuscript\n"
+        "@@ audit-only @@\n-audit text\n+corrected audit text\n",
+        encoding="utf-8",
+    )
+    payload: dict[str, object] = {
+        "schema_version": "yher.paper-skeleton-amendments.v1",
+        "policy": "post_collection_non_outcome_editorial_only",
+        "amendments": [
+            {
+                "amendment_id": "2026-07-14-test-honesty-correction",
+                "manuscript": manuscript,
+                "from_skeleton_sha256": frozen_sha256,
+                "to_skeleton_sha256": amended_sha256,
+                "classification": classification,
+                "generated_outcome_regions_unchanged": True,
+                "outcome_knowledge_status": "post_collection_non_outcome_only",
+                "recorded_at_utc": "2026-07-14T00:00:00Z",
+                "reviewer": "codex_test",
+                "affected_sections": ["Audit disclosure"],
+                "rationale": "Correct a non-outcome audit disclosure after collection.",
+                "evidence_anchors": ["tests/test_analysis_paper.py"],
+                "normalized_diff_path": normalized_diff.name,
+                "normalized_diff_sha256": _sha(normalized_diff),
+            }
+        ],
+    }
+    manifest.write_text(
+        json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "analysis.paper.MANUSCRIPT_SKELETON_AMENDMENT_PATH",
+        manifest,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "analysis.paper.MANUSCRIPT_SKELETON_AMENDMENT_SHA256",
+        _sha(manifest),
+        raising=False,
+    )
+    return payload
+
+
+def test_binder_accepts_only_a_hash_pinned_non_outcome_skeleton_amendment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from analysis.paper import _manuscript_skeleton_sha256
+
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    frozen_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    main.write_text(
+        main.read_text(encoding="utf-8").replace(
+            "Reference text must survive.",
+            "Corrected non-outcome isolation disclosure.",
+        ),
+        encoding="utf-8",
+    )
+    amended_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    _authorize_skeleton_amendment(
+        monkeypatch,
+        tmp_path / "paper_skeleton_amendments.json",
+        manuscript="main.md",
+        frozen_sha256=frozen_sha256,
+        amended_sha256=amended_sha256,
+    )
+
+    bind_papers(contract, artifacts, main, yau)
+
+    assert "Corrected non-outcome isolation disclosure." in main.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_binder_rejects_tampered_skeleton_amendment_manifest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from analysis.paper import _manuscript_skeleton_sha256
+
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    frozen_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    main.write_text(main.read_text(encoding="utf-8") + "\nAudit correction.\n")
+    amended_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    manifest = tmp_path / "paper_skeleton_amendments.json"
+    _authorize_skeleton_amendment(
+        monkeypatch,
+        manifest,
+        manuscript="main.md",
+        frozen_sha256=frozen_sha256,
+        amended_sha256=amended_sha256,
+    )
+    manifest.write_text(manifest.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+
+    with pytest.raises(PaperContractError, match="amendment manifest hash"):
+        bind_papers(contract, artifacts, main, yau)
+
+
+def test_binder_rejects_tampered_skeleton_amendment_diff(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from analysis.paper import _manuscript_skeleton_sha256
+
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    frozen_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    main.write_text(main.read_text(encoding="utf-8") + "\nAudit correction.\n")
+    amended_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    manifest = tmp_path / "paper_skeleton_amendments.json"
+    payload = _authorize_skeleton_amendment(
+        monkeypatch,
+        manifest,
+        manuscript="main.md",
+        frozen_sha256=frozen_sha256,
+        amended_sha256=amended_sha256,
+    )
+    diff_path = manifest.parent / str(
+        payload["amendments"][0]["normalized_diff_path"]  # type: ignore[index]
+    )
+    diff_path.write_text(
+        diff_path.read_text(encoding="utf-8") + "tampered\n", encoding="utf-8"
+    )
+
+    with pytest.raises(PaperContractError, match="amendment diff hash"):
+        bind_papers(contract, artifacts, main, yau)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    (
+        ("classification", "outcome_reinterpretation", "classification"),
+        ("from_skeleton_sha256", "f" * 64, "frozen predecessor"),
+        ("generated_outcome_regions_unchanged", False, "generated outcome regions"),
+        ("outcome_knowledge_status", "outcome_rewrite", "outcome knowledge"),
+        ("reviewer", "", "reviewer"),
+        ("affected_sections", [], "affected sections"),
+    ),
+)
+def test_binder_rejects_non_editorial_or_unanchored_skeleton_amendments(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: object,
+    message: str,
+) -> None:
+    from analysis.paper import _manuscript_skeleton_sha256
+
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    frozen_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    main.write_text(main.read_text(encoding="utf-8") + "\nAudit correction.\n")
+    amended_sha256 = _manuscript_skeleton_sha256(
+        main.read_text(encoding="utf-8"), include_zh=False
+    )
+    manifest = tmp_path / "paper_skeleton_amendments.json"
+    payload = _authorize_skeleton_amendment(
+        monkeypatch,
+        manifest,
+        manuscript="main.md",
+        frozen_sha256=frozen_sha256,
+        amended_sha256=amended_sha256,
+    )
+    payload["amendments"][0][field] = value  # type: ignore[index]
+    manifest.write_text(
+        json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "analysis.paper.MANUSCRIPT_SKELETON_AMENDMENT_SHA256", _sha(manifest)
+    )
+
+    with pytest.raises(PaperContractError, match=message):
+        bind_papers(contract, artifacts, main, yau)
+
+
+def test_repository_manuscript_skeletons_are_frozen_or_explicitly_audited(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.undo()
+    from analysis.paper import (
+        FROZEN_MANUSCRIPT_SKELETON_SHA256,
+        _manuscript_skeleton_sha256,
+        _validate_manuscript_skeleton,
+    )
+
+    repo_root = Path(__file__).parents[1]
+    for index, (relative, include_zh) in enumerate(
+        (
+            ("docs/paper/main.md", False),
+            ("docs/paper/yau_award_4page.md", True),
+        )
+    ):
+        manuscript = repo_root / relative
+        observed = _manuscript_skeleton_sha256(
+            manuscript.read_text(encoding="utf-8"), include_zh=include_zh
+        )
+        _validate_manuscript_skeleton(
+            manuscript.name,
+            observed,
+            FROZEN_MANUSCRIPT_SKELETON_SHA256[index],
+        )
 
 
 def test_h5_replay_injects_contract_analysis_provenance(
