@@ -18,6 +18,7 @@ DEFAULT_TRACK_MAP = REPO_ROOT / "config/curriculum/track_map_v1.yaml"
 DEFAULT_CATALOG = Path("/tmp/yher_channel_catalog/channel_catalog.jsonl")
 DEFAULT_KG = REPO_ROOT / "data/knowledge_graph_150_enriched.jsonl"
 DEFAULT_ORGANIC = TOOLS_ROOT / "scratchpad/organic_chunks_timestamped.jsonl"
+DEFAULT_VIDEO_CHUNKS = REPO_ROOT / "data/video_chunks/chemistry_chunks_v1.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "core/learning/assets/curriculum_runtime_v1.json"
 ENTITY_PREFIXES = ("bv:", "season:", "series:")
 ORGANIC_MARKERS = (
@@ -41,8 +42,12 @@ def build_runtime(
     track_map_path: Path,
     catalog_path: Path,
     kg_path: Path,
-    organic_path: Path,
+    organic_path: Path | None = None,
+    video_chunks_path: Path | None = None,
 ) -> dict[str, Any]:
+    if organic_path is not None and video_chunks_path is not None:
+        raise ValueError("organic_path and video_chunks_path are compatibility aliases; provide one")
+    candidate_path = Path(video_chunks_path or organic_path) if (video_chunks_path or organic_path) else None
     raw_track_map = yaml.safe_load(Path(track_map_path).read_text(encoding="utf-8"))
     if not isinstance(raw_track_map, dict):
         raise ValueError("track map must be an object")
@@ -54,8 +59,12 @@ def build_runtime(
         and row.get("evidence")
     }
     catalog = _catalog_index(catalog_path)
-    anchors = _anchor_index(organic_path)
-    segments: dict[str, dict[tuple[str, int], dict[str, Any]]] = {}
+    anchors = _anchor_index(candidate_path) if candidate_path is not None else {}
+    candidate_file_nonempty = False
+    if candidate_path is not None:
+        with candidate_path.open(encoding="utf-8") as handle:
+            candidate_file_nonempty = any(raw.strip() for raw in handle)
+    segments: dict[str, dict[Any, dict[str, Any]]] = {}
     for kg_line, kg_row in _read_jsonl_with_lines(kg_path):
         node = str(kg_row.get("node_id") or "").strip()
         parent = str(kg_row.get("parent_node") or "").strip()
@@ -82,53 +91,79 @@ def build_runtime(
             if signed_entity is None:
                 continue
             for target in targets:
-                anchor = _select_anchor(target, anchors.get((bv, p), []))
-                full_duration = authoritative_duration
-                duration = (
-                    max(1, int(float(anchor["end_sec"]) - float(anchor["start_sec"])))
-                    if anchor
-                    else full_duration
-                )
-                segment = {
-                    "segment_id": f"{bv}#P{p:03d}",
-                    "bv": bv,
-                    "p": p,
-                    "signed_entity": signed_entity,
-                    "seg_type": _segment_type(video.get("type")),
-                    "difficulty": str(video.get("difficulty") or "T2"),
-                    "topic_match_ratio": 1.0,
-                    "duration_sec": duration,
-                    "view": int(catalog_row.get("view") or 0),
-                    "pubdate": str(catalog_row.get("pubdate") or ""),
-                    "season_id": canonical_optional(catalog_row.get("season_id")),
-                    "season_name": catalog_row.get("season_name"),
-                    "season_order": catalog_row.get("season_order"),
-                    "part_title": str(
-                        catalog_row.get("part_title")
-                        or catalog_row.get("video_title")
-                        or ""
-                    ),
-                    "video_title": str(catalog_row.get("video_title") or ""),
-                    "part_degrade_state": catalog_row.get("part_degrade_state"),
-                    "value": str(video.get("what_you_learn") or ""),
-                    "completion_criterion": str(video.get("completion_criterion") or ""),
-                    "time_anchor": anchor,
-                    "provenance": {
+                selected = _select_anchors(target, anchors.get((bv, p), []))
+                if candidate_file_nonempty and not selected:
+                    continue
+                for anchor in selected if candidate_file_nonempty else [None]:
+                    full_duration = authoritative_duration
+                    duration = (
+                        float(anchor["end_sec"]) - float(anchor["start_sec"])
+                        if anchor
+                        else full_duration
+                    )
+                    provenance = {
                         "kg_line": kg_line,
                         "catalog_line": catalog_line,
-                    },
-                }
-                segments.setdefault(target, {}).setdefault((bv, p), segment)
+                    }
+                    if anchor:
+                        provenance.update({
+                            "chunk_source": "video_chunks",
+                            "video_chunks_line": anchor["source_line"],
+                        })
+                    segment = {
+                        "segment_id": (
+                            str(anchor["chunk_id"]) if anchor else f"{bv}#P{p:03d}"
+                        ),
+                        "bv": bv,
+                        "p": p,
+                        "signed_entity": signed_entity,
+                        "seg_type": _segment_type(video.get("type")),
+                        "difficulty": str(video.get("difficulty") or "T2"),
+                        "topic_match_ratio": 1.0,
+                        "duration_sec": duration,
+                        "full_video_duration_sec": full_duration,
+                        "view": int(catalog_row.get("view") or 0),
+                        "pubdate": str(catalog_row.get("pubdate") or ""),
+                        "season_id": canonical_optional(catalog_row.get("season_id")),
+                        "season_name": catalog_row.get("season_name"),
+                        "season_order": catalog_row.get("season_order"),
+                        "part_title": str(
+                            catalog_row.get("part_title")
+                            or catalog_row.get("video_title")
+                            or ""
+                        ),
+                        "video_title": str(catalog_row.get("video_title") or ""),
+                        "part_degrade_state": catalog_row.get("part_degrade_state"),
+                        "value": str(video.get("what_you_learn") or ""),
+                        "completion_criterion": str(video.get("completion_criterion") or ""),
+                        "time_anchor": anchor,
+                        "provenance": provenance,
+                    }
+                    if anchor:
+                        segment.update({
+                            "start_sec": float(anchor["start_sec"]),
+                            "end_sec": float(anchor["end_sec"]),
+                            "knowledge_topic": list(anchor["knowledge_topic"]),
+                            "chunk_source": "video_chunks",
+                        })
+                    key = segment["segment_id"] if anchor else (bv, p)
+                    segments.setdefault(target, {}).setdefault(key, segment)
+    candidate_provenance = (
+        _file_provenance(candidate_path)
+        if candidate_path is not None
+        else {"path": None, "sha256": None, "lines": 0}
+    )
     return {
         "version": "curriculum_runtime_v1_20260713",
         "provenance": {
             "track_map": _file_provenance(track_map_path),
             "catalog": _file_provenance(catalog_path),
             "knowledge_graph": _file_provenance(kg_path),
-            "organic_timestamps": _file_provenance(organic_path),
+            "organic_timestamps": candidate_provenance,
+            "video_chunks": candidate_provenance,
             "build_rule": (
                 "KG binding plus exact catalog row plus active exact-BV/season/series signature; "
-                "time anchors require organic node and needs_human=false"
+                "non-empty candidate files are chunk-only and require exact topic plus needs_human=false"
             ),
         },
         "track_map": raw_track_map,
@@ -192,8 +227,12 @@ def _anchor_index(path: Path) -> dict[tuple[str, int], list[dict[str, Any]]]:
 
 
 def _select_anchor(node: str, rows: list[dict[str, Any]]) -> dict[str, Any] | None:
-    if not any(marker in str(node) for marker in ORGANIC_MARKERS):
-        return None
+    selected = _select_anchors(node, rows)
+    return selected[0] if selected else None
+
+
+def _select_anchors(node: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
     for row in rows:
         topics = {str(value) for value in row.get("knowledge_topic") or []}
         if str(node) not in topics:
@@ -203,14 +242,16 @@ def _select_anchor(node: str, rows: list[dict[str, Any]]) -> dict[str, Any] | No
         except (KeyError, TypeError, ValueError):
             continue
         if 0 <= start < end:
-            return {
+            output.append({
                 "chunk_id": str(row.get("chunk_id") or ""),
                 "start_sec": start,
                 "end_sec": end,
+                "knowledge_topic": list(row.get("knowledge_topic") or []),
                 "needs_human": False,
                 "source_line": int(row["source_line"]),
-            }
-    return None
+                "chunk_source": "video_chunks",
+            })
+    return output
 
 
 def _segment_type(value: Any) -> str:
@@ -247,13 +288,20 @@ def main() -> int:
     parser.add_argument("--track-map", type=Path, default=DEFAULT_TRACK_MAP)
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
     parser.add_argument("--knowledge-graph", type=Path, default=DEFAULT_KG)
-    parser.add_argument("--organic-timestamps", type=Path, default=DEFAULT_ORGANIC)
+    candidates = parser.add_mutually_exclusive_group()
+    candidates.add_argument("--video-chunks", type=Path)
+    candidates.add_argument("--organic-timestamps", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     payload = build_runtime(
         track_map_path=args.track_map,
         catalog_path=args.catalog,
         kg_path=args.knowledge_graph,
+        video_chunks_path=(
+            args.video_chunks
+            if args.video_chunks is not None
+            else None if args.organic_timestamps is not None else DEFAULT_VIDEO_CHUNKS
+        ),
         organic_path=args.organic_timestamps,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -14,6 +14,7 @@ from engine import recommender
 
 
 DEFAULT_ASSET = Path(__file__).with_name("assets") / "curriculum_runtime_v1.json"
+DEFAULT_VIDEO_CHUNKS = Path(__file__).resolve().parents[2] / "data/video_chunks/chemistry_chunks_v1.jsonl"
 _ENTITY_PREFIXES = ("bv:", "season:", "series:")
 _ORGANIC_MARKERS = (
     "有机",
@@ -50,18 +51,41 @@ class CurriculumRuntime:
         self._validate_segments()
 
     @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> "CurriculumRuntime":
+    def from_payload(
+        cls,
+        payload: dict[str, Any],
+        *,
+        video_chunks_path: Path | None = None,
+        video_chunks: Iterable[dict[str, Any]] | None = None,
+    ) -> "CurriculumRuntime":
+        if video_chunks_path is not None and video_chunks is not None:
+            raise ValueError("video_chunks_path and video_chunks are mutually exclusive")
+        if video_chunks_path is not None:
+            rows = _read_video_chunks(Path(video_chunks_path))
+            return cls(_overlay_video_chunks(payload, rows, Path(video_chunks_path)))
+        if video_chunks is not None:
+            return cls(_overlay_video_chunks(payload, list(video_chunks), None))
         return cls(payload)
 
     @classmethod
-    def from_default_asset(cls, path: Path = DEFAULT_ASSET) -> "CurriculumRuntime":
+    def from_default_asset(
+        cls,
+        path: Path = DEFAULT_ASSET,
+        *,
+        video_chunks_path: Path | None = DEFAULT_VIDEO_CHUNKS,
+    ) -> "CurriculumRuntime":
         value = json.loads(Path(path).read_text(encoding="utf-8"))
+        if video_chunks_path is not None and Path(video_chunks_path).is_file():
+            chunks_path = Path(video_chunks_path)
+            value = _overlay_video_chunks(
+                value, _read_video_chunks(chunks_path), chunks_path
+            )
         return cls(value)
 
     def eligible_segments(self, node: str) -> list[dict[str, Any]]:
         """Return only exact-BV or canonical season/series signed candidates."""
         output: list[dict[str, Any]] = []
-        seen: set[tuple[str, int]] = set()
+        seen: set[str] = set()
         for source in self._segments_by_node.get(str(node), []):
             entity = canonical_entity(source.get("signed_entity"))
             if entity not in self._active_entities:
@@ -71,12 +95,13 @@ class CurriculumRuntime:
                 p = int(source.get("p") or 1)
             except (TypeError, ValueError):
                 continue
-            if not bv or p < 1 or (bv, p) in seen:
+            segment_id = str(source.get("segment_id") or "")
+            if not bv or p < 1 or not segment_id or segment_id in seen:
                 continue
             row = copy.deepcopy(source)
             row["bv"], row["p"], row["signed_entity"] = bv, p, entity
             output.append(row)
-            seen.add((bv, p))
+            seen.add(segment_id)
         return output
 
     def recommend(
@@ -95,12 +120,24 @@ class CurriculumRuntime:
         budget_seconds = max(0, int(float(budget.get("rx_minutes") or 0) * 60))
         engine_candidates = copy.deepcopy(candidates)
         for segment in engine_candidates:
-            full_duration = max(1, int(segment.get("duration_sec") or 1))
+            full_duration = max(1, int(
+                segment.get("full_video_duration_sec")
+                or segment.get("duration_sec")
+                or 1
+            ))
             segment["full_video_duration_sec"] = full_duration
+            anchor = _usable_anchor(str(node), segment)
+            if anchor is not None:
+                start, end = float(anchor["start_sec"]), float(anchor["end_sec"])
+                segment["start_sec"], segment["end_sec"] = start, end
+                segment["duration_sec"] = end - start
+            else:
+                segment.pop("start_sec", None)
+                segment.pop("end_sec", None)
             if (
                 budget_seconds > 0
                 and full_duration > budget_seconds
-                and _usable_anchor(str(node), segment.get("time_anchor")) is None
+                and anchor is None
             ):
                 # Video-level recommendation: allocate the first N minutes and
                 # disclose the complete duration; no synthetic timestamp/deep link.
@@ -140,12 +177,12 @@ class CurriculumRuntime:
             session_id=str(session_id),
             action_id=str(action_id),
         )
-        by_key = {(row["bv"], row["p"]): row for row in engine_candidates}
+        by_segment_id = {str(row["segment_id"]): row for row in engine_candidates}
         public: list[dict[str, Any]] = []
         bindings: dict[str, dict[str, Any]] = {}
         for served in result["recommendations"]:
-            source = by_key[(str(served["bv"]), int(served["p"]))]
-            anchor = _usable_anchor(str(node), source.get("time_anchor"))
+            source = by_segment_id[str(served["segment_id"])]
+            anchor = _usable_anchor(str(node), source)
             start = int(float(anchor["start_sec"])) if anchor else None
             url = _bilibili_url(source["bv"], source["p"], start)
             rec_id = str(served["rec_id"])
@@ -169,6 +206,7 @@ class CurriculumRuntime:
             public.append(
                 {
                     "rec_id": rec_id,
+                    "segment_id": str(source["segment_id"]),
                     "title": str(served.get("part_title") or source.get("video_title") or "观看讲解"),
                     "duration_seconds": duration,
                     "full_video_duration_seconds": full_duration,
@@ -177,7 +215,9 @@ class CurriculumRuntime:
                     "url": url,
                     "reason": str(served.get("reason") or ""),
                     "has_time_anchor": anchor is not None,
-                    "watch_scope": source.get("watch_scope") or "full_video",
+                    "watch_scope": source.get("watch_scope") or (
+                        "exact_segment" if anchor else "full_video"
+                    ),
                 }
             )
             bindings[rec_id] = {
@@ -199,17 +239,139 @@ class CurriculumRuntime:
         }
 
     def _validate_segments(self) -> None:
-        ids: set[str] = set()
+        identities: dict[str, tuple[Any, ...]] = {}
         for node, rows in self._segments_by_node.items():
             for row in rows:
                 segment_id = str(row.get("segment_id") or "")
                 if not segment_id:
                     raise ValueError(f"curriculum segment in {node!r} is missing segment_id")
-                scoped_id = f"{node}\0{segment_id}"
-                if scoped_id in ids:
-                    raise ValueError(f"duplicate curriculum segment: {node}/{segment_id}")
-                ids.add(scoped_id)
+                try:
+                    physical_identity = (
+                        str(row.get("bv") or ""),
+                        int(row.get("p") or 1),
+                        float(row["start_sec"]) if row.get("start_sec") is not None else None,
+                        float(row["end_sec"]) if row.get("end_sec") is not None else None,
+                    )
+                except (TypeError, ValueError, OverflowError) as exc:
+                    raise ValueError(
+                        f"curriculum segment {segment_id!r} has invalid physical identity"
+                    ) from exc
+                previous = identities.get(segment_id)
+                if previous is not None and previous != physical_identity:
+                    raise ValueError(
+                        f"curriculum segment physical identity conflict: {segment_id}"
+                    )
+                identities[segment_id] = physical_identity
                 canonical_entity(row.get("signed_entity"))
+
+
+def _read_video_chunks(path: Path) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    with Path(path).open(encoding="utf-8") as handle:
+        for line_number, raw in enumerate(handle, start=1):
+            if not raw.strip():
+                continue
+            row = json.loads(raw)
+            if not isinstance(row, dict):
+                raise ValueError(f"{path}:{line_number} must be an object")
+            row = copy.deepcopy(row)
+            row["_video_chunks_line"] = line_number
+            output.append(row)
+    return output
+
+
+def _overlay_video_chunks(
+    payload: dict[str, Any],
+    chunk_rows: list[dict[str, Any]],
+    source_path: Path | None,
+) -> dict[str, Any]:
+    if not chunk_rows:
+        return copy.deepcopy(payload)
+    by_part: dict[tuple[str, int], list[dict[str, Any]]] = {}
+    for source in chunk_rows:
+        if source.get("needs_human") is not False:
+            continue
+        try:
+            bv = str(source.get("bv") or "").strip()
+            p = int(source.get("p_number") or 1)
+            start, end = float(source["start_sec"]), float(source["end_sec"])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            continue
+        if not bv or p < 1 or not 0 <= start < end:
+            continue
+        by_part.setdefault((bv, p), []).append(source)
+
+    output = copy.deepcopy(payload)
+    overlaid: dict[str, list[dict[str, Any]]] = {}
+    for node, legacy_rows in (payload.get("segments_by_node") or {}).items():
+        node_name = str(node)
+        node_output: list[dict[str, Any]] = []
+        seen_segment_ids: set[str] = set()
+        for legacy in legacy_rows if isinstance(legacy_rows, list) else []:
+            try:
+                part_key = (str(legacy.get("bv") or ""), int(legacy.get("p") or 1))
+            except (TypeError, ValueError):
+                continue
+            for chunk in by_part.get(part_key, []):
+                topics = [str(value) for value in chunk.get("knowledge_topic") or []]
+                if node_name not in topics:
+                    continue
+                segment_id = str(chunk.get("chunk_id") or "").strip()
+                if not segment_id or segment_id in seen_segment_ids:
+                    continue
+                start, end = float(chunk["start_sec"]), float(chunk["end_sec"])
+                row = copy.deepcopy(legacy)
+                provenance = copy.deepcopy(row.get("provenance") or {})
+                provenance.update({
+                    "chunk_source": "video_chunks",
+                    "video_chunks_line": chunk.get("_video_chunks_line"),
+                })
+                row.update({
+                    "segment_id": segment_id,
+                    "start_sec": start,
+                    "end_sec": end,
+                    "duration_sec": end - start,
+                    "full_video_duration_sec": max(
+                        1, int(float(legacy.get("duration_sec") or 1))
+                    ),
+                    "knowledge_topic": topics,
+                    "chunk_source": "video_chunks",
+                    "time_anchor": {
+                        "chunk_id": segment_id,
+                        "start_sec": start,
+                        "end_sec": end,
+                        "needs_human": False,
+                        "source_line": chunk.get("_video_chunks_line"),
+                        "chunk_source": "video_chunks",
+                    },
+                    "provenance": provenance,
+                })
+                node_output.append(row)
+                seen_segment_ids.add(segment_id)
+        if node_output:
+            overlaid[node_name] = node_output
+    output["segments_by_node"] = overlaid
+    provenance = copy.deepcopy(output.get("provenance") or {})
+    if source_path is not None:
+        raw = Path(source_path).read_bytes()
+        provenance["video_chunks"] = {
+            "path": str(source_path),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "lines": len(chunk_rows),
+        }
+    else:
+        provenance["video_chunks"] = {
+            "path": None,
+            "sha256": hashlib.sha256(
+                json.dumps(chunk_rows, ensure_ascii=False, sort_keys=True).encode("utf-8")
+            ).hexdigest(),
+            "lines": len(chunk_rows),
+        }
+    provenance["build_rule"] = (
+        "trusted video chunks with exact runtime-node topic match; legacy rows are clone-only"
+    )
+    output["provenance"] = provenance
+    return output
 
 
 def canonical_entity(value: Any) -> str:
@@ -242,11 +404,22 @@ def _normalize_seen(values: Iterable[Any]) -> set[tuple[str, int]]:
     return output
 
 
-def _usable_anchor(node: str, value: Any) -> dict[str, Any] | None:
-    if not _is_organic_node(node) or not isinstance(value, dict):
+def _usable_anchor(node: str, segment: Any) -> dict[str, Any] | None:
+    if not isinstance(segment, dict):
         return None
-    if value.get("needs_human") is not False:
-        return None
+    provenance = segment.get("provenance") or {}
+    if (
+        segment.get("chunk_source") == "video_chunks"
+        or isinstance(provenance, dict)
+        and provenance.get("chunk_source") == "video_chunks"
+    ):
+        value = segment
+    else:
+        if not _is_organic_node(node):
+            return None
+        value = segment.get("time_anchor")
+        if not isinstance(value, dict) or value.get("needs_human") is not False:
+            return None
     try:
         start, end = float(value["start_sec"]), float(value["end_sec"])
     except (KeyError, TypeError, ValueError):

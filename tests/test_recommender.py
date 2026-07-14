@@ -414,13 +414,15 @@ def test_24_wiring_contract_real_fields():
 
 def test_25_rec_served_snapshot():
     """rec_served 快照含 rec_id/分量/mode/跨轨/未服务 top-k。"""
+    candidate = {**seg("F1", seg_type="concept_intro"), "segment_id": "snapshot-segment"}
     out = _run("高三", "exam_prep", B_U,
-               [seg("F1", seg_type="concept_intro"), seg("S1", seg_type="drill")])
+               [candidate, seg("S1", seg_type="drill")])
     snap = out["rec_served"]
     assert snap["mode"] == "full"
     s0 = snap["served"][0]
-    for k in ("rec_id", "w_track", "match", "efficacy", "score", "crossed_track"):
+    for k in ("rec_id", "segment_id", "w_track", "match", "efficacy", "score", "crossed_track"):
         assert k in s0, f"快照缺分量 {k}"
+    assert s0["segment_id"] == "snapshot-segment"
     assert "unserved_topk" in snap
 
 
@@ -543,6 +545,215 @@ def test_34_draft_string_tracks_reject_unknown_track_id():
         assert False, "未知字符串轨道不得被默认生成"
     except ValueError as exc:
         assert "unknown" in str(exc)
+
+
+def test_35_two_weak_nodes_override_stale_single_segment_budget_when_time_fits():
+    a, b = "弱点A", "弱点B"
+    candidates = {
+        a: [{**seg("F1", p=1, dur=180), "segment_id": "weak-a"}],
+        b: [{**seg("F1", p=2, dur=180), "segment_id": "weak-b"}],
+    }
+    out = rec.recommend(
+        "高二", "review", [a, b], {a: B_U, b: B_C}, candidates, tm(),
+        {"mode": "full", "rx_minutes": 6, "rx_segments": 1},
+    )
+
+    assert {row["node"] for row in out["recommendations"]} == {a, b}
+    assert len(out["recommendations"]) == 2
+
+
+def test_36_six_segment_budget_is_not_truncated_by_audit_topk():
+    candidates = [
+        {**seg("F1", p=index, dur=60), "segment_id": f"deep-{index}"}
+        for index in range(1, 7)
+    ]
+    out = _run(
+        "高二", "review", B_U, candidates,
+        budget={"mode": "full", "rx_minutes": 6, "rx_segments": 6},
+    )
+
+    assert len(out["recommendations"]) == 6
+    assert len(out["rec_served"]["unserved_topk"]) <= rec.TOPK
+
+
+def test_37_extra_slot_prefers_lower_mastery_probability_over_higher_entropy():
+    weaker, uncertain = "更薄弱", "熵更高"
+    beliefs = {
+        weaker: blf(0.10, 0.80, 0.05, 0.05),
+        uncertain: blf(0.45, 0.20, 0.20, 0.15),
+    }
+    candidates = {
+        weaker: [
+            {**seg("F1", p=1, dur=60), "segment_id": "weaker-1"},
+            {**seg("F1", p=2, dur=60), "segment_id": "weaker-2"},
+        ],
+        uncertain: [
+            {**seg("F1", p=3, dur=60), "segment_id": "uncertain-1"},
+            {**seg("F1", p=4, dur=60), "segment_id": "uncertain-2"},
+        ],
+    }
+    out = rec.recommend(
+        "高二", "review", [weaker, uncertain], beliefs, candidates, tm(),
+        {"mode": "full", "rx_minutes": 3, "rx_segments": 3},
+    )
+
+    counts = {node: 0 for node in beliefs}
+    for row in out["recommendations"]:
+        counts[row["node"]] += 1
+    assert counts == {weaker: 2, uncertain: 1}
+
+
+def test_38_shorter_lower_ranked_baseline_preserves_another_weak_node():
+    first, second = "长段节点", "另一弱点"
+    candidates = {
+        first: [
+            {**seg("F1", p=1, dur=540, tmr=1.0), "segment_id": "long-top"},
+            {**seg("F1", p=2, dur=240, tmr=0.9), "segment_id": "short-second"},
+        ],
+        second: [{**seg("F1", p=3, dur=360), "segment_id": "other-node"}],
+    }
+    out = rec.recommend(
+        "高二", "review", [first, second], {first: B_U, second: B_U},
+        candidates, tm(), {"mode": "full", "rx_minutes": 10, "rx_segments": 1},
+    )
+
+    assert {row["p"] for row in out["recommendations"]} == {2, 3}
+    assert {row.get("segment_id") for row in out["recommendations"]} == {
+        "short-second", "other-node",
+    }
+
+
+def test_39_same_node_extra_pick_prefers_unused_bv_within_score_bucket():
+    raw = raw_track_map(entities_extra=[
+        {"entity": "bv:F2", "track": "foundation", "reviewer": "user_chris",
+         "needs_human": False, "evidence": "fixture:second-foundation"},
+    ])
+    candidates = [
+        {**seg("F1", p=1, dur=60, tmr=1.00), "segment_id": "best"},
+        {**seg("F1", p=2, dur=60, tmr=0.99), "segment_id": "same-source"},
+        {**seg("F2", p=1, dur=60, tmr=0.98), "segment_id": "other-source"},
+    ]
+    out = rec.recommend(
+        "高二", "review", [NODE], {NODE: B_U}, {NODE: candidates},
+        rec.load_track_map(raw),
+        {"mode": "full", "rx_minutes": 2, "rx_segments": 2},
+    )
+
+    assert [row["bv"] for row in out["recommendations"]] == ["F1", "F2"]
+    assert [row.get("segment_id") for row in out["recommendations"]] == [
+        "best", "other-source",
+    ]
+
+
+def test_40_budget_shortfall_keeps_cap_and_names_unserved_weak_nodes():
+    first, second = "最弱节点", "次弱节点"
+    out = rec.recommend(
+        "高二", "review", [first, second],
+        {first: blf(0.1, 0.8, 0.05, 0.05), second: blf(0.2, 0.7, 0.05, 0.05)},
+        {
+            first: [{**seg("F1", p=1, dur=360), "segment_id": "first"}],
+            second: [{**seg("F1", p=2, dur=360), "segment_id": "second"}],
+        },
+        tm(), {"mode": "full", "rx_minutes": 6, "rx_segments": 1},
+    )
+
+    assert [row["node"] for row in out["recommendations"]] == [first]
+    assert any("预算不足" in warning and second in warning for warning in out["warnings"])
+
+
+def test_41_reasons_use_human_source_exact_range_target_state_and_real_peer():
+    a, b = "目标甲", "目标乙"
+    first = {
+        **seg("F1", p=1, dur=90, season_name="基础合集", season_order=2,
+              part_title="甲段"),
+        "segment_id": "reason-a", "start_sec": 65, "end_sec": 155,
+    }
+    second = {
+        **seg("F1", p=2, dur=90, season_name="专题合集", season_order=3,
+              part_title="乙段"),
+        "segment_id": "reason-b", "start_sec": 70, "end_sec": 160,
+    }
+    out = rec.recommend(
+        "高二", "review", [a, b], {a: B_U, b: B_C}, {a: [first], b: [second]},
+        tm(), {"mode": "full", "rx_minutes": 3, "rx_segments": 2},
+    )
+
+    by_node = {row["node"]: row for row in out["recommendations"]}
+    for node, own_source, peer_title in (
+        (a, "《基础合集》第2讲「甲段」", "乙段"),
+        (b, "《专题合集》第3讲「乙段」", "甲段"),
+    ):
+        reason = by_node[node]["reason"]
+        assert own_source in reason
+        assert "01:05-02:35" in reason if node == a else "01:10-02:40" in reason
+        assert f"目标节点「{node}」" in reason
+        assert "诊断状态" in reason and "薄弱" in reason
+        assert peer_title in reason and "互补" in reason
+        assert "F1" not in reason
+
+    legacy = seg("F1", part_title="兼容旧段")
+    legacy.pop("start_sec")
+    legacy.pop("end_sec")
+    singleton = _run(
+        "高二", "review", B_M_HI, [legacy],
+        budget={"mode": "full", "rx_minutes": 10, "rx_segments": 1},
+    )["recommendations"][0]["reason"]
+    assert "从开头观看本次分配时长" in singleton
+    assert "单独修复片段" in singleton
+    assert "薄弱" not in singleton
+
+
+def test_42_fractional_chunk_duration_never_rounds_under_hard_time_cap():
+    candidate = {
+        **seg("F1", dur=60.9),
+        "segment_id": "fractional-overrun",
+        "start_sec": 0.0,
+        "end_sec": 60.9,
+    }
+    out = _run(
+        "高二", "review", B_U, [candidate],
+        budget={"mode": "full", "rx_minutes": 1, "rx_segments": 1},
+    )
+
+    assert out["recommendations"] == []
+    assert out["status"] == "no_segment"
+
+
+def test_43_weak_coverage_reservation_accounts_for_shared_physical_parts():
+    a, b, c = "节点A", "节点B", "节点C"
+    shared = {
+        **seg("F1", p=3, dur=60, tmr=1.0),
+        "segment_id": "shared-segment",
+    }
+    candidates = {
+        a: [
+            {**seg("F1", p=1, dur=240, tmr=1.0), "segment_id": "a-top"},
+            {**seg("F1", p=2, dur=60, tmr=0.9), "segment_id": "a-alternate"},
+        ],
+        b: [
+            dict(shared),
+            {**seg("F1", p=4, dur=240, tmr=0.9), "segment_id": "b-private"},
+        ],
+        c: [dict(shared)],
+    }
+    beliefs = {
+        a: blf(0.10, 0.80, 0.05, 0.05),
+        b: blf(0.20, 0.70, 0.05, 0.05),
+        c: blf(0.30, 0.60, 0.05, 0.05),
+    }
+
+    out = rec.recommend(
+        "高二", "review", [a, b, c], beliefs, candidates, tm(),
+        {"mode": "full", "rx_minutes": 6, "rx_segments": 1},
+    )
+
+    assert {row["node"] for row in out["recommendations"]} == {a, b, c}
+    assert {row["segment_id"] for row in out["recommendations"]} == {
+        "a-alternate", "b-private", "shared-segment",
+    }
+    physical_parts = [(row["bv"], row["p"]) for row in out["recommendations"]]
+    assert len(physical_parts) == len(set(physical_parts))
+    assert not any("预算不足" in warning for warning in out["warnings"])
 
 
 if __name__ == "__main__":

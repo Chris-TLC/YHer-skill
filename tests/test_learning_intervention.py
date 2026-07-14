@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import importlib
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -1232,21 +1233,14 @@ def test_curriculum_excludes_neutral_candidates_instead_of_foundation_fallback()
     assert result["rec_served"]["action_id"] == "action-one"
 
 
-def test_default_runtime_resolves_real_oxidation_candidate_through_signed_series() -> None:
+def test_default_runtime_omits_legacy_part_without_trusted_exact_topic_chunk() -> None:
     runtime = _curriculum_class().from_default_asset()
     candidates = runtime.eligible_segments(NODE)
 
-    resolved = [
-        row
-        for row in candidates
-        if row["bv"] == "BV1Qi4y1R7tW" and row["p"] == 19
-    ]
-    assert resolved
-    assert resolved[0]["signed_entity"] == "series:1916889"
-    assert "season:series:" not in str(resolved[0])
+    assert candidates == []
 
 
-def test_default_runtime_routes_real_oxidation_video_within_eight_minute_rx_budget() -> None:
+def test_default_runtime_returns_honest_no_segment_without_trusted_chunk() -> None:
     runtime = _curriculum_class().from_default_asset()
 
     result = runtime.recommend(
@@ -1260,15 +1254,40 @@ def test_default_runtime_routes_real_oxidation_video_within_eight_minute_rx_budg
         action_id="learn",
     )
 
-    assert result["recommendations"]
+    assert result["recommendations"] == []
+    assert result["status"] == "no_segment"
+
+
+def test_default_runtime_keeps_all_exact_chunks_and_serves_by_segment_id() -> None:
+    runtime = _curriculum_class().from_default_asset()
+    node = "滴定-曲线与原理"
+    candidates = runtime.eligible_segments(node)
+
+    assert [row["segment_id"] for row in candidates] == [
+        "BV1QG4y1X7e2#P111#c000",
+        "BV1QG4y1X7e2#P111#c001",
+        "BV1QG4y1X7e2#P111#c002",
+    ]
+    assert all(row["provenance"]["chunk_source"] == "video_chunks" for row in candidates)
+
+    result = runtime.recommend(
+        node=node,
+        belief=np.full(4, 0.25),
+        grade="高二",
+        learning_purpose="review",
+        budget={"mode": "full", "rx_minutes": 20, "rx_segments": 3},
+        seen_segments=set(),
+        session_id="chunk-lookup",
+        action_id="learn",
+    )
+
     recommendation = result["recommendations"][0]
-    assert recommendation["url"].startswith("https://www.bilibili.com/video/")
-    assert "t=" not in recommendation["url"]
-    assert recommendation["has_time_anchor"] is False
-    assert "bv" not in recommendation and "p" not in recommendation
-    assert recommendation["duration_seconds"] == 8 * 60
-    assert recommendation["full_video_duration_seconds"] > recommendation["duration_seconds"]
-    assert recommendation["watch_scope"] == "from_start_within_session_budget"
+    segment_id = "BV1QG4y1X7e2#P111#c000"
+    assert recommendation["segment_id"] == segment_id
+    assert recommendation["duration_seconds"] == 601
+    assert result["bindings"][recommendation["rec_id"]]["segment_id"] == segment_id
+    assert result["rec_served"]["served"][0]["segment_id"] == segment_id
+    assert "t=3" in recommendation["url"]
 
 
 def test_runtime_builder_drops_catalog_rows_without_authoritative_duration(tmp_path: Path) -> None:
@@ -1332,6 +1351,94 @@ def test_runtime_builder_drops_catalog_rows_without_authoritative_duration(tmp_p
     assert payload["segments_by_node"] == {}
 
 
+def test_runtime_builder_organic_alias_emits_all_trusted_nonorganic_chunks(
+    tmp_path: Path,
+) -> None:
+    import inspect
+    import yaml
+    from scripts.build_curriculum_runtime import build_runtime
+
+    track_map = tmp_path / "track.yaml"
+    catalog = tmp_path / "catalog.jsonl"
+    kg = tmp_path / "kg.jsonl"
+    chunks = tmp_path / "chunks.jsonl"
+    track_map.write_text(
+        yaml.safe_dump(
+            {
+                "tracks": ["foundation"],
+                "entities": [{
+                    "entity": "bv:SIGNED", "track": "foundation",
+                    "reviewer": "codex_sol_20260713", "needs_human": False,
+                    "evidence": {"source_line": 1},
+                }],
+            },
+            allow_unicode=True,
+        ),
+        encoding="utf-8",
+    )
+    catalog.write_text(
+        json.dumps({
+            "bv": "SIGNED", "p": 1, "part_duration_sec": 900,
+            "part_title": "非有机整讲", "video_title": "非有机合集",
+            "season_name": "非有机合集", "season_order": 4,
+        }, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    kg.write_text(
+        json.dumps({
+            "node_id": "化学平衡-平衡移动",
+            "recommended_videos": [{
+                "bv": "SIGNED", "p_number": 1, "type": "concept_intro",
+                "what_you_learn": "理解平衡移动",
+                "completion_criterion": "能解释移动方向",
+            }],
+        }, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    chunk_rows = [
+        {
+            "chunk_id": "chunk-first", "bv": "SIGNED", "p_number": 1,
+            "start_sec": 65, "end_sec": 155,
+            "knowledge_topic": ["化学平衡-平衡移动"], "align_ratio": 0.95,
+            "text_repaired_v2": "第一段", "needs_human": False,
+        },
+        {
+            "chunk_id": "chunk-second", "bv": "SIGNED", "p_number": 1,
+            "start_sec": 200, "end_sec": 320,
+            "knowledge_topic": ["化学平衡-平衡移动"], "align_ratio": 0.90,
+            "text_repaired_v2": "第二段", "needs_human": False,
+        },
+    ]
+    chunks.write_text(
+        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in chunk_rows),
+        encoding="utf-8",
+    )
+
+    payload = build_runtime(
+        track_map_path=track_map,
+        catalog_path=catalog,
+        kg_path=kg,
+        organic_path=chunks,
+    )
+    rows = payload["segments_by_node"]["化学平衡-平衡移动"]
+
+    assert [row["segment_id"] for row in rows] == ["chunk-first", "chunk-second"]
+    assert [(row["start_sec"], row["end_sec"]) for row in rows] == [
+        (65.0, 155.0), (200.0, 320.0),
+    ]
+    assert all(row["provenance"]["chunk_source"] == "video_chunks" for row in rows)
+    assert payload["provenance"]["video_chunks"]["lines"] == 2
+
+    assert "video_chunks_path" in inspect.signature(build_runtime).parameters
+    alias_payload = build_runtime(
+        track_map_path=track_map,
+        catalog_path=catalog,
+        kg_path=kg,
+        video_chunks_path=chunks,
+    )
+    assert alias_payload["segments_by_node"] == payload["segments_by_node"]
+
+
 def test_organic_anchor_requires_exact_topic_evidence() -> None:
     from scripts.build_curriculum_runtime import _select_anchor
 
@@ -1373,6 +1480,87 @@ def test_timestamp_links_require_organic_node_and_signed_nonhuman_anchor() -> No
     assert organic["has_time_anchor"] is True
     assert "t=" not in nonorganic["url"]
     assert nonorganic["has_time_anchor"] is False
+
+
+def test_trusted_chunk_provenance_enables_nonorganic_timestamp_link() -> None:
+    payload = _runtime_payload()
+    segment = payload["segments_by_node"]["氧化还原反应-概念"][0]
+    segment.update({
+        "segment_id": "trusted-nonorganic-chunk",
+        "start_sec": 80.0,
+        "end_sec": 160.0,
+        "duration_sec": 80,
+        "provenance": {"chunk_source": "video_chunks"},
+    })
+    runtime = _curriculum_class().from_payload(payload)
+
+    trusted = runtime.recommend(
+        node="氧化还原反应-概念",
+        belief=np.full(4, 0.25),
+        grade="高二",
+        learning_purpose="review",
+        budget={"mode": "full", "rx_minutes": 20, "rx_segments": 1},
+        seen_segments=set(),
+        session_id="trusted-nonorganic",
+        action_id="learn",
+    )["recommendations"][0]
+
+    assert "t=80" in trusted["url"]
+    assert trusted["has_time_anchor"] is True
+    assert trusted["segment_id"] == "trusted-nonorganic-chunk"
+    assert "01:20-02:40" in trusted["reason"]
+
+
+def test_unmarked_nonorganic_bounds_do_not_fabricate_range_in_reason() -> None:
+    payload = _runtime_payload()
+    segment = payload["segments_by_node"]["氧化还原反应-概念"][0]
+    segment.update({"start_sec": 80.0, "end_sec": 160.0})
+    runtime = _curriculum_class().from_payload(payload)
+
+    legacy = runtime.recommend(
+        node="氧化还原反应-概念",
+        belief=np.full(4, 0.25),
+        grade="高二",
+        learning_purpose="review",
+        budget={"mode": "full", "rx_minutes": 20, "rx_segments": 1},
+        seen_segments=set(),
+        session_id="unmarked-nonorganic",
+        action_id="learn",
+    )["recommendations"][0]
+
+    assert "t=" not in legacy["url"]
+    assert legacy["has_time_anchor"] is False
+    assert "从开头观看本次分配时长" in legacy["reason"]
+    assert "01:20-02:40" not in legacy["reason"]
+
+
+def test_multilabel_chunk_reuse_requires_identical_physical_identity() -> None:
+    payload = _runtime_payload()
+    shared = payload["segments_by_node"]["有机推断"][0]
+    shared.update({
+        "segment_id": "shared-chunk",
+        "start_sec": 75.2,
+        "end_sec": 155.0,
+        "duration_sec": 79,
+        "provenance": {"chunk_source": "video_chunks"},
+    })
+    payload["segments_by_node"] = {
+        "标签甲": [{**copy.deepcopy(shared), "value": "甲节点价值"}],
+        "标签乙": [{
+            **copy.deepcopy(shared),
+            "value": "乙节点价值",
+            "completion_criterion": "乙节点完成标准",
+        }],
+    }
+
+    runtime = _curriculum_class().from_payload(payload)
+    assert runtime.eligible_segments("标签甲")[0]["segment_id"] == "shared-chunk"
+    assert runtime.eligible_segments("标签乙")[0]["value"] == "乙节点价值"
+
+    conflict = copy.deepcopy(payload)
+    conflict["segments_by_node"]["标签乙"][0]["end_sec"] = 156.0
+    with pytest.raises(ValueError, match="physical identity conflict"):
+        _curriculum_class().from_payload(conflict)
 
 
 def test_rec_served_is_append_once_and_checkpoint_replay_is_stable() -> None:

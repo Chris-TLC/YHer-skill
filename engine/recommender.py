@@ -411,19 +411,85 @@ def _part_title(segment: Dict) -> str:
     return pt
 
 
-def _build_reason(segment: Dict, comp: Dict, budget_left_min: int) -> str:
+def _format_timestamp(value) -> str:
+    seconds = max(0, int(float(value)))
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes:02d}:{seconds:02d}"
+
+
+def _exact_range(segment: Dict) -> Optional[str]:
+    try:
+        start = float(segment["start_sec"])
+        end = float(segment["end_sec"])
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return None
+    if not np.isfinite(start) or not np.isfinite(end) or not 0 <= start < end:
+        return None
+    return f"{_format_timestamp(start)}-{_format_timestamp(end)}"
+
+
+def _human_source(segment: Dict) -> str:
+    title = _part_title(segment) or segment.get("video_title") or "本段讲解"
+    season_name = segment.get("season_name")
+    season_order = segment.get("season_order")
+    if season_name and season_order is not None:
+        return f"《{season_name}》第{season_order}讲「{title}」"
+    return f"「{title}」"
+
+
+def _build_reason(node: str, segment: Dict, comp: Dict, budget_left_min: int,
+                  all_picks: List[Tuple[str, Dict, float, Dict]],
+                  pick_index: int, pm_proj: float) -> str:
     parts: List[str] = []
     tname = TRACK_DISPLAY.get(comp["track_id"], comp["track_id"])
     if comp.get("crossed"):
         parts.append(f"你这个点还没打牢，先回「{tname}」把这节看了再往下——冲刺题做了也白做。")
     st = comp.get("state")
-    if st and st not in ("M", "nonM"):
-        parts.append(f"诊断显示你在这个点卡在「{st}」。")
-    sn, so = segment.get("season_name"), segment.get("season_order")
-    if sn and so is not None:
-        parts.append(f"去《{sn}》第{so}讲。")
+    state_label = st or "未知"
+    if pm_proj < 0.6:
+        parts.append(
+            f"目标节点「{node}」当前诊断状态为「{state_label}」，"
+            f"P(M)={pm_proj:.2f}，属于薄弱目标节点。"
+        )
+    else:
+        parts.append(
+            f"目标节点「{node}」当前诊断状态为「{state_label}」，"
+            "按当前处方继续巩固。"
+        )
+    source = _human_source(segment)
+    exact_range = _exact_range(segment)
+    if exact_range is None:
+        parts.append(f"观看{source}，从开头观看本次分配时长。")
+    else:
+        parts.append(f"观看{source}的 {exact_range}。")
     dur_min = round((segment.get("duration_sec") or 0) / 60)
     parts.append(f"这段约{dur_min}分钟，今天还剩约{budget_left_min}分钟。")
+
+    peers = [
+        (index, pick)
+        for index, pick in enumerate(all_picks)
+        if index != pick_index
+    ]
+    if not peers:
+        parts.append("当前只选择这一段，它是本次单独修复片段，不虚构互补段。")
+    else:
+        _, (peer_node, peer_segment, _, _) = min(
+            peers,
+            key=lambda item: (
+                item[1][0] == node,
+                item[1][1].get("bv") == segment.get("bv"),
+                item[0],
+            ),
+        )
+        peer_title = _part_title(peer_segment) or peer_segment.get("video_title") or "另一已选片段"
+        if peer_node != node:
+            division = f"本段负责「{node}」，对方负责「{peer_node}」"
+        else:
+            division = f"本段先修复「{node}」的当前缺口，对方从另一讲解角度继续巩固"
+        parts.append(f"它与已选的「{peer_title}」互补：{division}。")
     return "".join(parts)
 
 
@@ -474,19 +540,30 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
     seen = set(seen_segments or ())
     prereq_map = prereq_map or {}
 
-    segment_ids = set()
+    segment_identities: Dict[str, Tuple] = {}
     for pool in segments_by_node.values():
         for segment in pool:
             segment_id = segment.get("segment_id")
             if segment_id is None:
                 continue
-            if segment_id in segment_ids:
-                raise ValueError(f"重复 segment_id: {segment_id!r}")
-            segment_ids.add(segment_id)
+            try:
+                physical = (
+                    str(segment.get("bv") or ""),
+                    int(segment.get("p") or 1),
+                    float(segment["start_sec"]) if segment.get("start_sec") is not None else None,
+                    float(segment["end_sec"]) if segment.get("end_sec") is not None else None,
+                )
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError(f"segment_id {segment_id!r} 物理身份无效") from exc
+            previous = segment_identities.get(str(segment_id))
+            if previous is not None and previous != physical:
+                raise ValueError(f"重复 segment_id 物理身份冲突: {segment_id!r}")
+            segment_identities[str(segment_id)] = physical
 
     # 1. 每节点评分 + 熵
     node_pools: Dict[str, List[Tuple[Dict, float, Dict]]] = {}
     node_entropy: Dict[str, float] = {}
+    node_pm: Dict[str, float] = {}
     for node in target_nodes:
         try:
             b = np.asarray(beliefs_proj[node], dtype=float)
@@ -496,11 +573,21 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
                 or not np.isclose(b.sum(), 1.0, rtol=0.0, atol=1e-6)):
             raise ValueError(f"节点 {node!r} belief 必须是四维概率分布")
         node_entropy[node] = sel.entropy(b)
+        node_pm[node] = float(b[m.M])
         state = node_state(b, mode)
         rx = prescription(state, mode)
         src = prereq_map.get(node) if (rx["source"] == "prereq" and node in prereq_map) else node
-        pool = [s for s in segments_by_node.get(src, [])
-                if (s.get("bv"), s.get("p")) not in seen]
+        pool = []
+        pool_segment_ids = set()
+        for candidate in segments_by_node.get(src, []):
+            if (candidate.get("bv"), candidate.get("p")) in seen:
+                continue
+            candidate_id = candidate.get("segment_id")
+            if candidate_id is not None and str(candidate_id) in pool_segment_ids:
+                continue
+            if candidate_id is not None:
+                pool_segment_ids.add(str(candidate_id))
+            pool.append(candidate)
         scored = []
         for s in pool:
             comp = _score_one(s, g, q, b, state, track_map, mode, rx, efficacy_table)
@@ -510,68 +597,209 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
         if scored and all(sc <= 0 for _, sc, _ in scored):
             scored = _fallback(scored, track_map, b, warnings, node)
         scored.sort(key=_sort_key)
-        node_pools[node] = scored[:TOPK]
+        node_pools[node] = [entry for entry in scored if entry[1] > 0]
 
-    # 2. 多节点汇合：段名额按熵降序分配，每节点≥1（断言 13）
-    order = sorted(target_nodes, key=lambda n: (-node_entropy[n], n))
-    counts = {n: 0 for n in order}
-    slots = rx_segments
-    for n in order:                            # 第一轮：熵序每节点 1 段
+    # 2. 先保证薄弱目标，再给非薄弱目标首轮名额，最后按薄弱顺序轮转富余名额。
+    order = sorted(target_nodes, key=lambda n: (node_pm[n], -node_entropy[n], n))
+    weak_order = [n for n in order if node_pm[n] < 0.6 and node_pools[n]]
+    effective_slots = max(rx_segments, len(weak_order))
+    budget_sec = rx_minutes * 60
+    picks: List[Tuple[str, Dict, float, Dict]] = []
+    used_sec = 0
+    used_parts = set()
+    selected_candidate_ids = set()
+    selected_bvs = {node: set() for node in order}
+
+    def duration(entry: Tuple[Dict, float, Dict]) -> int:
+        try:
+            return int(np.ceil(float(entry[0].get("duration_sec") or 0)))
+        except (TypeError, ValueError, OverflowError):
+            return 0
+
+    def candidate_key(segment: Dict) -> Tuple:
+        segment_id = segment.get("segment_id")
+        if segment_id is not None:
+            return ("segment_id", str(segment_id))
+        return (
+            "legacy", segment.get("bv"), segment.get("p"),
+            segment.get("start_sec"), segment.get("end_sec"),
+        )
+
+    def feasible_entries(node: str, remaining_sec: int) -> List[Tuple[Dict, float, Dict]]:
+        output = []
+        for entry in node_pools[node]:
+            seg = entry[0]
+            dur = duration(entry)
+            if dur <= 0 or dur > remaining_sec:
+                continue
+            if (seg.get("bv"), seg.get("p")) in used_parts:
+                continue
+            if candidate_key(seg) in selected_candidate_ids:
+                continue
+            output.append(entry)
+        return output
+
+    def choose_extra(node: str) -> Optional[Tuple[Dict, float, Dict]]:
+        feasible = feasible_entries(node, budget_sec - used_sec)
+        if not feasible:
+            return None
+        top_bucket = round(feasible[0][1] / EPSILON)
+        same_bucket = [entry for entry in feasible if round(entry[1] / EPSILON) == top_bucket]
+        diverse = [entry for entry in same_bucket if entry[0].get("bv") not in selected_bvs[node]]
+        return (diverse or same_bucket)[0]
+
+    def add_pick(node: str, entry: Tuple[Dict, float, Dict]) -> None:
+        nonlocal used_sec
+        seg, score, comp = entry
+        picks.append((node, seg, score, comp))
+        used_sec += duration(entry)
+        used_parts.add((seg.get("bv"), seg.get("p")))
+        selected_candidate_ids.add(candidate_key(seg))
+        selected_bvs[node].add(seg.get("bv"))
+
+    coverage_cache: Dict[Tuple, float] = {}
+
+    def future_minimum(nodes: Sequence[str], blocked_part: Tuple) -> float:
+        occupied = frozenset(used_parts | {blocked_part})
+        cache_key = (tuple(nodes), occupied)
+        if cache_key in coverage_cache:
+            return coverage_cache[cache_key]
+
+        options_by_node = []
+        for future_node in nodes:
+            cheapest_by_part: Dict[Tuple, int] = {}
+            for entry in node_pools[future_node]:
+                seg = entry[0]
+                part = (seg.get("bv"), seg.get("p"))
+                dur = duration(entry)
+                if (
+                    dur <= 0
+                    or part in occupied
+                    or candidate_key(seg) in selected_candidate_ids
+                ):
+                    continue
+                cheapest_by_part[part] = min(
+                    dur, cheapest_by_part.get(part, dur)
+                )
+            if not cheapest_by_part:
+                coverage_cache[cache_key] = float("inf")
+                return float("inf")
+            options_by_node.append(tuple(sorted(
+                cheapest_by_part.items(),
+                key=lambda item: (item[1], str(item[0][0]), str(item[0][1])),
+            )))
+
+        # Most-constrained nodes first keeps the exact capacity-aware search small.
+        options_by_node.sort(key=len)
+        independent_suffix = [0] * (len(options_by_node) + 1)
+        for index in range(len(options_by_node) - 1, -1, -1):
+            independent_suffix[index] = (
+                independent_suffix[index + 1]
+                + min(dur for _, dur in options_by_node[index])
+            )
+        memo: Dict[Tuple[int, frozenset], float] = {}
+
+        def search(index: int, taken: frozenset) -> float:
+            if index == len(options_by_node):
+                return 0.0
+            state = (index, taken)
+            if state in memo:
+                return memo[state]
+            best = float("inf")
+            for part, dur in options_by_node[index]:
+                if part in taken:
+                    continue
+                if dur + independent_suffix[index + 1] >= best:
+                    continue
+                tail = search(index + 1, taken | {part})
+                best = min(best, dur + tail)
+            memo[state] = best
+            return best
+
+        result = search(0, occupied)
+        coverage_cache[cache_key] = result
+        return result
+
+    for index, node in enumerate(weak_order):
+        feasible = feasible_entries(node, budget_sec - used_sec)
+        chosen = None
+        for entry in feasible:
+            seg = entry[0]
+            reserve = future_minimum(
+                weak_order[index + 1:], (seg.get("bv"), seg.get("p"))
+            )
+            if used_sec + duration(entry) + reserve <= budget_sec:
+                chosen = entry
+                break
+        if chosen is None and feasible:
+            chosen = feasible[0]
+        if chosen is not None:
+            add_pick(node, chosen)
+
+    served_nodes = {node for node, _, _, _ in picks}
+    missing_weak = [node for node in weak_order if node not in served_nodes]
+    if missing_weak:
+        named = "、".join(f"「{node}」" for node in missing_weak)
+        warnings.append(
+            f"预算不足：硬上限 {rx_minutes} 分钟内无法为薄弱目标节点 {named} 各分配一段"
+        )
+
+    slots = max(0, effective_slots - len(picks))
+    for node in order:
         if slots <= 0:
             break
-        if node_pools[n]:
-            counts[n] = 1
+        if node_pm[node] < 0.6 or not node_pools[node]:
+            continue
+        chosen = choose_extra(node)
+        if chosen is not None:
+            add_pick(node, chosen)
             slots -= 1
-    i = 0
-    while slots > 0 and any(counts[n] < len(node_pools[n]) for n in order):
-        n = order[i % len(order)]              # 富余给熵最高者（2h/3h+ 档）
-        if counts[n] < len(node_pools[n]):
-            counts[n] += 1
-            slots -= 1
-        i += 1
-        if i > 4096:
-            break
 
-    # 3. 全局排序（熵降序 → 节点内 Score 降序）+ 预算硬约束
-    picks: List[Tuple[str, Dict, float, Dict]] = []
-    for n in order:
-        for seg, sc, comp in node_pools[n][:counts[n]]:
-            picks.append((n, seg, sc, comp))
-    picks.sort(key=lambda x: (-node_entropy[x[0]], -x[2]))
+    while slots > 0:
+        progress = False
+        for node in order:
+            if slots <= 0:
+                break
+            chosen = choose_extra(node)
+            if chosen is None:
+                continue
+            add_pick(node, chosen)
+            slots -= 1
+            progress = True
+        if not progress:
+            break
 
     recommendations: List[Dict] = []
     served_snap: List[Dict] = []
-    budget_sec = rx_minutes * 60
     try:
         reason_budget_sec = max(
             0, int(float(budget.get("session_remaining_minutes")) * 60)
         )
     except (TypeError, ValueError, OverflowError):
         reason_budget_sec = budget_sec
-    used_sec = 0
-    served_ids = set()
-    for n, seg, sc, comp in picks:
-        dur = int(seg.get("duration_sec") or 0)
-        segment_key = (seg.get("bv"), seg.get("p"))
-        if segment_key in served_ids:
-            continue
-        if used_sec + dur > budget_sec:
-            continue                           # 超预算截断（宁缺勿滥，断言 7）
-        used_sec += dur
-        left_min = max(0, (reason_budget_sec - used_sec) // 60)
+    reason_used_sec = 0
+    served_parts = set()
+    for pick_index, (n, seg, sc, comp) in enumerate(picks):
+        dur = duration((seg, sc, comp))
+        reason_used_sec += dur
+        left_min = max(0, (reason_budget_sec - reason_used_sec) // 60)
         rid = rec_id_factory()
         rec = {
             "rec_id": rid, "node": n,
+            "segment_id": seg.get("segment_id"),
             "bv": seg.get("bv"), "p": seg.get("p"),
             "start_sec": seg.get("start_sec"), "end_sec": seg.get("end_sec"),
             "track_id": comp["track_id"],
             "part_title": _part_title(seg),
-            "reason": _build_reason(seg, comp, left_min),
+            "reason": _build_reason(
+                n, seg, comp, left_min, picks, pick_index, node_pm[n]
+            ),
         }
         recommendations.append(rec)
-        served_ids.add(segment_key)
+        served_parts.add((seg.get("bv"), seg.get("p")))
         served_snap.append({
-            "rec_id": rid, "bv": seg.get("bv"), "p": seg.get("p"), "node": n,
+            "rec_id": rid, "segment_id": seg.get("segment_id"),
+            "bv": seg.get("bv"), "p": seg.get("p"), "node": n,
             "track_id": comp["track_id"], "w_track": comp["w_track"],
             "match": comp["match"], "efficacy": comp["efficacy"], "score": comp["score"],
             "crossed_track": comp["crossed"],
@@ -581,8 +809,9 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
     unserved = []
     for n in order:
         for seg, sc, comp in node_pools[n]:
-            if (seg.get("bv"), seg.get("p")) not in served_ids:
+            if (seg.get("bv"), seg.get("p")) not in served_parts:
                 unserved.append({"bv": seg.get("bv"), "p": seg.get("p"),
+                                 "segment_id": seg.get("segment_id"),
                                  "node": n, "score": sc})
     unserved.sort(key=lambda x: -x["score"])
 
