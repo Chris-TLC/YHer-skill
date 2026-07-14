@@ -140,6 +140,8 @@ def test_paper_templates_have_generated_abstract_markers_and_neutral_outer_statu
     en_end = "<!-- END PAPER GENERATED ABSTRACT FINDINGS EN -->"
     zh_begin = "<!-- BEGIN PAPER GENERATED ABSTRACT FINDINGS ZH -->"
     zh_end = "<!-- END PAPER GENERATED ABSTRACT FINDINGS ZH -->"
+    defense_begin = "<!-- BEGIN PAPER GENERATED DEFENSE DIGEST -->"
+    defense_end = "<!-- END PAPER GENERATED DEFENSE DIGEST -->"
 
     assert main.count(en_begin) == main.count(en_end) == 1
     assert zh_begin not in main and zh_end not in main
@@ -149,6 +151,67 @@ def test_paper_templates_have_generated_abstract_markers_and_neutral_outer_statu
     assert "This draft does not publish, push, mint a DOI, or claim a completed" not in main
     assert "PENDING_S3" not in defense
     assert "PENDING_S3" not in contract.split("<!-- BEGIN S3 GENERATED RESULTS -->", 1)[0]
+    assert defense.count(defense_begin) == defense.count(defense_end) == 1
+
+
+def test_defense_post_result_numbers_are_owned_by_the_generated_digest() -> None:
+    defense = (ROOT / "docs/paper/defense_pack.md").read_text(encoding="utf-8")
+    begin = "<!-- BEGIN PAPER GENERATED DEFENSE DIGEST -->"
+    end = "<!-- END PAPER GENERATED DEFENSE DIGEST -->"
+    outside = defense.split(begin, 1)[0] + defense.split(end, 1)[1]
+
+    for hand_copied_result in (
+        "148/1,150",
+        "37.39% in A",
+        "+10.04 percentage points",
+        "misspecified H1 rescue was +12.09",
+        "DeepSeek, GLM, and Kimi",
+        "10,849 requests",
+        "5,571,972 input tokens",
+        "CNY 103.51977121",
+        "`H1=partially_supported`",
+    ):
+        assert hand_copied_result not in outside
+
+
+def test_skeleton_amendment_evidence_is_verifiable_and_pending_review() -> None:
+    manifest_path = ROOT / "experiments/config/paper_skeleton_amendments_v1.json"
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    for amendment in payload["amendments"]:
+        assert amendment["reviewer"] is None
+        assert amendment["review_status"] == "ai_draft_pending_user_or_claude_review"
+        for anchor in amendment["evidence_anchors"]:
+            assert isinstance(anchor, dict)
+            raw_path = Path(anchor["path"])
+            resolved = raw_path if raw_path.is_absolute() else ROOT / raw_path
+            resolved = resolved.resolve()
+            assert resolved.is_relative_to(ROOT) or resolved.is_relative_to(
+                Path("/tmp/yher_sprint2")
+            )
+            assert ".codex/sessions" not in resolved.as_posix()
+            assert resolved.is_file()
+            assert hashlib.sha256(resolved.read_bytes()).hexdigest() == anchor["sha256"]
+            assert anchor["locator"].strip()
+
+
+def test_yau_llm_persona_citations_support_prior_work_not_internal_h5_design() -> None:
+    yau = (ROOT / "docs/paper/yau_award_4page.md").read_text(encoding="utf-8")
+    citations = (
+        "[@lu-wang2024; @liu2024; @jin2025; @wu2025; @scarlatos2025; "
+        "@scarlatos2026]"
+    )
+    normalized = " ".join(yau.split())
+
+    assert (
+        "Prior LLM-simulated-student work motivates explicit validation and limitation "
+        f"analysis {citations}."
+    ) in normalized
+    assert (
+        "In this project, H5 is secondary and manipulation-gated; that status is an "
+        "internal design fact."
+    ) in normalized
+    assert f"H5 is secondary and manipulation-gated {citations}" not in normalized
 
 
 def test_document_evidence_pointers_resolve_to_frozen_repo_sources_and_archive() -> None:

@@ -25,3 +25,11 @@
 +interpretation and prose under those gates. Commits, an experiment tag, hashes, seeds,
 +tests, provenance envelopes, and isolation attestations form the audit layer. Final
 +interpretation and any submission decision remain pending student review.
+@@ -209,3 +212,4 @@
+-the work comes from one project with extensive AI assistance. LLM-simulated students
+-are secondary and manipulation-gated [@lu-wang2024; @liu2024; @jin2025; @wu2025;
+-@scarlatos2025; @scarlatos2026].
++the work comes from one project with extensive AI assistance. Prior
++LLM-simulated-student work motivates explicit validation and limitation analysis
++[@lu-wang2024; @liu2024; @jin2025; @wu2025; @scarlatos2025; @scarlatos2026]. In this
++project, H5 is secondary and manipulation-gated; that status is an internal design fact.

@@ -1,7 +1,9 @@
 {
   "schema_version": "yher.verified-references.v1",
-  "verified_at": "2026-07-13",
-  "verification_note": "Metadata and links are restricted to the independent S3 literature audit supplied to the S4/S5 writer. No unverified citation is included.",
+  "verified_at": "2026-07-14",
+  "verification_note": "All 17 cited sources were independently verified for existence on 2026-07-14 against DOI registries, publisher or anthology pages, and official software documentation. Exact metadata corrections from that audit are applied here.",
+  "audit_artifact": "experiments/config/paper_reference_audit_v1.json",
+  "audit_sha256": "e53eedd0131fa0a2f1647107f2e72f4dc09baa1da6af614d4f47be79b95b461a",
   "references": [
     {
       "id": "lord1971",
@@ -57,7 +59,7 @@
     {
       "id": "barrada2010",
       "type": "journal-article",
-      "authors": ["Juan Ramon Barrada", "Julio Olea", "Vicente Ponsoda", "Francisco Jose Abad"],
+      "authors": ["Juan Ramón Barrada", "Julio Olea", "Vicente Ponsoda", "Francisco José Abad"],
       "title": "A Method for the Comparison of Item Selection Rules in Computerized Adaptive Testing",
       "year": 2010,
       "container_title": "Applied Psychological Measurement",
@@ -83,7 +85,7 @@
     {
       "id": "pelanek2017",
       "type": "journal-article",
-      "authors": ["Radek Pelanek"],
+      "authors": ["Radek Pelánek"],
       "title": "Bayesian knowledge tracing, logistic models, and beyond: an overview of learner modeling techniques",
       "year": 2017,
       "container_title": "User Modeling and User-Adapted Interaction",
@@ -95,7 +97,7 @@
     {
       "id": "tabibian2019",
       "type": "journal-article",
-      "authors": ["Behzad Tabibian", "Utkarsh Upadhyay", "Abir De", "Ali Zarezade", "Bernhard Scholkopf", "Manuel Gomez-Rodriguez"],
+      "authors": ["Behzad Tabibian", "Utkarsh Upadhyay", "Abir De", "Ali Zarezade", "Bernhard Schölkopf", "Manuel Gomez-Rodriguez"],
       "title": "Enhancing human learning via spaced repetition optimization",
       "year": 2019,
       "container_title": "Proceedings of the National Academy of Sciences",
@@ -120,7 +122,7 @@
       "id": "fsrs-repository",
       "type": "software-repository",
       "authors": ["Open Spaced Repetition contributors"],
-      "title": "Free Spaced Repetition Scheduler",
+      "title": "Free Spaced Repetition Scheduling Algorithm",
       "year": null,
       "url": "https://github.com/open-spaced-repetition/free-spaced-repetition-scheduler",
       "metadata_note": "Official software repository; not treated as a peer-reviewed paper."
@@ -129,10 +131,10 @@
       "id": "anki-fsrs-manual",
       "type": "software-documentation",
       "authors": ["Anki contributors"],
-      "title": "Anki Manual: FSRS",
+      "title": "Deck Options - Anki Manual",
       "year": null,
       "url": "https://docs.ankiweb.net/deck-options.html#fsrs",
-      "metadata_note": "Official documentation; not treated as a peer-reviewed paper."
+      "metadata_note": "Official Anki documentation, section 'FSRS'; not treated as a peer-reviewed paper."
     },
     {
       "id": "lu-wang2024",
@@ -140,7 +142,7 @@
       "authors": ["Xinyi Lu", "Xu Wang"],
       "title": "Generative Students: Using LLM-Simulated Student Profiles to Support Question Item Evaluation",
       "year": 2024,
-      "container_title": "Proceedings of the ACM Conference on Learning at Scale",
+      "container_title": "Proceedings of the Eleventh ACM Conference on Learning @ Scale",
       "pages": "16-27",
       "doi": "10.1145/3657604.3662031",
       "url": "https://doi.org/10.1145/3657604.3662031"
@@ -162,7 +164,7 @@
       "authors": ["Hyoungwook Jin", "Minju Yoo", "Jeongeon Park", "Yokyung Lee", "Xu Wang", "Juho Kim"],
       "title": "TeachTune: Reviewing Pedagogical Agents Against Diverse Student Profiles with Simulated Students",
       "year": 2025,
-      "container_title": "Proceedings of the CHI Conference on Human Factors in Computing Systems",
+      "container_title": "Proceedings of the 2025 CHI Conference on Human Factors in Computing Systems",
       "pages": "1-28",
       "doi": "10.1145/3706598.3714054",
       "url": "https://doi.org/10.1145/3706598.3714054"
@@ -173,7 +175,7 @@
       "authors": ["Tao Wu", "Jingyuan Chen", "Wang Lin", "Mengze Li", "Yumeng Zhu", "Ang Li", "Kun Kuang", "Fei Wu"],
       "title": "Embracing Imperfection: Simulating Students with Diverse Cognitive Levels Using LLM-based Agents",
       "year": 2025,
-      "container_title": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics",
+      "container_title": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
       "pages": "9887-9908",
       "doi": "10.18653/v1/2025.acl-long.488",
       "url": "https://aclanthology.org/2025.acl-long.488/"
@@ -196,7 +198,7 @@
       "authors": ["Alexander Scarlatos", "Jaewook Lee", "Simon Woodhead", "Andrew Lan"],
       "title": "Simulated Students in Tutoring Dialogues: Substance or Illusion?",
       "year": 2026,
-      "container_title": "Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics",
+      "container_title": "Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
       "pages": "42349-42385",
       "doi": "10.18653/v1/2026.acl-long.1960",
       "url": "https://aclanthology.org/2026.acl-long.1960/"

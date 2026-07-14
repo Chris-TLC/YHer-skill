@@ -1,7 +1,10 @@
 # Defense Pack: Prerequisite-Probe Timing Under Item Budgets
 
-**Status:** programmatic H1-H4 analysis is complete. H5 was excluded pre-outcome under
-the frozen mapping gate; zero providers qualified and no H5 outcome decision was made.
+<!-- BEGIN PAPER GENERATED DEFENSE DIGEST -->
+**Machine digest status: UNBOUND.** The controller must rerun S3 with final code
+provenance before `analysis.paper` may populate this block.
+<!-- END PAPER GENERATED DEFENSE DIGEST -->
+
 Pilot observations may explain why hypotheses were chosen, but they are not
 confirmatory evidence and must never be pooled with confirmatory results.
 
@@ -79,10 +82,8 @@ confirmatory evidence and must never be pooled with confirmatory results.
 distinguish a prerequisite gap from mastered, chain-instability, and unlearned states
 under a binary response channel and fixed item budgets, and whether the timing policy
 for prerequisite probes changes that finite-budget distinguishability. It does not
-test learning gains or long-term memory. Programmatic decisions are
-`H1=partially_supported`, `H2=not_supported`, `H3=supported`, and `H4=supported`; H5
-was excluded pre-outcome, zero providers qualified, and no H5 outcome decision was
-made.
+test learning gains or long-term memory. The machine-generated digest above is the
+only defense-pack source for final hypothesis decisions and H5 lifecycle counts.
 
 **Evidence:** [E01], [E18], [E19].
 
@@ -124,11 +125,9 @@ transitions are explicitly out of scope.
 so unlimited independent observations identify them under the model. The permitted
 claim is **budget-limited weak identifiability** or **practical non-identifiability at
 the pre-specified budgets of 9, 15, and 25 items**. Any stronger mathematical or
-asymptotic claim would contradict the frozen plan. H1 was only partially supported:
-at 15 items, A achieved 148/1,150 = 12.87% P correct convergence versus B's 9/1,150 =
-0.78%, a +12.09 percentage-point contrast (95% CI 10.35 to 13.83), but A remained far
-below the frozen 50% absolute gate. The no-repeat sensitivity was +0.50 percentage
-points (95% CI 0.00 to 1.50), so it does not justify a stronger claim.
+asymptotic claim would contradict the frozen plan. The final H1 branch, arm rates,
+contrast, interval, and no-repeat sensitivity are read only from the machine-generated
+digest. That evidence does not justify a stronger claim than the frozen branch permits.
 
 **Evidence:** [E01] `Question And Scope`; [E10] `local_correct_probs`; [E18]
 sections 1.2 and 9; [E19].
@@ -172,12 +171,10 @@ testing context, [E20] CAT records
 **Answer.** A versus B compares adaptive belief-triggered selection with a local-only
 fixed ladder. C versus A tests the additional harm from inserting prerequisite evidence
 on a fixed schedule; A versus B separately tests whether belief-triggered selection
-avoids material harm relative to asking local questions only. The results split those
-claims. C-state misdiagnosis at 9 items was 37.39% in A, 27.65% in B, and 43.04% in C.
-C minus A was +5.65 percentage points (95% CI 2.35 to 8.96), supporting fixed-quota
-harm. But A minus B was +9.74 percentage points (95% CI 7.22 to 12.26), violating the
-+5 percentage-point no-harm margin. Belief-triggered harm avoidance was therefore
-falsified, and the frozen joint H2 decision is `not_supported`.
+avoids material harm relative to asking local questions only. The machine-generated
+digest reports the final A/B/C rates, both contrasts and intervals, and the frozen H2
+branch. The interpretation must follow that conjunction rather than promote only the
+more favorable contrast.
 
 **Evidence:** [E02]; [E18] sections 1.3 and 5.3; [E19].
 
@@ -219,10 +216,10 @@ appeared there and the frozen rule combines C-versus-A harm with A-versus-B no-h
 Classic CAT work established measurement efficiency and item-selection methods. This
 study focuses on an action-linked P/U/C state distinction that needs cross-node
 prerequisite evidence, then separates belief-triggered timing from a fixed quota.
-H3, the generic adaptive-versus-fixed comparison, is explicitly subordinate. It was
-supported: A minus B terminal accuracy was +10.04 percentage points (95% CI 8.89 to
-11.19), and median convergence was 8 items for A versus 11 for B. These are a sanity
-check under the simulated production model, not the paper's novelty claim.
+H3, the generic adaptive-versus-fixed comparison, is explicitly subordinate. Its final
+accuracy contrast, interval, medians, and branch appear only in the machine-generated
+digest. They are a sanity check under the simulated production model, not the paper's
+novelty claim.
 
 **Evidence:** [E18] sections 1.3, 2.1, and 5.1; [E20] CAT records
 `lord1971`, `weiss1982`, `weiss-kingsbury1984`, `barrada2010`, and `han2018`; [E19].
@@ -275,10 +272,9 @@ must be separated by item type.
 **Answer.** No. H4 asks whether the H1/H2 point directions survive one declared
 perturbation family and how much they degrade. That is a robustness check, not a
 validation of human behavior. Failure is informative; success still leaves many
-unmodeled response processes. H4 was supported under its directional rule: the
-misspecified H1 rescue was +12.09 percentage points (95% CI 10.17 to 14.00), and the
-misspecified H2 fixed-quota harm was +6.96 percentage points (95% CI 3.65 to 10.26).
-Those effects establish robustness only to this frozen perturbation family.
+unmodeled response processes. The machine-generated digest reports the final H4
+directional branch, effects, and intervals. Any surviving effects establish robustness
+only to this frozen perturbation family.
 
 **Evidence:** [E06] H4 decision rule; [E18] sections 7 and 9; [E19].
 
@@ -346,9 +342,9 @@ prevents a favorable denominator choice from hiding risk.
 
 **Answer.** They were intended to provide a secondary stress test of prompted behavior
 across official providers. They do not contribute to programmatic accuracy claims and
-do not stand in for humans. In this run H5 was excluded pre-outcome because the frozen
-explicit misconception-to-option mapping gate was unavailable. No cross-provider
-behavioral outcome was evaluated.
+do not stand in for humans. The final H5 lifecycle and reportability state are read
+only from the machine-generated digest; an unavailable frozen mapping gate cannot be
+recast as cross-provider behavioral evidence.
 
 **Evidence:** [E06] H5 decision rule; [E16]; [E18] sections 2.4, 5.1, and 9; [E22].
 
@@ -360,9 +356,9 @@ wrong-option hit-rate contrast against a random-wrong-option baseline. A failed 
 permits at most one predeclared prompt rewrite; exclusions remain visible. Passing
 these gates supports prompt manipulation, not human realism.
 
-For this run the explicit option map was absent, so the required dual manipulation
-check could not qualify any provider. Accuracy-only collection artifacts cannot replace
-the frozen misconception-level gate.
+The explicit option-map gate determines whether the dual manipulation check is
+reportable. Accuracy-only collection artifacts cannot replace the frozen
+misconception-level gate; the machine-generated digest owns the final lifecycle state.
 
 **Evidence:** [E06] H5 decision rule; [E16] frozen config fields `accuracy_bands`,
 `maximum_prompt_rewrites`, and `minimum_complete_per_cell`; [E22].
@@ -371,11 +367,10 @@ the frozen misconception-level gate.
 
 **Answer.** The system does not infer a mapping from option text, model rationale, or
 observed responses. The cell is marked `excluded_pre_outcome`, and the misconception-
-hit contrast is not reportable for it. The current runner documentation states that
-the required explicit machine mapping is absent in the present catalog. The final
-lifecycle therefore records H5 as excluded pre-outcome, zero qualifying providers, and
-a null decision. This is not a negative H5 result. H5 status is read only from the
-validated lifecycle in the results contract.
+hit contrast is not reportable for it. The current runner documentation states the
+mapping requirement, while the machine-generated digest reports the final lifecycle,
+qualifying count, and decision state from validated artifacts. A pre-outcome exclusion
+is not a negative H5 result.
 
 **Evidence:** [E16] `Pre-Observation Gate` and `freeze_manipulation_panel`; [E19];
 [E22].
@@ -386,11 +381,9 @@ validated lifecycle in the results contract.
 model-ID drift checks, and accounting. A provider-arm cell needs at least 45 of 50
 personas, and H5 support requires enough providers to qualify in both arms. Excluded
 providers and personas remain in manifests and denominators rather than disappearing
-from the narrative. The final machine lifecycle classified DeepSeek, GLM, and Kimi as
-invalid calibration schema; Doubao as a network interruption; and MiniMax and Tongyi
-as post-calibration exclusions. The immutable accounting ledger records 10,849
-requests, 5,571,972 input tokens, 1,201,999 output tokens, and CNY 103.51977121. These
-are collection and cost records, not H5 outcome evidence.
+from the narrative. The machine-generated digest owns the provider lifecycle,
+excluded-cell denominators, request/token totals, and cost. Those accounting values are
+collection records, not H5 outcome evidence.
 
 **Evidence:** [E06] H5 decision rule; [E16] `Live Provider Run` and frozen
 `provider_policy`; `../../experiments/llm_sim/runner.py`, classes
@@ -412,11 +405,10 @@ authored AI-generated implementation.
 
 ## 30. What happens if H1 or H2 fails, and how can anyone trust that answer?
 
-**Answer.** The frozen branches were applied unchanged: `H1=partially_supported`,
-`H2=not_supported`, `H3=supported`, and `H4=supported`; H5 was excluded pre-outcome
-with a null decision and must not be described as negative. In particular, H2's
-fixed-quota harm direction survived, but its belief-triggered no-harm requirement
-failed. Neither that failure nor H1's missed 50% gate triggered parameter tuning,
+**Answer.** The machine-generated digest reports every final branch and the H5
+lifecycle without treating a pre-outcome exclusion as negative. The frozen branch
+logic, including H2's conjunction and H1's absolute gate, cannot be rewritten after
+observing results. Neither a failed branch component nor a missed gate triggered parameter tuning,
 hidden exclusions, extra replicates, or a new decision rule. Trust comes from the
 pre-data plan, deterministic seeds, repository and annotated-tag binding, input/config
 hashes, simulated-data envelopes, per-shard isolation attestations, raw-shard hashes,

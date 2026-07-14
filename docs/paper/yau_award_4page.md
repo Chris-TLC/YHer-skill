@@ -233,9 +233,10 @@ The main limitations are explicit: simulated learners are not humans; matched
 simulation is partly circular; the misspecification family is not exhaustive; the
 truth state is static; evidence is binary and multiple-choice-heavy; only a subset of
 the 135-node graph is open; sparse pools may repeat; held-out Brier is internal; and
-the work comes from one project with extensive AI assistance. LLM-simulated students
-are secondary and manipulation-gated [@lu-wang2024; @liu2024; @jin2025; @wu2025;
-@scarlatos2025; @scarlatos2026].
+the work comes from one project with extensive AI assistance. Prior
+LLM-simulated-student work motivates explicit validation and limitation analysis
+[@lu-wang2024; @liu2024; @jin2025; @wu2025; @scarlatos2025; @scarlatos2026]. In this
+project, H5 is secondary and manipulation-gated; that status is an internal design fact.
 
 The analysis plan, canonical config, seed derivation, source hashes, and isolation
 rules are repository-bound. Raw confirmatory artifacts must remain in the isolated

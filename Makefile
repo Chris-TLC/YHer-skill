@@ -9,8 +9,14 @@ PAPER_H5_RESULTS ?= $(PAPER_H5_DIR)/h5_results.json
 PAPER_MAIN ?= docs/paper/main.md
 PAPER_YAU ?= docs/paper/yau_award_4page.md
 PAPER_FIGURE_OUTPUT ?= docs/paper/generated
+PAPER_REFERENCES ?= docs/paper/references.json
+PAPER_PDF_DIR ?= output/pdf
+PAPER_MAIN_PDF ?= $(PAPER_PDF_DIR)/main.pdf
+PAPER_YAU_PDF ?= $(PAPER_PDF_DIR)/yau_award_4page.pdf
+PAPER_PANDOC ?= /opt/homebrew/bin/pandoc
+PAPER_CHROME ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
 
-.PHONY: paper-results figures paper-h5-lock paper-h5-finalize paper-h5-analyze paper-h5-merge paper-h5-merge-existing paper-bind paper-check paper-all paper-final
+.PHONY: paper-results figures paper-h5-lock paper-h5-finalize paper-h5-analyze paper-h5-merge paper-h5-merge-existing paper-bind paper-check paper-all paper-final paper-pdf paper-pdf-main paper-pdf-yau
 
 paper-results:
 	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m analysis --manifest "$(PAPER_RESULTS_MANIFEST)" --output "$(PAPER_RESULTS_DIR)" --results-contract "$(PAPER_RESULTS_CONTRACT)"
@@ -50,3 +56,11 @@ paper-final:
 	$(MAKE) --no-print-directory paper-h5-merge-existing
 	$(MAKE) --no-print-directory paper-bind
 	$(MAKE) --no-print-directory paper-check
+
+paper-pdf: paper-pdf-main paper-pdf-yau
+
+paper-pdf-main:
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile main --input "$(PAPER_MAIN)" --output "$(PAPER_MAIN_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)"
+
+paper-pdf-yau:
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile yau --input "$(PAPER_YAU)" --output "$(PAPER_YAU_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --expected-pages 4

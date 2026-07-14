@@ -10,10 +10,21 @@
       "amendment_id": "2026-07-14-main-honesty-and-lifecycle",
       "classification": "non_outcome_editorial_audit_correction",
       "evidence_anchors": [
-        "PROJECT_HANDOFF/YHER_PROJECT_OVERVIEW.md#2026-07-13-18:01",
-        "PROJECT_HANDOFF/codex_briefs/2026-07-13_仿真评估实验与论文总攻.md#H-A-H-H",
-        "experiments/analysis_plan.md#Question-And-Scope",
-        "/Users/mac/.codex/sessions/2026/07/14/rollout-2026-07-14T06-08-07-019f5d85-f20c-7961-9628-ab94201f1929.jsonl#2026-07-13T22:23:08.985Z"
+        {
+          "locator": "Question And Scope and Honest Reporting And Stopping",
+          "path": "experiments/analysis_plan.md",
+          "sha256": "662e6844dfbabf8942d787d6b7c2ef37d92c995f22e5968563fa0d9861317fd5"
+        },
+        {
+          "locator": "D10-D13 and pending-student-review preamble",
+          "path": "docs/paper/decision_log.md",
+          "sha256": "7fb88e69b85970a0880f1a5e4e297c584ce5d36af64c09f465eaffcb78be831a"
+        },
+        {
+          "locator": "aggregate_isolation_assertions",
+          "path": "experiments/confirmatory/provenance.py",
+          "sha256": "a55629a5a021322f80749ed01578f4b85069b1c013a6c8fcf576d3cee22fc98d"
+        }
       ],
       "from_skeleton_sha256": "751a719870a18b4fb2699815240401db88c74f3580d3a3e60154d5a520e7e5ff",
       "generated_outcome_regions_unchanged": true,
@@ -23,7 +34,8 @@
       "outcome_knowledge_status": "post_collection_non_outcome_only",
       "rationale": "Narrow the H-A claim to guarded computation windows, correct decision-layer and student attribution, replace stale future tense, disclose the final H5 pre-outcome exclusion, and mark final interpretation as pending student review.",
       "recorded_at_utc": "2026-07-14T00:29:45Z",
-      "reviewer": "codex_post_collection_audit_20260714",
+      "review_status": "ai_draft_pending_user_or_claude_review",
+      "reviewer": null,
       "to_skeleton_sha256": "ade54e4145be2a708a741eff5a557fd8c02aa554908d3cdd9aff0b0a43da2359"
     },
     {
@@ -34,21 +46,28 @@
       "amendment_id": "2026-07-14-yau-citation-and-authorship",
       "classification": "non_outcome_editorial_audit_correction",
       "evidence_anchors": [
-        "docs/paper/references.json",
-        "PROJECT_HANDOFF/YHER_PROJECT_OVERVIEW.md#2026-07-13-18:01",
-        "PROJECT_HANDOFF/codex_briefs/2026-07-13_仿真评估实验与论文总攻.md#S5",
-        "/Users/mac/.codex/sessions/2026/07/14/rollout-2026-07-14T05-07-35-019f5d4e-86af-7582-9170-bcfc5d453694.jsonl#2026-07-13T21:18:19.468Z"
+        {
+          "locator": "D10-D13 and pending-student-review preamble",
+          "path": "docs/paper/decision_log.md",
+          "sha256": "7fb88e69b85970a0880f1a5e4e297c584ce5d36af64c09f465eaffcb78be831a"
+        },
+        {
+          "locator": "Question And Scope",
+          "path": "experiments/analysis_plan.md",
+          "sha256": "662e6844dfbabf8942d787d6b7c2ef37d92c995f22e5968563fa0d9861317fd5"
+        }
       ],
       "from_skeleton_sha256": "1afff22d5f8ca706bafe61ba73588a44175cf0b10e7f992b20e74f2fe2eb6045",
       "generated_outcome_regions_unchanged": true,
       "manuscript": "yau_award_4page.md",
       "normalized_diff_path": "paper_skeleton_amendments_v1/yau_award_4page.normalized.diff",
-      "normalized_diff_sha256": "e407acbdc50e8c2d3c1b05e5163ff0f8f3022c71df3502efa1a678f9faaa8813",
+      "normalized_diff_sha256": "bcf086b38c9046d5a9072be65bb92a72a4f5e99f9afe00d99a2fc42a7f5d79f8",
       "outcome_knowledge_status": "post_collection_non_outcome_only",
-      "rationale": "Narrow an unsupported expected-information literature attribution and state that AI drafted the current result interpretation while final interpretation remains pending student review.",
+      "rationale": "Narrow an unsupported expected-information literature attribution, attach simulated-student citations to prior-work validation rather than the internal H5 design, and state that AI drafted the current result interpretation while final interpretation remains pending student review.",
       "recorded_at_utc": "2026-07-14T00:29:45Z",
-      "reviewer": "codex_post_collection_audit_20260714",
-      "to_skeleton_sha256": "d0361030d0ac5c578669336e40068439519b02116dddf974ab16cb73367b3e03"
+      "review_status": "ai_draft_pending_user_or_claude_review",
+      "reviewer": null,
+      "to_skeleton_sha256": "57d10d13cf836626972da9619c294b9d5419b539c53a76b010290ad790b5410e"
     }
   ],
   "policy": "post_collection_non_outcome_editorial_only",

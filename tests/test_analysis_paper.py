@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import difflib
 import hashlib
 import json
 from pathlib import Path
@@ -31,6 +32,8 @@ BEGIN_ABSTRACT_EN = "<!-- BEGIN PAPER GENERATED ABSTRACT FINDINGS EN -->"
 END_ABSTRACT_EN = "<!-- END PAPER GENERATED ABSTRACT FINDINGS EN -->"
 BEGIN_ABSTRACT_ZH = "<!-- BEGIN PAPER GENERATED ABSTRACT FINDINGS ZH -->"
 END_ABSTRACT_ZH = "<!-- END PAPER GENERATED ABSTRACT FINDINGS ZH -->"
+BEGIN_DEFENSE_DIGEST = "<!-- BEGIN PAPER GENERATED DEFENSE DIGEST -->"
+END_DEFENSE_DIGEST = "<!-- END PAPER GENERATED DEFENSE DIGEST -->"
 
 
 H1_IDS = {
@@ -104,12 +107,23 @@ REQUIRED_FIGURES = {
 }
 YAU_PROGRAMMATIC_IDS = {
     "H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS",
+    "H1_P_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS",
+    "H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS",
     "H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS_CI95",
+    "H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT",
     "H1_P_A_MINUS_B_CORRECT_CONVERGENCE_MATCHED_B15_COMMON_SUPPORT_CI95",
+    "H2_C_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS",
+    "H2_C_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS",
+    "H2_C_C_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS",
+    "H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS",
     "H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95",
+    "H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS",
     "H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_ELIGIBLE_STRESS_CI95",
+    "H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT",
     "H2_C_C_MINUS_A_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95",
+    "H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT",
     "H2_C_A_MINUS_B_MISDIAGNOSIS_MATCHED_B9_COMMON_SUPPORT_CI95",
+    "H3_A_MINUS_B_TERMINAL_ACCURACY_MATCHED_B15_FULL_SET",
     "H3_A_MINUS_B_TERMINAL_ACCURACY_MATCHED_B15_FULL_SET_CI95",
     "H3_A_MEDIAN_CONVERGENCE_ITEMS_MATCHED_B15_FULL_SET",
     "H3_B_MEDIAN_CONVERGENCE_ITEMS_MATCHED_B15_FULL_SET",
@@ -341,17 +355,20 @@ def _sync_fixture_provenance_artifacts(
     h5_results.write_text(
         json.dumps(
             {
-                "denominators": {
-                    "excluded_provider_cells": payload["denominators"].get(
-                        "excluded_provider_cells"
-                    ),
-                    "excluded_persona_cells": payload["denominators"].get(
-                        "excluded_persona_cells"
-                    ),
-                },
+                "denominators": dict(payload["denominators"]),
                 "provider_exclusion_disclosure": payload.get(
                     "h5_provider_exclusion_disclosure"
                 ),
+                "ledger": {
+                    "totals": {
+                        "requests": 10_849,
+                        "responses": 10_842,
+                        "retries": 5,
+                        "input_tokens": 5_571_972,
+                        "output_tokens": 1_201_999,
+                        "cost_yuan": 103.51977121,
+                    }
+                },
             },
             sort_keys=True,
             indent=2,
@@ -749,8 +766,32 @@ def _valid_payload(artifact_root: Path, *, h5: str = "excluded") -> dict[str, ob
                 "Target Delta",
                 "Target Gamma"
             ],
-            "excluded_provider_cells": None,
-            "excluded_persona_cells": None,
+            "excluded_provider_cells": 12,
+            "excluded_persona_cells": 464,
+            "frozen_provider_count": 6,
+            "collected_provider_count": 3 if h5 == "excluded" else 5,
+            "qualifying_provider_count": 0 if h5 == "excluded" else 5,
+            "invalid_calibration_schema_provider_count": (
+                3 if h5 == "excluded" else 0
+            ),
+            "invalid_provider_artifact_count": 0,
+            "missing_provider_count": 0,
+            "missing_required_revision_provider_count": 0,
+            "network_interruption_provider_count": 1 if h5 == "excluded" else 0,
+            "model_drift_exclusion_provider_count": 0,
+            "provider_configuration_exclusion_provider_count": 0,
+            "pre_outcome_design_exclusion_provider_count": 0,
+            "technical_interruption_provider_count": 0,
+            "post_calibration_exclusion_provider_count": 2 if h5 == "excluded" else 0,
+            "provider_lifecycle_counts": (
+                {
+                    "invalid_calibration_schema": 3,
+                    "network_interruption": 1,
+                    "post_calibration_exclusion": 2,
+                }
+                if h5 == "excluded"
+                else {"collected": 5, "missing": 1}
+            ),
         },
         "analysis_artifact": (
             "metric_registry.json"
@@ -824,6 +865,14 @@ def _paper_template(name: str) -> str:
         "## Discussion\n\n"
         f"{BEGIN_DISCUSSION}\nIf H1 is supported, placeholder.\n{END_DISCUSSION}\n\n"
         "## References\n\nReference text must survive.\n"
+    )
+
+
+def _defense_template() -> str:
+    return (
+        "# Defense\n\n"
+        f"{BEGIN_DEFENSE_DIGEST}\nPENDING machine digest\n{END_DEFENSE_DIGEST}\n\n"
+        "Human defense text must survive.\n"
     )
 
 
@@ -1556,8 +1605,10 @@ def test_binding_is_idempotent_and_yau_is_a_compact_consistent_publication_surfa
         assert main_value.group(1) == yau_value.group(1)
         assert main_value.group(1) == _paper_value(record["value"])
 
-    # Yau retains one source-artifact hash sentence, not a per-figure SHA dump.
-    assert yau_results.count("sha256:") == 1
+    # The source hash appears in the audit lifecycle record and source sentence; the
+    # H5-results hash appears once in the audit lifecycle record.
+    assert yau_results.count(f"sha256:{payload['analysis_artifact_sha256']}") == 2
+    assert yau_results.count(f"sha256:{payload['h5_results_file_sha256']}") == 1
     main_abstract = main_text.split(BEGIN_ABSTRACT_EN, 1)[1].split(END_ABSTRACT_EN, 1)[0]
     yau_abstract_en = yau_text.split(BEGIN_ABSTRACT_EN, 1)[1].split(END_ABSTRACT_EN, 1)[0]
     yau_abstract_zh = yau_text.split(BEGIN_ABSTRACT_ZH, 1)[1].split(END_ABSTRACT_ZH, 1)[0]
@@ -1568,6 +1619,116 @@ def test_binding_is_idempotent_and_yau_is_a_compact_consistent_publication_surfa
     assert "rescue 95% CI" in main_abstract
     assert "harm 95% CI" in main_abstract
     assert "no-harm 95% CI" in main_abstract
+
+
+def test_both_render_paths_disclose_machine_bound_h5_exclusion_cells(
+    tmp_path: Path,
+) -> None:
+    contract, artifacts, main, yau = _fixture(tmp_path)
+
+    bind_papers(contract, artifacts, main, yau)
+
+    for manuscript in (main, yau):
+        text = manuscript.read_text(encoding="utf-8")
+        assert "12 excluded provider cells" in text
+        assert "464 excluded persona cells" in text
+
+
+def test_yau_machine_audit_binds_every_visible_non_metric_number(
+    tmp_path: Path,
+) -> None:
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    payload = load_results_contract(contract)
+
+    bind_papers(contract, artifacts, main, yau)
+
+    audit = yau.read_text(encoding="utf-8").split(
+        "<!-- BEGIN YAU MACHINE AUDIT -->", 1
+    )[1].split("<!-- END YAU MACHINE AUDIT -->", 1)[0]
+    expected_denominators = {
+        "intended_journeys": "intended_journey_count",
+        "valid_journeys": "valid_journey_count",
+        "estimand_excluded_journeys": "estimand_excluded_journey_count",
+        "frozen_providers": "frozen_provider_count",
+        "collected_providers": "collected_provider_count",
+        "qualifying_providers": "qualifying_provider_count",
+        "excluded_provider_cells": "excluded_provider_cells",
+        "excluded_persona_cells": "excluded_persona_cells",
+    }
+    for label, field in expected_denominators.items():
+        assert f"{label}={payload['denominators'][field]:,}" in audit
+    assert "lifecycle `YAU_VISIBLE_LIFECYCLE_DENOMINATORS`" in audit
+    assert (
+        f"h5_results_sha256=sha256:{payload['h5_results_file_sha256']}" in audit
+    )
+    assert (
+        f"source_artifact_sha256=sha256:{payload['analysis_artifact_sha256']}" in audit
+    )
+
+
+def test_yau_labels_stress_and_common_support_denominators_from_records(
+    tmp_path: Path,
+) -> None:
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    payload = load_results_contract(contract)
+    for result_id in H1_IDS:
+        payload["metrics"][result_id]["denominator"] = (  # type: ignore[index]
+            200 if "COMMON_SUPPORT" in result_id else 1_150
+        )
+    for result_id in H2_IDS:
+        payload["metrics"][result_id]["denominator"] = (  # type: ignore[index]
+            450 if "COMMON_SUPPORT" in result_id else 1_150
+        )
+    _sync_fixture_registry(artifacts, payload)
+    _write_contract(contract, payload)
+
+    bind_papers(contract, artifacts, main, yau)
+
+    visible = yau.read_text(encoding="utf-8").split(
+        "<!-- BEGIN YAU MACHINE AUDIT -->", 1
+    )[0]
+    assert "stress n=1,150/arm; common-support n=200/arm" in visible
+    assert "stress n=1,150/arm; common-support n=450/arm" in visible
+
+
+def test_defense_digest_is_contract_generated_and_check_detects_drift(
+    tmp_path: Path,
+) -> None:
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    defense = tmp_path / "defense_pack.md"
+    defense.write_text(_defense_template(), encoding="utf-8")
+
+    bind_papers(contract, artifacts, main, yau, defense_path=defense)
+
+    text = defense.read_text(encoding="utf-8")
+    digest = text.split(BEGIN_DEFENSE_DIGEST, 1)[1].split(END_DEFENSE_DIGEST, 1)[0]
+    assert "PENDING" not in digest
+    assert "H1=supported" in digest
+    assert "H2=supported" in digest
+    assert "H3=supported" in digest
+    assert "H4=supported" in digest
+    assert "H5=not evaluated (excluded pre-outcome)" in digest
+    assert "12 excluded provider cells" in digest
+    assert "464 excluded persona cells" in digest
+    assert "requests=10,849" in digest
+    assert "input tokens=5,571,972" in digest
+    assert "output tokens=1,201,999" in digest
+    assert "CNY 103.51977121" in digest
+    assert "result `H1_P_A_CORRECT_CONVERGENCE_MATCHED_B15_ELIGIBLE_STRESS`" in digest
+    assert "Human defense text must survive." in text
+
+    defense.write_text(text.replace("requests=10,849", "requests=10,850"), encoding="utf-8")
+    drifted = defense.read_bytes()
+    with pytest.raises(PaperDriftError, match="defense_pack.md"):
+        bind_papers(
+            contract,
+            artifacts,
+            main,
+            yau,
+            defense_path=defense,
+            check=True,
+        )
+    assert defense.read_bytes() == drifted
 
 
 def test_contract_pngs_are_copied_with_deterministic_names_and_relative_links(
@@ -1602,6 +1763,12 @@ def test_contract_pngs_are_copied_with_deterministic_names_and_relative_links(
     assert len(main_links) == 10
     assert 2 <= len(yau_links) < len(main_links)
     assert set(yau_links) <= set(main_links)
+    yau_selected = yau_text.split("### Selected verified figures", 1)[1]
+    assert yau_selected.count("::: {.figure-grid}") == 1
+    assert yau_selected.count("\n:::\n") == 1
+    assert yau_selected.index("::: {.figure-grid}") < yau_selected.index("![")
+    assert yau_selected.rindex("\n:::") > yau_selected.rindex("![")
+    assert ")\n\n![" in yau_selected
     assert all(not Path(link).is_absolute() for link in main_links + yau_links)
     assert all(link.startswith("publication-assets/") for link in main_links + yau_links)
 
@@ -1674,14 +1841,48 @@ def _authorize_skeleton_amendment(
     manifest: Path,
     *,
     manuscript: str,
-    frozen_sha256: str,
-    amended_sha256: str,
+    frozen_text: str,
+    amended_text: str,
+    include_zh: bool = False,
     classification: str = "non_outcome_editorial_audit_correction",
+    reviewer: object = None,
+    review_status: str = "ai_draft_pending_user_or_claude_review",
+    evidence_anchors: object | None = None,
 ) -> dict[str, object]:
+    def normalized(text: str) -> str:
+        marker_pairs = [
+            (BEGIN_STATUS, END_STATUS),
+            (BEGIN_ABSTRACT_EN, END_ABSTRACT_EN),
+            (BEGIN_PAPER_RESULTS, END_PAPER_RESULTS),
+            (BEGIN_DISCUSSION, END_DISCUSSION),
+        ]
+        if include_zh:
+            marker_pairs.insert(2, (BEGIN_ABSTRACT_ZH, END_ABSTRACT_ZH))
+        for begin, end in marker_pairs:
+            start = text.index(begin)
+            finish = text.index(end, start) + len(end)
+            text = (
+                text[:start]
+                + f"{begin}\n<machine-generated-content>\n{end}"
+                + text[finish:]
+            )
+        return text
+
+    frozen_normalized = normalized(frozen_text)
+    amended_normalized = normalized(amended_text)
+    frozen_sha256 = hashlib.sha256(frozen_normalized.encode("utf-8")).hexdigest()
+    amended_sha256 = hashlib.sha256(amended_normalized.encode("utf-8")).hexdigest()
     normalized_diff = manifest.with_name(f"{manifest.stem}.{manuscript}.patch")
     normalized_diff.write_text(
-        "--- frozen/manuscript\n+++ amended/manuscript\n"
-        "@@ audit-only @@\n-audit text\n+corrected audit text\n",
+        "".join(
+            difflib.unified_diff(
+                frozen_normalized.splitlines(keepends=True),
+                amended_normalized.splitlines(keepends=True),
+                fromfile=f"frozen-original/{manuscript}",
+                tofile=f"current/{manuscript}",
+                n=0,
+            )
+        ),
         encoding="utf-8",
     )
     payload: dict[str, object] = {
@@ -1697,10 +1898,21 @@ def _authorize_skeleton_amendment(
                 "generated_outcome_regions_unchanged": True,
                 "outcome_knowledge_status": "post_collection_non_outcome_only",
                 "recorded_at_utc": "2026-07-14T00:00:00Z",
-                "reviewer": "codex_test",
+                "reviewer": reviewer,
+                "review_status": review_status,
                 "affected_sections": ["Audit disclosure"],
                 "rationale": "Correct a non-outcome audit disclosure after collection.",
-                "evidence_anchors": ["tests/test_analysis_paper.py"],
+                "evidence_anchors": (
+                    evidence_anchors
+                    if evidence_anchors is not None
+                    else [
+                        {
+                            "path": "tests/test_analysis_paper.py",
+                            "sha256": _sha(Path(__file__)),
+                            "locator": "skeleton amendment contract tests",
+                        }
+                    ]
+                ),
                 "normalized_diff_path": normalized_diff.name,
                 "normalized_diff_sha256": _sha(normalized_diff),
             }
@@ -1727,28 +1939,22 @@ def test_binder_accepts_only_a_hash_pinned_non_outcome_skeleton_amendment(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from analysis.paper import _manuscript_skeleton_sha256
-
     contract, artifacts, main, yau = _fixture(tmp_path)
-    frozen_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
+    frozen_text = main.read_text(encoding="utf-8")
     main.write_text(
-        main.read_text(encoding="utf-8").replace(
+        frozen_text.replace(
             "Reference text must survive.",
             "Corrected non-outcome isolation disclosure.",
         ),
         encoding="utf-8",
     )
-    amended_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
+    amended_text = main.read_text(encoding="utf-8")
     _authorize_skeleton_amendment(
         monkeypatch,
         tmp_path / "paper_skeleton_amendments.json",
         manuscript="main.md",
-        frozen_sha256=frozen_sha256,
-        amended_sha256=amended_sha256,
+        frozen_text=frozen_text,
+        amended_text=amended_text,
     )
 
     bind_papers(contract, artifacts, main, yau)
@@ -1758,27 +1964,106 @@ def test_binder_accepts_only_a_hash_pinned_non_outcome_skeleton_amendment(
     )
 
 
+def test_binder_rejects_codex_reviewer_as_a_false_approval(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    frozen_text = main.read_text(encoding="utf-8")
+    main.write_text(frozen_text + "\nAudit correction.\n", encoding="utf-8")
+    _authorize_skeleton_amendment(
+        monkeypatch,
+        tmp_path / "paper_skeleton_amendments.json",
+        manuscript="main.md",
+        frozen_text=frozen_text,
+        amended_text=main.read_text(encoding="utf-8"),
+        reviewer="codex_post_collection_audit",
+        evidence_anchors=["tests/test_analysis_paper.py"],
+    )
+
+    with pytest.raises(PaperContractError, match="pending review"):
+        bind_papers(contract, artifacts, main, yau)
+
+
+def test_binder_rejects_unrelated_but_hash_pinned_normalized_diff(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    frozen_text = main.read_text(encoding="utf-8")
+    main.write_text(frozen_text + "\nAudit correction.\n", encoding="utf-8")
+    manifest = tmp_path / "paper_skeleton_amendments.json"
+    payload = _authorize_skeleton_amendment(
+        monkeypatch,
+        manifest,
+        manuscript="main.md",
+        frozen_text=frozen_text,
+        amended_text=main.read_text(encoding="utf-8"),
+    )
+    amendment = payload["amendments"][0]  # type: ignore[index]
+    diff_path = manifest.parent / str(amendment["normalized_diff_path"])
+    diff_path.write_text(
+        "--- frozen-original/main.md\n+++ current/main.md\n"
+        "@@ -1 +1 @@\n-Unrelated frozen text\n+Unrelated amended text\n",
+        encoding="utf-8",
+    )
+    amendment["normalized_diff_sha256"] = _sha(diff_path)
+    manifest.write_text(
+        json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "analysis.paper.MANUSCRIPT_SKELETON_AMENDMENT_SHA256", _sha(manifest)
+    )
+
+    with pytest.raises(PaperContractError, match="diff does not reconstruct"):
+        bind_papers(contract, artifacts, main, yau)
+
+
+def test_binder_rejects_machine_local_session_evidence_anchor(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    contract, artifacts, main, yau = _fixture(tmp_path)
+    frozen_text = main.read_text(encoding="utf-8")
+    main.write_text(frozen_text + "\nAudit correction.\n", encoding="utf-8")
+    _authorize_skeleton_amendment(
+        monkeypatch,
+        tmp_path / "paper_skeleton_amendments.json",
+        manuscript="main.md",
+        frozen_text=frozen_text,
+        amended_text=main.read_text(encoding="utf-8"),
+        evidence_anchors=[
+            {
+                "path": (
+                    "/Users/mac/.codex/sessions/2026/07/14/"
+                    "machine-local-session.jsonl"
+                ),
+                "sha256": "1" * 64,
+                "locator": "machine-local evidence",
+            }
+        ],
+    )
+
+    with pytest.raises(PaperContractError, match="evidence anchor"):
+        bind_papers(contract, artifacts, main, yau)
+
+
 def test_binder_rejects_tampered_skeleton_amendment_manifest(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from analysis.paper import _manuscript_skeleton_sha256
-
     contract, artifacts, main, yau = _fixture(tmp_path)
-    frozen_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
-    main.write_text(main.read_text(encoding="utf-8") + "\nAudit correction.\n")
-    amended_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
+    frozen_text = main.read_text(encoding="utf-8")
+    main.write_text(frozen_text + "\nAudit correction.\n")
+    amended_text = main.read_text(encoding="utf-8")
     manifest = tmp_path / "paper_skeleton_amendments.json"
     _authorize_skeleton_amendment(
         monkeypatch,
         manifest,
         manuscript="main.md",
-        frozen_sha256=frozen_sha256,
-        amended_sha256=amended_sha256,
+        frozen_text=frozen_text,
+        amended_text=amended_text,
     )
     manifest.write_text(manifest.read_text(encoding="utf-8") + "\n", encoding="utf-8")
 
@@ -1790,23 +2075,17 @@ def test_binder_rejects_tampered_skeleton_amendment_diff(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from analysis.paper import _manuscript_skeleton_sha256
-
     contract, artifacts, main, yau = _fixture(tmp_path)
-    frozen_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
-    main.write_text(main.read_text(encoding="utf-8") + "\nAudit correction.\n")
-    amended_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
+    frozen_text = main.read_text(encoding="utf-8")
+    main.write_text(frozen_text + "\nAudit correction.\n")
+    amended_text = main.read_text(encoding="utf-8")
     manifest = tmp_path / "paper_skeleton_amendments.json"
     payload = _authorize_skeleton_amendment(
         monkeypatch,
         manifest,
         manuscript="main.md",
-        frozen_sha256=frozen_sha256,
-        amended_sha256=amended_sha256,
+        frozen_text=frozen_text,
+        amended_text=amended_text,
     )
     diff_path = manifest.parent / str(
         payload["amendments"][0]["normalized_diff_path"]  # type: ignore[index]
@@ -1827,6 +2106,7 @@ def test_binder_rejects_tampered_skeleton_amendment_diff(
         ("generated_outcome_regions_unchanged", False, "generated outcome regions"),
         ("outcome_knowledge_status", "outcome_rewrite", "outcome knowledge"),
         ("reviewer", "", "reviewer"),
+        ("review_status", "approved_by_user", "pending review"),
         ("affected_sections", [], "affected sections"),
     ),
 )
@@ -1837,23 +2117,17 @@ def test_binder_rejects_non_editorial_or_unanchored_skeleton_amendments(
     value: object,
     message: str,
 ) -> None:
-    from analysis.paper import _manuscript_skeleton_sha256
-
     contract, artifacts, main, yau = _fixture(tmp_path)
-    frozen_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
-    main.write_text(main.read_text(encoding="utf-8") + "\nAudit correction.\n")
-    amended_sha256 = _manuscript_skeleton_sha256(
-        main.read_text(encoding="utf-8"), include_zh=False
-    )
+    frozen_text = main.read_text(encoding="utf-8")
+    main.write_text(frozen_text + "\nAudit correction.\n")
+    amended_text = main.read_text(encoding="utf-8")
     manifest = tmp_path / "paper_skeleton_amendments.json"
     payload = _authorize_skeleton_amendment(
         monkeypatch,
         manifest,
         manuscript="main.md",
-        frozen_sha256=frozen_sha256,
-        amended_sha256=amended_sha256,
+        frozen_text=frozen_text,
+        amended_text=amended_text,
     )
     payload["amendments"][0][field] = value  # type: ignore[index]
     manifest.write_text(
@@ -1874,7 +2148,7 @@ def test_repository_manuscript_skeletons_are_frozen_or_explicitly_audited(
     monkeypatch.undo()
     from analysis.paper import (
         FROZEN_MANUSCRIPT_SKELETON_SHA256,
-        _manuscript_skeleton_sha256,
+        _normalize_manuscript_skeleton,
         _validate_manuscript_skeleton,
     )
 
@@ -1886,7 +2160,7 @@ def test_repository_manuscript_skeletons_are_frozen_or_explicitly_audited(
         )
     ):
         manuscript = repo_root / relative
-        observed = _manuscript_skeleton_sha256(
+        observed = _normalize_manuscript_skeleton(
             manuscript.read_text(encoding="utf-8"), include_zh=include_zh
         )
         _validate_manuscript_skeleton(
@@ -1994,10 +2268,11 @@ def test_generated_png_set_is_exact_and_cleanup_preserves_non_png_files(
     assert keep.read_text(encoding="utf-8") == "human-owned\n"
 
 
-def test_cli_exposes_figure_output_directory() -> None:
+def test_cli_exposes_figure_output_directory_and_defaults_to_defense_pack() -> None:
     args = build_parser().parse_args(["--figure-output-dir", "paper-assets"])
 
     assert args.figure_output_dir == Path("paper-assets")
+    assert args.defense == Path("docs/paper/defense_pack.md")
 
 
 def test_marker_failure_is_detected_before_either_manuscript_changes(tmp_path: Path) -> None:
