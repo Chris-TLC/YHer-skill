@@ -3,7 +3,7 @@
 engine/planner.py — 时间预算规划器（设计文档块 4，第 187-205 行）
 ================================================================
 预算约束下最大化预期掌握增益（v1 贪心+查表，不上优化器）。
-四档预算表（30min/1h/2h/3h+）；30min = 浅诊断口径（用户 2026-07-08 拍板）。
+预算表（30min/1h-6h）；30min = 浅诊断口径（用户 2026-07-08 拍板）。
 输出 session_budget 给 selector（EIG 循环终止预算）与 recommender（约束）。
 
 组件：
@@ -19,23 +19,33 @@ from typing import Dict, Optional
 
 from engine import mastery as m
 
-# 四档预算表（第 192-198 行；模块常量+注释，可调不改函数形式）。
+# 产品预算表。3h+ 仅在 session_budget 输入边界解析为 3h。
 # 30min: 用户 2026-07-08 拍板改浅诊断口径（M/非M 二分，不承诺病因收敛）。
 BUDGET_TABLE = {
-    "30min": {"mode": "shallow", "diagnostic_items": 9, "diagnostic_minutes": 12,
+    "30min": {"total_minutes": 30, "mode": "shallow", "diagnostic_items": 9, "diagnostic_minutes": 12,
               "target_nodes": 1, "rx_segments": 1, "rx_minutes": 8,
               "retest_items": 3, "followup_max": 2, "buffer_minutes": 1},
-    "1h":    {"mode": "full", "diagnostic_items": 15, "diagnostic_minutes": 20,
-              "target_nodes": 2, "rx_segments": 2, "rx_minutes": 15,
-              "retest_items": 5, "followup_max": 3, "buffer_minutes": 10},
-    "2h":    {"mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
-              "target_nodes": 2, "rx_segments": 4, "rx_minutes": 30,
-              "retest_items": 10, "followup_max": 5, "buffer_minutes": 20},
-    "3h+":   {"mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
-              "target_nodes": 2, "rx_segments": 4, "rx_minutes": 30,
-              "retest_items": 10, "followup_max": 5, "buffer_minutes": 30,
-              "two_rounds": True},   # 两轮完整闭环；结尾不填满、诚实收手
+    "1h":    {"total_minutes": 60, "mode": "full", "diagnostic_items": 15, "diagnostic_minutes": 20,
+              "target_nodes": 2, "rx_segments": 2, "rx_minutes": 25,
+              "retest_items": 5, "followup_max": 3, "buffer_minutes": 12},
+    "2h":    {"total_minutes": 120, "mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
+              "target_nodes": 2, "rx_segments": 4, "rx_minutes": 60,
+              "retest_items": 10, "followup_max": 5, "buffer_minutes": 14},
+    "3h":    {"total_minutes": 180, "mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
+              "target_nodes": 2, "rx_segments": 8, "rx_minutes": 120,
+              "retest_items": 10, "followup_max": 5, "buffer_minutes": 14},
+    "4h":    {"total_minutes": 240, "mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
+              "target_nodes": 2, "rx_segments": 12, "rx_minutes": 180,
+              "retest_items": 10, "followup_max": 5, "buffer_minutes": 14},
+    "5h":    {"total_minutes": 300, "mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
+              "target_nodes": 2, "rx_segments": 16, "rx_minutes": 240,
+              "retest_items": 10, "followup_max": 5, "buffer_minutes": 14},
+    "6h":    {"total_minutes": 360, "mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
+              "target_nodes": 2, "rx_segments": 20, "rx_minutes": 300,
+              "retest_items": 10, "followup_max": 5, "buffer_minutes": 14},
 }
+
+_BUDGET_ALIASES = {"3h+": "3h"}
 
 REVIEW_STORE_THRESHOLD = 0.7        # 存储 P(M) 高于此才考虑复核
 REVIEW_DECAY_THRESHOLD = 0.6        # 投影跌破此触发复核
@@ -46,8 +56,11 @@ EXHAUSTION_MULT = 1.5               # 诊断超时 ×1.5 触发降级
 
 
 def session_budget(tier: str) -> Dict:
-    """查表返回该档预算。未知档默认 1h。"""
-    return dict(BUDGET_TABLE.get(tier, BUDGET_TABLE["1h"]))
+    """查表返回该档预算；未知档闭合失败。"""
+    canonical = _BUDGET_ALIASES.get(tier, tier)
+    if canonical not in BUDGET_TABLE:
+        raise ValueError(f"unsupported session budget: {tier!r}")
+    return dict(BUDGET_TABLE[canonical])
 
 
 def estimate_minutes(budget: Dict) -> float:
@@ -57,10 +70,7 @@ def estimate_minutes(budget: Dict) -> float:
     rx = budget["rx_minutes"]
     retest = budget["retest_items"] * 0.6
     buf = budget["buffer_minutes"]
-    total = diag + rx + retest + buf
-    if budget.get("two_rounds"):
-        total = (diag + rx + retest) * 2 + buf      # 两轮闭环
-    return total
+    return diag + rx + retest + buf
 
 
 def plan_reviews(nodes: Dict[str, m.NodeBelief], now: float,
@@ -101,11 +111,16 @@ def check_exhaustion(budget: Dict, elapsed_diagnostic_min: float) -> Dict:
 
 def explain_plan(budget: Dict) -> str:
     """把安排与理由印给学生（第 200 行，用户明确要求）。数字实时从预算表生成。"""
+    total = budget["total_minutes"]
+    time_label = (
+        f"{total // 60}小时（{total} 分钟）" if total >= 60 else f"{total} 分钟"
+    )
+    plan = (
+        f"你今天有 {time_label}：诊断最多 {budget['diagnostic_items']} 道、最多 "
+        f"{budget['diagnostic_minutes']} 分钟；视频学习最多 {budget['rx_segments']} 段、最多 "
+        f"{budget['rx_minutes']} 分钟；再做 {budget['retest_items']} 道复测，预留 "
+        f"{budget['buffer_minutes']} 分钟缓冲。"
+    )
     if budget["mode"] == "shallow":
-        return (f"你今天有约 30 分钟：先用 {budget['diagnostic_items']} 道题快速定位"
-                f"「哪些点掌握了、哪些还没」，看 1 段视频补最弱的，再 "
-                f"{budget['retest_items']} 题确认。时间有限，今天只做快速定位、不深挖病因。")
-    return (f"你今天有这些时间：约 {budget['diagnostic_minutes']} 分钟定位问题（{budget['diagnostic_items']} 题），"
-            f"{budget['rx_minutes']} 分钟看 {budget['rx_segments']} 段视频，"
-            f"{int(budget['retest_items']*0.6)+1} 分钟证明补上了（{budget['retest_items']} 题），"
-            f"剩下 {budget['buffer_minutes']} 分钟是缓冲。")
+        return plan + "时间有限，今天只做快速定位、不深挖病因。"
+    return plan + "更长的学习时段会把新增时间用于学习，而不会增加诊断题量。"

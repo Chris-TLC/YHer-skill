@@ -26,8 +26,17 @@ from typing import Any, Dict, List, Optional, Sequence
 SCHEMA_VERSION = "yher_diag_v1"      # 诊断引擎地基 v1；字段口径变更时 +1，新旧不混算
 SUBJECT_DEFAULT = "chemistry"        # 第 7 项（补充点④，现在锁死）
 
-# ── 第 1 项 · session.time_budget（分钟；设计文档第 189 行四档）─────────
-TIME_BUDGET_MINUTES = {"30min": 30, "1h": 60, "2h": 120, "3h+": 180}
+# ── 第 1 项 · session.time_budget（分钟）──────────────────────────────
+TIME_BUDGET_MINUTES = {
+    "30min": 30,
+    "1h": 60,
+    "2h": 120,
+    "3h": 180,
+    "4h": 240,
+    "5h": 300,
+    "6h": 360,
+    "3h+": 180,
+}
 
 
 def normalize_time_budget(value: Any) -> Optional[int]:

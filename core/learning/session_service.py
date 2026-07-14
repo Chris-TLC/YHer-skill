@@ -22,7 +22,7 @@ from .item_catalog import CatalogItem, ItemCatalog
 from .scoring import LLMGrader, score_item
 
 
-_TOTAL_MINUTES = {"30min": 30, "1h": 60, "2h": 120, "3h+": 180}
+_LEGACY_TOTAL_MINUTES = {"30min": 30, "1h": 60, "2h": 120, "3h+": 180}
 _PHASE_ORDER = ("diagnostic", "practice", "held_out")
 _FORBIDDEN_PUBLIC_KEYS = {
     "item_id",
@@ -99,8 +99,10 @@ class SessionService:
         user_id, node = str(user_id).strip(), str(node).strip()
         if not user_id or not node:
             raise SessionError("user_id and node are required")
-        if budget_tier not in planner.BUDGET_TABLE:
-            raise SessionError("unsupported budget_tier")
+        try:
+            budget = planner.session_budget(budget_tier)
+        except ValueError as exc:
+            raise SessionError("unsupported budget_tier") from exc
         if node not in self.catalog.open_nodes():
             raise SessionError("node is not open for deterministic diagnosis")
         candidates = _one_per_family(self.catalog.for_node(node, deterministic_only=True))
@@ -154,7 +156,7 @@ class SessionService:
             "user_id": user_id,
             "node": node,
             "budget_tier": budget_tier,
-            "budget": planner.session_budget(budget_tier),
+            "budget": budget,
             "grade": str(grade or "高二"),
             "learning_purpose": str(learning_purpose or "review"),
             "synthetic": self.synthetic,
@@ -1157,7 +1159,13 @@ class SessionService:
         }
 
     def _timing(self, session: dict[str, Any]) -> dict[str, float]:
-        total = float(_TOTAL_MINUTES[session["budget_tier"]])
+        stored_total = (session.get("budget") or {}).get("total_minutes")
+        if stored_total is None:
+            try:
+                stored_total = _LEGACY_TOTAL_MINUTES[session["budget_tier"]]
+            except KeyError as exc:
+                raise SessionError("session budget is missing total_minutes") from exc
+        total = float(stored_total)
         effective_now = (
             float(session["completed_at"])
             if session.get("completed_at") is not None

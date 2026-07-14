@@ -14,7 +14,7 @@ class StrictRequest(BaseModel):
 class StartSessionRequest(StrictRequest):
     user_id: str = Field(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
     node: str = Field(min_length=1, max_length=120)
-    budget_tier: Literal["30min", "1h", "2h", "3h+"] = "30min"
+    budget_tier: Literal["30min", "1h", "2h", "3h", "4h", "5h", "6h", "3h+"] = "30min"
     grade: str = Field(default="高二", min_length=1, max_length=20)
     learning_purpose: str = Field(default="review", min_length=1, max_length=40)
 

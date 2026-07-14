@@ -16,6 +16,8 @@ from apps import study_schema as sch  # noqa: E402
 def test_normalize_time_budget():
     assert sch.normalize_time_budget("1h") == 60
     assert sch.normalize_time_budget("30min") == 30
+    assert sch.normalize_time_budget("4h") == 240
+    assert sch.normalize_time_budget("6h") == 360
     assert sch.normalize_time_budget("3h+") == 180
     assert sch.normalize_time_budget(45) == 45
     assert sch.normalize_time_budget("garbage") is None    # 无法解析 → None，不猜

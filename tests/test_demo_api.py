@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import subprocess
+
 from fastapi.testclient import TestClient
 
 from adapters.store.memory import MemoryStore
-from apps.demo_api import create_app
+from apps.demo_api import REPO_ROOT, create_app
 from core.learning.item_catalog import CatalogItem, ItemCatalog
 
 
@@ -67,7 +69,11 @@ def test_health_exposes_runtime_and_data_contract(tmp_path):
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["git"]["sha"]
-    assert payload["git"]["branch"] == "demo-overnight-20260712"
+    # Verify truthfulness without assuming the main-worktree branch name.
+    current_branch = subprocess.check_output(
+        ["git", "branch", "--show-current"], cwd=REPO_ROOT, text=True
+    ).strip()
+    assert payload["git"]["branch"] == current_branch
     assert payload["engine_version"]
     assert "started_at" in payload
     assert payload["counts"]["trusted"] == 10
@@ -115,6 +121,22 @@ def test_start_persists_grade_and_learning_purpose_and_forbids_extra_fields(tmp_
     assert accepted.status_code == 201
     assert accepted.json()["grade"] == "高三"
     assert accepted.json()["learning_purpose"] == "exam_prep"
+    assert rejected.status_code == 422
+
+
+def test_start_accepts_six_hour_budget_and_rejects_unsupported_seven_hour_budget(tmp_path):
+    client = _client(tmp_path)
+    accepted = client.post(
+        "/api/demo/sessions",
+        json={"user_id": "six-hour", "node": NODE, "budget_tier": "6h"},
+    )
+    rejected = client.post(
+        "/api/demo/sessions",
+        json={"user_id": "seven-hour", "node": NODE, "budget_tier": "7h"},
+    )
+
+    assert accepted.status_code == 201
+    assert accepted.json()["timing"]["budget_minutes"] == 360.0
     assert rejected.status_code == 422
 
 

@@ -8,6 +8,7 @@ import os
 import sys
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from engine import mastery as m       # noqa: E402
@@ -15,10 +16,30 @@ from engine import planner as pl      # noqa: E402
 
 DAY = m.DAY_SECONDS
 
+HOURLY_BUDGETS = {
+    "1h": (60, 15, 20, 2, 2, 25, 5, 3, 12),
+    "2h": (120, 25, 40, 2, 4, 60, 10, 5, 14),
+    "3h": (180, 25, 40, 2, 8, 120, 10, 5, 14),
+    "4h": (240, 25, 40, 2, 12, 180, 10, 5, 14),
+    "5h": (300, 25, 40, 2, 16, 240, 10, 5, 14),
+    "6h": (360, 25, 40, 2, 20, 300, 10, 5, 14),
+}
+HOURLY_FIELDS = (
+    "total_minutes",
+    "diagnostic_items",
+    "diagnostic_minutes",
+    "target_nodes",
+    "rx_segments",
+    "rx_minutes",
+    "retest_items",
+    "followup_max",
+    "buffer_minutes",
+)
 
-# ── 四档预算表 ────────────────────────────────────────────────────────
+
+# ── 预算表 ────────────────────────────────────────────────────────────
 def test_budget_table_all_tiers():
-    for tier in ("30min", "1h", "2h", "3h+"):
+    for tier in ("30min", "1h", "2h", "3h", "4h", "5h", "6h", "3h+"):
         b = pl.session_budget(tier)
         assert b["diagnostic_items"] > 0
         assert b["target_nodes"] >= 1
@@ -29,12 +50,55 @@ def test_budget_monotonic_with_time():
     d30 = pl.session_budget("30min")["diagnostic_items"]
     d1h = pl.session_budget("1h")["diagnostic_items"]
     d2h = pl.session_budget("2h")["diagnostic_items"]
-    assert d30 < d1h < d2h                          # 时间越多题越多
+    # Early budgets grow to T0; 2h+ stays capped at 25 without weakening safety gates.
+    assert d30 < d1h < d2h
 
 
 def test_budget_matches_design_values():
     assert pl.session_budget("1h")["diagnostic_items"] == 15   # 第 195 行
     assert pl.session_budget("2h")["diagnostic_items"] == 25   # 第 196 行
+
+
+def test_canonical_hourly_tiers_have_exact_total_minutes_and_alias():
+    assert pl.session_budget("30min").get("total_minutes") == 30
+    for tier, expected in HOURLY_BUDGETS.items():
+        budget = pl.session_budget(tier)
+        assert tuple(budget.get(field) for field in HOURLY_FIELDS) == expected
+    assert pl.session_budget("3h+") == pl.session_budget("3h")
+
+
+def test_diagnostic_budget_caps_at_t0_after_two_hours():
+    assert 9 < pl.session_budget("1h")["diagnostic_items"] < 25
+    for tier in ("2h", "3h", "4h", "5h", "6h"):
+        budget = pl.session_budget(tier)
+        # T0 deliberately caps diagnosis at 25 items; longer sessions add learning time.
+        assert budget["diagnostic_items"] == 25
+        assert budget["diagnostic_minutes"] == 40
+        assert budget["followup_max"] <= 5
+
+
+def test_recommendation_time_grows_after_two_hours_without_more_diagnosis():
+    tiers = ("2h", "3h", "4h", "5h", "6h")
+    rx = [pl.session_budget(tier)["rx_minutes"] for tier in tiers]
+    assert rx == sorted(rx)
+    assert len(set(rx)) == len(rx)
+    assert all(pl.session_budget(tier)["diagnostic_items"] == 25 for tier in tiers)
+
+
+def test_canonical_budgets_have_no_two_rounds_and_exact_accounting():
+    for tier in ("30min", "1h", "2h", "3h", "4h", "5h", "6h"):
+        budget = pl.session_budget(tier)
+        assert "two_rounds" not in budget
+    for tier in ("1h", "2h", "3h", "4h", "5h", "6h"):
+        budget = pl.session_budget(tier)
+        assert pl.estimate_minutes(budget) == int(tier[:-1]) * 60
+    assert pl.estimate_minutes(pl.session_budget("30min")) <= 30 * 1.1
+
+
+def test_unknown_budget_values_fail_closed():
+    for value in ("90min", "7h", ""):
+        with pytest.raises(ValueError):
+            pl.session_budget(value)
 
 
 # ── 30min 浅诊断口径（用户 2026-07-08 拍板）────────────────────────────
@@ -46,13 +110,22 @@ def test_30min_is_shallow_diagnosis():
 
 
 def test_higher_tiers_are_full_diagnosis():
-    for tier in ("1h", "2h", "3h+"):
+    for tier in ("1h", "2h", "3h", "4h", "5h", "6h", "3h+"):
         assert pl.session_budget(tier)["mode"] == "full"
 
 
 # ── 账目不超预算（各档最坏 ≤ 预算×1.1）─────────────────────────────────
 def test_budget_accounting_within_110pct():
-    for tier, minutes in (("30min", 30), ("1h", 60), ("2h", 120)):
+    totals = {
+        "30min": 30,
+        "1h": 60,
+        "2h": 120,
+        "3h": 180,
+        "4h": 240,
+        "5h": 300,
+        "6h": 360,
+    }
+    for tier, minutes in totals.items():
         est = pl.estimate_minutes(pl.session_budget(tier))
         assert est <= minutes * 1.1, (tier, est)
 
@@ -112,6 +185,14 @@ def test_plan_explanation_generated():
     text = pl.explain_plan(pl.session_budget("1h"))
     assert "分钟" in text or "题" in text            # 有具体安排数字
     assert len(text) > 10
+
+
+def test_six_hour_plan_explains_caps_and_learning_allocation():
+    text = pl.explain_plan(pl.session_budget("6h"))
+    assert "6小时" in text or "360分钟" in text or "360 分钟" in text
+    assert "25" in text and "诊断" in text
+    assert "最多 20 段" in text
+    assert "更长" in text and "学习" in text and "诊断" in text
 
 
 if __name__ == "__main__":

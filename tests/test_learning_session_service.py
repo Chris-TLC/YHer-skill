@@ -113,6 +113,42 @@ def test_start_freezes_two_held_out_families_and_all_partitions_are_disjoint():
         )
 
 
+def test_six_hour_session_reports_full_timing_budget():
+    store = MemoryStore()
+    service = _service(store)
+    started = service.start_session("six-hour", NODE, "6h")
+
+    assert started["timing"]["budget_minutes"] == 360.0
+    assert store.load_session(started["session_id"])["budget"]["total_minutes"] == 360
+
+
+def test_legacy_three_hour_plus_snapshot_keeps_planner_fields_and_gets_compat_timing():
+    store = MemoryStore()
+    service = _service(store)
+    session_id = service.start_session("legacy-three-plus", NODE, "30min")["session_id"]
+    legacy = store.load_session(session_id)
+    legacy["budget_tier"] = "3h+"
+    legacy_budget = {
+        "mode": "full",
+        "diagnostic_items": 25,
+        "diagnostic_minutes": 40,
+        "target_nodes": 2,
+        "rx_segments": 4,
+        "rx_minutes": 30,
+        "retest_items": 10,
+        "followup_max": 5,
+        "buffer_minutes": 30,
+        "two_rounds": True,
+    }
+    legacy["budget"] = dict(legacy_budget)
+    store.save_session(session_id, legacy)
+
+    view = service.session_view(session_id)
+
+    assert view["timing"]["budget_minutes"] == 180.0
+    assert store.load_session(session_id)["budget"] == legacy_budget
+
+
 def test_assignment_is_opaque_and_submission_cannot_name_an_item():
     store = MemoryStore()
     service = _service(store)
