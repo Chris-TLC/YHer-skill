@@ -1,0 +1,78 @@
+{
+  "schema_version": "yher.llm_sim.transport.v2",
+  "version": "v2",
+  "providers": {
+    "deepseek": {
+      "max_tokens": 1024,
+      "retry_max_tokens": 2048,
+      "timeout_seconds": 90,
+      "concurrency": 4,
+      "max_attempts": 4,
+      "failure_threshold": 3,
+      "base_backoff_seconds": 1.0,
+      "max_backoff_seconds": 30.0,
+      "cooldown_seconds": 120.0,
+      "jitter_fraction": 0.25
+    },
+    "glm": {
+      "max_tokens": 512,
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60,
+      "concurrency": 4,
+      "max_attempts": 3,
+      "failure_threshold": 3,
+      "base_backoff_seconds": 1.0,
+      "max_backoff_seconds": 30.0,
+      "cooldown_seconds": 120.0,
+      "jitter_fraction": 0.25
+    },
+    "kimi": {
+      "max_tokens": 512,
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60,
+      "concurrency": 4,
+      "max_attempts": 3,
+      "failure_threshold": 3,
+      "base_backoff_seconds": 1.0,
+      "max_backoff_seconds": 30.0,
+      "cooldown_seconds": 120.0,
+      "jitter_fraction": 0.25
+    },
+    "minimax": {
+      "max_tokens": 512,
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60,
+      "concurrency": 4,
+      "max_attempts": 3,
+      "failure_threshold": 3,
+      "base_backoff_seconds": 1.0,
+      "max_backoff_seconds": 30.0,
+      "cooldown_seconds": 120.0,
+      "jitter_fraction": 0.25
+    },
+    "doubao": {
+      "max_tokens": 1024,
+      "retry_max_tokens": 2048,
+      "timeout_seconds": 120,
+      "concurrency": 2,
+      "max_attempts": 4,
+      "failure_threshold": 3,
+      "base_backoff_seconds": 2.0,
+      "max_backoff_seconds": 60.0,
+      "cooldown_seconds": 180.0,
+      "jitter_fraction": 0.25
+    },
+    "tongyi": {
+      "max_tokens": 512,
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60,
+      "concurrency": 4,
+      "max_attempts": 3,
+      "failure_threshold": 3,
+      "base_backoff_seconds": 1.0,
+      "max_backoff_seconds": 30.0,
+      "cooldown_seconds": 120.0,
+      "jitter_fraction": 0.25
+    }
+  }
+}
