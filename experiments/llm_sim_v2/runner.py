@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import random
+import subprocess
 import threading
 import time
 from collections import Counter
@@ -1079,6 +1080,7 @@ def _validated_stored_git_proof(
     stored: Any,
     active: Any,
     *,
+    repo_root: Path,
     label: str,
 ) -> dict[str, Any]:
     if not isinstance(stored, Mapping) or not isinstance(active, Mapping):
@@ -1099,7 +1101,97 @@ def _validated_stored_git_proof(
         or stored.get("precedes_observation") is not True
     ):
         raise ValueError(f"phase provenance {label} git proof drifted")
-    _validate_runtime_timestamp(str(stored.get("observation_timestamp") or ""))
+
+    def parse_utc(value: Any, *, field: str) -> datetime:
+        text = str(value or "").strip()
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError(
+                f"phase provenance {label} {field} is invalid"
+            ) from exc
+        offset = parsed.utcoffset()
+        if parsed.tzinfo is None or offset is None or offset.total_seconds() != 0:
+            raise ValueError(f"phase provenance {label} {field} is not UTC")
+        return parsed.astimezone(timezone.utc)
+
+    def resolve_commit(value: Any, *, field: str) -> str:
+        commit = str(value or "").strip().lower()
+        if len(commit) != 40 or any(char not in "0123456789abcdef" for char in commit):
+            raise ValueError(f"phase provenance {label} {field} is invalid")
+        try:
+            resolved = subprocess.check_output(
+                ["git", "rev-parse", "--verify", f"{commit}^{{commit}}"],
+                cwd=repo_root,
+                text=True,
+                stderr=subprocess.DEVNULL,
+            ).strip()
+        except subprocess.CalledProcessError as exc:
+            raise ValueError(
+                f"phase provenance {label} {field} is not a git commit"
+            ) from exc
+        if resolved != commit:
+            raise ValueError(f"phase provenance {label} {field} identity drifted")
+        return commit
+
+    def require_ancestor(ancestor: str, descendant: str, *, relation: str) -> None:
+        result = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+            cwd=repo_root,
+            capture_output=True,
+        )
+        if result.returncode == 1:
+            raise ValueError(f"phase provenance {label} {relation} ancestry is invalid")
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"cannot verify phase provenance {label} {relation} ancestry"
+            )
+
+    bound_commit = resolve_commit(stored.get("commit"), field="commit")
+    stored_head = resolve_commit(stored.get("current_head"), field="current_head")
+    active_head = resolve_commit(
+        active.get("current_head"), field="active current_head"
+    )
+    repository_head = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_root,
+        text=True,
+    ).strip()
+    if active_head != repository_head:
+        raise ValueError(f"phase provenance {label} active current_head is stale")
+    require_ancestor(bound_commit, stored_head, relation="commit-to-stored-head")
+    require_ancestor(stored_head, active_head, relation="stored-to-active-head")
+
+    stored_commit_text = str(stored.get("commit_timestamp_utc") or "").strip()
+    active_commit_text = str(active.get("commit_timestamp_utc") or "").strip()
+    actual_commit_epoch = int(
+        subprocess.check_output(
+            ["git", "show", "-s", "--format=%ct", bound_commit],
+            cwd=repo_root,
+            text=True,
+        ).strip()
+    )
+    actual_commit_text = datetime.fromtimestamp(
+        actual_commit_epoch,
+        tz=timezone.utc,
+    ).isoformat()
+    if (
+        stored_commit_text != active_commit_text
+        or active_commit_text != actual_commit_text
+    ):
+        raise ValueError(f"phase provenance {label} commit timestamp drifted")
+    commit_timestamp = parse_utc(stored_commit_text, field="commit timestamp")
+    observation_text = _validate_runtime_timestamp(
+        str(stored.get("observation_timestamp") or "")
+    )
+    observation_timestamp = parse_utc(
+        observation_text,
+        field="observation timestamp",
+    )
+    if not commit_timestamp < observation_timestamp:
+        raise ValueError(
+            f"phase provenance {label} commit does not precede observation"
+        )
     return dict(stored)
 
 
@@ -1122,11 +1214,13 @@ def verify_phase_provenance_against_contract(
     stored_freeze_proof = _validated_stored_git_proof(
         freeze_binding.get("git_proof"),
         contract.freeze_proof,
+        repo_root=contract.repo_root,
         label="freeze",
     )
     stored_runtime_proof = _validated_stored_git_proof(
         runtime_binding.get("git_proof"),
         runtime_proof.get("git_proof"),
+        repo_root=contract.repo_root,
         label="runtime",
     )
     first_observation = _validate_runtime_timestamp(

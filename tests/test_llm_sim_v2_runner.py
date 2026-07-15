@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import copy
+from datetime import datetime, timezone
 from email.utils import formatdate
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 from typing import Any
 
 import pytest
@@ -51,6 +53,33 @@ def _canonical_sha(value: Any) -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
+
+
+def _git_head() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        text=True,
+    ).strip()
+
+
+def _git_commit_timestamp(commit: str) -> str:
+    epoch = int(
+        subprocess.check_output(
+            ["git", "show", "-s", "--format=%ct", commit],
+            cwd=REPO_ROOT,
+            text=True,
+        ).strip()
+    )
+    return datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat()
+
+
+def _git_parent(commit: str) -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", f"{commit}^"],
+        cwd=REPO_ROOT,
+        text=True,
+    ).strip()
 
 
 def _contract_with_revision_one():
@@ -1040,9 +1069,10 @@ def _phase_provenance_fixture(*, partial: bool = False):
     )
 
     contract = load_runtime_contract(REPO_ROOT)
+    runtime_commit = str(contract.freeze_proof["commit"])
     runtime = build_runtime_task_manifest(
         contract,
-        runtime_commit="a" * 40,
+        runtime_commit=runtime_commit,
         frozen_at_utc="2026-07-15T07:05:00Z",
     )
     proof = {
@@ -1059,12 +1089,20 @@ def _phase_provenance_fixture(*, partial: bool = False):
             "commit": runtime["runtime_commit"],
             "current_head": runtime["runtime_commit"],
             "ancestor_of_head": True,
+            "commit_timestamp_utc": _git_commit_timestamp(runtime_commit),
             "observation_timestamp": contract.freeze_proof[
                 "observation_timestamp"
             ],
             "precedes_observation": True,
             "byte_identical": True,
-            "files": runtime["runtime_files"],
+            "files": [
+                {
+                    "path": row["path"],
+                    "sha256": row["sha256"],
+                    "byte_identical": True,
+                }
+                for row in runtime["runtime_files"]
+            ],
         },
     }
     frozen_providers = tuple(contract.config["pilot"]["providers"])
@@ -1093,6 +1131,47 @@ def _phase_provenance_fixture(*, partial: bool = False):
     return contract, runtime, tasks, phase
 
 
+def _active_runtime_proof(
+    runtime: dict[str, Any],
+    phase: dict[str, Any],
+) -> dict[str, Any]:
+    git_proof = copy.deepcopy(phase["runtime"]["git_proof"])
+    git_proof["current_head"] = _git_head()
+    git_proof["commit_timestamp_utc"] = _git_commit_timestamp(
+        runtime["runtime_commit"]
+    )
+    return {
+        "schema_version": "yher.llm_sim_v2.runtime_task_manifest_proof.v1",
+        "ok": True,
+        "run_id": "llm-personas-v2-dual",
+        "runtime_task_manifest_sha256": runtime[
+            "runtime_task_manifest_sha256"
+        ],
+        "runtime_commit": runtime["runtime_commit"],
+        "git_proof": git_proof,
+    }
+
+
+def _phase_scope(phase: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: phase[key]
+        for key in (
+            "collection_mode",
+            "development_only",
+            "partial",
+            "formal_analysis_eligible",
+            "frozen_providers",
+            "selected_providers",
+            "task_limit",
+        )
+    }
+
+
+def _rehash_phase(phase: dict[str, Any]) -> None:
+    phase.pop("phase_provenance_sha256", None)
+    phase["phase_provenance_sha256"] = _canonical_sha(phase)
+
+
 def test_phase_provenance_serializes_all_frozen_and_execution_bindings(tmp_path: Path):
     from experiments.llm_sim_v2.runner import (
         validate_formal_phase_provenance,
@@ -1109,7 +1188,7 @@ def test_phase_provenance_serializes_all_frozen_and_execution_bindings(tmp_path:
     assert phase["target"]["target_set_hash"] == contract.config["target_set_hash"]
     assert phase["grid_sha256"] == contract.freeze_manifest["grid_sha256"]
     assert phase["prompt"]["revision"] == 0
-    assert phase["runtime"]["execution_commit"] == "a" * 40
+    assert phase["runtime"]["execution_commit"] == runtime["runtime_commit"]
     assert phase["runtime"]["execution_files"] == runtime["runtime_files"]
     assert phase["task_roster"]["expected_task_count"] == len(tasks) == 128
     assert validate_formal_phase_provenance(phase)["ok"] is True
@@ -1139,28 +1218,8 @@ def test_rehashed_stored_phase_provenance_is_revalidated_against_active_contract
     )
 
     contract, runtime, tasks, phase = _phase_provenance_fixture()
-    runtime_proof = {
-        "schema_version": "yher.llm_sim_v2.runtime_task_manifest_proof.v1",
-        "ok": True,
-        "run_id": "llm-personas-v2-dual",
-        "runtime_task_manifest_sha256": runtime[
-            "runtime_task_manifest_sha256"
-        ],
-        "runtime_commit": runtime["runtime_commit"],
-        "git_proof": phase["runtime"]["git_proof"],
-    }
-    scope = {
-        key: phase[key]
-        for key in (
-            "collection_mode",
-            "development_only",
-            "partial",
-            "formal_analysis_eligible",
-            "frozen_providers",
-            "selected_providers",
-            "task_limit",
-        )
-    }
+    runtime_proof = _active_runtime_proof(runtime, phase)
+    scope = _phase_scope(phase)
     assert verify_phase_provenance_against_contract(
         phase,
         contract=contract,
@@ -1172,8 +1231,7 @@ def test_rehashed_stored_phase_provenance_is_revalidated_against_active_contract
 
     tampered = copy.deepcopy(phase)
     tampered[section][field] = "0" * 64
-    tampered.pop("phase_provenance_sha256", None)
-    tampered["phase_provenance_sha256"] = _canonical_sha(tampered)
+    _rehash_phase(tampered)
     with pytest.raises(ValueError, match="phase provenance.*contract"):
         verify_phase_provenance_against_contract(
             tampered,
@@ -1183,6 +1241,103 @@ def test_rehashed_stored_phase_provenance_is_revalidated_against_active_contract
             tasks=tasks,
             collection_scope=scope,
         )
+
+
+def test_rehashed_phase_rejects_coordinated_precommit_observation_timestamps():
+    from experiments.llm_sim_v2.runner import (
+        verify_phase_provenance_against_contract,
+    )
+
+    contract, runtime, tasks, phase = _phase_provenance_fixture()
+    runtime_proof = _active_runtime_proof(runtime, phase)
+    tampered = copy.deepcopy(phase)
+    ancient = "2000-01-01T00:00:00Z"
+    tampered["first_observation_at_utc"] = ancient
+    tampered["freeze"]["git_proof"]["observation_timestamp"] = ancient
+    tampered["runtime"]["git_proof"]["observation_timestamp"] = ancient
+    tampered["freeze"]["git_proof"]["precedes_observation"] = True
+    tampered["runtime"]["git_proof"]["precedes_observation"] = True
+    _rehash_phase(tampered)
+
+    with pytest.raises(ValueError, match="commit|observation|temporal"):
+        verify_phase_provenance_against_contract(
+            tampered,
+            contract=contract,
+            runtime_manifest=runtime,
+            runtime_proof=runtime_proof,
+            tasks=tasks,
+            collection_scope=_phase_scope(phase),
+        )
+
+
+@pytest.mark.parametrize("binding", ["freeze", "runtime"])
+def test_rehashed_phase_rejects_stored_commit_timestamp_drift(binding: str):
+    from experiments.llm_sim_v2.runner import (
+        verify_phase_provenance_against_contract,
+    )
+
+    contract, runtime, tasks, phase = _phase_provenance_fixture()
+    runtime_proof = _active_runtime_proof(runtime, phase)
+    tampered = copy.deepcopy(phase)
+    tampered[binding]["git_proof"]["commit_timestamp_utc"] = (
+        "1999-01-01T00:00:00+00:00"
+    )
+    _rehash_phase(tampered)
+
+    with pytest.raises(ValueError, match="commit timestamp|git proof|temporal"):
+        verify_phase_provenance_against_contract(
+            tampered,
+            contract=contract,
+            runtime_manifest=runtime,
+            runtime_proof=runtime_proof,
+            tasks=tasks,
+            collection_scope=_phase_scope(phase),
+        )
+
+
+def test_rehashed_phase_rejects_impossible_stored_runtime_head_ancestry():
+    from experiments.llm_sim_v2.runner import (
+        FROZEN_COMMIT,
+        verify_phase_provenance_against_contract,
+    )
+
+    contract, runtime, tasks, phase = _phase_provenance_fixture()
+    runtime_proof = _active_runtime_proof(runtime, phase)
+    tampered = copy.deepcopy(phase)
+    tampered["runtime"]["git_proof"]["current_head"] = _git_parent(
+        FROZEN_COMMIT
+    )
+    _rehash_phase(tampered)
+
+    with pytest.raises(ValueError, match="current_head|ancestor|ancestry"):
+        verify_phase_provenance_against_contract(
+            tampered,
+            contract=contract,
+            runtime_manifest=runtime,
+            runtime_proof=runtime_proof,
+            tasks=tasks,
+            collection_scope=_phase_scope(phase),
+        )
+
+
+def test_stored_runtime_head_may_precede_active_head_when_ancestry_is_valid():
+    from experiments.llm_sim_v2.runner import (
+        verify_phase_provenance_against_contract,
+    )
+
+    contract, runtime, tasks, phase = _phase_provenance_fixture()
+    assert phase["runtime"]["git_proof"]["current_head"] == runtime[
+        "runtime_commit"
+    ]
+    assert runtime["runtime_commit"] != _git_head()
+    assert verify_phase_provenance_against_contract(
+        phase,
+        contract=contract,
+        runtime_manifest=runtime,
+        runtime_proof=_active_runtime_proof(runtime, phase),
+        tasks=tasks,
+        collection_scope=_phase_scope(phase),
+    )["contract_revalidated"] is True
 
 
 def test_formal_analyzer_rejects_partial_phase_provenance():
@@ -1233,7 +1388,7 @@ def test_response_and_provider_manifest_bind_phase_provenance(tmp_path: Path):
     assert binding["runtime_task_manifest_sha256"] == phase["runtime"][
         "runtime_task_manifest_sha256"
     ]
-    assert binding["execution_commit"] == "a" * 40
+    assert binding["execution_commit"] == phase["runtime"]["execution_commit"]
     assert summary["provenance"] == binding
 
 
