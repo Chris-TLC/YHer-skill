@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from copy import deepcopy
 from collections.abc import Iterable, Mapping
 from typing import Any
+
+from .keys import canonical_key
 
 
 SCHEMA_VERSION = "yher.llm_sim_v2.target_option_map.v1"
@@ -97,6 +100,8 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
     output: list[dict[str, Any]] = []
     seen: dict[tuple[str, str], dict[str, Any]] = {}
     for raw in _raw_rows(rows):
+        if _contains_codex_reviewer(raw):
+            raise ValueError("reviewer provenance cannot use a codex_* manual reviewer")
         item_id = str(raw.get("item_id") or "").strip()
         failure_id = str(raw.get("failure_id") or "").strip()
         if not item_id or not failure_id:
@@ -107,16 +112,16 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
         option = raw.get("target_option")
         target_option = str(option).strip().upper() if option is not None and str(option).strip() else None
         reviewer = raw.get("reviewer_provenance", raw.get("reviewer", raw.get("provenance")))
-        if reviewer is None or (isinstance(reviewer, str) and not reviewer.strip()):
-            raise ValueError("mapping rows require reviewer provenance")
-        if _contains_codex_reviewer(reviewer, _signer_context=True):
+        if not isinstance(reviewer, Mapping) or not reviewer:
+            raise ValueError("mapping rows require non-empty structured reviewer provenance")
+        if _contains_codex_reviewer(reviewer):
             raise ValueError("reviewer provenance cannot use a codex_* manual reviewer")
         row: dict[str, Any] = {
             "item_id": item_id,
             "failure_id": failure_id,
             "target_option": target_option,
             "status": status,
-            "reviewer_provenance": reviewer,
+            "reviewer_provenance": deepcopy(dict(reviewer)),
         }
         if raw.get("ambiguity_reason") is not None:
             row["ambiguity_reason"] = str(raw["ambiguity_reason"])
@@ -131,20 +136,24 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
 
 
 def _contains_codex_reviewer(value: Any, *, _signer_context: bool = False) -> bool:
-    signer_keys = {"reviewer", "manual_reviewer", "signer", "signed_by", "reviewed_by"}
+    signer_keys = {
+        "reviewer",
+        "reviewer_name",
+        "manual_reviewer",
+        "signer",
+        "signed_by",
+        "reviewed_by",
+    }
     if isinstance(value, Mapping):
         for key, item in value.items():
-            normalized = str(key).strip().lower().replace("-", "_")
-            if normalized in signer_keys:
-                if _contains_codex_reviewer(item, _signer_context=True):
-                    return True
-            elif isinstance(item, Mapping) or isinstance(item, (list, tuple, set, frozenset)):
-                if _contains_codex_reviewer(item, _signer_context=False):
-                    return True
+            child_signer_context = _signer_context or canonical_key(key) in signer_keys
+            if _contains_codex_reviewer(item, _signer_context=child_signer_context):
+                return True
         return False
     if isinstance(value, (list, tuple, set, frozenset)):
         return any(_contains_codex_reviewer(item, _signer_context=_signer_context) for item in value)
-    return _signer_context and str(value).strip().lower().startswith(("codex_", "codex-"))
+    identity = canonical_key(value)
+    return _signer_context and (identity == "codex" or identity.startswith("codex_"))
 
 
 def _correct_option(item: Any) -> str | None:
@@ -220,6 +229,14 @@ def normalize_target_option_map(
             if not str(row.get("ambiguity_reason") or "").strip():
                 raise ValueError("excluded_ambiguous rows require ambiguity_reason")
     if existing is not None:
+        if mapping_locked:
+            missing_hashes = {
+                key for key in ("mapping_sha256", "target_set_hash") if not existing.get(key)
+            }
+            if missing_hashes:
+                raise ValueError(f"locked mapping is missing frozen hashes: {sorted(missing_hashes)}")
+        mapping_sha256(existing)
+        target_set_hash(existing)
         old_rows = _existing_rows(existing)
         if mapping_locked and old_rows != normalized_rows:
             raise ValueError("post-observation mapping replacement is forbidden")

@@ -112,14 +112,20 @@ def test_blind_and_judge_scanners_catch_adversarial_fields_values_and_prose():
             frozen_leakage_lexicon=("confuses conjugate pairs",),
         )
 
+    observed = {"label": "unknown", "evidence": "insufficient_evidence"}
     judge = prompts.render_judge_export(
         blind_messages=prompts.render_blind_prompt(_row(), _item()),
-        model_output={"label": "unknown", "evidence": "insufficient_evidence"},
+        model_output=observed,
         persona=_row(),
         item=_item(),
         frozen_leakage_lexicon=(),
     )
-    prompts.assert_judge_no_target_labels(judge, persona=_row(), item=_item())
+    prompts.assert_judge_no_target_labels(
+        judge,
+        persona=_row(),
+        item=_item(),
+        observed_output=observed,
+    )
     judge_text = json.dumps(judge, ensure_ascii=False)
     assert "unknown" in judge_text
     assert "insufficient_evidence" in judge_text
@@ -137,9 +143,10 @@ def test_public_question_and_option_text_are_allowed_inside_nested_judge_export(
     item["public_question"] = "Explain the failure_id term in this public question"
     item["options"]["B"] = "confuses conjugate pairs"
     blind = prompts.render_blind_prompt(_row(), item, frozen_leakage_lexicon=("confuses conjugate pairs",))
+    observed = {"label": "unknown", "evidence": "public text only"}
     judge = prompts.render_judge_export(
         blind_messages=blind,
-        model_output={"label": "unknown", "evidence": "public text only"},
+        model_output=observed,
         persona=_row(),
         item=item,
         frozen_leakage_lexicon=("confuses conjugate pairs",),
@@ -149,6 +156,7 @@ def test_public_question_and_option_text_are_allowed_inside_nested_judge_export(
         persona=_row(),
         item=item,
         frozen_leakage_lexicon=("confuses conjugate pairs",),
+        observed_output=observed,
     )
 
 

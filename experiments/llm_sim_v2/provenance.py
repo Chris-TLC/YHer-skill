@@ -71,13 +71,22 @@ def hash_declared_files(
     }
 
 
-def _declared_rows(value: Mapping[str, Any] | Sequence[Any]) -> list[dict[str, str]]:
+def _declared_rows(value: Mapping[str, Any] | Sequence[Any]) -> list[dict[str, Any]]:
+    structured_manifest = False
     if isinstance(value, Mapping):
         if "files" in value:
+            structured_manifest = True
+            advertised = value.get("file_set_sha256")
+            if not isinstance(advertised, str) or len(advertised) != 64:
+                raise ValueError("structured provenance manifest requires file_set_sha256")
+            computed = hashlib.sha256(_canonical(value["files"])).hexdigest()
+            if advertised.lower() != computed:
+                raise ValueError("provenance file-set sha256 does not match manifest files")
             value = value["files"]
         else:
             value = [{"path": path, "sha256": digest} for path, digest in value.items()]
-    rows: list[dict[str, str]] = []
+    rows: list[dict[str, Any]] = []
+    seen_paths: set[str] = set()
     for row in value:
         if isinstance(row, Mapping):
             path = str(row.get("path") or "")
@@ -87,7 +96,18 @@ def _declared_rows(value: Mapping[str, Any] | Sequence[Any]) -> list[dict[str, s
             path, digest = str(path), str(digest)
         if not path or len(digest) != 64:
             raise ValueError("declared provenance rows require path and sha256")
-        rows.append({"path": path, "sha256": digest.lower()})
+        if path in seen_paths:
+            raise ValueError(f"declared provenance manifest contains duplicate path: {path}")
+        seen_paths.add(path)
+        normalized_row: dict[str, Any] = {"path": path, "sha256": digest.lower()}
+        if structured_manifest:
+            size = row.get("size")
+            if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+                raise ValueError("structured provenance manifest rows require a non-negative size")
+            normalized_row["size"] = size
+            if row.get("category") is not None:
+                normalized_row["category"] = str(row["category"])
+        rows.append(normalized_row)
     if not rows:
         raise ValueError("declared provenance file set cannot be empty")
     return sorted(rows, key=lambda row: row["path"])
@@ -143,6 +163,8 @@ def verify_frozen_git_commit(
         committed_sha = hashlib.sha256(committed).hexdigest()
         current = current_path.read_bytes()
         current_sha = hashlib.sha256(current).hexdigest()
+        if "size" in row and (len(committed) != row["size"] or len(current) != row["size"]):
+            raise ValueError(f"frozen file size does not match manifest: {normalized}")
         if committed_sha != row["sha256"] or current_sha != committed_sha:
             raise ValueError(f"frozen file is not byte-identical: {normalized}")
         file_rows.append({"path": normalized, "sha256": committed_sha, "byte_identical": True})

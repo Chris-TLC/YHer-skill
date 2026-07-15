@@ -7,10 +7,15 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .keys import canonical_key
 from .public import public_question_payload
 
 
 JUDGE_LABELS = frozenset({"consistent", "inconsistent", "unknown", "insufficient_evidence"})
+_JUDGE_OUTPUT_FIELDS = frozenset({"label", "error_category", "rationale", "simulated"})
+_JUDGE_AUTHENTICITY_FIELDS = frozenset(
+    {"authenticity", "authenticity_score", "truthfulness", "truthfulness_score", "realism", "realism_score"}
+)
 _FORBIDDEN_FIELD_NAMES = (
     "persona_id",
     "pair_id",
@@ -33,7 +38,7 @@ _NO_OBSERVATION = object()
 
 
 def _normalize_field_token(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
+    return canonical_key(value)
 
 
 def _dict(value: Any) -> dict[str, Any]:
@@ -211,6 +216,7 @@ def _scan_structure(
     expected_observed: Any = _NO_OBSERVATION,
     context_terms: Sequence[str],
     violations: list[str],
+    candidate_paths: list[str],
     path: str = "$",
     allow_observed_terms: bool = False,
 ) -> None:
@@ -219,29 +225,33 @@ def _scan_structure(
     if isinstance(value, Mapping):
         for key, child in value.items():
             key_text = str(key)
-            key_lower = key_text.lower()
             key_normalized = _normalize_field_token(key_text)
             child_path = f"{path}.{key_text}"
             if key_normalized in _FORBIDDEN_FIELD_NAMES:
                 violations.append(f"forbidden field: {key_normalized}")
-            elif key_normalized == "candidate_output" and key_lower != "candidate_output":
-                violations.append("forbidden field: candidate_output")
-            if key_lower == _PUBLIC_KEY and _public_payload_matches(child, expected_public):
+            if key_normalized == _PUBLIC_KEY and key_text == _PUBLIC_KEY and _public_payload_matches(child, expected_public):
                 continue
             candidate_matches = False
-            if key_lower == "candidate_output" and expected_observed is not _NO_OBSERVATION:
-                try:
-                    candidate_matches = _canonical_json(child) == _canonical_json(expected_observed)
-                except (TypeError, ValueError):
-                    candidate_matches = False
-                if not candidate_matches:
-                    violations.append("candidate output differs from supplied observation")
+            if key_normalized == "candidate_output":
+                if key_text != "candidate_output":
+                    violations.append("candidate_output must use its canonical field name")
+                if expected_observed is _NO_OBSERVATION:
+                    violations.append("forbidden field: candidate_output")
+                else:
+                    candidate_paths.append(child_path)
+                    try:
+                        candidate_matches = _canonical_json(child) == _canonical_json(expected_observed)
+                    except (TypeError, ValueError):
+                        candidate_matches = False
+                    if not candidate_matches:
+                        violations.append("candidate output differs from supplied observation")
             _scan_structure(
                 child,
                 expected_public=expected_public,
                 expected_observed=expected_observed,
                 context_terms=context_terms,
                 violations=violations,
+                candidate_paths=candidate_paths,
                 path=child_path,
                 allow_observed_terms=allow_observed_terms or candidate_matches,
             )
@@ -254,6 +264,7 @@ def _scan_structure(
                 expected_observed=expected_observed,
                 context_terms=context_terms,
                 violations=violations,
+                candidate_paths=candidate_paths,
                 path=f"{path}[{index}]",
                 allow_observed_terms=allow_observed_terms,
             )
@@ -276,7 +287,7 @@ def scan_blind_leakage(
     persona: Any | None = None,
     item: Any | None = None,
     frozen_leakage_lexicon: Sequence[str] = (),
-    observed_output: Any | None = None,
+    observed_output: Any = _NO_OBSERVATION,
 ) -> list[str]:
     parsed = [
         _decode_nested_json(_message_json(message))
@@ -301,14 +312,13 @@ def scan_blind_leakage(
     if item is not None:
         expected_public = public_question_payload(item)
     expected_observed = (
-        _NO_OBSERVATION
-        if observed_output is None
-        else _decode_nested_json(observed_output)
+        _NO_OBSERVATION if observed_output is _NO_OBSERVATION else _decode_nested_json(observed_output)
     )
     terms = [
         *context_values,
         *(str(value).strip().lower() for value in frozen_leakage_lexicon),
     ]
+    candidate_paths: list[str] = []
     for payload in parsed:
         _scan_structure(
             payload,
@@ -316,7 +326,10 @@ def scan_blind_leakage(
             expected_observed=expected_observed,
             context_terms=tuple(term for term in terms if term),
             violations=violations,
+            candidate_paths=candidate_paths,
         )
+    if expected_observed is not _NO_OBSERVATION and len(candidate_paths) != 1:
+        violations.append("judge export must contain exactly one candidate_output bound to the supplied observation")
     return sorted(set(violations))
 
 
@@ -326,7 +339,7 @@ def assert_blind_no_leakage(
     persona: Any | None = None,
     item: Any | None = None,
     frozen_leakage_lexicon: Sequence[str] = (),
-    observed_output: Any | None = None,
+    observed_output: Any = _NO_OBSERVATION,
 ) -> None:
     violations = scan_blind_leakage(
         messages,
@@ -382,7 +395,7 @@ def assert_judge_no_target_labels(
     persona: Any | None = None,
     item: Any | None = None,
     frozen_leakage_lexicon: Sequence[str] = (),
-    observed_output: Any | None = None,
+    observed_output: Any = _NO_OBSERVATION,
 ) -> None:
     assert_blind_no_leakage(
         messages,
@@ -399,7 +412,24 @@ def validate_judge_output(value: Mapping[str, Any]) -> dict[str, Any]:
     label = str(value.get("label") or "").strip().lower()
     if label not in JUDGE_LABELS:
         raise ValueError("judge output label is not allowed")
+    for key in value:
+        normalized = canonical_key(key)
+        if normalized in _FORBIDDEN_FIELD_NAMES:
+            raise ValueError(f"judge output contains target-label leakage field: {normalized}")
+        if normalized in _JUDGE_AUTHENTICITY_FIELDS:
+            raise ValueError(f"judge output contains forbidden authenticity/truthfulness field: {normalized}")
+        if str(key) != normalized or normalized not in _JUDGE_OUTPUT_FIELDS:
+            raise ValueError("judge output permits only agreement and error-category fields")
     output = dict(value)
+    if "error_category" in output:
+        category = output["error_category"]
+        if not isinstance(category, str) or not category.strip():
+            raise ValueError("judge error_category must be a non-empty string")
+        output["error_category"] = category.strip()
+    if "rationale" in output and not isinstance(output["rationale"], str):
+        raise ValueError("judge rationale must be a string")
+    if "simulated" in output and output["simulated"] is not True:
+        raise ValueError("judge output simulated flag must be true")
     try:
         assert_judge_no_target_labels([_json_message("assistant", output)])
     except AssertionError as exc:

@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 from typing import Any, Mapping
 
+from .keys import canonical_key
+
 
 RUN_ID = "llm-personas-v2-dual"
 _FORBIDDEN_PATH_MARKERS = {
@@ -55,14 +57,28 @@ def _validate_record(record: Mapping[str, Any], *, phase: str) -> dict[str, Any]
         raise ValueError("v2 record phase does not match its store")
     if record.get("analysis_population") != phase:
         raise ValueError("v2 record analysis_population does not match its store")
-    for key in ("run_id", "study_run_id"):
-        value = str(record.get(key, "")).lower()
-        if "llm-personas-v1" in value or "llm_sim_v1" in value:
-            raise ValueError("v1 envelopes are forbidden in the v2 store")
+    if _contains_v1_run_envelope(record):
+        raise ValueError("v1 envelopes are forbidden in the v2 store")
     schema_version = str(record.get("schema_version", "")).lower()
     if "v1" in schema_version and not schema_version.startswith("yher.llm_sim_v2."):
         raise ValueError("v1 envelopes are forbidden in the v2 store")
     return dict(record)
+
+
+def _contains_v1_run_envelope(value: Any) -> bool:
+    if isinstance(value, Mapping):
+        for key, child in value.items():
+            normalized = canonical_key(key)
+            if normalized == "run_id" or normalized.endswith("_run_id"):
+                run_value = str(child).casefold()
+                if "llm-personas-v1" in run_value or "llm_sim_v1" in run_value:
+                    return True
+            if _contains_v1_run_envelope(child):
+                return True
+        return False
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return any(_contains_v1_run_envelope(child) for child in value)
+    return False
 
 
 class V2Store:

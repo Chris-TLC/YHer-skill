@@ -28,8 +28,8 @@ class QAFinding:
 
 
 _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("sample_size_claim", re.compile(r"\b600\s+(?:learners?|students?)\b|\b300\s+(?:learners?|students?)\b", re.I)),
-    ("real_student_distribution", re.compile(r"\breal\s+(?:student|learner)s?\s+distribution\b|\bdistribution\s+of\s+real\s+(?:student|learner)s?\b|\brepresentative\s+of\s+(?:the\s+)?(?:real|actual)\s+(?:student|learner)\s+population\b|\b(?:reflects?|mirrors?)\s+(?:the\s+)?(?:real|actual)\s+(?:student|learner)\s+distribution\b", re.I)),
+    ("sample_size_claim", re.compile(r"\b(?:n\s*=\s*)?(?:600|300)\s+(?:(?:simulated|synthetic|AI)\s+)?(?:learners?|students?)\b", re.I)),
+    ("real_student_distribution", re.compile(r"\b(?:real|actual)\s+(?:student|learner)s?\s+distribution\b|\bdistribution\s+of\s+(?:real|actual)\s+(?:student|learner)s?\b|\brepresentative\s+of\s+(?:the\s+)?(?:real|actual)\s+(?:student|learner)\s+population\b|\b(?:reflects?|mirrors?)\s+(?:the\s+)?(?:real|actual)\s+(?:student|learner)\s+distribution\b", re.I)),
     ("human_or_teacher_validation", re.compile(r"\b(?:human|teacher|expert)[ -](?:gold|validated|validation|validation[- ]set|ground\s+truth)\b|\bvalidated\s+by\s+(?:human|teacher|expert)s?\b|\b(?:human|teacher|expert)\s+ground\s+truth\b", re.I)),
     ("learning_trajectory_simulation", re.compile(r"\blearning[ -]trajector(?:y|ies)(?:\s+simulation|\s+simulated|\s+study)?\b|\b(?:simulated?\s+)?learning\s+trajectories\b|\btrajectory\s+simulation\b", re.I)),
     ("four_state_persona", re.compile(r"\bfour[ -]state(?:s)?\s+persona(?:s)?\b|\bfour\s+states?\s+personas?\b", re.I)),

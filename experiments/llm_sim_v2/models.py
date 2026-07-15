@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Mapping
 
+from .keys import canonical_key
+
 
 _FORBIDDEN_PERSONA_KEYS = {
     "provider",
@@ -43,7 +45,7 @@ def _thaw(value: Any) -> Any:
 def _scan_forbidden(value: Any) -> str | None:
     if isinstance(value, Mapping):
         for key, item in value.items():
-            if str(key).strip().lower() in _FORBIDDEN_PERSONA_KEYS:
+            if canonical_key(key) in _FORBIDDEN_PERSONA_KEYS:
                 return str(key)
             found = _scan_forbidden(item)
             if found:
@@ -145,7 +147,7 @@ class PersonaV2:
             observable_error_policy=value.get("observable_error_policy", {}),
             noise_parameters=value.get("noise_parameters", {}),
             modality_condition=str(value.get("modality_condition") or "text_only"),
-            seed=int(value.get("seed", 0)),
+            seed=value.get("seed", 0),
             ability_band=value.get("ability_band"),
             anchor_id=value.get("anchor_id"),
             failure_id=value.get("failure_id"),

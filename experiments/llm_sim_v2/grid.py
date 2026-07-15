@@ -7,7 +7,7 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .models import PersonaV2
+from .models import PersonaV2, _scan_forbidden
 
 
 ANCHOR_COUNT = 25
@@ -30,9 +30,10 @@ def _anchor_rows(anchors: Sequence[Any]) -> list[dict[str, Any]]:
     for anchor in anchors:
         if not isinstance(anchor, Mapping) and not hasattr(anchor, "__dict__"):
             raise ValueError("each anchor must be a mapping or record")
-        forbidden = {"provider", "outcome", "response", "model_id"}
-        if isinstance(anchor, Mapping) and forbidden.intersection(str(key).lower() for key in anchor):
-            raise ValueError("persona anchors cannot contain provider or outcome data")
+        anchor_fields = anchor if isinstance(anchor, Mapping) else vars(anchor)
+        forbidden = _scan_forbidden(anchor_fields)
+        if forbidden:
+            raise ValueError(f"persona anchors cannot contain provider or observed outcome data: {forbidden}")
         target_node = str(_value(anchor, "target_node", "")).strip()
         failure_id = str(_value(anchor, "failure_id", "")).strip()
         anchor_id = str(_value(anchor, "anchor_id", "") or f"{target_node}:{failure_id}").strip()

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 from collections.abc import Mapping
-import re
 from typing import Any
+
+from .keys import canonical_key
 
 
 _PRIVATE_PUBLIC_KEYS = frozenset(
@@ -57,7 +58,7 @@ _PUBLIC_SCHEMA_KEYS = frozenset(
 
 
 def _normalize_key(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
+    return canonical_key(value)
 
 
 def _value(record: Any, key: str, default: Any = None) -> Any:
@@ -118,6 +119,13 @@ def public_question_payload(item: Any) -> dict[str, Any]:
     if not isinstance(candidate, Mapping):
         raise ValueError("public_question must return a mapping")
     payload = deepcopy(dict(candidate))
+    noncanonical_keys = {
+        str(key)
+        for key in payload
+        if str(key) != _normalize_key(key)
+    }
+    if noncanonical_keys:
+        raise ValueError(f"public_question schema keys must be canonical: {sorted(noncanonical_keys)}")
     unknown_keys = {
         _normalize_key(key)
         for key in payload

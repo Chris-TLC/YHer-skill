@@ -113,7 +113,7 @@ def _mapping_fixture():
             "failure_id": failure_id,
             "target_option": "B",
             "status": "mapped",
-            "reviewer": "claude",
+            "reviewer_provenance": {"reviewer": "claude", "method": "manual_review"},
         }
         for item_id, failure_id in expected
     ]
@@ -448,7 +448,7 @@ def test_manual_mapping_reviewer_rule_is_separate_from_code_gate_self_signing():
     catalog, expected, rows = _mapping_fixture()
     with pytest.raises(ValueError, match="codex|reviewer"):
         mapping.normalize_target_option_map(
-            [{**rows[0], "reviewer": "codex_gate"}, *rows[1:]],
+            [{**rows[0], "reviewer_provenance": {"reviewer": "codex_gate"}}, *rows[1:]],
             catalog=catalog,
             expected_rows=expected,
         )

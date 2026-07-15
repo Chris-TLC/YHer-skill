@@ -194,7 +194,7 @@ def test_panel_and_mapping_accept_bare_in_memory_item_iterables():
             "failure_id": anchor["failure_id"],
             "target_option": "B",
             "status": "mapped",
-            "reviewer": "claude",
+            "reviewer_provenance": {"reviewer": "claude", "method": "manual_review"},
         }
         for item in selected
     ]
@@ -246,7 +246,7 @@ def _valid_mapping(panel_module):
             "failure_id": anchor["failure_id"],
             "target_option": "B",
             "status": "mapped",
-            "reviewer": "claude",
+            "reviewer_provenance": {"reviewer": "claude", "method": "manual_review"},
         }
         for item in selected
     ]
@@ -340,7 +340,7 @@ def test_target_option_map_rejects_codex_manual_reviewer_and_accepts_explicit_am
     anchor, catalog, selected, rows = _valid_mapping(panel)
     with pytest.raises(ValueError, match="reviewer|codex"):
         mapping.normalize_target_option_map(
-            [dict(rows[0], reviewer="codex_manual")] + rows[1:],
+            [dict(rows[0], reviewer_provenance={"reviewer": "codex_manual"})] + rows[1:],
             catalog=catalog,
             expected_rows=[(item["item_id"], anchor["failure_id"]) for item in selected],
         )
