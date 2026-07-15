@@ -146,12 +146,20 @@ class BudgetFuseOpen(RuntimeError):
 
 
 class BudgetLedger:
-    def __init__(self, *, soft_warning_yuan: float, hard_fuse_yuan: float) -> None:
+    def __init__(
+        self,
+        *,
+        soft_warning_yuan: float,
+        hard_fuse_yuan: float,
+        initial_cost_yuan: float = 0.0,
+    ) -> None:
         if not 0 <= soft_warning_yuan < hard_fuse_yuan:
             raise ValueError("budget thresholds must satisfy 0 <= soft < hard")
+        if float(initial_cost_yuan) < 0:
+            raise ValueError("initial budget cost must be non-negative")
         self.soft_warning_yuan = float(soft_warning_yuan)
         self.hard_fuse_yuan = float(hard_fuse_yuan)
-        self.total_cost_yuan = 0.0
+        self.total_cost_yuan = float(initial_cost_yuan)
         self._lock = threading.Lock()
 
     @property
@@ -590,6 +598,7 @@ def execute_task(
                     option_keys=option_keys,
                 )
                 final_status = "complete"
+                final_error = None
                 break
             except InvalidProviderOutput as exc:
                 final_status = "excluded_schema"
@@ -602,13 +611,33 @@ def execute_task(
             raise
         except Exception as exc:
             final_error = _error_category(exc)
-            attempts.append(
-                {
+            if isinstance(exc, ProviderTruncatedResponseError):
+                truncated_usage = exc.usage
+                truncated_cost = max(0.0, float(exc.cost_yuan))
+                budget.add_cost(truncated_cost)
+                attempt = {
+                    "attempt": attempt_index + 1,
+                    "status": "failed",
+                    "error_category": final_error,
+                    "latency_ms": round(float(exc.latency_ms), 3),
+                    "model_returned": str(exc.returned_model or ""),
+                    "finish_reason": str(exc.finish_reason or ""),
+                    "reasoning_tokens": max(0, int(exc.reasoning_tokens)),
+                    "usage": {
+                        "input_tokens": max(0, int(truncated_usage.get("input_tokens") or 0)),
+                        "output_tokens": max(0, int(truncated_usage.get("output_tokens") or 0)),
+                    },
+                    "cost_yuan": truncated_cost,
+                }
+            else:
+                attempt = {
                     "attempt": attempt_index + 1,
                     "status": "failed",
                     "error_category": final_error,
                     "latency_ms": round((time.monotonic() - started) * 1000, 3),
                 }
+            attempts.append(
+                attempt
             )
             if attempt_index + 1 >= policy.max_attempts or not _retryable(exc):
                 break
@@ -693,7 +722,9 @@ class V2ProviderRunner:
         self._write_lock = threading.Lock()
 
     def _record_path(self, task: Task) -> Path:
-        return self.store.path(Path("records") / f"{task.task_id}.json")
+        return self.store.path(
+            Path("records") / self.provider / f"{task.task_id}.json"
+        )
 
     def _read_existing(self, task: Task) -> dict[str, Any] | None:
         path = self._record_path(task)
@@ -716,7 +747,7 @@ class V2ProviderRunner:
     def _write_record(self, task: Task, record: Mapping[str, Any]) -> None:
         with self._write_lock:
             self.store.write_json(
-                Path("records") / f"{task.task_id}.json",
+                Path("records") / self.provider / f"{task.task_id}.json",
                 record,
                 immutable=True,
             )
@@ -780,7 +811,11 @@ class V2ProviderRunner:
             },
             "finished_at_utc": _utc_now(),
         }
-        self.store.write_json("provider_manifest.json", summary, immutable=False)
+        self.store.write_json(
+            Path("provider_manifests") / f"{self.provider}.json",
+            summary,
+            immutable=False,
+        )
         return summary
 
 

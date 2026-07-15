@@ -192,6 +192,7 @@ def test_execute_task_retries_same_messages_and_records_every_attempt(tmp_path: 
     )
 
     assert record["status"] == "complete"
+    assert record["error"] is None
     assert len(record["attempts"]) == 2
     assert record["retry_count"] == 1
     assert transport.calls[0]["messages"] == transport.calls[1]["messages"]
@@ -200,6 +201,63 @@ def test_execute_task_retries_same_messages_and_records_every_attempt(tmp_path: 
     assert record["prompt_contract_sha256"] == task.prompt_contract_sha256
     assert record["prompt_contract_sha256"] != task.wire_message_sha256
     assert budget.total_cost_yuan == pytest.approx(0.01)
+
+
+def test_truncated_attempt_usage_and_cost_are_counted_before_retry():
+    from experiments.llm_sim.transport import ProviderTruncatedResponseError
+    from experiments.llm_sim_v2.runner import (
+        BudgetLedger,
+        execute_task,
+        enumerate_tasks,
+        load_runtime_contract,
+    )
+
+    contract = load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    truncated = ProviderTruncatedResponseError(
+        finish_reason="length",
+        request_max_tokens=1024,
+        reasoning_tokens=900,
+        returned_model="deepseek-v4-pro",
+        usage={"input_tokens": 100, "output_tokens": 1024},
+        cost_yuan=0.25,
+        latency_ms=5.0,
+    )
+    transport = SequenceTransport(
+        [truncated, _response(answer=task.correct_option, cost=0.10)]
+    )
+    budget = BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0)
+
+    record = execute_task(
+        task,
+        provider="deepseek",
+        model="deepseek-v4-pro",
+        transport=transport,
+        policy=contract.provider_policy("deepseek"),
+        budget=budget,
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+
+    assert record["status"] == "complete"
+    assert record["error"] is None
+    assert record["cost_yuan"] == pytest.approx(0.35)
+    assert budget.total_cost_yuan == pytest.approx(0.35)
+    assert record["attempts"][0] == {
+        "attempt": 1,
+        "status": "failed",
+        "error_category": "truncated_length",
+        "latency_ms": 5.0,
+        "model_returned": "deepseek-v4-pro",
+        "finish_reason": "length",
+        "reasoning_tokens": 900,
+        "usage": {"input_tokens": 100, "output_tokens": 1024},
+        "cost_yuan": 0.25,
+    }
 
 
 def test_execute_task_excludes_model_drift_and_never_parses_it_as_valid():
@@ -272,10 +330,52 @@ def test_provider_runner_is_resumable_and_phase_isolated(tmp_path: Path):
     assert not (tmp_path / "llm-personas-v2-dual/main").exists()
 
 
+def test_provider_runner_scopes_identical_tasks_by_provider(tmp_path: Path):
+    from experiments.llm_sim_v2.runner import (
+        BudgetLedger,
+        V2ProviderRunner,
+        enumerate_tasks,
+        load_runtime_contract,
+    )
+
+    contract = load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    for provider in ("deepseek", "doubao"):
+        model = contract.provider_model(provider)
+        runner = V2ProviderRunner(
+            contract=contract,
+            output_base=tmp_path,
+            phase="pilot",
+            provider=provider,
+            transport=SequenceTransport(
+                [_response(answer=task.correct_option, returned_model=model)]
+            ),
+            budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+            sleep=lambda _: None,
+            random_value=lambda: 0.5,
+        )
+        assert runner.run_tasks([task])["complete_records"] == 1
+
+    root = tmp_path / "llm-personas-v2-dual/pilot/records"
+    assert (root / "deepseek" / f"{task.task_id}.json").is_file()
+    assert (root / "doubao" / f"{task.task_id}.json").is_file()
+    manifests = tmp_path / "llm-personas-v2-dual/pilot/provider_manifests"
+    assert (manifests / "deepseek.json").is_file()
+    assert (manifests / "doubao.json").is_file()
+
+
 def test_budget_ledger_hard_fuse_stops_new_calls_after_recorded_cost():
     from experiments.llm_sim_v2.runner import BudgetFuseOpen, BudgetLedger
 
-    budget = BudgetLedger(soft_warning_yuan=1.0, hard_fuse_yuan=2.0)
+    budget = BudgetLedger(
+        soft_warning_yuan=1.0,
+        hard_fuse_yuan=2.0,
+        initial_cost_yuan=0.5,
+    )
     budget.add_cost(1.25)
     assert budget.soft_warning_triggered is True
     assert budget.hard_fuse_triggered is False
@@ -283,6 +383,32 @@ def test_budget_ledger_hard_fuse_stops_new_calls_after_recorded_cost():
     assert budget.hard_fuse_triggered is True
     with pytest.raises(BudgetFuseOpen):
         budget.assert_new_call_allowed()
+
+
+def test_existing_phase_cost_rebuilds_one_budget_across_all_provider_records(tmp_path: Path):
+    from experiments.llm_sim_v2.collect import existing_phase_cost
+
+    root = tmp_path / "llm-personas-v2-dual/main/records"
+    for provider, costs in {"deepseek": [0.1, 0.2], "doubao": [0.3]}.items():
+        provider_root = root / provider
+        provider_root.mkdir(parents=True)
+        for index, cost in enumerate(costs):
+            (provider_root / f"{index}.json").write_text(
+                json.dumps(
+                    {
+                        "run_id": "llm-personas-v2-dual",
+                        "phase": "main",
+                        "analysis_population": "main",
+                        "cost_yuan": cost,
+                    }
+                ),
+                encoding="utf-8",
+            )
+    assert existing_phase_cost(tmp_path, phase="main") == pytest.approx(0.6)
+
+    (root / "doubao/0.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="record|cost|phase|run"):
+        existing_phase_cost(tmp_path, phase="main")
 
 
 def test_collection_entrypoint_requires_explicit_live_and_partial_acknowledgement(tmp_path: Path):

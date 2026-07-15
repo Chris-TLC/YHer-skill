@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Sequence
 
@@ -15,6 +17,44 @@ from .runner import (
     enumerate_tasks,
     load_runtime_contract,
 )
+from .store import RUN_ID
+
+
+def existing_phase_cost(output_base: str | Path, *, phase: str) -> float:
+    phase_name = str(phase).strip().lower()
+    if phase_name not in {"pilot", "main"}:
+        raise ValueError("phase must be pilot or main")
+    records_root = Path(output_base).expanduser().resolve(strict=False) / RUN_ID / phase_name / "records"
+    if not records_root.exists():
+        return 0.0
+    total = 0.0
+    seen: set[tuple[str, str]] = set()
+    for path in sorted(records_root.rglob("*.json")):
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"invalid stored v2 cost record: {path}") from exc
+        if not isinstance(value, Mapping):
+            raise ValueError(f"invalid stored v2 cost record: {path}")
+        provider = str(value.get("provider") or path.parent.name)
+        task_id = str(value.get("task_id") or path.stem)
+        key = (provider, task_id)
+        try:
+            cost = float(value["cost_yuan"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"stored v2 record has invalid cost: {path}") from exc
+        if (
+            value.get("run_id") != RUN_ID
+            or value.get("phase") != phase_name
+            or value.get("analysis_population") != phase_name
+            or key in seen
+            or not math.isfinite(cost)
+            or cost < 0
+        ):
+            raise ValueError(f"stored v2 record run/phase/cost identity is invalid: {path}")
+        seen.add(key)
+        total += cost
+    return total
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,6 +98,12 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
     tasks = enumerate_tasks(contract, phase=args.phase)
     if args.limit is not None:
         tasks = tasks[: max(0, int(args.limit))]
+    output_base = root / args.output_base
+    budget = BudgetLedger(
+        soft_warning_yuan=float(args.soft_warning),
+        hard_fuse_yuan=float(args.hard_fuse),
+        initial_cost_yuan=existing_phase_cost(output_base, phase=args.phase),
+    )
     results: list[dict[str, object]] = []
     for provider in configured:
         transport = HTTPProviderTransport.from_environment(
@@ -67,14 +113,11 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
         )
         runner = V2ProviderRunner(
             contract=contract,
-            output_base=root / args.output_base,
+            output_base=output_base,
             phase=args.phase,
             provider=provider,
             transport=transport,
-            budget=BudgetLedger(
-                soft_warning_yuan=float(args.soft_warning),
-                hard_fuse_yuan=float(args.hard_fuse),
-            ),
+            budget=budget,
         )
         results.append(runner.run_tasks(tasks))
     return results
