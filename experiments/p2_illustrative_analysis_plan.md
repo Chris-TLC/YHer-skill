@@ -23,7 +23,28 @@ hierarchical, or semantic label expansion is permitted.
 | Trusted candidate JSONL | `9f14b8103eb191c7ffc5d2b1f1777e88b915082b94a3ac21f3c07f41a53f0406` |
 | Signed runtime metadata | `6348b28805c75eddba73b39ef14c034f4c9aa0fd517a78b396440f865489dedd` |
 | H1-H4 raw manifest | `2c68cada6c2229e6860d46fca4e4f65b3df674bfc4652b4a947934ba05e76dd3` |
-| Canonical eight-row subset | `b8ae2eaef4e047f75dbc2aa2a791188528115219660679b0fca70f530da7e2e2` |
+| Reproducible canonical eight-row subset | `e080008a40e514bf57e95a5c9905c9ba469c1e9c976b0e1ec465e684d55ff34d` |
+| Earlier audit-declared subset digest (retained, not a gate) | `b8ae2eaef4e047f75dbc2aa2a791188528115219660679b0fca70f530da7e2e2` |
+
+The reproducible subset digest is SHA-256 over the UTF-8 bytes produced by:
+
+```python
+json.dumps(
+    sorted(eight_full_source_rows, key=lambda row: row["chunk_id"]),
+    ensure_ascii=False,
+    sort_keys=True,
+    separators=(",", ":"),
+).encode("utf-8")
+```
+
+The earlier audit described its digest as full rows sorted by keys and
+`chunk_id`, but did not retain the serialization algorithm. Exhaustive checks of
+the ordinary JSON array and JSONL variants (ASCII/non-ASCII, compact/default,
+with/without terminal newline) did not reproduce it. It is preserved as
+`audit_declared_unreproduced` metadata and cannot make the run pass or fail.
+Identity instead fails closed on the three full-source hashes, the exact eight
+IDs and fields below, exactly three physical sources, and the reproducible
+canonical digest.
 
 The H1-H4 row filter is `condition=matched`, target in the two-node set,
 `truth in {M,P,C,U}`, `arm in {A,B,C}`, replicate 0--49, and
