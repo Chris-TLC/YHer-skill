@@ -14,6 +14,16 @@ import tempfile
 from typing import Any
 
 from .prompts import assert_blind_no_leakage
+from .collect import verify_formal_carried_forward_cost_ledger
+from .evidence import (
+    REVIEWED_CARRIED_LEDGER_SHA256,
+    REVIEWED_LEGACY_KNOWN_COST_YUAN,
+    REVIEWED_LEGACY_RECEIPT_SHA256,
+    REVIEWED_LEGACY_RECORD_SET_SHA256,
+    build_phase_evidence_receipt,
+    validate_v2_response_record,
+    write_phase_evidence_receipt,
+)
 from .runner import (
     BudgetLedger,
     FROZEN_COMMIT,
@@ -23,6 +33,7 @@ from .runner import (
     enumerate_tasks,
     load_runtime_contract,
     parse_provider_output,
+    phase_provenance_binding,
     validate_formal_phase_provenance,
     verify_phase_provenance_against_contract,
     verify_runtime_task_manifest,
@@ -35,6 +46,15 @@ EXPECTED_TASKS_PER_PROVIDER = 128
 MIN_COMPLETE_FRACTION = 0.80
 MAX_INVALID_SCHEMA_FRACTION = 0.20
 DEFAULT_OUTPUT_DIR = Path("/tmp/yher_h5v2/formal_pilot_audit")
+DEFAULT_ANCHOR_A = Path(
+    "experiments/llm_sim_v2/evidence_anchors/replacement_pilot_phase_anchor_a.json"
+)
+DEFAULT_ANCHOR_B = Path(
+    "experiments/llm_sim_v2/evidence_anchors/replacement_pilot_phase_anchor_b.json"
+)
+DEFAULT_TRANSITION_RECEIPT = Path(
+    "experiments/llm_sim_v2/evidence_anchors/replacement_pilot_resume_transition.json"
+)
 EXPECTED_GATE_NAMES = (
     "auditor_git_provenance",
     "runtime_and_phase_provenance",
@@ -44,6 +64,7 @@ EXPECTED_GATE_NAMES = (
     "model_identity",
     "text_only_and_leakage",
     "pilot_main_isolation",
+    "phase_evidence_receipts",
     "accounting_reconciliation",
     "lifecycle_disclosures",
     "zero_call_resume",
@@ -156,6 +177,234 @@ def _source_file_rows(root: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _phase_store_file_rows(root: Path) -> list[dict[str, Any]]:
+    """Mirror the evidence writer's store snapshot with path-level rows."""
+
+    rows: list[dict[str, Any]] = []
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise PilotAuditError(f"pilot source contains a symlink: {path}")
+        if not path.is_file():
+            continue
+        relative = _safe_relative(root, path)
+        if relative.startswith("evidence/phase_receipts/"):
+            continue
+        if path.name.startswith(".") and ".tmp-" in path.name:
+            continue
+        rows.append(
+            {
+                "path": relative,
+                "bytes": path.stat().st_size,
+                "sha256": sha256_file(path),
+            }
+        )
+    return rows
+
+
+def _verify_phase_receipt_envelope(receipt: Mapping[str, Any]) -> str:
+    payload = dict(receipt)
+    advertised = payload.pop("phase_evidence_receipt_sha256", None)
+    if (
+        receipt.get("schema_version")
+        != "yher.llm_sim_v2.phase_evidence_receipt.v1"
+        or receipt.get("simulated") is not True
+        or receipt.get("run_id") != RUN_ID
+        or receipt.get("phase") != "pilot"
+        or receipt.get("authority") != "post_invocation_phase_receipt"
+        or not isinstance(advertised, str)
+        or advertised != canonical_sha256(payload)
+    ):
+        raise PilotAuditError("phase evidence receipt envelope is invalid")
+    return advertised
+
+
+def _phase_anchor_summary(
+    receipt: Mapping[str, Any], path: Path
+) -> dict[str, Any]:
+    return {
+        "phase_evidence_receipt_sha256": _verify_phase_receipt_envelope(receipt),
+        "file_sha256": sha256_file(path),
+        "file_bytes": path.stat().st_size,
+    }
+
+
+def _validate_evidence_tree(
+    pilot_root: Path,
+    *,
+    providers: Sequence[str],
+    required_receipts: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    evidence_root = pilot_root / "evidence"
+    expected_top = {"phase_receipts", "provider_events", "provider_locks"}
+    if evidence_root.is_symlink() or not evidence_root.is_dir():
+        raise PilotAuditError("pilot evidence root is missing or invalid")
+    actual_top = {path.name for path in evidence_root.iterdir()}
+    if actual_top != expected_top or any(path.is_symlink() for path in evidence_root.iterdir()):
+        raise PilotAuditError("pilot evidence root has an unexplained entry")
+
+    provider_set = set(providers)
+    event_root = evidence_root / "provider_events"
+    if (
+        not event_root.is_dir()
+        or event_root.is_symlink()
+        or {path.name for path in event_root.iterdir()} != provider_set
+        or any(path.is_symlink() or not path.is_dir() for path in event_root.iterdir())
+    ):
+        raise PilotAuditError("pilot provider evidence roster is invalid")
+    event_counts: dict[str, int] = {}
+    for provider in providers:
+        entries = list((event_root / provider).iterdir())
+        if any(
+            path.is_symlink() or not path.is_file() or path.suffix != ".json"
+            for path in entries
+        ):
+            raise PilotAuditError("pilot provider evidence stream has an unbound entry")
+        event_counts[provider] = len(entries)
+
+    lock_root = evidence_root / "provider_locks"
+    expected_locks = {f"{provider}.lock" for provider in providers}
+    if (
+        not lock_root.is_dir()
+        or lock_root.is_symlink()
+        or {path.name for path in lock_root.iterdir()} != expected_locks
+        or any(path.is_symlink() or not path.is_file() for path in lock_root.iterdir())
+    ):
+        raise PilotAuditError("pilot provider evidence lock set is invalid")
+
+    receipt_root = evidence_root / "phase_receipts"
+    if receipt_root.is_symlink() or not receipt_root.is_dir():
+        raise PilotAuditError("pilot internal phase receipt root is missing")
+    receipts: dict[str, dict[str, Any]] = {}
+    for path in receipt_root.iterdir():
+        if path.is_symlink() or not path.is_file() or path.suffix != ".json":
+            raise PilotAuditError("pilot internal phase receipt root has an unbound entry")
+        receipt = _read_json(path)
+        digest = _verify_phase_receipt_envelope(receipt)
+        if path.name != f"{digest}.json" or digest in receipts:
+            raise PilotAuditError("pilot internal phase receipt identity is invalid")
+        receipts[digest] = {
+            "path": _safe_relative(pilot_root, path),
+            "bytes": path.stat().st_size,
+            "sha256": sha256_file(path),
+        }
+    required_digests = {
+        _verify_phase_receipt_envelope(receipt) for receipt in required_receipts
+    }
+    if not required_digests <= set(receipts):
+        raise PilotAuditError("pilot internal A/B phase receipt copy is missing")
+    receipt_files = sorted(
+        (dict(row) for row in receipts.values()),
+        key=lambda row: str(row["path"]),
+    )
+    return {
+        "top_level_entries": sorted(actual_top),
+        "provider_event_counts": event_counts,
+        "provider_lock_files": sorted(expected_locks),
+        "phase_receipts": receipts,
+        "phase_receipt_files": receipt_files,
+        "phase_receipt_file_set_sha256": canonical_sha256(receipt_files),
+    }
+
+
+def _git_head(repo_root: Path) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    head = result.stdout.strip()
+    if len(head) != 40:
+        raise PilotAuditError("active Git HEAD is invalid")
+    return head
+
+
+def _git_committed_file_proof(
+    repo_root: Path,
+    path: Path,
+    *,
+    head: str | None = None,
+) -> dict[str, Any]:
+    target = str(head or _git_head(repo_root))
+    resolved = path.expanduser().resolve(strict=True)
+    try:
+        relative = resolved.relative_to(repo_root).as_posix()
+    except ValueError:
+        relative = ""
+    current_sha = sha256_file(resolved)
+    committed_sha: str | None = None
+    anchor_commit: str | None = None
+    resolved_head: str | None = None
+    try:
+        if not relative:
+            raise ValueError
+        resolved_head = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", target],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).stdout.strip()
+        tracked = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-tree", "--name-only", resolved_head, "--", relative],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).stdout.splitlines()
+        if tracked != [relative]:
+            raise ValueError
+        committed = subprocess.run(
+            ["git", "-C", str(repo_root), "show", f"{resolved_head}:{relative}"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        ).stdout
+        committed_sha = hashlib.sha256(committed).hexdigest()
+        anchor_commit = subprocess.run(
+            ["git", "-C", str(repo_root), "log", "-1", "--format=%H", resolved_head, "--", relative],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).stdout.strip() or None
+    except (OSError, subprocess.CalledProcessError, UnicodeError, ValueError):
+        pass
+    passed = (
+        bool(relative)
+        and len(resolved_head or "") == 40
+        and committed_sha == current_sha
+        and len(anchor_commit or "") == 40
+    )
+    return {
+        "passed": passed,
+        "path": relative or str(resolved),
+        "file_sha256": current_sha,
+        "committed_blob_sha256": committed_sha,
+        "git_head": resolved_head,
+        "anchor_commit": anchor_commit,
+    }
+
+
+def _git_is_ancestor(
+    repo_root: Path,
+    ancestor: str,
+    descendant: str,
+    *,
+    strict: bool = False,
+) -> bool:
+    if strict and ancestor == descendant:
+        return False
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "merge-base", "--is-ancestor", ancestor, descendant],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return result.returncode == 0
+
+
 class _Blockers:
     def __init__(self) -> None:
         self._rows: list[dict[str, Any]] = []
@@ -196,25 +445,22 @@ class _Blockers:
 
 
 def _phase_binding(phase: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        "collection_mode": phase["collection_mode"],
-        "development_only": phase["development_only"],
-        "partial": phase["partial"],
-        "formal_analysis_eligible": phase["formal_analysis_eligible"],
-        "phase_provenance_sha256": phase["phase_provenance_sha256"],
-        "freeze_manifest_sha256": phase["freeze"]["freeze_manifest_sha256"],
-        "source_set_sha256": phase["source"]["source_set_sha256"],
-        "target_set_hash": phase["target"]["target_set_hash"],
-        "grid_sha256": phase["grid_sha256"],
-        "prompt_ledger_sha256": phase["prompt"]["prompt_ledger_sha256"],
-        "prompt_revision": phase["prompt"]["revision"],
-        "prompt_contract_sha256": phase["prompt"]["prompt_contract_sha256"],
-        "runtime_task_manifest_sha256": phase["runtime"][
-            "runtime_task_manifest_sha256"
-        ],
-        "execution_commit": phase["runtime"]["execution_commit"],
-        "runtime_file_set_sha256": phase["runtime"]["runtime_file_set_sha256"],
-    }
+    return phase_provenance_binding(phase)
+
+
+def _reviewed_carried_forward_cost(repo_root: Path) -> dict[str, Any]:
+    path = (
+        repo_root
+        / "experiments/llm_sim_v2/evidence_anchors/"
+        "legacy_pilot_carried_forward_cost.json"
+    )
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PilotAuditError(
+            "reviewed carried-forward cost ledger is missing or invalid"
+        ) from exc
+    return verify_formal_carried_forward_cost_ledger(value)
 
 
 def _scope_from_phase(phase: Mapping[str, Any]) -> dict[str, Any]:
@@ -336,7 +582,7 @@ def _audit_record(
         if record.get(field) != expected
     ]
     envelope = {
-        "schema_version": "yher.llm_sim_v2.response_record.v1",
+        "schema_version": "yher.llm_sim_v2.response_record.v2",
         "simulated": True,
         "run_id": RUN_ID,
         "phase": "pilot",
@@ -363,6 +609,22 @@ def _audit_record(
         blockers.add(
             "record_provenance_drift",
             "record provenance differs from verified formal phase binding",
+            provider=provider,
+            task_id=task.task_id,
+        )
+    try:
+        validate_v2_response_record(
+            record,
+            provider=provider,
+            requested_model=model,
+            phase="pilot",
+            task=task,
+            expected_provenance=phase_binding,
+        )
+    except (TypeError, ValueError) as exc:
+        blockers.add(
+            "record_identity_drift",
+            f"response_record.v2 strict replay failed: {exc}",
             provider=provider,
             task_id=task.task_id,
         )
@@ -1171,11 +1433,36 @@ def audit_formal_pilot(
     resume_after: Mapping[str, Any] | None = None,
     resume_receipt: Mapping[str, Any] | None = None,
     resume_receipt_path: Path | str | None = None,
+    anchor_a_path: Path | str | None = None,
+    anchor_b_path: Path | str | None = None,
 ) -> dict[str, Any]:
     """Audit one formal pilot root without reading a main or provider endpoint."""
 
     repo = Path(repo_root).expanduser().resolve(strict=True)
     pilot = Path(pilot_root).expanduser().resolve(strict=True)
+    transition_hint = (
+        Path(resume_receipt_path).expanduser().resolve(strict=False)
+        if resume_receipt_path is not None
+        else None
+    )
+    sibling_a = (
+        transition_hint.with_name("pilot-phase-anchor-a.json")
+        if transition_hint is not None
+        else None
+    )
+    sibling_b = (
+        transition_hint.with_name("pilot-phase-anchor-b.json")
+        if transition_hint is not None
+        else None
+    )
+    a_path = Path(
+        anchor_a_path
+        or (sibling_a if sibling_a is not None and sibling_a.exists() else repo / DEFAULT_ANCHOR_A)
+    ).expanduser().resolve(strict=False)
+    b_path = Path(
+        anchor_b_path
+        or (sibling_b if sibling_b is not None and sibling_b.exists() else repo / DEFAULT_ANCHOR_B)
+    ).expanduser().resolve(strict=False)
     blockers = _Blockers()
     contract = load_runtime_contract(repo)
     runtime_manifest = contract.runtime_manifest
@@ -1184,6 +1471,7 @@ def audit_formal_pilot(
     runtime_proof = verify_runtime_task_manifest(
         contract, runtime_manifest, verify_git=True
     )
+    carried_forward_cost = _reviewed_carried_forward_cost(repo)
     auditor_proof = _audit_implementation_proof(repo)
     if not auditor_proof["passed"]:
         blockers.add(
@@ -1218,6 +1506,7 @@ def audit_formal_pilot(
         )
 
     expected_pilot_entries = {
+        "evidence",
         "phase_provenance.json",
         "provider_lifecycle",
         "provider_manifests",
@@ -1274,6 +1563,7 @@ def audit_formal_pilot(
                 runtime_proof=runtime_proof,
                 tasks=tasks,
                 collection_scope=_scope_from_phase(phase),
+                carried_forward_cost=carried_forward_cost,
             )
             phase_binding = _phase_binding(phase)
             provenance_pass = True
@@ -1284,6 +1574,27 @@ def audit_formal_pilot(
             )
     if not phase_binding:
         phase_binding = {"invalid_phase_provenance": True}
+
+    phase_receipt_pass = False
+    current_phase_receipt: dict[str, Any] | None = None
+    evidence_tree: dict[str, Any] | None = None
+    if phase and provenance_pass:
+        try:
+            current_phase_receipt = build_phase_evidence_receipt(
+                pilot,
+                phase_provenance=phase,
+                tasks=tasks,
+            )
+            evidence_tree = _validate_evidence_tree(
+                pilot,
+                providers=providers,
+            )
+            phase_receipt_pass = True
+        except (KeyError, OSError, TypeError, ValueError) as exc:
+            blockers.add(
+                "phase_evidence_receipt",
+                f"Evidence-v2 phase receipt reconstruction failed: {exc}",
+            )
 
     text_proof = _audit_text_and_leakage(contract, tasks)
     if phase.get("modality_condition") != "text_only":
@@ -1364,7 +1675,12 @@ def audit_formal_pilot(
     for field in ("attempt_count", "unknown_attempt_count", "input_tokens", "output_tokens"):
         accounting[field] = int(accounting[field])
     prior = contract.prior_cost_ledger
-    running_total = float(prior["pre_run_total_bound_yuan"])
+    carried_total = float(carried_forward_cost["total_accounted_cost_yuan"])
+    pre_collection_total = round(
+        float(prior["pre_run_total_bound_yuan"]) + carried_total,
+        8,
+    )
+    running_total = pre_collection_total
     final_total = round(
         running_total + float(accounting["accounted_cost_yuan"]),
         8,
@@ -1418,6 +1734,23 @@ def audit_formal_pilot(
                 "pre_run_ambiguity_reserve_yuan"
             ],
             "prior_total_bound_yuan": prior["pre_run_total_bound_yuan"],
+            "carried_forward_cost_ledger_sha256": carried_forward_cost[
+                "carried_forward_cost_ledger_sha256"
+            ],
+            "carried_forward_source_phase_receipt_sha256": carried_forward_cost[
+                "source_phase_receipt_sha256"
+            ],
+            "carried_forward_source_record_set_sha256": carried_forward_cost[
+                "source_record_set_sha256"
+            ],
+            "carried_forward_known_cost_yuan": carried_forward_cost[
+                "known_cost_yuan"
+            ],
+            "carried_forward_unknown_reserve_yuan": carried_forward_cost[
+                "unknown_cost_reserve_yuan"
+            ],
+            "carried_forward_total_accounted_cost_yuan": carried_total,
+            "pre_collection_total_yuan": pre_collection_total,
             "total_accounted_cost_yuan": final_total,
             "soft_warning_yuan": contract.config["budget_yuan"]["soft_warning"],
             "hard_fuse_yuan": contract.config["budget_yuan"]["hard_fuse"],
@@ -1465,16 +1798,32 @@ def audit_formal_pilot(
         "record_identity_drift", "record_provenance_drift"
     )
     resume_comparison: dict[str, Any]
-    if resume_before is None or resume_after is None:
+    current_snapshot = snapshot_resume_state(pilot)
+    expected_complete_records = len(providers) * EXPECTED_TASKS_PER_PROVIDER
+    if resume_before is None and resume_after is None:
+        resume_comparison = {
+            "ok": True,
+            "require_zero_calls": True,
+            "supplemental_legacy_snapshots": "not_supplied",
+            "formal_blocking_reasons": [],
+            "after_matches_audited_root": True,
+            "expected_complete_record_count": expected_complete_records,
+            "full_complete_record_count": current_snapshot.get("record_count")
+            == expected_complete_records,
+        }
+    elif resume_before is None or resume_after is None:
         resume_comparison = {
             "ok": False,
             "require_zero_calls": True,
-            "formal_blocking_reasons": ["resume_snapshots_missing"],
+            "supplemental_legacy_snapshots": "incomplete_pair",
+            "formal_blocking_reasons": ["resume_snapshot_pair_incomplete"],
+            "after_matches_audited_root": False,
+            "expected_complete_record_count": expected_complete_records,
+            "full_complete_record_count": False,
         }
-        resume_pass = False
         blockers.add(
             "zero_call_resume",
-            "formal approval requires before/after snapshots from an immediate resume",
+            "legacy resume snapshots must be supplied as a complete before/after pair",
         )
     else:
         resume_comparison = compare_resume_audits(
@@ -1482,13 +1831,11 @@ def audit_formal_pilot(
             resume_after,
             require_zero_calls=True,
         )
-        current_snapshot = snapshot_resume_state(pilot)
         after_to_current = compare_resume_audits(
             resume_after,
             current_snapshot,
             require_zero_calls=True,
         )
-        expected_complete_records = len(providers) * EXPECTED_TASKS_PER_PROVIDER
         resume_comparison["after_matches_audited_root"] = after_to_current["ok"]
         resume_comparison["expected_complete_record_count"] = (
             expected_complete_records
@@ -1497,26 +1844,26 @@ def audit_formal_pilot(
             resume_before.get("record_count") == expected_complete_records
             and resume_after.get("record_count") == expected_complete_records
         )
-        resume_comparison["provider_resume_evidence"] = {
-            provider: report["resume_evidence"]
-            for provider, report in provider_reports.items()
-        }
-        resume_comparison["runner_resume_observed"] = all(
-            evidence["resumed_record_count"] == EXPECTED_TASKS_PER_PROVIDER
-            and evidence["lifecycle_event_count"] >= 2
-            for evidence in resume_comparison["provider_resume_evidence"].values()
+    resume_comparison["provider_resume_evidence"] = {
+        provider: report["resume_evidence"]
+        for provider, report in provider_reports.items()
+    }
+    resume_comparison["runner_resume_observed"] = all(
+        evidence["resumed_record_count"] == EXPECTED_TASKS_PER_PROVIDER
+        and evidence["lifecycle_event_count"] >= 2
+        for evidence in resume_comparison["provider_resume_evidence"].values()
+    )
+    resume_pass = bool(
+        resume_comparison["ok"]
+        and resume_comparison["after_matches_audited_root"]
+        and resume_comparison["full_complete_record_count"]
+        and resume_comparison["runner_resume_observed"]
+    )
+    if not resume_pass and not blockers.has("zero_call_resume"):
+        blockers.add(
+            "zero_call_resume",
+            "post-completion resume added calls/records, changed bytes, or was incomplete",
         )
-        resume_pass = bool(
-            resume_comparison["ok"]
-            and resume_comparison["after_matches_audited_root"]
-            and resume_comparison["full_complete_record_count"]
-            and resume_comparison["runner_resume_observed"]
-        )
-        if not resume_pass:
-            blockers.add(
-                "zero_call_resume",
-                "post-completion resume added calls/records, changed bytes, or was incomplete",
-            )
     resume_receipt_proof: dict[str, Any] | None = None
     if resume_receipt is None and resume_receipt_path is None:
         blockers.add(
@@ -1533,6 +1880,11 @@ def audit_formal_pilot(
                 repo_root=repo,
                 pilot_root=pilot,
                 receipt_path=resume_receipt_path,
+                anchor_a_path=a_path,
+                anchor_b_path=b_path,
+                phase_provenance=phase,
+                tasks=tasks,
+                audit_head=str(auditor_proof.get("audit_git_head") or ""),
             )
         except (KeyError, OSError, TypeError, ValueError) as exc:
             blockers.add(
@@ -1600,6 +1952,17 @@ def audit_formal_pilot(
                 ),
             },
         ),
+        "phase_evidence_receipts": _gate(
+            phase_receipt_pass,
+            evidence={
+                "current_phase_evidence_receipt_sha256": (
+                    current_phase_receipt.get("phase_evidence_receipt_sha256")
+                    if current_phase_receipt
+                    else None
+                ),
+                "evidence_tree": evidence_tree,
+            },
+        ),
         "accounting_reconciliation": _gate(
             accounting_pass, evidence=accounting
         ),
@@ -1655,10 +2018,361 @@ def audit_formal_pilot(
             "phase_provenance_file_sha256": (
                 sha256_file(phase_path) if phase_path.is_file() else None
             ),
+            "current_phase_evidence_receipt_sha256": (
+                current_phase_receipt.get("phase_evidence_receipt_sha256")
+                if current_phase_receipt
+                else None
+            ),
+            "anchor_a_file_sha256": (
+                sha256_file(a_path) if a_path.is_file() else None
+            ),
+            "anchor_b_file_sha256": (
+                sha256_file(b_path) if b_path.is_file() else None
+            ),
+            "transition_receipt_file_sha256": (
+                sha256_file(Path(resume_receipt_path).expanduser().resolve(strict=False))
+                if resume_receipt_path is not None
+                and Path(resume_receipt_path).expanduser().resolve(strict=False).is_file()
+                else None
+            ),
         },
     }
     report["pilot_audit_sha256"] = canonical_sha256(report)
     return report
+
+
+def _is_lower_hex(value: Any, length: int) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == length
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _is_canonical_relative_path(value: Any) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    path = Path(value)
+    return (
+        not path.is_absolute()
+        and ".." not in path.parts
+        and path.as_posix() == value
+        and value not in {".", ".."}
+    )
+
+
+def _evidence_v2_structural_links_are_exact(
+    *,
+    phase_evidence: Mapping[str, Any],
+    transition_proof: Mapping[str, Any],
+    source: Mapping[str, Any],
+    source_files: Sequence[Mapping[str, Any]],
+    auditor_proof: Mapping[str, Any],
+) -> bool:
+    """Cross-bind every duplicated Evidence-v2 identity in a stored GO report."""
+
+    try:
+        if set(phase_evidence) != {
+            "current_phase_evidence_receipt_sha256",
+            "evidence_tree",
+        } or set(transition_proof) != {
+            "ok",
+            "verification_scope",
+            "transition_receipt_sha256",
+            "anchor_a_phase_evidence_receipt_sha256",
+            "anchor_b_phase_evidence_receipt_sha256",
+            "anchor_a",
+            "anchor_b",
+            "transition",
+            "resume_execution_head",
+            "audit_head",
+            "evidence_tree",
+            "phase_receipt_inventory",
+        }:
+            return False
+        if (
+            transition_proof.get("ok") is not True
+            or transition_proof.get("verification_scope")
+            != "git_anchored_phase_a_zero_call_resume_phase_b"
+            or not _is_lower_hex(
+                transition_proof.get("transition_receipt_sha256"), 64
+            )
+            or not _is_lower_hex(
+                transition_proof.get("resume_execution_head"), 40
+            )
+        ):
+            return False
+
+        anchor_a_proof = transition_proof["anchor_a"]
+        anchor_b_proof = transition_proof["anchor_b"]
+        transition_git_proof = transition_proof["transition"]
+        proofs = (anchor_a_proof, anchor_b_proof, transition_git_proof)
+        if not all(isinstance(proof, Mapping) for proof in proofs):
+            return False
+
+        anchor_a_digest = transition_proof[
+            "anchor_a_phase_evidence_receipt_sha256"
+        ]
+        anchor_b_digest = transition_proof[
+            "anchor_b_phase_evidence_receipt_sha256"
+        ]
+        if (
+            not _is_lower_hex(anchor_a_digest, 64)
+            or not _is_lower_hex(anchor_b_digest, 64)
+            or anchor_a_digest == anchor_b_digest
+        ):
+            return False
+
+        gate_tree = phase_evidence["evidence_tree"]
+        transition_tree = transition_proof["evidence_tree"]
+        if (
+            not isinstance(gate_tree, Mapping)
+            or not isinstance(transition_tree, Mapping)
+            or dict(gate_tree) != dict(transition_tree)
+            or set(gate_tree) != {
+                "top_level_entries",
+                "provider_event_counts",
+                "provider_lock_files",
+                "phase_receipts",
+                "phase_receipt_files",
+                "phase_receipt_file_set_sha256",
+            }
+            or gate_tree.get("top_level_entries")
+            != ["phase_receipts", "provider_events", "provider_locks"]
+        ):
+            return False
+
+        normalized_source_files: list[dict[str, Any]] = []
+        for row in source_files:
+            if (
+                not isinstance(row, Mapping)
+                or set(row) != {"path", "bytes", "sha256"}
+                or not _is_canonical_relative_path(row.get("path"))
+                or not isinstance(row.get("bytes"), int)
+                or row.get("bytes", -1) < 0
+                or not _is_lower_hex(row.get("sha256"), 64)
+            ):
+                return False
+            normalized_source_files.append(dict(row))
+        if (
+            normalized_source_files
+            != sorted(normalized_source_files, key=lambda row: str(row["path"]))
+            or len({str(row["path"]) for row in normalized_source_files})
+            != len(normalized_source_files)
+        ):
+            return False
+
+        expected_provider_set = set(EXPECTED_PILOT_PROVIDERS)
+        event_counts = Counter({provider: 0 for provider in EXPECTED_PILOT_PROVIDERS})
+        source_lock_paths: set[str] = set()
+        for row in normalized_source_files:
+            path = str(row["path"])
+            if path.startswith("evidence/provider_events/"):
+                parts = Path(path).parts
+                if (
+                    len(parts) != 4
+                    or parts[:2] != ("evidence", "provider_events")
+                    or parts[2] not in expected_provider_set
+                    or Path(parts[3]).suffix != ".json"
+                ):
+                    return False
+                event_counts[parts[2]] += 1
+            elif path.startswith("evidence/provider_locks/"):
+                source_lock_paths.add(path)
+        expected_lock_files = sorted(
+            f"{provider}.lock" for provider in EXPECTED_PILOT_PROVIDERS
+        )
+        if (
+            gate_tree.get("provider_event_counts")
+            != {
+                provider: event_counts[provider]
+                for provider in EXPECTED_PILOT_PROVIDERS
+            }
+            or any(event_counts[provider] <= 0 for provider in EXPECTED_PILOT_PROVIDERS)
+            or gate_tree.get("provider_lock_files") != expected_lock_files
+            or source_lock_paths
+            != {
+                f"evidence/provider_locks/{filename}"
+                for filename in expected_lock_files
+            }
+        ):
+            return False
+
+        receipts = gate_tree["phase_receipts"]
+        receipt_files = gate_tree["phase_receipt_files"]
+        if (
+            not isinstance(receipts, Mapping)
+            or set(receipts) != {anchor_a_digest, anchor_b_digest}
+            or not isinstance(receipt_files, list)
+        ):
+            return False
+
+        expected_rows: list[dict[str, Any]] = []
+        for digest, proof in (
+            (anchor_a_digest, anchor_a_proof),
+            (anchor_b_digest, anchor_b_proof),
+        ):
+            row = receipts[digest]
+            if (
+                not isinstance(row, Mapping)
+                or set(row) != {"path", "bytes", "sha256"}
+                or row.get("path")
+                != f"evidence/phase_receipts/{digest}.json"
+                or not isinstance(row.get("bytes"), int)
+                or row.get("bytes", 0) <= 0
+                or row.get("sha256") != proof.get("file_sha256")
+            ):
+                return False
+            expected_rows.append(dict(row))
+        expected_rows.sort(key=lambda row: str(row["path"]))
+        if (
+            receipt_files != expected_rows
+            or gate_tree.get("phase_receipt_file_set_sha256")
+            != canonical_sha256(expected_rows)
+        ):
+            return False
+
+        inventory = transition_proof["phase_receipt_inventory"]
+        if not isinstance(inventory, Mapping) or set(inventory) != {
+            "before_file_count",
+            "after_file_count",
+            "before_file_set_sha256",
+            "after_file_set_sha256",
+            "added_phase_evidence_receipt_sha256",
+        }:
+            return False
+        anchor_a_row = next(
+            row
+            for row in expected_rows
+            if row["path"]
+            == f"evidence/phase_receipts/{anchor_a_digest}.json"
+        )
+        if (
+            inventory.get("before_file_count") != 1
+            or inventory.get("after_file_count") != 2
+            or inventory.get("before_file_set_sha256")
+            != canonical_sha256([anchor_a_row])
+            or inventory.get("after_file_set_sha256")
+            != canonical_sha256(expected_rows)
+            or inventory.get("added_phase_evidence_receipt_sha256")
+            != anchor_b_digest
+        ):
+            return False
+
+        source_receipt_rows = sorted(
+            (
+                dict(row)
+                for row in normalized_source_files
+                if str(row.get("path") or "").startswith(
+                    "evidence/phase_receipts/"
+                )
+            ),
+            key=lambda row: str(row["path"]),
+        )
+        if source_receipt_rows != expected_rows:
+            return False
+
+        proof_hashes = (
+            (
+                source.get("anchor_a_file_sha256"),
+                anchor_a_proof,
+                DEFAULT_ANCHOR_A.as_posix(),
+            ),
+            (
+                source.get("anchor_b_file_sha256"),
+                anchor_b_proof,
+                DEFAULT_ANCHOR_B.as_posix(),
+            ),
+            (
+                source.get("transition_receipt_file_sha256"),
+                transition_git_proof,
+                DEFAULT_TRANSITION_RECEIPT.as_posix(),
+            ),
+        )
+        if any(
+            set(proof)
+            != {
+                "passed",
+                "path",
+                "file_sha256",
+                "committed_blob_sha256",
+                "git_head",
+                "anchor_commit",
+            }
+            or proof.get("passed") is not True
+            or proof.get("path") != expected_path
+            or not _is_lower_hex(proof.get("file_sha256"), 64)
+            or proof.get("file_sha256") != proof.get("committed_blob_sha256")
+            or source_hash != proof.get("file_sha256")
+            or not _is_lower_hex(proof.get("git_head"), 40)
+            or not _is_lower_hex(proof.get("anchor_commit"), 40)
+            for source_hash, proof, expected_path in proof_hashes
+        ):
+            return False
+
+        audit_head = transition_proof.get("audit_head")
+        execution_head = transition_proof.get("resume_execution_head")
+        anchor_a_commit = anchor_a_proof.get("anchor_commit")
+        anchor_b_commit = anchor_b_proof.get("anchor_commit")
+        if (
+            not _is_lower_hex(audit_head, 40)
+            or source.get("audit_git_head") != audit_head
+            or any(
+                proof.get("git_head") != audit_head
+                for _, proof, _ in proof_hashes
+            )
+            or anchor_b_commit
+            != transition_git_proof.get("anchor_commit")
+            or len({anchor_a_commit, execution_head, anchor_b_commit}) != 3
+            or execution_head == audit_head
+        ):
+            return False
+
+        current_digest = phase_evidence.get(
+            "current_phase_evidence_receipt_sha256"
+        )
+        if not (
+            current_digest == anchor_b_digest
+            and source.get("current_phase_evidence_receipt_sha256")
+            == anchor_b_digest
+            and inventory.get("added_phase_evidence_receipt_sha256")
+            == anchor_b_digest
+        ):
+            return False
+
+        if (
+            set(auditor_proof)
+            != {
+                "passed",
+                "path",
+                "auditor_implementation_sha256",
+                "committed_blob_sha256",
+                "audit_git_head",
+                "auditor_commit",
+            }
+            or auditor_proof.get("passed") is not True
+            or auditor_proof.get("path")
+            != "experiments/llm_sim_v2/audit_pilot.py"
+            or not _is_lower_hex(
+                auditor_proof.get("auditor_implementation_sha256"), 64
+            )
+            or auditor_proof.get("auditor_implementation_sha256")
+            != auditor_proof.get("committed_blob_sha256")
+            or not _is_lower_hex(auditor_proof.get("audit_git_head"), 40)
+            or not _is_lower_hex(auditor_proof.get("auditor_commit"), 40)
+            or source.get("auditor_implementation_sha256")
+            != auditor_proof.get("auditor_implementation_sha256")
+            or source.get("auditor_committed_blob_sha256")
+            != auditor_proof.get("committed_blob_sha256")
+            or source.get("auditor_implementation_sha256")
+            != source.get("auditor_committed_blob_sha256")
+            or source.get("audit_git_head") != auditor_proof.get("audit_git_head")
+            or source.get("auditor_commit") != auditor_proof.get("auditor_commit")
+        ):
+            return False
+    except (KeyError, StopIteration, TypeError, ValueError):
+        return False
+    return True
 
 
 def verify_pilot_audit(report: Mapping[str, Any]) -> dict[str, Any]:
@@ -1733,12 +2447,148 @@ def verify_pilot_audit(report: Mapping[str, Any]) -> dict[str, Any]:
         accounting_valid = False
     if not accounting_valid:
         raise PilotAuditError("pilot audit accounting is invalid")
+    try:
+        reviewed_cost_shape = (
+            math.isclose(
+                float(accounting["pre_collection_total_yuan"]),
+                2.57152913,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(accounting["carried_forward_total_accounted_cost_yuan"]),
+                REVIEWED_LEGACY_KNOWN_COST_YUAN,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(accounting["carried_forward_known_cost_yuan"]),
+                REVIEWED_LEGACY_KNOWN_COST_YUAN,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(accounting["carried_forward_unknown_reserve_yuan"]),
+                0.0,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(accounting["total_accounted_cost_yuan"]),
+                float(accounting["pre_collection_total_yuan"])
+                + float(accounting["accounted_cost_yuan"]),
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and accounting["carried_forward_cost_ledger_sha256"]
+            == REVIEWED_CARRIED_LEDGER_SHA256
+            and accounting["carried_forward_source_phase_receipt_sha256"]
+            == REVIEWED_LEGACY_RECEIPT_SHA256
+            and accounting["carried_forward_source_record_set_sha256"]
+            == REVIEWED_LEGACY_RECORD_SET_SHA256
+        )
+    except (KeyError, TypeError, ValueError):
+        reviewed_cost_shape = False
     blocking_reasons = report.get("blocking_reasons")
     if report.get("decision") == "GO" and blocking_reasons != []:
         raise PilotAuditError("GO audit retains blocking reasons")
     if report.get("decision") == "GO" and not all_gates_pass:
         raise PilotAuditError("GO audit retains a failed gate")
     if report.get("decision") == "GO":
+        phase_gate = gates["phase_evidence_receipts"]
+        phase_evidence = phase_gate.get("evidence")
+        zero_gate = gates["zero_call_resume"]
+        resume_evidence = zero_gate.get("evidence")
+        transition_proof = (
+            resume_evidence.get("git_anchored_receipt")
+            if isinstance(resume_evidence, Mapping)
+            else None
+        )
+        anchor_proofs = (
+            (
+                transition_proof.get("anchor_a"),
+                transition_proof.get("anchor_b"),
+                transition_proof.get("transition"),
+            )
+            if isinstance(transition_proof, Mapping)
+            else ()
+        )
+        inventory_proof = (
+            transition_proof.get("phase_receipt_inventory")
+            if isinstance(transition_proof, Mapping)
+            else None
+        )
+        auditor_gate_proof = gates["auditor_git_provenance"].get("evidence")
+        exact_structural_links = (
+            _evidence_v2_structural_links_are_exact(
+                phase_evidence=phase_evidence,
+                transition_proof=transition_proof,
+                source=source,
+                source_files=source_files,
+                auditor_proof=auditor_gate_proof,
+            )
+            if all(
+                isinstance(value, Mapping)
+                for value in (
+                    phase_evidence,
+                    transition_proof,
+                    source,
+                    auditor_gate_proof,
+                )
+            )
+            else False
+        )
+        evidence_v2_shape = (
+            isinstance(phase_evidence, Mapping)
+            and len(
+                str(
+                    phase_evidence.get("current_phase_evidence_receipt_sha256")
+                    or ""
+                )
+            )
+            == 64
+            and isinstance(phase_evidence.get("evidence_tree"), Mapping)
+            and len(phase_evidence["evidence_tree"].get("phase_receipts", {})) >= 2
+            and isinstance(resume_evidence, Mapping)
+            and resume_evidence.get("runner_resume_observed") is True
+            and resume_evidence.get("full_complete_record_count") is True
+            and isinstance(transition_proof, Mapping)
+            and transition_proof.get("ok") is True
+            and transition_proof.get("verification_scope")
+            == "git_anchored_phase_a_zero_call_resume_phase_b"
+            and len(str(transition_proof.get("transition_receipt_sha256") or ""))
+            == 64
+            and len(str(transition_proof.get("resume_execution_head") or "")) == 40
+            and len(str(transition_proof.get("audit_head") or "")) == 40
+            and isinstance(inventory_proof, Mapping)
+            and len(str(inventory_proof.get("after_file_set_sha256") or "")) == 64
+            and phase_evidence["evidence_tree"].get(
+                "phase_receipt_file_set_sha256"
+            )
+            == inventory_proof.get("after_file_set_sha256")
+            and phase_evidence.get("current_phase_evidence_receipt_sha256")
+            == transition_proof.get("anchor_b_phase_evidence_receipt_sha256")
+            and len(anchor_proofs) == 3
+            and all(
+                isinstance(proof, Mapping)
+                and proof.get("passed") is True
+                and len(str(proof.get("file_sha256") or "")) == 64
+                and len(str(proof.get("committed_blob_sha256") or "")) == 64
+                and len(str(proof.get("anchor_commit") or "")) == 40
+                for proof in anchor_proofs
+            )
+            and isinstance(source, Mapping)
+            and source.get("anchor_a_file_sha256")
+            == anchor_proofs[0].get("file_sha256")
+            and source.get("anchor_b_file_sha256")
+            == anchor_proofs[1].get("file_sha256")
+            and source.get("transition_receipt_file_sha256")
+            == anchor_proofs[2].get("file_sha256")
+            and exact_structural_links
+            and reviewed_cost_shape
+        )
+        if not evidence_v2_shape:
+            raise PilotAuditError("GO audit lacks its Evidence-v2 transition proof")
         go_provider_shape = all(
             isinstance(row, Mapping)
             and row.get("expected_task_state_count") == EXPECTED_TASKS_PER_PROVIDER
@@ -1787,6 +2637,8 @@ def verify_pilot_audit_against_sources(
     resume_after: Mapping[str, Any] | None,
     resume_receipt: Mapping[str, Any] | None,
     resume_receipt_path: Path | str | None,
+    anchor_a_path: Path | str | None = None,
+    anchor_b_path: Path | str | None = None,
 ) -> dict[str, Any]:
     """Authoritatively regenerate an audit from its Git-bound source store."""
 
@@ -1798,6 +2650,8 @@ def verify_pilot_audit_against_sources(
         resume_after=resume_after,
         resume_receipt=resume_receipt,
         resume_receipt_path=resume_receipt_path,
+        anchor_a_path=anchor_a_path,
+        anchor_b_path=anchor_b_path,
     )
     if regenerated["pilot_audit_sha256"] != report.get("pilot_audit_sha256"):
         raise PilotAuditError(
@@ -1874,6 +2728,8 @@ def write_pilot_audit(
     resume_after: Mapping[str, Any] | None,
     resume_receipt: Mapping[str, Any] | None,
     resume_receipt_path: Path | str | None,
+    anchor_a_path: Path | str | None = None,
+    anchor_b_path: Path | str | None = None,
 ) -> dict[str, Any]:
     pilot_path = Path(pilot_root).expanduser().resolve(strict=True)
     run_root = pilot_path.parent
@@ -1888,6 +2744,8 @@ def write_pilot_audit(
         resume_after=resume_after,
         resume_receipt=resume_receipt,
         resume_receipt_path=resume_receipt_path,
+        anchor_a_path=anchor_a_path,
+        anchor_b_path=anchor_b_path,
     )
     if root.exists():
         raise PilotAuditError(
@@ -1939,6 +2797,8 @@ def write_pilot_audit(
             resume_after=resume_after,
             resume_receipt=resume_receipt,
             resume_receipt_path=resume_receipt_path,
+            anchor_a_path=anchor_a_path,
+            anchor_b_path=anchor_b_path,
         )
         if post_write["pilot_audit_sha256"] != report.get("pilot_audit_sha256"):
             raise PilotAuditError(
@@ -2116,60 +2976,364 @@ def compare_resume_audits(
     return comparison
 
 
-def _resume_receipt_git_proof(
-    repo_root: Path, receipt_path: Path
+def _store_delta(
+    before_rows: Sequence[Mapping[str, Any]],
+    after_rows: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    path = receipt_path.expanduser().resolve(strict=True)
-    try:
-        relative = path.relative_to(repo_root).as_posix()
-    except ValueError:
-        relative = ""
-    current_sha = sha256_file(path)
-
-    def git(*args: str, binary: bool = False) -> bytes | str:
-        result = subprocess.run(
-            ["git", "-C", str(repo_root), *args],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-        return result.stdout if binary else result.stdout.decode("utf-8").strip()
-
-    head: str | None = None
-    committed_sha: str | None = None
-    anchor_commit: str | None = None
-    try:
-        if not relative:
-            raise ValueError
-        head = str(git("rev-parse", "HEAD"))
-        git("ls-files", "--error-unmatch", relative)
-        committed = git("show", f"HEAD:{relative}", binary=True)
-        assert isinstance(committed, bytes)
-        committed_sha = hashlib.sha256(committed).hexdigest()
-        anchor_commit = str(git("log", "-1", "--format=%H", "--", relative)) or None
-    except (
-        AssertionError,
-        OSError,
-        subprocess.CalledProcessError,
-        UnicodeError,
-        ValueError,
-    ):
-        pass
+    before = {str(row["path"]): dict(row) for row in before_rows}
+    after = {str(row["path"]): dict(row) for row in after_rows}
+    if len(before) != len(before_rows) or len(after) != len(after_rows):
+        raise PilotAuditError("phase store delta contains duplicate paths")
+    added = [after[path] for path in sorted(set(after) - set(before))]
+    removed = [before[path] for path in sorted(set(before) - set(after))]
+    mutated = [
+        {
+            "path": path,
+            "before_bytes": before[path]["bytes"],
+            "before_sha256": before[path]["sha256"],
+            "after_bytes": after[path]["bytes"],
+            "after_sha256": after[path]["sha256"],
+        }
+        for path in sorted(set(before) & set(after))
+        if before[path] != after[path]
+    ]
     return {
-        "passed": (
-            bool(relative)
-            and committed_sha == current_sha
-            and isinstance(head, str)
-            and len(head) == 40
-            and isinstance(anchor_commit, str)
-            and len(anchor_commit) == 40
-        ),
-        "path": relative or str(path),
-        "receipt_file_sha256": current_sha,
-        "committed_blob_sha256": committed_sha,
-        "anchor_git_head": head,
-        "anchor_commit": anchor_commit,
+        "before_files": [before[path] for path in sorted(before)],
+        "after_files": [after[path] for path in sorted(after)],
+        "added_files": added,
+        "removed_files": removed,
+        "mutated_files": mutated,
     }
+
+
+def _verify_phase_receipt_inventory_delta(
+    pilot_root: Path,
+    inventory_delta: Mapping[str, Any],
+    *,
+    anchor_a: Mapping[str, Any],
+    anchor_b: Mapping[str, Any],
+    evidence_tree: Mapping[str, Any],
+) -> dict[str, Any]:
+    before_rows = inventory_delta.get("before_files")
+    after_rows = inventory_delta.get("after_files")
+    current_rows = evidence_tree.get("phase_receipt_files")
+    if not all(isinstance(value, list) for value in (before_rows, after_rows, current_rows)):
+        raise PilotAuditError("transition lacks its internal phase-receipt inventory")
+    recomputed = _store_delta(before_rows, after_rows)
+    if dict(inventory_delta) != recomputed or after_rows != current_rows:
+        raise PilotAuditError("internal phase-receipt inventory delta is stale")
+    if recomputed["removed_files"] or recomputed["mutated_files"]:
+        raise PilotAuditError("zero-call resume removed or mutated a phase receipt")
+
+    a_digest = _verify_phase_receipt_envelope(anchor_a)
+    b_digest = _verify_phase_receipt_envelope(anchor_b)
+    if a_digest == b_digest:
+        raise PilotAuditError("phase anchors A and B must be distinct receipts")
+    a_path = f"evidence/phase_receipts/{a_digest}.json"
+    b_path = f"evidence/phase_receipts/{b_digest}.json"
+    before_by_path = {str(row.get("path")): dict(row) for row in before_rows}
+    after_by_path = {str(row.get("path")): dict(row) for row in after_rows}
+    if (
+        len(before_by_path) != len(before_rows)
+        or len(after_by_path) != len(after_rows)
+        or set(before_by_path) != {a_path}
+        or set(after_by_path) != {a_path, b_path}
+        or a_path not in before_by_path
+        or b_path in before_by_path
+        or a_path not in after_by_path
+        or b_path not in after_by_path
+        or [str(row.get("path")) for row in recomputed["added_files"]] != [b_path]
+    ):
+        raise PilotAuditError(
+            "zero-call resume must append only the internal phase anchor B receipt"
+        )
+    for digest, row in ((a_digest, after_by_path[a_path]), (b_digest, after_by_path[b_path])):
+        path = pilot_root / "evidence/phase_receipts" / f"{digest}.json"
+        if (
+            row.get("sha256") != sha256_file(path)
+            or row.get("bytes") != path.stat().st_size
+        ):
+            raise PilotAuditError("internal phase anchor inventory differs from disk")
+    return {
+        "before_file_count": len(before_rows),
+        "after_file_count": len(after_rows),
+        "before_file_set_sha256": canonical_sha256(before_rows),
+        "after_file_set_sha256": canonical_sha256(after_rows),
+        "added_phase_evidence_receipt_sha256": b_digest,
+    }
+
+
+def _transition_event_rows(
+    pilot_root: Path,
+    *,
+    provider: str,
+    start_index: int,
+    stop_index: int,
+) -> list[dict[str, Any]]:
+    root = pilot_root / "evidence" / "provider_events" / provider
+    paths = sorted(root.glob("*.json")) if root.is_dir() else []
+    if len(paths) != stop_index or not 0 <= start_index <= stop_index:
+        raise PilotAuditError("provider transition event range is invalid")
+    rows: list[dict[str, Any]] = []
+    for path in paths[start_index:stop_index]:
+        event = _read_json(path)
+        rows.append(
+            {
+                "path": _safe_relative(pilot_root, path),
+                "bytes": path.stat().st_size,
+                "sha256": sha256_file(path),
+                "event_index": event.get("event_index"),
+                "event_type": event.get("event_type"),
+                "event_sha256": event.get("event_sha256"),
+                "previous_event_sha256": event.get("previous_event_sha256"),
+                "invocation_id": event.get("invocation_id"),
+                "start_event_sha256": event.get("start_event_sha256"),
+                "status": event.get("status"),
+                "invocation_kind": event.get("invocation_kind"),
+                "expected_task_count": event.get("expected_task_count"),
+                "resumed_record_count": event.get("resumed_record_count"),
+                "provider_call_count": event.get("provider_call_count"),
+                "provider_call_count_before": event.get(
+                    "provider_call_count_before"
+                ),
+                "provider_call_count_after": event.get(
+                    "provider_call_count_after"
+                ),
+                "before_store": event.get("before_store"),
+                "after_store": event.get("after_store"),
+            }
+        )
+    return rows
+
+
+def _provider_transition_delta(
+    pilot_root: Path,
+    *,
+    provider: str,
+    anchor_a: Mapping[str, Any],
+    anchor_b: Mapping[str, Any],
+) -> dict[str, Any]:
+    before = anchor_a["providers"][provider]
+    after = anchor_b["providers"][provider]
+    start_index = int(before["evidence_event_count"])
+    stop_index = int(after["evidence_event_count"])
+    return {
+        "evidence_event_count_before": start_index,
+        "evidence_event_count_after": stop_index,
+        "evidence_event_count_delta": stop_index - start_index,
+        "evidence_chain_head_before": before["evidence_chain_head_sha256"],
+        "evidence_chain_head_after": after["evidence_chain_head_sha256"],
+        "provider_call_count_before": before["provider_call_count"],
+        "provider_call_count_after": after["provider_call_count"],
+        "provider_call_count_delta": int(after["provider_call_count"])
+        - int(before["provider_call_count"]),
+        "record_count_before": before["record_count"],
+        "record_count_after": after["record_count"],
+        "record_count_delta": int(after["record_count"])
+        - int(before["record_count"]),
+        "record_set_sha256_before": before["record_set_sha256"],
+        "record_set_sha256_after": after["record_set_sha256"],
+        "record_set_unchanged": before["record_set_sha256"]
+        == after["record_set_sha256"],
+        "validated_attempt_count_before": before["validated_attempt_count"],
+        "validated_attempt_count_after": after["validated_attempt_count"],
+        "added_events": _transition_event_rows(
+            pilot_root,
+            provider=provider,
+            start_index=start_index,
+            stop_index=stop_index,
+        ),
+    }
+
+
+def _assert_provider_transition(
+    provider: str,
+    delta: Mapping[str, Any],
+) -> None:
+    events = delta.get("added_events")
+    if not isinstance(events, list) or len(events) != 2:
+        raise PilotAuditError(f"{provider} resume must add exactly two evidence events")
+    start, finish = events
+    valid = (
+        delta.get("evidence_event_count_delta") == 2
+        and delta.get("provider_call_count_delta") == 0
+        and delta.get("record_count_delta") == 0
+        and delta.get("record_set_unchanged") is True
+        and delta.get("validated_attempt_count_before")
+        == delta.get("validated_attempt_count_after")
+        and start.get("event_type") == "invocation_started"
+        and finish.get("event_type") == "invocation_finished"
+        and start.get("event_index") == delta.get("evidence_event_count_before")
+        and finish.get("event_index")
+        == int(delta.get("evidence_event_count_before") or 0) + 1
+        and start.get("previous_event_sha256")
+        == delta.get("evidence_chain_head_before")
+        and finish.get("previous_event_sha256") == start.get("event_sha256")
+        and finish.get("event_sha256") == delta.get("evidence_chain_head_after")
+        and start.get("invocation_id") == finish.get("invocation_id")
+        and finish.get("start_event_sha256") == start.get("event_sha256")
+        and start.get("expected_task_count") == EXPECTED_TASKS_PER_PROVIDER
+        and finish.get("expected_task_count") == EXPECTED_TASKS_PER_PROVIDER
+        and start.get("resumed_record_count") == EXPECTED_TASKS_PER_PROVIDER
+        and finish.get("resumed_record_count") == EXPECTED_TASKS_PER_PROVIDER
+        and start.get("provider_call_count_before")
+        == delta.get("provider_call_count_before")
+        and finish.get("provider_call_count_before")
+        == delta.get("provider_call_count_before")
+        and finish.get("provider_call_count_after")
+        == delta.get("provider_call_count_before")
+        and finish.get("provider_call_count") == 0
+        and finish.get("invocation_kind") == "resume"
+        and finish.get("status") == "complete"
+    )
+    if not valid:
+        raise PilotAuditError(
+            f"{provider} resume evidence is not one closed zero-call resume invocation"
+        )
+
+
+def _snapshot_from_file_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    ordered = sorted((dict(row) for row in rows), key=lambda row: str(row["path"]))
+    return {
+        "schema_version": "yher.llm_sim_v2.phase_store_snapshot.v1",
+        "run_id": RUN_ID,
+        "phase": "pilot",
+        "file_count": len(ordered),
+        "total_bytes": sum(int(row["bytes"]) for row in ordered),
+        "file_set_sha256": canonical_sha256(ordered),
+    }
+
+
+def _assert_ordered_provider_transition_chain(
+    provider_deltas: Mapping[str, Mapping[str, Any]],
+    store_delta: Mapping[str, Any],
+    *,
+    anchor_a_store: Mapping[str, Any],
+    anchor_b_store: Mapping[str, Any],
+) -> None:
+    before_rows = store_delta["before_files"]
+    after_rows = store_delta["after_files"]
+    state = {str(row["path"]): dict(row) for row in before_rows}
+    if _snapshot_from_file_rows(list(state.values())) != dict(anchor_a_store):
+        raise PilotAuditError("ordered transition does not begin at phase anchor A")
+    added = {str(row["path"]): dict(row) for row in store_delta["added_files"]}
+    mutated = {
+        str(row["path"]): dict(row) for row in store_delta["mutated_files"]
+    }
+    for provider in EXPECTED_PILOT_PROVIDERS:
+        start, finish = provider_deltas[provider]["added_events"]
+        before_store = _snapshot_from_file_rows(list(state.values()))
+        if (
+            start.get("before_store") != before_store
+            or finish.get("before_store") != before_store
+        ):
+            raise PilotAuditError(
+                f"{provider} resume does not start at the preceding phase state"
+            )
+        start_path = str(start["path"])
+        state[start_path] = {
+            key: start[key] for key in ("path", "bytes", "sha256")
+        }
+        lifecycle_paths = [
+            path
+            for path in added
+            if path.startswith(f"provider_lifecycle/{provider}/")
+        ]
+        if len(lifecycle_paths) != 1:
+            raise PilotAuditError(
+                f"{provider} resume must add one lifecycle disclosure"
+            )
+        lifecycle_path = lifecycle_paths[0]
+        state[lifecycle_path] = added[lifecycle_path]
+        manifest_path = f"provider_manifests/{provider}.json"
+        manifest_change = mutated.get(manifest_path)
+        if manifest_change is None:
+            raise PilotAuditError(f"{provider} resume manifest delta is missing")
+        state[manifest_path] = {
+            "path": manifest_path,
+            "bytes": manifest_change["after_bytes"],
+            "sha256": manifest_change["after_sha256"],
+        }
+        if finish.get("after_store") != _snapshot_from_file_rows(
+            list(state.values())
+        ):
+            raise PilotAuditError(
+                f"{provider} finish receipt does not bind its pre-finish store"
+            )
+        finish_path = str(finish["path"])
+        state[finish_path] = {
+            key: finish[key] for key in ("path", "bytes", "sha256")
+        }
+    if (
+        _snapshot_from_file_rows(list(state.values())) != dict(anchor_b_store)
+        or sorted(state.values(), key=lambda row: str(row["path"])) != after_rows
+    ):
+        raise PilotAuditError("ordered transition does not terminate at phase anchor B")
+
+
+def _verify_store_delta(
+    pilot_root: Path,
+    store_delta: Mapping[str, Any],
+    *,
+    anchor_a_store: Mapping[str, Any],
+    anchor_b_store: Mapping[str, Any],
+) -> None:
+    before_rows = store_delta.get("before_files")
+    after_rows = store_delta.get("after_files")
+    if not isinstance(before_rows, list) or not isinstance(after_rows, list):
+        raise PilotAuditError("transition receipt lacks its phase store rows")
+    if (
+        len(before_rows) != anchor_a_store.get("file_count")
+        or sum(int(row.get("bytes") or 0) for row in before_rows)
+        != anchor_a_store.get("total_bytes")
+        or canonical_sha256(before_rows) != anchor_a_store.get("file_set_sha256")
+        or len(after_rows) != anchor_b_store.get("file_count")
+        or sum(int(row.get("bytes") or 0) for row in after_rows)
+        != anchor_b_store.get("total_bytes")
+        or canonical_sha256(after_rows) != anchor_b_store.get("file_set_sha256")
+        or after_rows != _phase_store_file_rows(pilot_root)
+    ):
+        raise PilotAuditError("transition phase store rows differ from A/B or disk")
+    recomputed = _store_delta(before_rows, after_rows)
+    if dict(store_delta) != recomputed:
+        raise PilotAuditError("transition phase store delta is stale or invalid")
+    if recomputed["removed_files"]:
+        raise PilotAuditError("zero-call resume removed phase-store evidence")
+    expected_added_prefixes = {
+        *(f"evidence/provider_events/{provider}/" for provider in EXPECTED_PILOT_PROVIDERS),
+        *(f"provider_lifecycle/{provider}/" for provider in EXPECTED_PILOT_PROVIDERS),
+    }
+    added_paths = [str(row["path"]) for row in recomputed["added_files"]]
+    if len(added_paths) != 6 or any(
+        sum(path.startswith(prefix) for prefix in expected_added_prefixes) != 1
+        for path in added_paths
+    ):
+        raise PilotAuditError("zero-call resume added an unexplained phase-store file")
+    mutated_paths = {
+        str(row["path"]) for row in recomputed["mutated_files"]
+    }
+    if mutated_paths != {
+        f"provider_manifests/{provider}.json"
+        for provider in EXPECTED_PILOT_PROVIDERS
+    }:
+        raise PilotAuditError("zero-call resume mutated an unexplained phase-store file")
+
+
+def _write_immutable_json(path: Path, value: Mapping[str, Any]) -> None:
+    payload = (
+        json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2).encode("utf-8")
+        + b"\n"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        if path.read_bytes() == payload:
+            return
+        raise PilotAuditError(f"immutable protocol artifact differs: {path}")
+    temporary = path.with_name(f".{path.name}.tmp")
+    if temporary.exists():
+        raise PilotAuditError("protocol artifact temporary path already exists")
+    temporary.write_bytes(payload)
+    temporary.rename(path)
 
 
 def verify_zero_call_resume_receipt(
@@ -2178,46 +3342,49 @@ def verify_zero_call_resume_receipt(
     repo_root: Path | str,
     pilot_root: Path | str,
     receipt_path: Path | str,
+    anchor_a_path: Path | str,
+    anchor_b_path: Path | str,
+    phase_provenance: Mapping[str, Any],
+    tasks: Sequence[Task],
+    audit_head: str | None = None,
 ) -> dict[str, Any]:
     repo = Path(repo_root).expanduser().resolve(strict=True)
     pilot = Path(pilot_root).expanduser().resolve(strict=True)
     path = Path(receipt_path).expanduser().resolve(strict=True)
+    a_path = Path(anchor_a_path).expanduser().resolve(strict=True)
+    b_path = Path(anchor_b_path).expanduser().resolve(strict=True)
     stored = _read_json(path)
     if stored != dict(receipt):
-        raise PilotAuditError("resume receipt file differs from supplied receipt")
+        raise PilotAuditError("resume transition file differs from supplied receipt")
     payload = dict(receipt)
-    advertised = payload.pop("resume_receipt_sha256", None)
+    advertised = payload.pop("transition_receipt_sha256", None)
     if (
         receipt.get("schema_version")
-        != "yher.llm_sim_v2.zero_call_resume_receipt.v1"
+        != "yher.llm_sim_v2.pilot_resume_transition_receipt.v2"
         or receipt.get("simulated") is not True
         or receipt.get("run_id") != RUN_ID
         or receipt.get("phase") != "pilot"
         or receipt.get("providers") != list(EXPECTED_PILOT_PROVIDERS)
-        or receipt.get("provider_call_count") != 0
+        or receipt.get("provider_call_count_delta") != 0
         or receipt.get("records_unchanged") is not True
-        or receipt.get("before_record_count")
-        != len(EXPECTED_PILOT_PROVIDERS) * EXPECTED_TASKS_PER_PROVIDER
-        or receipt.get("after_record_count")
-        != len(EXPECTED_PILOT_PROVIDERS) * EXPECTED_TASKS_PER_PROVIDER
-        or receipt.get("before_resume_snapshot_sha256")
-        != receipt.get("after_resume_snapshot_sha256")
+        or len(str(receipt.get("resume_execution_head") or "")) != 40
         or advertised != canonical_sha256(payload)
     ):
-        raise PilotAuditError("zero-call resume receipt envelope is invalid")
-    added_lifecycle = receipt.get("added_lifecycle_files")
+        raise PilotAuditError("zero-call resume transition envelope is invalid")
+    current_snapshot = snapshot_resume_state(pilot)
     if (
-        not isinstance(added_lifecycle, list)
-        or len(added_lifecycle) != len(EXPECTED_PILOT_PROVIDERS)
-        or {
-            str(path_value).split("/")[1]
-            for path_value in added_lifecycle
-            if str(path_value).startswith("provider_lifecycle/")
-            and len(str(path_value).split("/")) == 3
-        }
-        != set(EXPECTED_PILOT_PROVIDERS)
+        receipt.get("before_resume_snapshot_sha256")
+        != current_snapshot["resume_snapshot_sha256"]
+        or receipt.get("after_resume_snapshot_sha256")
+        != current_snapshot["resume_snapshot_sha256"]
+        or receipt.get("before_record_count") != current_snapshot["record_count"]
+        or receipt.get("after_record_count") != current_snapshot["record_count"]
+        or receipt.get("before_attempt_count") != current_snapshot["attempt_count"]
+        or receipt.get("after_attempt_count") != current_snapshot["attempt_count"]
     ):
-        raise PilotAuditError("resume receipt lifecycle increment is invalid")
+        raise PilotAuditError(
+            "zero-call resume snapshot declarations differ from the current record set"
+        )
     contract = load_runtime_contract(repo)
     if (
         receipt.get("auditor_implementation_sha256")
@@ -2225,25 +3392,121 @@ def verify_zero_call_resume_receipt(
         or receipt.get("runtime_task_manifest_sha256")
         != contract.runtime_manifest.get("runtime_task_manifest_sha256")
     ):
-        raise PilotAuditError("resume receipt code/runtime binding is invalid")
-    current_snapshot = snapshot_resume_state(pilot)
-    current_files = _source_file_rows(pilot)
-    if (
-        current_snapshot["resume_snapshot_sha256"]
-        != receipt.get("after_resume_snapshot_sha256")
-        or canonical_sha256(current_files)
-        != receipt.get("after_pilot_source_set_sha256")
-        or len(current_files) != receipt.get("after_pilot_source_file_count")
+        raise PilotAuditError("resume transition code/runtime binding is invalid")
+
+    anchor_a = _read_json(a_path)
+    anchor_b = _read_json(b_path)
+    a_summary = _phase_anchor_summary(anchor_a, a_path)
+    b_summary = _phase_anchor_summary(anchor_b, b_path)
+    if receipt.get("anchor_a") != a_summary or receipt.get("anchor_b") != b_summary:
+        raise PilotAuditError("resume transition does not bind exact A/B receipt bytes")
+    rebuilt_b = build_phase_evidence_receipt(
+        pilot,
+        phase_provenance=phase_provenance,
+        tasks=tasks,
+    )
+    if anchor_b != rebuilt_b:
+        raise PilotAuditError("phase anchor B is stale relative to the current pilot store")
+    evidence_tree = _validate_evidence_tree(
+        pilot,
+        providers=EXPECTED_PILOT_PROVIDERS,
+        required_receipts=(anchor_a, anchor_b),
+    )
+    for anchor, summary in ((anchor_a, a_summary), (anchor_b, b_summary)):
+        digest = str(anchor["phase_evidence_receipt_sha256"])
+        if evidence_tree["phase_receipts"][digest]["sha256"] != summary["file_sha256"]:
+            raise PilotAuditError("internal and external phase anchor bytes differ")
+    inventory_delta = receipt.get("phase_receipt_inventory_delta")
+    if not isinstance(inventory_delta, Mapping):
+        raise PilotAuditError("resume transition lacks phase-receipt inventory evidence")
+    inventory_proof = _verify_phase_receipt_inventory_delta(
+        pilot,
+        inventory_delta,
+        anchor_a=anchor_a,
+        anchor_b=anchor_b,
+        evidence_tree=evidence_tree,
+    )
+
+    provider_deltas = receipt.get("provider_deltas")
+    if not isinstance(provider_deltas, Mapping) or set(provider_deltas) != set(
+        EXPECTED_PILOT_PROVIDERS
     ):
-        raise PilotAuditError("pilot store differs from anchored resume receipt")
-    anchor = _resume_receipt_git_proof(repo, path)
-    if not anchor["passed"]:
-        raise PilotAuditError("resume receipt is not committed unchanged in Git")
+        raise PilotAuditError("resume transition provider delta set is invalid")
+    expected_deltas: dict[str, Any] = {}
+    for provider in EXPECTED_PILOT_PROVIDERS:
+        expected = _provider_transition_delta(
+            pilot,
+            provider=provider,
+            anchor_a=anchor_a,
+            anchor_b=anchor_b,
+        )
+        _assert_provider_transition(
+            provider,
+            expected,
+        )
+        expected_deltas[provider] = expected
+    if dict(provider_deltas) != expected_deltas:
+        raise PilotAuditError("resume transition provider event delta is stale or invalid")
+    if sum(
+        int(row["provider_call_count_delta"])
+        for row in expected_deltas.values()
+    ) != 0:
+        raise PilotAuditError("resume transition entered a provider transport")
+    _verify_store_delta(
+        pilot,
+        receipt.get("store_delta") if isinstance(receipt.get("store_delta"), Mapping) else {},
+        anchor_a_store=anchor_a["store_snapshot"],
+        anchor_b_store=anchor_b["store_snapshot"],
+    )
+    _assert_ordered_provider_transition_chain(
+        expected_deltas,
+        receipt["store_delta"],
+        anchor_a_store=anchor_a["store_snapshot"],
+        anchor_b_store=anchor_b["store_snapshot"],
+    )
+
+    resolved_audit_head = str(audit_head or _git_head(repo))
+    a_git = _git_committed_file_proof(repo, a_path, head=resolved_audit_head)
+    b_git = _git_committed_file_proof(repo, b_path, head=resolved_audit_head)
+    transition_git = _git_committed_file_proof(repo, path, head=resolved_audit_head)
+    execution_head = str(receipt["resume_execution_head"])
+    a_commit = str(a_git.get("anchor_commit") or "")
+    b_commit = str(b_git.get("anchor_commit") or "")
+    transition_commit = str(transition_git.get("anchor_commit") or "")
+    git_order_pass = (
+        a_git.get("passed") is True
+        and b_git.get("passed") is True
+        and transition_git.get("passed") is True
+        and a_git.get("git_head") == resolved_audit_head
+        and b_git.get("git_head") == resolved_audit_head
+        and transition_git.get("git_head") == resolved_audit_head
+        and b_commit == transition_commit
+        and _git_is_ancestor(repo, a_commit, execution_head, strict=True)
+        and _git_is_ancestor(repo, execution_head, b_commit, strict=True)
+        and _git_is_ancestor(repo, b_commit, resolved_audit_head)
+    )
+    if not git_order_pass:
+        raise PilotAuditError(
+            "Git proof must satisfy A commit < resume execution HEAD < "
+            "B/transition commit <= audit HEAD"
+        )
     return {
         "ok": True,
-        "verification_scope": "git_anchored_zero_call_resume_receipt",
-        "resume_receipt_sha256": advertised,
-        "anchor": anchor,
+        "verification_scope": "git_anchored_phase_a_zero_call_resume_phase_b",
+        "transition_receipt_sha256": advertised,
+        "anchor_a_phase_evidence_receipt_sha256": a_summary[
+            "phase_evidence_receipt_sha256"
+        ],
+        "anchor_b_phase_evidence_receipt_sha256": b_summary[
+            "phase_evidence_receipt_sha256"
+        ],
+        "anchor_a": a_git,
+        "anchor_b": b_git,
+        "transition": transition_git,
+        "resume_execution_head": execution_head,
+        "audit_head": resolved_audit_head,
+        "evidence_tree": evidence_tree,
+        "phase_receipt_inventory": inventory_proof,
     }
 
 
@@ -2251,27 +3514,80 @@ def run_zero_call_resume_probe(
     *,
     repo_root: Path | str,
     pilot_root: Path | str,
-    receipt_path: Path | str,
+    anchor_a_path: Path | str,
+    anchor_b_path: Path | str,
+    transition_receipt_path: Path | str,
 ) -> dict[str, Any]:
     """Exercise the real resume path with a transport that cannot call a provider."""
 
     repo = Path(repo_root).expanduser().resolve(strict=True)
     pilot = Path(pilot_root).expanduser().resolve(strict=True)
-    receipt_file = Path(receipt_path).expanduser().resolve(strict=False)
-    if pilot.parent == receipt_file or pilot.parent in receipt_file.parents:
-        raise PilotAuditError("resume receipt must remain outside the pilot run root")
-    if receipt_file.exists():
-        raise PilotAuditError("resume receipt path must not already exist")
+    a_path = Path(anchor_a_path).expanduser().resolve(strict=True)
+    b_path = Path(anchor_b_path).expanduser().resolve(strict=False)
+    transition_path = Path(transition_receipt_path).expanduser().resolve(strict=False)
+    for protocol_path in (a_path, b_path, transition_path):
+        if protocol_path == pilot.parent or pilot.parent in protocol_path.parents:
+            raise PilotAuditError("A/B/transition artifacts must remain outside the run root")
+    if b_path.exists() or transition_path.exists():
+        raise PilotAuditError("anchor B and transition paths must not already exist")
+
+    contract = load_runtime_contract(repo)
+    tasks = enumerate_tasks(contract, phase="pilot")
+    phase = _read_json(pilot / "phase_provenance.json")
+    anchor_a = _read_json(a_path)
+    rebuilt_a = build_phase_evidence_receipt(
+        pilot,
+        phase_provenance=phase,
+        tasks=tasks,
+    )
+    if anchor_a != rebuilt_a:
+        raise PilotAuditError("phase anchor A is stale before the resume execution")
+    internal_a = write_phase_evidence_receipt(
+        pilot,
+        phase_provenance=phase,
+        tasks=tasks,
+    )
+    if internal_a != anchor_a:
+        raise PilotAuditError("internal and external phase anchor A differ")
+    evidence_a = _validate_evidence_tree(
+        pilot,
+        providers=EXPECTED_PILOT_PROVIDERS,
+        required_receipts=(anchor_a,),
+    )
+    anchor_a_digest = str(anchor_a["phase_evidence_receipt_sha256"])
+    if set(evidence_a["phase_receipts"]) != {anchor_a_digest}:
+        raise PilotAuditError(
+            "phase-receipt inventory before resume must contain only anchor A"
+        )
+    execution_head = _git_head(repo)
+    a_git = _git_committed_file_proof(repo, a_path, head=execution_head)
+    if not (
+        a_git.get("passed") is True
+        and a_git.get("git_head") == execution_head
+        and _git_is_ancestor(
+            repo,
+            str(a_git.get("anchor_commit") or ""),
+            execution_head,
+            strict=True,
+        )
+    ):
+        raise PilotAuditError(
+            "phase anchor A must be committed unchanged before a descendant resume HEAD"
+        )
+
     before = snapshot_resume_state(pilot)
     preflight = audit_formal_pilot(
         repo_root=repo,
         pilot_root=pilot,
         resume_before=before,
         resume_after=before,
+        anchor_a_path=a_path,
+        anchor_b_path=b_path,
     )
     allowed_preflight_blockers = {
         "zero_call_resume",
         "zero_call_resume_receipt",
+        "phase_evidence_receipt",
     }
     unexpected = [
         row
@@ -2283,15 +3599,7 @@ def run_zero_call_resume_probe(
             "zero-call resume preflight has non-resume blockers: "
             + ", ".join(sorted({str(row["code"]) for row in unexpected}))
         )
-    contract = load_runtime_contract(repo)
-    tasks = enumerate_tasks(contract, phase="pilot")
-    phase = _read_json(pilot / "phase_provenance.json")
-    before_files = _source_file_rows(pilot)
-    before_lifecycle = {
-        row["path"]: row
-        for row in before_files
-        if str(row["path"]).startswith("provider_lifecycle/")
-    }
+    before_files = _phase_store_file_rows(pilot)
     budget = BudgetLedger(
         soft_warning_yuan=float(contract.config["budget_yuan"]["soft_warning"]),
         hard_fuse_yuan=float(contract.config["budget_yuan"]["hard_fuse"]),
@@ -2331,52 +3639,97 @@ def run_zero_call_resume_probe(
     provider_calls = sum(transport.call_count for transport in transports)
     after = snapshot_resume_state(pilot)
     comparison = compare_resume_audits(before, after, require_zero_calls=True)
-    after_files = _source_file_rows(pilot)
-    after_lifecycle = {
-        row["path"]: row
-        for row in after_files
-        if str(row["path"]).startswith("provider_lifecycle/")
+    after_files = _phase_store_file_rows(pilot)
+    anchor_b = write_phase_evidence_receipt(
+        pilot,
+        phase_provenance=phase,
+        tasks=tasks,
+    )
+    external_b = write_phase_evidence_receipt(
+        pilot,
+        output=b_path,
+        phase_provenance=phase,
+        tasks=tasks,
+    )
+    if external_b != anchor_b:
+        raise PilotAuditError("internal and external phase anchor B differ")
+    evidence_b = _validate_evidence_tree(
+        pilot,
+        providers=EXPECTED_PILOT_PROVIDERS,
+        required_receipts=(anchor_a, anchor_b),
+    )
+    phase_receipt_inventory_delta = _store_delta(
+        evidence_a["phase_receipt_files"],
+        evidence_b["phase_receipt_files"],
+    )
+    _verify_phase_receipt_inventory_delta(
+        pilot,
+        phase_receipt_inventory_delta,
+        anchor_a=anchor_a,
+        anchor_b=anchor_b,
+        evidence_tree=evidence_b,
+    )
+    provider_deltas = {
+        provider: _provider_transition_delta(
+            pilot,
+            provider=provider,
+            anchor_a=anchor_a,
+            anchor_b=anchor_b,
+        )
+        for provider in EXPECTED_PILOT_PROVIDERS
     }
-    added_lifecycle = sorted(set(after_lifecycle) - set(before_lifecycle))
+    for provider, delta in provider_deltas.items():
+        _assert_provider_transition(
+            provider,
+            delta,
+        )
+    store_delta = _store_delta(before_files, after_files)
+    _verify_store_delta(
+        pilot,
+        store_delta,
+        anchor_a_store=anchor_a["store_snapshot"],
+        anchor_b_store=anchor_b["store_snapshot"],
+    )
+    _assert_ordered_provider_transition_chain(
+        provider_deltas,
+        store_delta,
+        anchor_a_store=anchor_a["store_snapshot"],
+        anchor_b_store=anchor_b["store_snapshot"],
+    )
     receipt: dict[str, Any] = {
-        "schema_version": "yher.llm_sim_v2.zero_call_resume_receipt.v1",
+        "schema_version": "yher.llm_sim_v2.pilot_resume_transition_receipt.v2",
         "simulated": True,
         "run_id": RUN_ID,
         "phase": "pilot",
         "providers": list(EXPECTED_PILOT_PROVIDERS),
-        "provider_call_count": provider_calls,
+        "anchor_a": _phase_anchor_summary(anchor_a, a_path),
+        "anchor_b": _phase_anchor_summary(anchor_b, b_path),
+        "resume_execution_head": execution_head,
+        "provider_call_count_delta": provider_calls,
         "records_unchanged": bool(comparison["ok"] and provider_calls == 0),
+        "before_resume_snapshot_sha256": before["resume_snapshot_sha256"],
+        "after_resume_snapshot_sha256": after["resume_snapshot_sha256"],
         "before_record_count": before["record_count"],
         "after_record_count": after["record_count"],
         "before_attempt_count": before["attempt_count"],
         "after_attempt_count": after["attempt_count"],
-        "before_resume_snapshot_sha256": before["resume_snapshot_sha256"],
-        "after_resume_snapshot_sha256": after["resume_snapshot_sha256"],
-        "before_pilot_source_file_count": len(before_files),
-        "after_pilot_source_file_count": len(after_files),
-        "before_pilot_source_set_sha256": canonical_sha256(before_files),
-        "after_pilot_source_set_sha256": canonical_sha256(after_files),
-        "before_lifecycle_set_sha256": canonical_sha256(before_lifecycle),
-        "after_lifecycle_set_sha256": canonical_sha256(after_lifecycle),
-        "added_lifecycle_files": added_lifecycle,
+        "provider_deltas": provider_deltas,
+        "store_delta": store_delta,
+        "phase_receipt_inventory_delta": phase_receipt_inventory_delta,
         "runtime_task_manifest_sha256": contract.runtime_manifest[
             "runtime_task_manifest_sha256"
         ],
         "auditor_implementation_sha256": sha256_file(Path(__file__).resolve()),
     }
-    receipt["resume_receipt_sha256"] = canonical_sha256(receipt)
-    receipt_file.parent.mkdir(parents=True, exist_ok=True)
-    temporary = receipt_file.with_name(f".{receipt_file.name}.tmp")
-    if temporary.exists():
-        raise PilotAuditError("resume receipt temporary path already exists")
-    temporary.write_text(
-        json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    temporary.rename(receipt_file)
+    receipt["transition_receipt_sha256"] = canonical_sha256(receipt)
+    _write_immutable_json(transition_path, receipt)
     return {
         "receipt": receipt,
-        "receipt_path": str(receipt_file),
+        "receipt_path": str(transition_path),
+        "anchor_a": anchor_a,
+        "anchor_a_path": str(a_path),
+        "anchor_b": anchor_b,
+        "anchor_b_path": str(b_path),
         "resume_before": before,
         "resume_after": after,
     }
@@ -2388,33 +3741,77 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--pilot-root", required=True, type=Path)
     parser.add_argument("--resume-before", type=Path)
     parser.add_argument("--resume-after", type=Path)
-    parser.add_argument("--resume-receipt", type=Path)
+    parser.add_argument("--resume-receipt", "--resume-transition", dest="resume_receipt", type=Path)
+    parser.add_argument("--anchor-a", type=Path)
+    parser.add_argument("--anchor-b", type=Path)
+    parser.add_argument("--prepare-anchor-a", action="store_true")
+    parser.add_argument("--run-resume", action="store_true")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR)
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    repo = args.repo_root.expanduser().resolve(strict=True)
+    pilot = args.pilot_root.expanduser().resolve(strict=True)
+    anchor_a_path = args.anchor_a or repo / DEFAULT_ANCHOR_A
+    anchor_b_path = args.anchor_b or repo / DEFAULT_ANCHOR_B
+    transition_path = args.resume_receipt or repo / DEFAULT_TRANSITION_RECEIPT
+    if args.prepare_anchor_a and args.run_resume:
+        raise PilotAuditError("prepare-anchor-a and run-resume are separate commit stages")
+    if args.prepare_anchor_a:
+        contract = load_runtime_contract(repo)
+        tasks = enumerate_tasks(contract, phase="pilot")
+        phase = _read_json(pilot / "phase_provenance.json")
+        internal = write_phase_evidence_receipt(
+            pilot,
+            phase_provenance=phase,
+            tasks=tasks,
+        )
+        external = write_phase_evidence_receipt(
+            pilot,
+            output=anchor_a_path,
+            phase_provenance=phase,
+            tasks=tasks,
+        )
+        if internal != external:
+            raise PilotAuditError("internal and external phase anchor A differ")
+        print(json.dumps(external, ensure_ascii=False, sort_keys=True))
+        return 0
+    if args.run_resume:
+        result = run_zero_call_resume_probe(
+            repo_root=repo,
+            pilot_root=pilot,
+            anchor_a_path=anchor_a_path,
+            anchor_b_path=anchor_b_path,
+            transition_receipt_path=transition_path,
+        )
+        print(json.dumps(result["receipt"], ensure_ascii=False, sort_keys=True))
+        return 0
     resume_before = _read_json(args.resume_before) if args.resume_before else None
     resume_after = _read_json(args.resume_after) if args.resume_after else None
-    resume_receipt = _read_json(args.resume_receipt) if args.resume_receipt else None
+    resume_receipt = _read_json(transition_path) if transition_path.is_file() else None
     report = audit_formal_pilot(
-        repo_root=args.repo_root,
-        pilot_root=args.pilot_root,
+        repo_root=repo,
+        pilot_root=pilot,
         resume_before=resume_before,
         resume_after=resume_after,
         resume_receipt=resume_receipt,
-        resume_receipt_path=args.resume_receipt,
+        resume_receipt_path=transition_path if resume_receipt is not None else None,
+        anchor_a_path=anchor_a_path,
+        anchor_b_path=anchor_b_path,
     )
     manifest = write_pilot_audit(
         report,
         args.output,
-        repo_root=args.repo_root,
-        pilot_root=args.pilot_root,
+        repo_root=repo,
+        pilot_root=pilot,
         resume_before=resume_before,
         resume_after=resume_after,
         resume_receipt=resume_receipt,
-        resume_receipt_path=args.resume_receipt,
+        resume_receipt_path=transition_path if resume_receipt is not None else None,
+        anchor_a_path=anchor_a_path,
+        anchor_b_path=anchor_b_path,
     )
     print(json.dumps(manifest, ensure_ascii=False, sort_keys=True))
     return 0 if report["decision"] == "GO" else 2
