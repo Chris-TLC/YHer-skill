@@ -1,7 +1,7 @@
 {
   "freeze_commit": "e3c0d4dbe6f37303d9eac86ecd9c1af823f152b9",
   "freeze_manifest_sha256": "2d0ea5608dd4ab277106bd5a8effe978d575f93b77193747efc6d37b9473245e",
-  "frozen_at_utc": "2026-07-15T10:44:18Z",
+  "frozen_at_utc": "2026-07-15T15:32:00Z",
   "phases": {
     "main": {
       "providers": [
@@ -1688,8 +1688,8 @@
   "prompt_ledger_sha256": "cc6eeff0cf32f1800c4472634a2a88f4983628eda67e89488b5d769e67352427",
   "prompt_revision": 0,
   "run_id": "llm-personas-v2-dual",
-  "runtime_commit": "6918d5d41c0cbb08e03bd86df0e67de2ce0dc1e5",
-  "runtime_file_set_sha256": "0af165d398f0b3cc50bbf11fb66e355f901629d4aaa9b16613f677823d2a32ed",
+  "runtime_commit": "3ffaed676c3463b91d2347da36cb06ae5cbc14a7",
+  "runtime_file_set_sha256": "72c20a83c966c1462945600b7e00da075d9e6290a5ccdf30e575c68dbea57012",
   "runtime_files": [
     {
       "path": "experiments/config/llm_transport_v2.json",
@@ -1703,8 +1703,23 @@
     },
     {
       "path": "experiments/llm_sim_v2/collect.py",
-      "sha256": "2a1a45127787eb3fb797874d43a3e0e5f3a5cec48d66f178de466dc1cd4db560",
-      "size": 18847
+      "sha256": "a46fba8bad117940d58cc1141969e37d51b5b6e8a46ec6db1f645a2b9cbb1828",
+      "size": 25974
+    },
+    {
+      "path": "experiments/llm_sim_v2/evidence.py",
+      "sha256": "e0475649d711b45f8b773839626519681a3ee22207783d9a6e3afbbaa77130d7",
+      "size": 69775
+    },
+    {
+      "path": "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_carried_forward_cost.json",
+      "sha256": "1c7c1838162944fd16ce45ac78111fb3f5c0def7f2804dc504dd9c27468ab489",
+      "size": 576
+    },
+    {
+      "path": "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_retrospective_receipt.json",
+      "sha256": "65e11e1108dbe8e80ed30c82209f1f62ae86ff0d58e59408847edc7ac2f4744a",
+      "size": 166712
     },
     {
       "path": "experiments/llm_sim_v2/prior_cost_ledger.json",
@@ -1713,11 +1728,16 @@
     },
     {
       "path": "experiments/llm_sim_v2/runner.py",
-      "sha256": "217d506dc3a839455dca72772fc48c6710cf854edee13d38f4abd69192c66dba",
-      "size": 88890
+      "sha256": "9c489f7c9ca1ed32886bbf6fcdd8bf617a588592e8c03929da1d81727f848bf1",
+      "size": 98947
+    },
+    {
+      "path": "experiments/llm_sim_v2/store.py",
+      "sha256": "61204110acc76d87b2c3444783aedf4e94b2b503f4e37266dac3203a22411a2e",
+      "size": 6201
     }
   ],
-  "runtime_task_manifest_sha256": "4882aeef7d2106acfb543f01e6f3d956722c7ffa52fe1ba677c8ffd8daad4938",
+  "runtime_task_manifest_sha256": "d4acf7530317926b5ef916f1b47a1381917e0439b3e072239f18af67370d7a59",
   "schema_version": "yher.llm_sim_v2.runtime_task_manifest.v1",
   "simulated": true
 }
