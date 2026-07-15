@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
+from .mapping import (
+    SCHEMA_VERSION as MAPPING_SCHEMA_VERSION,
+    mapping_sha256,
+    target_set_hash,
+)
 from .store import RUN_ID
 
 
@@ -95,11 +101,88 @@ def _pilot_personas(persona_ids: Sequence[str]) -> list[str]:
     return ranked[:5]
 
 
+def _canonical(value: Any) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def build_leakage_lexicon(anchors: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Freeze target-specific failure prose while leaving curriculum labels allowed."""
+
+    values: dict[str, str] = {}
+    for anchor in anchors:
+        if not isinstance(anchor, Mapping):
+            raise ValueError("leakage lexicon anchors must be mappings")
+        for field in (
+            "failure_id",
+            "failure_cause",
+            "failure_symptom",
+            "diagnostic_question",
+        ):
+            text = str(anchor.get(field) or "").strip()
+            if text:
+                values.setdefault(text.casefold(), text)
+    terms = sorted(values.values(), key=lambda value: (value.casefold(), value))
+    if not terms:
+        raise ValueError("leakage lexicon cannot be empty")
+    return {
+        "schema_version": "yher.llm_sim_v2.leakage_lexicon.v1",
+        "terms": terms,
+        "sha256": hashlib.sha256(_canonical(terms)).hexdigest(),
+    }
+
+
+def _validate_leakage_lexicon(value: Mapping[str, Any]) -> str:
+    if not isinstance(value, Mapping):
+        raise ValueError("a frozen leakage lexicon is required")
+    terms = value.get("terms")
+    if not isinstance(terms, list) or not terms or not all(
+        isinstance(term, str) and term.strip() for term in terms
+    ):
+        raise ValueError("leakage lexicon terms must be non-empty strings")
+    if len({term.casefold() for term in terms}) != len(terms):
+        raise ValueError("leakage lexicon terms must be unique")
+    computed = hashlib.sha256(_canonical(terms)).hexdigest()
+    if value.get("sha256") != computed:
+        raise ValueError("leakage lexicon sha256 mismatch")
+    return computed
+
+
+def validate_analysis_population(
+    records: Sequence[Mapping[str, Any]],
+    *,
+    phase: str,
+) -> list[dict[str, Any]]:
+    """Fail closed when an analysis loader crosses the pilot/main boundary."""
+
+    expected = str(phase).strip().lower()
+    if expected not in {"pilot", "main"}:
+        raise ValueError("analysis phase must be pilot or main")
+    output: list[dict[str, Any]] = []
+    for record in records:
+        if not isinstance(record, Mapping):
+            raise ValueError("analysis records must be objects")
+        if (
+            record.get("simulated") is not True
+            or record.get("run_id") != RUN_ID
+            or record.get("phase") != expected
+            or record.get("analysis_population") != expected
+        ):
+            raise ValueError("analysis record phase/population does not match the requested population")
+        output.append(dict(record))
+    return output
+
+
 def build_study_config(
     *,
     personas: Sequence[Any],
     mapping: Mapping[str, Any],
     blind_panel: Mapping[str, Any],
+    leakage_lexicon: Mapping[str, Any],
     frozen_at_utc: str,
 ) -> dict[str, Any]:
     """Build the collection/analysis contract that is committed before observation."""
@@ -119,6 +202,22 @@ def build_study_config(
     if any(value != {"deficit", "control"} for value in conditions.values()):
         raise ValueError("each persona cluster requires deficit and control rows")
 
+    if (
+        not isinstance(mapping, Mapping)
+        or mapping.get("schema_version") != MAPPING_SCHEMA_VERSION
+        or mapping.get("frozen") is not True
+        or mapping.get("observation_started") is not False
+    ):
+        raise ValueError("mapping envelope is not a pre-observation frozen mapping")
+    computed_mapping_sha = mapping_sha256(mapping)
+    computed_target_hash = target_set_hash(mapping)
+    consensus = mapping.get("consensus")
+    if not isinstance(consensus, Mapping):
+        raise ValueError("mapping consensus provenance is required")
+    for field in ("draft_sha256", "crosscheck_sha256"):
+        digest = str(consensus.get(field) or "")
+        if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+            raise ValueError("mapping consensus digest is invalid")
     mapping_rows = mapping.get("rows")
     if not isinstance(mapping_rows, list) or len(mapping_rows) != 100:
         raise ValueError("the frozen target-option mapping must contain exactly 100 rows")
@@ -126,8 +225,15 @@ def build_study_config(
     if any(str(row.get("status")) not in allowed_statuses for row in mapping_rows):
         raise ValueError("mapping rows contain a non-frozen status")
     mapped_rows = sum(row.get("status") == "mapped" for row in mapping_rows)
+    if (
+        consensus.get("mapped_rows") != mapped_rows
+        or consensus.get("excluded_ambiguous_rows") != len(mapping_rows) - mapped_rows
+    ):
+        raise ValueError("mapping consensus counts do not match mapping rows")
     mapped_fraction = mapped_rows / len(mapping_rows)
     mapping_passed = mapped_fraction >= MAPPING_MINIMUM_FRACTION
+
+    lexicon_sha = _validate_leakage_lexicon(leakage_lexicon)
 
     panel_anchors = blind_panel.get("anchors")
     if not isinstance(panel_anchors, list) or len(panel_anchors) != 25:
@@ -137,8 +243,14 @@ def build_study_config(
         if not isinstance(items, list) or not 4 <= len(items) <= 25:
             raise ValueError("each blind anchor must contain four to 25 items")
         item_ids = [str(item.get("item_id") or "") for item in items]
+        family_ids = [str(item.get("family_id") or "") for item in items]
         if not all(item_ids) or len(set(item_ids)) != len(item_ids):
             raise ValueError("blind anchor item IDs must be non-empty and unique")
+        if not all(family_ids) or len(set(family_ids)) != len(family_ids):
+            raise ValueError("blind anchor family IDs must be non-empty and unique")
+        calibration_ids = anchor.get("calibration_item_ids")
+        if not isinstance(calibration_ids, list) or calibration_ids != item_ids[:4]:
+            raise ValueError("blind panel must begin with its exact four calibration items")
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -155,8 +267,9 @@ def build_study_config(
         "paired_response_rows": 100,
         "response_arms": ["deficit", "control"],
         "repeated_measure_factors": ["provider", "response_arm"],
-        "mapping_sha256": str(mapping.get("mapping_sha256") or ""),
-        "target_set_hash": str(mapping.get("target_set_hash") or ""),
+        "mapping_sha256": computed_mapping_sha,
+        "target_set_hash": computed_target_hash,
+        "leakage_lexicon_sha256": lexicon_sha,
         "mapping_gate": {
             "mapped_rows": mapped_rows,
             "total_rows": len(mapping_rows),
@@ -238,5 +351,7 @@ __all__ = [
     "MAPPING_MINIMUM_FRACTION",
     "PROVIDERS",
     "SCHEMA_VERSION",
+    "build_leakage_lexicon",
     "build_study_config",
+    "validate_analysis_population",
 ]
