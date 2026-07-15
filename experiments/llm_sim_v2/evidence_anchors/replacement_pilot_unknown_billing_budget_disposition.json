@@ -1,0 +1,140 @@
+{
+  "accounting": {
+    "hard_fuse_yuan": 450.0,
+    "phase_accounted_cost_yuan": 22.0336589,
+    "phase_known_cost_yuan": 2.0336589,
+    "phase_unknown_reserve_yuan": 20.0,
+    "pre_collection_total_yuan": 2.57152913,
+    "remaining_headroom_yuan": 425.39481197,
+    "total_accounted_cost_yuan": 24.60518803,
+    "total_known_cost_yuan": 4.49218803,
+    "total_unknown_reserve_yuan": 20.113
+  },
+  "action_disposition": "continue_under_preexisting_budget_authorization",
+  "anchor_a": {
+    "file_bytes": 1859,
+    "file_sha256": "4f6713919f9c2257485a706b44098ba4230f5bf1326a871491b0b561252be269",
+    "phase_evidence_receipt_sha256": "0b76ff3b7a00f1dac0aedcf3050ce3075a5b970475d6eed48e46d229410b9fd7",
+    "phase_provenance_file_sha256": "ccf623e0cc9466c163c3dab47e051f3130f80965ae29aee8f8912d5c80882ecc",
+    "phase_provenance_sha256": "c26c2199eeeae5c566957cc4dffe0ce064269a0dd1c28ff5dc5db4103b031bb2",
+    "providers": {
+      "deepseek": {
+        "evidence_chain_head_sha256": "9458e0a37cfc73e4e7868f80d0258cb66f5903397bdb128ac7e65491609dfe42",
+        "provider_manifest_sha256": "814caea4252f72e45cb25469bc1110e2d8bfcf821103ad7b30d015e892faad3c",
+        "record_set_sha256": "7f13fe1faa0bac8b37eda8cf7ba289d885d5bbc2ff0e0dbdf5e2aac8ca82be5d"
+      },
+      "doubao": {
+        "evidence_chain_head_sha256": "f434c25b4cc36a0e6e7681e08a0854a83b5c09041408fb54aff78816db0ac479",
+        "provider_manifest_sha256": "6c3d1ec16e8f510a09a1130437e253f2733f89744a9574a883fa339424e00ff5",
+        "record_set_sha256": "522c26ccea345ef59d854e2a8735f20b69d9e90ec949dceb88fc37bd49c8f0d9"
+      }
+    },
+    "store_snapshot": {
+      "file_count": 603,
+      "file_set_sha256": "2318f55e4c6f684a259edc2e6ddf8940c97373198f8b68ba369a28027b809826",
+      "phase": "pilot",
+      "run_id": "llm-personas-v2-dual",
+      "schema_version": "yher.llm_sim_v2.phase_store_snapshot.v1",
+      "total_bytes": 1716312
+    }
+  },
+  "authority": "post_observation_budget_governance",
+  "authorization": {
+    "analysis_plan": {
+      "anchor_commit": "97c3353a0c518a08bc7c1ccea3925f2b1838d712",
+      "committed_blob_sha256": "0e6d935c782fc4eb8989d10546676a52ae6b56181e5058f4f956a8c0e33fa866",
+      "path": "experiments/h5v2_analysis_plan.md",
+      "sha256": "0e6d935c782fc4eb8989d10546676a52ae6b56181e5058f4f956a8c0e33fa866"
+    },
+    "dispatch_brief": {
+      "path": "PROJECT_HANDOFF/codex_briefs/2026-07-15_persona双条件v2与期刊论文总攻.md",
+      "sha256": "9245652e033b20b9f1094ff4c4cfd6b5cb0fbbad26e3ff3d216e2a6c9261f75a"
+    },
+    "hard_fuse_policy": "CNY 450 is the only additional-confirmation fuse.",
+    "self_review_policy": "Codex may self-review and self-sign with dated evidence."
+  },
+  "billing_authorization_resolution_sha256": "bc33bd901890f9365651b0bc81fdf6bcde5a1ef4827ee1447c3fcb56ed22a054",
+  "billing_fact_status": "unresolved_reserved",
+  "freeze_manifest_sha256": "2d0ea5608dd4ab277106bd5a8effe978d575f93b77193747efc6d37b9473245e",
+  "phase": "pilot",
+  "review_date": "2026-07-16",
+  "reviewer": "codex_budget_resolution_2026_07_16",
+  "run_id": "llm-personas-v2-dual",
+  "runtime_task_manifest_sha256": "d4acf7530317926b5ef916f1b47a1381917e0439b3e072239f18af67370d7a59",
+  "safeguards": {
+    "billing_ambiguity_retained": true,
+    "original_needs_user_disclosure_retained": true,
+    "other_audit_blockers_waived": false,
+    "reserve_remains_accounted": true,
+    "scientific_outcomes_unmodified": true
+  },
+  "schema_version": "yher.llm_sim_v2.billing_authorization_resolution.v1",
+  "simulated": true,
+  "unknown_attempt_set_sha256": "6a929ffdcb5c28bb44fd02373bc9f0ca70376746df218113b708622f1c0d08a2",
+  "unknown_attempts": [
+    {
+      "attempt": 4,
+      "failure": {
+        "billing_ambiguity": true,
+        "cost_known": false,
+        "cost_reserve_yuan": 10.0,
+        "cost_yuan": null,
+        "error_category": "network_timeout",
+        "provider_response_received": false
+      },
+      "provider": "deepseek",
+      "provider_call_event": {
+        "bytes": 773,
+        "event_index": 129,
+        "event_sha256": "a48b1611dfc2f05bd35df98e28187cf266c8b2cfb7d2f3eed5af1045896bc743",
+        "file_sha256": "d912df0fcca0adf9f917d5f676307b1135140131a2c033679e2a4f6c963a1b5f",
+        "invocation_id": "253a5e13e58249ffb03f6cfda74d4b8d",
+        "path": "evidence/provider_events/deepseek/000129-a48b1611dfc2f05bd35df98e28187cf266c8b2cfb7d2f3eed5af1045896bc743.json"
+      },
+      "record": {
+        "attempt_sha256": "1d5a6c563683a3bf9b2b8531811366729323345e8685616ef2fcc1223d0a77fa",
+        "bytes": 5364,
+        "path": "records/deepseek/2a420f8e8555ee36ea1091b11f19de23a44ea481c319a9f34ec2880ec57d929b.json",
+        "sha256": "e8c27f55fdf6b135ecda262fa402d6d64597b74f93cfb4b8ad84df63d9e50b5e"
+      },
+      "request": {
+        "max_tokens": 2048,
+        "model": "deepseek-v4-pro",
+        "wire_message_sha256": "d6a7be7fc63b7ffb39b0997370da5c4b21a5160e8b4ce8e8c5f613b65eb6d63d"
+      },
+      "task_id": "2a420f8e8555ee36ea1091b11f19de23a44ea481c319a9f34ec2880ec57d929b"
+    },
+    {
+      "attempt": 1,
+      "failure": {
+        "billing_ambiguity": true,
+        "cost_known": false,
+        "cost_reserve_yuan": 10.0,
+        "cost_yuan": null,
+        "error_category": "network_timeout",
+        "provider_response_received": false
+      },
+      "provider": "doubao",
+      "provider_call_event": {
+        "bytes": 782,
+        "event_index": 41,
+        "event_sha256": "c01138d2745b20eb5b9ffd627db4cc0a8b89dd6704436c1bb55015bdbb175e65",
+        "file_sha256": "acf9e54ebde0ccf8fad9abc6ced398e502ff6b1b830dee1a178950bdfeb4ca47",
+        "invocation_id": "f0cf253aa18c44d9bbd6fa8aeafbbeff",
+        "path": "evidence/provider_events/doubao/000041-c01138d2745b20eb5b9ffd627db4cc0a8b89dd6704436c1bb55015bdbb175e65.json"
+      },
+      "record": {
+        "attempt_sha256": "5af57e32fbcc1758182bb782468597359656787d756bad6dd420f2144904adaa",
+        "bytes": 5041,
+        "path": "records/doubao/16f1756a61ba20b30dc161276ee4effbefd0ad95e5d67f8e71cef5f0f105aea3.json",
+        "sha256": "34f477974c14e8bc45650e6e088fbc9b710db6d49570db27d1a5e49de9f1589f"
+      },
+      "request": {
+        "max_tokens": 1024,
+        "model": "doubao-seed-2-0-mini-260428",
+        "wire_message_sha256": "229bf98845f4c9db0aaa299081163a5ca3561a273f6012e3fdcbc5d67c41d8ff"
+      },
+      "task_id": "16f1756a61ba20b30dc161276ee4effbefd0ad95e5d67f8e71cef5f0f105aea3"
+    }
+  ]
+}
