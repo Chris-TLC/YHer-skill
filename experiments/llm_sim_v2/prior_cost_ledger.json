@@ -1,0 +1,28 @@
+{
+  "currency": "CNY",
+  "known_cost_entries": [
+    {
+      "cost_yuan": 0.28948744,
+      "evidence_id": "mapping_crosscheck",
+      "evidence_sha256": "e2f1e5533f0b962c60f140d0d1a07f36d03ab37d5531741c1b8ad554009a7a69"
+    },
+    {
+      "cost_yuan": 0.11171617,
+      "evidence_id": "provider_probe_summary",
+      "evidence_sha256": "7482afead0198adf0d12b444059a52efbe550d373e0f017346736d402d5350a2"
+    },
+    {
+      "cost_yuan": 0.1434596,
+      "evidence_id": "quarantine_56_record_canonical_row_manifest",
+      "evidence_sha256": "b3e7b4d7a15b51e00cae849ce738772e2f1ce8e52006afdb33dc44080711a7a0"
+    }
+  ],
+  "known_cost_yuan": 0.54466321,
+  "pre_run_ambiguity_reserve_yuan": 0.113,
+  "pre_run_total_bound_yuan": 0.65766321,
+  "prior_cost_ledger_sha256": "962c8eeb45702a3a38740db296d574773dac204ac8162b557388e295f011d58e",
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.prior_cost_ledger.v1",
+  "simulated": true,
+  "unknown_attempt_reserve_yuan": 10.0
+}
