@@ -16,6 +16,7 @@ from .runner import (
     V2ProviderRunner,
     enumerate_tasks,
     load_runtime_contract,
+    verify_runtime_task_manifest,
 )
 from .store import RUN_ID
 
@@ -91,6 +92,9 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
     root = Path(args.repo_root).expanduser().resolve(strict=True)
     secrets_root = Path(args.secrets_root or args.repo_root).expanduser().resolve(strict=True)
     contract = load_runtime_contract(root)
+    if contract.runtime_manifest is None:
+        raise SystemExit("runtime task manifest is not frozen; live collection is forbidden")
+    verify_runtime_task_manifest(contract, contract.runtime_manifest, verify_git=True)
     configured = tuple(args.providers or contract.config[args.phase]["providers"])
     unknown = sorted(set(configured) - set(contract.config["providers"]))
     if unknown:

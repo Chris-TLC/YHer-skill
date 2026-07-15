@@ -436,3 +436,31 @@ def test_collection_entrypoint_requires_explicit_live_and_partial_acknowledgemen
     )
     with pytest.raises(SystemExit, match="allow-partial"):
         run_collection(partial)
+
+
+def test_runtime_task_manifest_binds_both_phase_task_sets_and_runtime_commit():
+    from experiments.llm_sim_v2.runner import (
+        build_runtime_task_manifest,
+        load_runtime_contract,
+        verify_runtime_task_manifest,
+    )
+
+    contract = load_runtime_contract(REPO_ROOT)
+    manifest = build_runtime_task_manifest(
+        contract,
+        runtime_commit="a" * 40,
+        frozen_at_utc="2026-07-15T06:30:00Z",
+    )
+
+    assert manifest["freeze_commit"] == "e3c0d4dbe6f37303d9eac86ecd9c1af823f152b9"
+    assert manifest["runtime_commit"] == "a" * 40
+    assert manifest["phases"]["pilot"]["task_count"] == 128
+    assert manifest["phases"]["main"]["task_count"] == 1528
+    assert len(manifest["phases"]["pilot"]["task_ids"]) == 128
+    assert len(manifest["phases"]["main"]["task_ids"]) == 1528
+    assert len(manifest["runtime_task_manifest_sha256"]) == 64
+    assert verify_runtime_task_manifest(contract, manifest)["ok"] is True
+
+    manifest["phases"]["main"]["task_ids"].pop()
+    with pytest.raises(ValueError, match="task|manifest|digest"):
+        verify_runtime_task_manifest(contract, manifest)

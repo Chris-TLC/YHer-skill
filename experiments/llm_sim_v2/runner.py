@@ -39,6 +39,11 @@ from .store import RUN_ID, V2Store
 FROZEN_COMMIT = "e3c0d4dbe6f37303d9eac86ecd9c1af823f152b9"
 FROZEN_DIR_REL = Path("experiments/llm_sim_v2/frozen_v0")
 FROZEN_PLAN_REL = Path("experiments/h5v2_analysis_plan.md")
+RUNTIME_MANIFEST_REL = Path("experiments/llm_sim_v2/runtime_task_manifest.json")
+RUNTIME_PATHS = (
+    "experiments/llm_sim_v2/collect.py",
+    "experiments/llm_sim_v2/runner.py",
+)
 _JSON_KEYS = {"simulated", "answer", "rationale"}
 _BLIND_JSON_KEYS = _JSON_KEYS | {"abstain"}
 
@@ -116,6 +121,7 @@ class RuntimeContract:
     prompt_ledger: Mapping[str, Any]
     freeze_manifest: Mapping[str, Any]
     freeze_proof: Mapping[str, Any]
+    runtime_manifest: Mapping[str, Any] | None = None
 
     def provider_policy(self, provider: str) -> ProviderPolicy:
         name = str(provider).strip().lower()
@@ -327,12 +333,17 @@ def enumerate_tasks(contract: RuntimeContract, *, phase: str) -> list[Task]:
             # The frozen config stores the count; derive the same deterministic
             # subset from the population block when the explicit list is absent.
             repeat_count = int(contract.config["blind"].get("terminal_repeat_subset_persona_count", 0))
-            repeat_ids = {
-                row["persona_id"]
-                for row in sorted(rows, key=lambda row: hashlib.sha256(f"repeat|{row['persona_id']}".encode()).hexdigest())
-                if row.get("deficit_condition") == "deficit"
-            }
-            repeat_ids = set(sorted(repeat_ids)[:repeat_count])
+            ranked_ids = [
+                str(row["persona_id"])
+                for row in sorted(
+                    (row for row in rows if row.get("deficit_condition") == "deficit"),
+                    key=lambda row: (
+                        hashlib.sha256(f"repeat|{row['persona_id']}".encode()).hexdigest(),
+                        str(row["persona_id"]),
+                    ),
+                )
+            ]
+            repeat_ids = set(ranked_ids[:repeat_count])
     tasks: list[Task] = []
     for persona in rows:
         anchor = panels.get(str(persona.get("anchor_id")))
@@ -500,7 +511,11 @@ def load_runtime_contract(repo_root: str | Path) -> RuntimeContract:
             ],
             phase=phase,
         )
-    return RuntimeContract(
+    runtime_manifest_path = root / RUNTIME_MANIFEST_REL
+    runtime_manifest = (
+        _read_json(runtime_manifest_path) if runtime_manifest_path.is_file() else None
+    )
+    contract = RuntimeContract(
         repo_root=root,
         config=config,
         mapping=mapping,
@@ -511,7 +526,125 @@ def load_runtime_contract(repo_root: str | Path) -> RuntimeContract:
         prompt_ledger=prompt_ledger,
         freeze_manifest=manifest,
         freeze_proof=proof,
+        runtime_manifest=runtime_manifest,
     )
+    if runtime_manifest is not None:
+        verify_runtime_task_manifest(contract, runtime_manifest, verify_git=False)
+    return contract
+
+
+def _validate_runtime_timestamp(value: str) -> str:
+    text = str(value).strip()
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("runtime frozen_at_utc must be ISO-8601") from exc
+    if not text.endswith("Z") or parsed.tzinfo is None:
+        raise ValueError("runtime frozen_at_utc must be UTC")
+    return text
+
+
+def build_runtime_task_manifest(
+    contract: RuntimeContract,
+    *,
+    runtime_commit: str,
+    frozen_at_utc: str,
+) -> dict[str, Any]:
+    commit = str(runtime_commit).strip().lower()
+    if len(commit) != 40 or any(value not in "0123456789abcdef" for value in commit):
+        raise ValueError("runtime commit must be a full lowercase git SHA")
+    phases: dict[str, Any] = {}
+    for phase in ("pilot", "main"):
+        tasks = enumerate_tasks(contract, phase=phase)
+        task_ids = [task.task_id for task in tasks]
+        rows = [
+            {
+                "task_id": task.task_id,
+                "logical_key": task.logical_key,
+                "message_sha256": task.message_sha256,
+                "wire_message_sha256": task.wire_message_sha256,
+                "prompt_contract_sha256": task.prompt_contract_sha256,
+            }
+            for task in tasks
+        ]
+        if len(task_ids) != len(set(task_ids)):
+            raise ValueError(f"runtime {phase} tasks contain duplicate task IDs")
+        phases[phase] = {
+            "task_count": len(tasks),
+            "task_ids": task_ids,
+            "task_set_sha256": _sha(rows),
+            "providers": list(contract.config[phase]["providers"]),
+        }
+    runtime_files = []
+    for relative in RUNTIME_PATHS:
+        data = (contract.repo_root / relative).read_bytes()
+        runtime_files.append(
+            {
+                "path": relative,
+                "sha256": hashlib.sha256(data).hexdigest(),
+                "size": len(data),
+            }
+        )
+    manifest = {
+        "schema_version": "yher.llm_sim_v2.runtime_task_manifest.v1",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "freeze_commit": FROZEN_COMMIT,
+        "freeze_manifest_sha256": contract.freeze_manifest["freeze_manifest_sha256"],
+        "runtime_commit": commit,
+        "frozen_at_utc": _validate_runtime_timestamp(frozen_at_utc),
+        "prompt_revision": 0,
+        "runtime_files": runtime_files,
+        "runtime_file_set_sha256": _sha(runtime_files),
+        "phases": phases,
+    }
+    manifest["runtime_task_manifest_sha256"] = _sha(manifest)
+    return manifest
+
+
+def verify_runtime_task_manifest(
+    contract: RuntimeContract,
+    manifest: Mapping[str, Any],
+    *,
+    verify_git: bool = False,
+) -> dict[str, Any]:
+    if (
+        not isinstance(manifest, Mapping)
+        or manifest.get("schema_version") != "yher.llm_sim_v2.runtime_task_manifest.v1"
+        or manifest.get("run_id") != RUN_ID
+        or manifest.get("freeze_commit") != FROZEN_COMMIT
+        or manifest.get("freeze_manifest_sha256")
+        != contract.freeze_manifest.get("freeze_manifest_sha256")
+    ):
+        raise ValueError("runtime task manifest envelope does not match the frozen study")
+    advertised = manifest.get("runtime_task_manifest_sha256")
+    payload = dict(manifest)
+    payload.pop("runtime_task_manifest_sha256", None)
+    if advertised != _sha(payload):
+        raise ValueError("runtime task manifest digest mismatch")
+    expected = build_runtime_task_manifest(
+        contract,
+        runtime_commit=str(manifest.get("runtime_commit") or ""),
+        frozen_at_utc=str(manifest.get("frozen_at_utc") or ""),
+    )
+    if expected != manifest:
+        raise ValueError("runtime task manifest task set drifted")
+    git_proof = None
+    if verify_git:
+        git_proof = verify_frozen_git_commit(
+            contract.repo_root,
+            commit=str(manifest["runtime_commit"]),
+            declared_files=list(manifest["runtime_files"]),
+            observation_timestamp=_utc_now(),
+        )
+    return {
+        "schema_version": "yher.llm_sim_v2.runtime_task_manifest_proof.v1",
+        "ok": True,
+        "run_id": RUN_ID,
+        "runtime_task_manifest_sha256": advertised,
+        "runtime_commit": manifest["runtime_commit"],
+        "git_proof": git_proof,
+    }
 
 
 def _retryable(exc: Exception) -> bool:
@@ -828,8 +961,10 @@ __all__ = [
     "Task",
     "V2ProviderRunner",
     "compute_outcomes",
+    "build_runtime_task_manifest",
     "enumerate_tasks",
     "execute_task",
     "load_runtime_contract",
     "parse_provider_output",
+    "verify_runtime_task_manifest",
 ]
