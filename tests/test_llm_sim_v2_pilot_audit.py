@@ -328,6 +328,13 @@ def test_complete_formal_pilot_is_hash_bound_go(
     assert report["gates"]["text_only_and_leakage"]["passed"] is True
     assert report["gates"]["pilot_main_isolation"]["passed"] is True
     assert report["gates"]["phase_evidence_receipts"]["passed"] is True
+    assert report["gates"]["billing_authorization_resolution"] == {
+        "passed": True,
+        "evidence": {
+            "status": "not_required",
+            "unknown_attempt_count": 0,
+        },
+    }
     assert report["gates"]["zero_call_resume"]["passed"] is True
     assert report["accounting"]["pre_collection_total_yuan"] == pytest.approx(
         2.57152913
@@ -338,6 +345,16 @@ def test_complete_formal_pilot_is_hash_bound_go(
         hashlib.sha256(audit_module.read_bytes()).hexdigest()
     )
     assert len(report["source_binding"]["audit_git_head"]) == 40
+    assert (
+        report["source_binding"][
+            "billing_authorization_resolution_file_sha256"
+        ]
+        is None
+    )
+    assert (
+        report["source_binding"]["billing_authorization_resolution_sha256"]
+        is None
+    )
     for provider in ("deepseek", "doubao"):
         provider_report = report["providers"][provider]
         assert provider_report["expected_task_state_count"] == 128
@@ -1222,6 +1239,113 @@ def test_verifier_rejects_structurally_gutted_rehashed_go(
     with pytest.raises(PilotAuditError, match="Evidence-v2 transition proof"):
         verify_pilot_audit(forged)
 
+    billing_mutations = (
+        lambda row: row["gates"]["billing_authorization_resolution"][
+            "evidence"
+        ].update({"status": "applied"}),
+        lambda row: row["gates"]["billing_authorization_resolution"][
+            "evidence"
+        ].update({"unknown_attempt_count": 1}),
+        lambda row: row["source_binding"].update(
+            {
+                "billing_authorization_resolution_file_sha256": "1" * 64,
+                "billing_authorization_resolution_sha256": "2" * 64,
+            }
+        ),
+    )
+    for mutate in billing_mutations:
+        forged = json.loads(json.dumps(valid))
+        mutate(forged)
+        forged.pop("pilot_audit_sha256")
+        forged["pilot_audit_sha256"] = _canonical_sha(forged)
+        with pytest.raises(PilotAuditError, match="billing authorization"):
+            verify_pilot_audit(forged)
+
+    applied = json.loads(json.dumps(valid))
+    applied["accounting"]["unknown_attempt_count"] = 1
+    applied["accounting"]["unknown_cost_reserve_yuan"] = 10.0
+    applied["accounting"]["accounted_cost_yuan"] = round(
+        float(applied["accounting"]["accounted_cost_yuan"]) + 10.0, 8
+    )
+    applied["accounting"]["total_accounted_cost_yuan"] = round(
+        float(applied["accounting"]["total_accounted_cost_yuan"]) + 10.0, 8
+    )
+    deepseek = applied["providers"]["deepseek"]
+    deepseek["accounting"]["unknown_attempt_count"] = 1
+    deepseek["accounting"]["unknown_cost_reserve_yuan"] = 10.0
+    deepseek["accounting"]["accounted_cost_yuan"] = round(
+        float(deepseek["accounting"]["accounted_cost_yuan"]) + 10.0, 8
+    )
+    deepseek["disclosures"]["needs_user"] = {
+        "required": True,
+        "reason": "unknown_provider_billing_reserved",
+        "record_count": 1,
+        "record_task_ids": ["reserved-task"],
+        "unknown_cost_attempt_count": 1,
+    }
+    transition = applied["gates"]["zero_call_resume"]["evidence"][
+        "git_anchored_receipt"
+    ]
+    applied_proof = {
+        "status": "applied",
+        "billing_fact_status": "unresolved_reserved",
+        "action_disposition": "continue_under_preexisting_budget_authorization",
+        "billing_authorization_resolution_sha256": "2" * 64,
+        "file_sha256": "1" * 64,
+        "committed_blob_sha256": "1" * 64,
+        "receipt_commit": transition["resume_execution_head"],
+        "audit_head": applied["source_binding"]["audit_git_head"],
+        "anchor_a_commit": transition["anchor_a"]["anchor_commit"],
+        "anchor_a_phase_evidence_receipt_sha256": transition[
+            "anchor_a_phase_evidence_receipt_sha256"
+        ],
+        "unknown_attempt_count": 1,
+        "unknown_attempt_set_sha256": "3" * 64,
+        "unknown_reserve_yuan": 10.0,
+        "total_accounted_cost_yuan": applied["accounting"][
+            "total_accounted_cost_yuan"
+        ],
+        "hard_fuse_yuan": applied["accounting"]["hard_fuse_yuan"],
+    }
+    applied["gates"]["billing_authorization_resolution"] = {
+        "passed": True,
+        "evidence": applied_proof,
+    }
+    applied["source_binding"].update(
+        {
+            "billing_authorization_resolution_file_sha256": "1" * 64,
+            "billing_authorization_resolution_sha256": "2" * 64,
+        }
+    )
+    applied.pop("pilot_audit_sha256")
+    applied["pilot_audit_sha256"] = _canonical_sha(applied)
+    assert verify_pilot_audit(applied)["ok"] is True
+
+    applied_mutations = (
+        lambda row: row["gates"]["billing_authorization_resolution"][
+            "evidence"
+        ].update({"receipt_commit": "9" * 40}),
+        lambda row: row["gates"]["billing_authorization_resolution"][
+            "evidence"
+        ].update({"anchor_a_commit": "8" * 40}),
+        lambda row: row["gates"]["billing_authorization_resolution"][
+            "evidence"
+        ].update({"unknown_reserve_yuan": 0.0}),
+        lambda row: row["gates"]["billing_authorization_resolution"][
+            "evidence"
+        ].update({"unknown_attempt_count": True}),
+        lambda row: row["providers"]["deepseek"]["disclosures"][
+            "needs_user"
+        ].update({"required": False}),
+    )
+    for mutate in applied_mutations:
+        forged = json.loads(json.dumps(applied))
+        mutate(forged)
+        forged.pop("pilot_audit_sha256")
+        forged["pilot_audit_sha256"] = _canonical_sha(forged)
+        with pytest.raises(PilotAuditError, match="billing authorization"):
+            verify_pilot_audit(forged)
+
     for field, value in (
         ("resume_execution_head", "z" * 40),
         ("transition_receipt_sha256", "z" * 64),
@@ -1452,6 +1576,107 @@ def test_cli_accepts_anchored_transition_without_legacy_snapshots(
     assert exit_code == 0
 
 
+def test_cli_prepares_billing_resolution_as_a_separate_commit_stage(
+    formal_pilot: tuple[Path, object, list[object]],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import experiments.llm_sim_v2.audit_pilot as audit_module
+
+    pilot_root, _, _ = formal_pilot
+    anchor_a = _anchor_a_path(pilot_root)
+    anchor_a.write_text("{}\n", encoding="utf-8")
+    captured: dict[str, object] = {}
+
+    def prepare(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return {"billing_fact_status": "unresolved_reserved"}
+
+    monkeypatch.setattr(
+        audit_module, "prepare_billing_authorization_resolution", prepare
+    )
+    common = [
+        "--repo-root",
+        str(REPO_ROOT),
+        "--pilot-root",
+        str(pilot_root),
+        "--anchor-a",
+        str(anchor_a),
+    ]
+
+    assert audit_module.main([*common, "--prepare-billing-resolution"]) == 0
+    assert captured["anchor_a_path"] == anchor_a
+    assert json.loads(capsys.readouterr().out)["billing_fact_status"] == (
+        "unresolved_reserved"
+    )
+
+    for conflicting in ("--prepare-anchor-a", "--run-resume"):
+        with pytest.raises(
+            audit_module.PilotAuditError, match="separate commit stages"
+        ):
+            audit_module.main(
+                [
+                    *common,
+                    "--prepare-billing-resolution",
+                    conflicting,
+                ]
+            )
+
+
+def test_resume_requires_billing_resolution_commit_at_execution_head(
+    formal_pilot: tuple[Path, object, list[object]],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.audit_pilot as audit_module
+    from experiments.llm_sim_v2.evidence import write_phase_evidence_receipt
+
+    pilot_root, _, tasks = formal_pilot
+    phase = json.loads(
+        (pilot_root / "phase_provenance.json").read_text(encoding="utf-8")
+    )
+    anchor_a = tmp_path / "pilot-phase-anchor-a.json"
+    anchor_b = tmp_path / "pilot-phase-anchor-b.json"
+    transition = tmp_path / "pilot-resume-transition.json"
+    write_phase_evidence_receipt(
+        pilot_root,
+        output=anchor_a,
+        phase_provenance=phase,
+        tasks=tasks,
+    )
+    monkeypatch.setattr(
+        audit_module,
+        "audit_formal_pilot",
+        lambda **_: {
+            "blocking_reasons": [],
+            "accounting": {"total_accounted_cost_yuan": 24.60518803},
+            "gates": {
+                "billing_authorization_resolution": {
+                    "passed": True,
+                    "evidence": {
+                        "status": "applied",
+                        "receipt_commit": "d" * 40,
+                    },
+                }
+            },
+        },
+    )
+
+    with pytest.raises(
+        audit_module.PilotAuditError, match="billing resolution commit"
+    ):
+        audit_module.run_zero_call_resume_probe(
+            repo_root=REPO_ROOT,
+            pilot_root=pilot_root,
+            anchor_a_path=anchor_a,
+            anchor_b_path=anchor_b,
+            transition_receipt_path=transition,
+        )
+
+    assert not anchor_b.exists()
+    assert not transition.exists()
+
+
 def test_resume_audit_allows_only_new_immutable_records(tmp_path: Path) -> None:
     from experiments.llm_sim_v2.audit_pilot import (
         compare_resume_audits,
@@ -1497,3 +1722,212 @@ def test_resume_audit_allows_only_new_immutable_records(tmp_path: Path) -> None:
     assert comparison["attempt_count_changes"] == [
         {"record_key": "deepseek/a", "before": 1, "after": 2}
     ]
+
+
+def test_billing_authorization_resolution_requires_exact_reserved_attempts() -> None:
+    from experiments.llm_sim_v2.audit_pilot import (
+        PilotAuditError,
+        build_billing_authorization_resolution_payload,
+        validate_billing_authorization_resolution_payload,
+    )
+
+    attempts = [
+        {
+            "provider": provider,
+            "task_id": character * 64,
+            "attempt": attempt,
+            "record": {
+                "path": f"records/{provider}/{character * 64}.json",
+                "bytes": 1234 + attempt,
+                "sha256": character * 64,
+                "attempt_sha256": ("a" if provider == "deepseek" else "b") * 64,
+            },
+            "request": {
+                "model": "model-frozen",
+                "max_tokens": 1024,
+                "wire_message_sha256": ("c" if provider == "deepseek" else "d") * 64,
+            },
+            "failure": {
+                "error_category": "network_timeout",
+                "provider_response_received": False,
+                "cost_known": False,
+                "billing_ambiguity": True,
+                "cost_yuan": None,
+                "cost_reserve_yuan": 10.0,
+            },
+            "provider_call_event": {
+                "path": f"evidence/provider_events/{provider}/event-{attempt}.json",
+                "bytes": 456 + attempt,
+                "file_sha256": ("e" if provider == "deepseek" else "f") * 64,
+                "event_sha256": ("1" if provider == "deepseek" else "2") * 64,
+                "event_index": attempt,
+                "invocation_id": f"invocation-{provider}",
+            },
+        }
+        for provider, character, attempt in (
+            ("deepseek", "3", 4),
+            ("doubao", "4", 1),
+        )
+    ]
+    anchor = {
+        "phase_evidence_receipt_sha256": "5" * 64,
+        "file_sha256": "6" * 64,
+        "file_bytes": 9000,
+        "phase_provenance_sha256": "7" * 64,
+        "phase_provenance_file_sha256": "8" * 64,
+        "store_snapshot": {"file_set_sha256": "9" * 64},
+        "providers": {
+            provider: {
+                "provider_manifest_sha256": character * 64,
+                "record_set_sha256": digit * 64,
+                "evidence_chain_head_sha256": event * 64,
+            }
+            for provider, character, digit, event in (
+                ("deepseek", "a", "b", "c"),
+                ("doubao", "d", "e", "f"),
+            )
+        },
+    }
+    accounting = {
+        "pre_collection_total_yuan": 2.57152913,
+        "phase_known_cost_yuan": 2.0336589,
+        "phase_unknown_reserve_yuan": 20.0,
+        "phase_accounted_cost_yuan": 22.0336589,
+        "total_known_cost_yuan": 4.49218803,
+        "total_unknown_reserve_yuan": 20.113,
+        "total_accounted_cost_yuan": 24.60518803,
+        "hard_fuse_yuan": 450.0,
+        "remaining_headroom_yuan": 425.39481197,
+    }
+    authorization = {
+        "analysis_plan": {
+            "path": "experiments/h5v2_analysis_plan.md",
+            "sha256": "a" * 64,
+            "committed_blob_sha256": "a" * 64,
+            "anchor_commit": "b" * 40,
+        },
+        "dispatch_brief": {
+            "path": "PROJECT_HANDOFF/codex_briefs/brief.md",
+            "sha256": "c" * 64,
+        },
+        "hard_fuse_policy": "CNY 450 is the only additional-confirmation fuse.",
+        "self_review_policy": "Codex may self-review and self-sign with dated evidence.",
+    }
+    receipt = build_billing_authorization_resolution_payload(
+        unknown_attempts=attempts,
+        anchor_a=anchor,
+        accounting=accounting,
+        authorization=authorization,
+        runtime_task_manifest_sha256="d" * 64,
+        freeze_manifest_sha256="e" * 64,
+        reviewer="codex_budget_resolution",
+        review_date="2026-07-16",
+    )
+
+    assert validate_billing_authorization_resolution_payload(
+        receipt,
+        expected_unknown_attempts=attempts,
+        expected_anchor_a=anchor,
+        expected_accounting=accounting,
+        expected_authorization=authorization,
+        expected_runtime_task_manifest_sha256="d" * 64,
+        expected_freeze_manifest_sha256="e" * 64,
+    ) == receipt["billing_authorization_resolution_sha256"]
+    assert receipt["billing_fact_status"] == "unresolved_reserved"
+    assert receipt["action_disposition"] == (
+        "continue_under_preexisting_budget_authorization"
+    )
+
+    def use_bool_for_doubao_attempt(row: dict[str, object]) -> None:
+        row["unknown_attempts"][1]["attempt"] = True
+        row["unknown_attempt_set_sha256"] = _canonical_sha(
+            row["unknown_attempts"]
+        )
+
+    def use_bool_for_doubao_event_index(row: dict[str, object]) -> None:
+        row["unknown_attempts"][1]["provider_call_event"][
+            "event_index"
+        ] = True
+        row["unknown_attempt_set_sha256"] = _canonical_sha(
+            row["unknown_attempts"]
+        )
+
+    def use_int_for_failure_boolean(row: dict[str, object]) -> None:
+        row["unknown_attempts"][1]["failure"][
+            "provider_response_received"
+        ] = 0
+        row["unknown_attempt_set_sha256"] = _canonical_sha(
+            row["unknown_attempts"]
+        )
+
+    mutations = (
+        lambda row: row["unknown_attempts"].pop(),
+        lambda row: row["unknown_attempts"].append(row["unknown_attempts"][0]),
+        use_bool_for_doubao_attempt,
+        use_bool_for_doubao_event_index,
+        use_int_for_failure_boolean,
+        lambda row: row["unknown_attempts"][0]["record"].__setitem__(
+            "attempt_sha256", "0" * 64
+        ),
+        lambda row: row["unknown_attempts"][0][
+            "provider_call_event"
+        ].__setitem__("event_sha256", "0" * 64),
+        lambda row: row["accounting"].__setitem__("phase_unknown_reserve_yuan", 0),
+        lambda row: row["accounting"].__setitem__(
+            "total_accounted_cost_yuan", 1.0
+        ),
+        lambda row: row["anchor_a"].__setitem__("file_sha256", "0" * 64),
+        lambda row: row["authorization"].__setitem__(
+            "hard_fuse_policy", "confirmation waived"
+        ),
+        lambda row: row.__setitem__("runtime_task_manifest_sha256", "0" * 64),
+        lambda row: row.__setitem__("freeze_manifest_sha256", "0" * 64),
+        lambda row: row.__setitem__("reviewer", "codex_"),
+        lambda row: row.__setitem__("review_date", "not-a-date"),
+        lambda row: row.__setitem__("billing_fact_status", "resolved"),
+        lambda row: row["safeguards"].__setitem__(
+            "other_audit_blockers_waived", 0
+        ),
+        lambda row: row["safeguards"].__setitem__(
+            "scientific_outcomes_unmodified", False
+        ),
+    )
+    for mutate in mutations:
+        forged = json.loads(json.dumps(receipt))
+        mutate(forged)
+        forged.pop("billing_authorization_resolution_sha256")
+        forged["billing_authorization_resolution_sha256"] = _canonical_sha(forged)
+        with pytest.raises(PilotAuditError):
+            validate_billing_authorization_resolution_payload(
+                forged,
+                expected_unknown_attempts=attempts,
+                expected_anchor_a=anchor,
+                expected_accounting=accounting,
+                expected_authorization=authorization,
+                expected_runtime_task_manifest_sha256="d" * 64,
+                expected_freeze_manifest_sha256="e" * 64,
+            )
+
+
+def test_billing_authorization_resolution_cannot_override_hard_fuse() -> None:
+    from experiments.llm_sim_v2.audit_pilot import (
+        PilotAuditError,
+        build_billing_authorization_resolution_payload,
+    )
+
+    with pytest.raises(PilotAuditError, match="hard fuse"):
+        build_billing_authorization_resolution_payload(
+            unknown_attempts=[{"provider": "deepseek"}],
+            anchor_a={"phase_evidence_receipt_sha256": "a" * 64},
+            accounting={
+                "phase_unknown_reserve_yuan": 10.0,
+                "total_accounted_cost_yuan": 450.0,
+                "hard_fuse_yuan": 450.0,
+                "remaining_headroom_yuan": 0.0,
+            },
+            authorization={},
+            runtime_task_manifest_sha256="b" * 64,
+            freeze_manifest_sha256="c" * 64,
+            reviewer="codex_budget_resolution",
+            review_date="2026-07-16",
+        )

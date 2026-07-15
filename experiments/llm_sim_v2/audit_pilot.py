@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from collections.abc import Mapping, Sequence
+from datetime import date
 import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 from typing import Any
@@ -55,6 +57,21 @@ DEFAULT_ANCHOR_B = Path(
 DEFAULT_TRANSITION_RECEIPT = Path(
     "experiments/llm_sim_v2/evidence_anchors/replacement_pilot_resume_transition.json"
 )
+DEFAULT_BILLING_AUTHORIZATION_RESOLUTION = Path(
+    "experiments/llm_sim_v2/evidence_anchors/"
+    "replacement_pilot_unknown_billing_budget_disposition.json"
+)
+ANALYSIS_PLAN_RELATIVE = Path("experiments/h5v2_analysis_plan.md")
+DISPATCH_BRIEF_RELATIVE = Path(
+    "PROJECT_HANDOFF/codex_briefs/"
+    "2026-07-15_persona双条件v2与期刊论文总攻.md"
+)
+REVIEWED_DISPATCH_BRIEF_SHA256 = (
+    "9245652e033b20b9f1094ff4c4cfd6b5cb0fbbad26e3ff3d216e2a6c9261f75a"
+)
+HARD_FUSE_POLICY = "CNY 450 is the only additional-confirmation fuse."
+SELF_REVIEW_POLICY = "Codex may self-review and self-sign with dated evidence."
+_BILLING_REVIEWER_PATTERN = re.compile(r"codex_[a-z0-9][a-z0-9_]*")
 EXPECTED_GATE_NAMES = (
     "auditor_git_provenance",
     "runtime_and_phase_provenance",
@@ -65,6 +82,7 @@ EXPECTED_GATE_NAMES = (
     "text_only_and_leakage",
     "pilot_main_isolation",
     "phase_evidence_receipts",
+    "billing_authorization_resolution",
     "accounting_reconciliation",
     "lifecycle_disclosures",
     "zero_call_resume",
@@ -1356,13 +1374,6 @@ def _audit_provider(
             "provider needs_user disclosure differs from immutable attempt reserves",
             provider=provider,
         )
-    if needs_user_ids:
-        blockers.add(
-            "needs_user_unresolved",
-            "unknown provider billing remains unresolved for completed pilot records",
-            provider=provider,
-        )
-
     state_counts = dict(sorted(Counter(states.values()).items()))
     provider_totals["reported_cumulative_total_cost_yuan"] = (
         float(budget.get("total_cost_yuan"))
@@ -1765,6 +1776,66 @@ def audit_formal_pilot(
             "reconciled total accounted cost reaches the frozen CNY 450 fuse",
         )
 
+    billing_resolution_required = int(accounting["unknown_attempt_count"]) > 0
+    billing_resolution_pass = not billing_resolution_required
+    billing_resolution_proof: dict[str, Any] = {
+        "status": "not_required",
+        "unknown_attempt_count": int(accounting["unknown_attempt_count"]),
+    }
+    if billing_resolution_required:
+        try:
+            billing_resolution_proof = verify_billing_authorization_resolution(
+                repo_root=repo,
+                pilot_root=pilot,
+                anchor_a_path=a_path,
+                resolution_path=(
+                    repo / DEFAULT_BILLING_AUTHORIZATION_RESOLUTION
+                ),
+                contract=contract,
+                audit_head=str(auditor_proof.get("audit_git_head") or ""),
+            )
+            billing_resolution_pass = (
+                billing_resolution_proof["unknown_attempt_count"]
+                == accounting["unknown_attempt_count"]
+                and math.isclose(
+                    float(billing_resolution_proof["unknown_reserve_yuan"]),
+                    float(accounting["unknown_cost_reserve_yuan"]),
+                    rel_tol=0.0,
+                    abs_tol=1e-8,
+                )
+                and math.isclose(
+                    float(billing_resolution_proof["total_accounted_cost_yuan"]),
+                    float(accounting["total_accounted_cost_yuan"]),
+                    rel_tol=0.0,
+                    abs_tol=1e-8,
+                )
+                and float(billing_resolution_proof["total_accounted_cost_yuan"])
+                < float(billing_resolution_proof["hard_fuse_yuan"])
+            )
+            if not billing_resolution_pass:
+                raise PilotAuditError(
+                    "billing authorization accounting differs from pilot audit"
+                )
+        except (KeyError, OSError, TypeError, ValueError) as exc:
+            billing_resolution_proof = {
+                "status": "missing_or_invalid",
+                "unknown_attempt_count": int(accounting["unknown_attempt_count"]),
+                "reason": str(exc),
+            }
+            billing_resolution_pass = False
+        if not billing_resolution_pass:
+            for provider in EXPECTED_PILOT_PROVIDERS:
+                if int(
+                    provider_reports[provider]["accounting"][
+                        "unknown_attempt_count"
+                    ]
+                ) > 0:
+                    blockers.add(
+                        "needs_user_unresolved",
+                        "unknown provider billing lacks a valid preauthorized disposition",
+                        provider=provider,
+                    )
+
     source_files = _source_file_rows(pilot)
     source_set_sha = canonical_sha256(source_files)
     condition_pass = all(
@@ -1963,6 +2034,10 @@ def audit_formal_pilot(
                 "evidence_tree": evidence_tree,
             },
         ),
+        "billing_authorization_resolution": _gate(
+            billing_resolution_pass,
+            evidence=billing_resolution_proof,
+        ),
         "accounting_reconciliation": _gate(
             accounting_pass, evidence=accounting
         ),
@@ -2035,6 +2110,18 @@ def audit_formal_pilot(
                 and Path(resume_receipt_path).expanduser().resolve(strict=False).is_file()
                 else None
             ),
+            "billing_authorization_resolution_file_sha256": (
+                billing_resolution_proof.get("file_sha256")
+                if billing_resolution_proof.get("status") == "applied"
+                else None
+            ),
+            "billing_authorization_resolution_sha256": (
+                billing_resolution_proof.get(
+                    "billing_authorization_resolution_sha256"
+                )
+                if billing_resolution_proof.get("status") == "applied"
+                else None
+            ),
         },
     }
     report["pilot_audit_sha256"] = canonical_sha256(report)
@@ -2059,6 +2146,719 @@ def _is_canonical_relative_path(value: Any) -> bool:
         and path.as_posix() == value
         and value not in {".", ".."}
     )
+
+
+def _unknown_billing_failure_is_exact(value: Any) -> bool:
+    return (
+        isinstance(value, Mapping)
+        and set(value)
+        == {
+            "error_category",
+            "provider_response_received",
+            "cost_known",
+            "billing_ambiguity",
+            "cost_yuan",
+            "cost_reserve_yuan",
+        }
+        and value.get("error_category") == "network_timeout"
+        and value.get("provider_response_received") is False
+        and value.get("cost_known") is False
+        and value.get("billing_ambiguity") is True
+        and value.get("cost_yuan") is None
+        and type(value.get("cost_reserve_yuan")) in {int, float}
+        and float(value.get("cost_reserve_yuan")) == 10.0
+    )
+
+
+def _validate_unknown_billing_attempt_rows(rows: Any) -> list[dict[str, Any]]:
+    if not isinstance(rows, list) or not rows:
+        raise PilotAuditError("billing authorization lacks reserved attempts")
+    normalized: list[dict[str, Any]] = []
+    identities: set[tuple[str, str, int]] = set()
+    for value in rows:
+        if not isinstance(value, Mapping) or set(value) != {
+            "provider",
+            "task_id",
+            "attempt",
+            "record",
+            "request",
+            "failure",
+            "provider_call_event",
+        }:
+            raise PilotAuditError("billing authorization attempt row is invalid")
+        provider = value.get("provider")
+        task_id = value.get("task_id")
+        attempt = value.get("attempt")
+        record = value.get("record")
+        request = value.get("request")
+        failure = value.get("failure")
+        event = value.get("provider_call_event")
+        if (
+            provider not in EXPECTED_PILOT_PROVIDERS
+            or not _is_lower_hex(task_id, 64)
+            or type(attempt) is not int
+            or attempt < 1
+            or not isinstance(record, Mapping)
+            or set(record) != {"path", "bytes", "sha256", "attempt_sha256"}
+            or record.get("path") != f"records/{provider}/{task_id}.json"
+            or type(record.get("bytes")) is not int
+            or int(record.get("bytes", 0)) <= 0
+            or not _is_lower_hex(record.get("sha256"), 64)
+            or not _is_lower_hex(record.get("attempt_sha256"), 64)
+            or not isinstance(request, Mapping)
+            or set(request) != {"model", "max_tokens", "wire_message_sha256"}
+            or not isinstance(request.get("model"), str)
+            or not request.get("model")
+            or type(request.get("max_tokens")) is not int
+            or int(request.get("max_tokens", 0)) <= 0
+            or not _is_lower_hex(request.get("wire_message_sha256"), 64)
+            or not _unknown_billing_failure_is_exact(failure)
+            or not isinstance(event, Mapping)
+            or set(event)
+            != {
+                "path",
+                "bytes",
+                "file_sha256",
+                "event_sha256",
+                "event_index",
+                "invocation_id",
+            }
+            or not _is_canonical_relative_path(event.get("path"))
+            or not str(event.get("path")).startswith(
+                f"evidence/provider_events/{provider}/"
+            )
+            or type(event.get("bytes")) is not int
+            or int(event.get("bytes", 0)) <= 0
+            or not _is_lower_hex(event.get("file_sha256"), 64)
+            or not _is_lower_hex(event.get("event_sha256"), 64)
+            or type(event.get("event_index")) is not int
+            or int(event.get("event_index", -1)) < 0
+            or not isinstance(event.get("invocation_id"), str)
+            or not event.get("invocation_id")
+        ):
+            raise PilotAuditError("billing authorization attempt evidence is invalid")
+        identity = (str(provider), str(task_id), int(attempt))
+        if identity in identities:
+            raise PilotAuditError("billing authorization repeats an attempt")
+        identities.add(identity)
+        normalized.append(json.loads(json.dumps(value, ensure_ascii=False)))
+    ordered = sorted(
+        normalized,
+        key=lambda row: (str(row["provider"]), str(row["task_id"]), int(row["attempt"])),
+    )
+    if normalized != ordered:
+        raise PilotAuditError("billing authorization attempt rows are not sorted")
+    return normalized
+
+
+def _billing_reviewer_and_date_are_valid(reviewer: Any, review_date: Any) -> bool:
+    if (
+        not isinstance(reviewer, str)
+        or _BILLING_REVIEWER_PATTERN.fullmatch(reviewer) is None
+        or not isinstance(review_date, str)
+    ):
+        return False
+    try:
+        parsed = date.fromisoformat(review_date)
+    except ValueError:
+        return False
+    return parsed.isoformat() == review_date
+
+
+def _billing_safeguards_are_exact(value: Any) -> bool:
+    return (
+        isinstance(value, Mapping)
+        and set(value)
+        == {
+            "original_needs_user_disclosure_retained",
+            "billing_ambiguity_retained",
+            "reserve_remains_accounted",
+            "scientific_outcomes_unmodified",
+            "other_audit_blockers_waived",
+        }
+        and value.get("original_needs_user_disclosure_retained") is True
+        and value.get("billing_ambiguity_retained") is True
+        and value.get("reserve_remains_accounted") is True
+        and value.get("scientific_outcomes_unmodified") is True
+        and value.get("other_audit_blockers_waived") is False
+    )
+
+
+def build_billing_authorization_resolution_payload(
+    *,
+    unknown_attempts: Sequence[Mapping[str, Any]],
+    anchor_a: Mapping[str, Any],
+    accounting: Mapping[str, Any],
+    authorization: Mapping[str, Any],
+    runtime_task_manifest_sha256: str,
+    freeze_manifest_sha256: str,
+    reviewer: str,
+    review_date: str,
+) -> dict[str, Any]:
+    if not _billing_reviewer_and_date_are_valid(reviewer, review_date):
+        raise PilotAuditError("billing authorization reviewer is invalid")
+    try:
+        total = float(accounting["total_accounted_cost_yuan"])
+        hard_fuse = float(accounting["hard_fuse_yuan"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise PilotAuditError("billing authorization accounting is invalid") from exc
+    if not math.isfinite(total) or not math.isfinite(hard_fuse) or total >= hard_fuse:
+        raise PilotAuditError("billing authorization cannot override the hard fuse")
+    attempts = sorted(
+        (json.loads(json.dumps(row, ensure_ascii=False)) for row in unknown_attempts),
+        key=lambda row: (str(row["provider"]), str(row["task_id"]), int(row["attempt"])),
+    )
+    if not attempts:
+        raise PilotAuditError("billing authorization lacks reserved attempts")
+    receipt: dict[str, Any] = {
+        "schema_version": (
+            "yher.llm_sim_v2.billing_authorization_resolution.v1"
+        ),
+        "simulated": True,
+        "run_id": RUN_ID,
+        "phase": "pilot",
+        "authority": "post_observation_budget_governance",
+        "billing_fact_status": "unresolved_reserved",
+        "action_disposition": (
+            "continue_under_preexisting_budget_authorization"
+        ),
+        "unknown_attempts": attempts,
+        "unknown_attempt_set_sha256": canonical_sha256(attempts),
+        "anchor_a": json.loads(json.dumps(anchor_a, ensure_ascii=False)),
+        "accounting": json.loads(json.dumps(accounting, ensure_ascii=False)),
+        "authorization": json.loads(json.dumps(authorization, ensure_ascii=False)),
+        "runtime_task_manifest_sha256": runtime_task_manifest_sha256,
+        "freeze_manifest_sha256": freeze_manifest_sha256,
+        "safeguards": {
+            "original_needs_user_disclosure_retained": True,
+            "billing_ambiguity_retained": True,
+            "reserve_remains_accounted": True,
+            "scientific_outcomes_unmodified": True,
+            "other_audit_blockers_waived": False,
+        },
+        "reviewer": reviewer,
+        "review_date": review_date,
+    }
+    receipt["billing_authorization_resolution_sha256"] = canonical_sha256(receipt)
+    validate_billing_authorization_resolution_payload(
+        receipt,
+        expected_unknown_attempts=attempts,
+        expected_anchor_a=anchor_a,
+        expected_accounting=accounting,
+        expected_authorization=authorization,
+        expected_runtime_task_manifest_sha256=runtime_task_manifest_sha256,
+        expected_freeze_manifest_sha256=freeze_manifest_sha256,
+    )
+    return receipt
+
+
+def validate_billing_authorization_resolution_payload(
+    receipt: Mapping[str, Any],
+    *,
+    expected_unknown_attempts: Sequence[Mapping[str, Any]],
+    expected_anchor_a: Mapping[str, Any],
+    expected_accounting: Mapping[str, Any],
+    expected_authorization: Mapping[str, Any],
+    expected_runtime_task_manifest_sha256: str,
+    expected_freeze_manifest_sha256: str,
+) -> str:
+    payload = dict(receipt)
+    advertised = payload.pop("billing_authorization_resolution_sha256", None)
+    if (
+        set(payload)
+        != {
+            "schema_version",
+            "simulated",
+            "run_id",
+            "phase",
+            "authority",
+            "billing_fact_status",
+            "action_disposition",
+            "unknown_attempts",
+            "unknown_attempt_set_sha256",
+            "anchor_a",
+            "accounting",
+            "authorization",
+            "runtime_task_manifest_sha256",
+            "freeze_manifest_sha256",
+            "safeguards",
+            "reviewer",
+            "review_date",
+        }
+        or receipt.get("schema_version")
+        != "yher.llm_sim_v2.billing_authorization_resolution.v1"
+        or receipt.get("simulated") is not True
+        or receipt.get("run_id") != RUN_ID
+        or receipt.get("phase") != "pilot"
+        or receipt.get("authority") != "post_observation_budget_governance"
+        or receipt.get("billing_fact_status") != "unresolved_reserved"
+        or receipt.get("action_disposition")
+        != "continue_under_preexisting_budget_authorization"
+        or advertised != canonical_sha256(payload)
+    ):
+        raise PilotAuditError("billing authorization envelope is invalid")
+    attempts = _validate_unknown_billing_attempt_rows(receipt.get("unknown_attempts"))
+    expected_attempts = _validate_unknown_billing_attempt_rows(
+        list(expected_unknown_attempts)
+    )
+    if (
+        attempts != expected_attempts
+        or receipt.get("unknown_attempt_set_sha256") != canonical_sha256(attempts)
+        or receipt.get("anchor_a") != dict(expected_anchor_a)
+        or receipt.get("accounting") != dict(expected_accounting)
+        or receipt.get("authorization") != dict(expected_authorization)
+        or receipt.get("runtime_task_manifest_sha256")
+        != expected_runtime_task_manifest_sha256
+        or receipt.get("freeze_manifest_sha256") != expected_freeze_manifest_sha256
+        or not _billing_safeguards_are_exact(receipt.get("safeguards"))
+        or not _billing_reviewer_and_date_are_valid(
+            receipt.get("reviewer"), receipt.get("review_date")
+        )
+    ):
+        raise PilotAuditError("billing authorization differs from source evidence")
+    accounting = receipt["accounting"]
+    try:
+        count = len(attempts)
+        phase_known = float(accounting["phase_known_cost_yuan"])
+        phase_reserve = float(accounting["phase_unknown_reserve_yuan"])
+        phase_total = float(accounting["phase_accounted_cost_yuan"])
+        pre_total = float(accounting["pre_collection_total_yuan"])
+        total_known = float(accounting["total_known_cost_yuan"])
+        total_reserve = float(accounting["total_unknown_reserve_yuan"])
+        total = float(accounting["total_accounted_cost_yuan"])
+        hard_fuse = float(accounting["hard_fuse_yuan"])
+        headroom = float(accounting["remaining_headroom_yuan"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise PilotAuditError("billing authorization accounting is invalid") from exc
+    if not (
+        set(accounting)
+        == {
+            "pre_collection_total_yuan",
+            "phase_known_cost_yuan",
+            "phase_unknown_reserve_yuan",
+            "phase_accounted_cost_yuan",
+            "total_known_cost_yuan",
+            "total_unknown_reserve_yuan",
+            "total_accounted_cost_yuan",
+            "hard_fuse_yuan",
+            "remaining_headroom_yuan",
+        }
+        and math.isclose(phase_reserve, count * 10.0, rel_tol=0.0, abs_tol=1e-8)
+        and math.isclose(phase_total, phase_known + phase_reserve, rel_tol=0.0, abs_tol=1e-8)
+        and math.isclose(total, pre_total + phase_total, rel_tol=0.0, abs_tol=1e-8)
+        and math.isclose(total, total_known + total_reserve, rel_tol=0.0, abs_tol=1e-8)
+        and math.isclose(headroom, hard_fuse - total, rel_tol=0.0, abs_tol=1e-8)
+        and total < hard_fuse
+    ):
+        raise PilotAuditError("billing authorization reaches or misstates the hard fuse")
+    return str(advertised)
+
+
+def _workspace_dispatch_brief_path(repo_root: Path) -> Path:
+    for ancestor in (repo_root, *repo_root.parents):
+        candidate = ancestor / DISPATCH_BRIEF_RELATIVE
+        if candidate.is_file():
+            return candidate.resolve(strict=True)
+    raise PilotAuditError("billing authorization dispatch brief is missing")
+
+
+def _billing_authorization_sources(
+    repo_root: Path, *, audit_head: str
+) -> dict[str, Any]:
+    plan_path = repo_root / ANALYSIS_PLAN_RELATIVE
+    plan_proof = _git_committed_file_proof(repo_root, plan_path, head=audit_head)
+    brief_path = _workspace_dispatch_brief_path(repo_root)
+    plan_text = plan_path.read_text(encoding="utf-8")
+    brief_text = brief_path.read_text(encoding="utf-8")
+    if not (
+        plan_proof.get("passed") is True
+        and plan_proof.get("path") == ANALYSIS_PLAN_RELATIVE.as_posix()
+        and plan_proof.get("file_sha256")
+        == plan_proof.get("committed_blob_sha256")
+        and "CNY 450 is a hard fuse" in plan_text
+        and "enters `needs_user`" in plan_text
+        and sha256_file(brief_path) == REVIEWED_DISPATCH_BRIEF_SHA256
+        and "累计超 **¥450** 时熔断进 needs_user 等用户确认" in brief_text
+        and "Codex 可自审自签" in brief_text
+    ):
+        raise PilotAuditError("billing authorization policy sources are invalid")
+    return {
+        "analysis_plan": {
+            "path": ANALYSIS_PLAN_RELATIVE.as_posix(),
+            "sha256": plan_proof["file_sha256"],
+            "committed_blob_sha256": plan_proof["committed_blob_sha256"],
+            "anchor_commit": plan_proof["anchor_commit"],
+        },
+        "dispatch_brief": {
+            "path": DISPATCH_BRIEF_RELATIVE.as_posix(),
+            "sha256": REVIEWED_DISPATCH_BRIEF_SHA256,
+        },
+        "hard_fuse_policy": HARD_FUSE_POLICY,
+        "self_review_policy": SELF_REVIEW_POLICY,
+    }
+
+
+def _billing_anchor_a_binding(
+    anchor_a: Mapping[str, Any], anchor_a_path: Path
+) -> dict[str, Any]:
+    digest = _verify_phase_receipt_envelope(anchor_a)
+    providers = anchor_a.get("providers")
+    if not isinstance(providers, Mapping) or set(providers) != set(
+        EXPECTED_PILOT_PROVIDERS
+    ):
+        raise PilotAuditError("billing authorization anchor A provider set is invalid")
+    provider_bindings: dict[str, Any] = {}
+    for provider in EXPECTED_PILOT_PROVIDERS:
+        row = providers[provider]
+        if not isinstance(row, Mapping):
+            raise PilotAuditError("billing authorization anchor A provider is invalid")
+        provider_bindings[provider] = {
+            field: row.get(field)
+            for field in (
+                "provider_manifest_sha256",
+                "record_set_sha256",
+                "evidence_chain_head_sha256",
+            )
+        }
+        if any(
+            not _is_lower_hex(value, 64)
+            for value in provider_bindings[provider].values()
+        ):
+            raise PilotAuditError("billing authorization anchor A hashes are invalid")
+    store_snapshot = anchor_a.get("store_snapshot")
+    if not isinstance(store_snapshot, Mapping):
+        raise PilotAuditError("billing authorization anchor A store is invalid")
+    return {
+        "phase_evidence_receipt_sha256": digest,
+        "file_sha256": sha256_file(anchor_a_path),
+        "file_bytes": anchor_a_path.stat().st_size,
+        "phase_provenance_sha256": anchor_a.get("phase_provenance_sha256"),
+        "phase_provenance_file_sha256": anchor_a.get(
+            "phase_provenance_file_sha256"
+        ),
+        "store_snapshot": dict(store_snapshot),
+        "providers": provider_bindings,
+    }
+
+
+def _billing_unknown_attempt_rows(pilot_root: Path) -> list[dict[str, Any]]:
+    event_by_identity: dict[tuple[str, str, int], tuple[Path, dict[str, Any]]] = {}
+    for provider in EXPECTED_PILOT_PROVIDERS:
+        event_root = pilot_root / "evidence/provider_events" / provider
+        for path in sorted(event_root.glob("*.json")):
+            event = _read_json(path)
+            if event.get("event_type") != "provider_call_started":
+                continue
+            payload = dict(event)
+            advertised = payload.pop("event_sha256", None)
+            try:
+                identity = (
+                    provider,
+                    str(event["task_id"]),
+                    int(event["attempt"]),
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise PilotAuditError("billing provider-call identity is invalid") from exc
+            if (
+                event.get("schema_version")
+                != "yher.llm_sim_v2.provider_evidence_event.v1"
+                or event.get("simulated") is not True
+                or event.get("run_id") != RUN_ID
+                or event.get("phase") != "pilot"
+                or event.get("provider") != provider
+                or not _is_lower_hex(advertised, 64)
+                or advertised != canonical_sha256(payload)
+                or identity in event_by_identity
+            ):
+                raise PilotAuditError("billing provider-call event is invalid")
+            event_by_identity[identity] = (path, event)
+
+    rows: list[dict[str, Any]] = []
+    for provider in EXPECTED_PILOT_PROVIDERS:
+        records_root = pilot_root / "records" / provider
+        for record_path in sorted(records_root.glob("*.json")):
+            record = _read_json(record_path)
+            attempts = record.get("attempts")
+            if not isinstance(attempts, list):
+                raise PilotAuditError("billing source record lacks attempts")
+            unknown = [
+                attempt
+                for attempt in attempts
+                if isinstance(attempt, Mapping)
+                and (
+                    attempt.get("billing_ambiguity") is True
+                    or attempt.get("cost_known") is False
+                    or float(attempt.get("cost_reserve_yuan") or 0.0) > 0.0
+                )
+            ]
+            if not unknown:
+                continue
+            if (
+                record.get("provider") != provider
+                or record.get("task_id") != record_path.stem
+                or record.get("needs_user") is not True
+                or record.get("needs_user_reasons")
+                != ["unknown_provider_billing_reserved"]
+                or not math.isclose(
+                    float(record.get("unknown_cost_reserve_yuan") or 0.0),
+                    sum(float(attempt.get("cost_reserve_yuan") or 0.0) for attempt in unknown),
+                    rel_tol=0.0,
+                    abs_tol=1e-8,
+                )
+            ):
+                raise PilotAuditError("billing source record disclosure is invalid")
+            for attempt_value in unknown:
+                attempt = dict(attempt_value)
+                try:
+                    attempt_number = int(attempt["attempt"])
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise PilotAuditError("billing source attempt is invalid") from exc
+                identity = (provider, record_path.stem, attempt_number)
+                event_pair = event_by_identity.get(identity)
+                if event_pair is None:
+                    raise PilotAuditError("billing source attempt lacks provider-call event")
+                event_path, event = event_pair
+                failure = {
+                    "error_category": attempt.get("error_category"),
+                    "provider_response_received": attempt.get(
+                        "provider_response_received"
+                    ),
+                    "cost_known": attempt.get("cost_known"),
+                    "billing_ambiguity": attempt.get("billing_ambiguity"),
+                    "cost_yuan": attempt.get("cost_yuan"),
+                    "cost_reserve_yuan": attempt.get("cost_reserve_yuan"),
+                }
+                request = {
+                    "model": record.get("requested_model"),
+                    "max_tokens": attempt.get("request_max_tokens"),
+                    "wire_message_sha256": record.get("wire_message_sha256"),
+                }
+                if (
+                    not _unknown_billing_failure_is_exact(failure)
+                    or event.get("model") != request["model"]
+                    or event.get("request_max_tokens") != request["max_tokens"]
+                    or event.get("wire_message_sha256")
+                    != request["wire_message_sha256"]
+                ):
+                    raise PilotAuditError("billing attempt and event differ")
+                rows.append(
+                    {
+                        "provider": provider,
+                        "task_id": record_path.stem,
+                        "attempt": attempt_number,
+                        "record": {
+                            "path": _safe_relative(pilot_root, record_path),
+                            "bytes": record_path.stat().st_size,
+                            "sha256": sha256_file(record_path),
+                            "attempt_sha256": canonical_sha256(attempt),
+                        },
+                        "request": request,
+                        "failure": failure,
+                        "provider_call_event": {
+                            "path": _safe_relative(pilot_root, event_path),
+                            "bytes": event_path.stat().st_size,
+                            "file_sha256": sha256_file(event_path),
+                            "event_sha256": event["event_sha256"],
+                            "event_index": event["event_index"],
+                            "invocation_id": event["invocation_id"],
+                        },
+                    }
+                )
+    rows.sort(
+        key=lambda row: (str(row["provider"]), str(row["task_id"]), int(row["attempt"]))
+    )
+    return _validate_unknown_billing_attempt_rows(rows)
+
+
+def _billing_accounting(
+    pilot_root: Path,
+    *,
+    prior_cost_ledger: Mapping[str, Any],
+    carried_forward_cost: Mapping[str, Any],
+) -> dict[str, float]:
+    phase_known = 0.0
+    phase_reserve = 0.0
+    for provider in EXPECTED_PILOT_PROVIDERS:
+        for path in sorted((pilot_root / "records" / provider).glob("*.json")):
+            record = _read_json(path)
+            phase_known += float(record.get("known_cost_yuan") or 0.0)
+            phase_reserve += float(record.get("unknown_cost_reserve_yuan") or 0.0)
+    phase_known = round(phase_known, 8)
+    phase_reserve = round(phase_reserve, 8)
+    phase_total = round(phase_known + phase_reserve, 8)
+    pre_total = round(
+        float(prior_cost_ledger["pre_run_total_bound_yuan"])
+        + float(carried_forward_cost["total_accounted_cost_yuan"]),
+        8,
+    )
+    total_known = round(
+        float(prior_cost_ledger["known_cost_yuan"])
+        + float(carried_forward_cost["known_cost_yuan"])
+        + phase_known,
+        8,
+    )
+    total_reserve = round(
+        float(prior_cost_ledger["pre_run_ambiguity_reserve_yuan"])
+        + float(carried_forward_cost["unknown_cost_reserve_yuan"])
+        + phase_reserve,
+        8,
+    )
+    total = round(pre_total + phase_total, 8)
+    hard_fuse = 450.0
+    return {
+        "pre_collection_total_yuan": pre_total,
+        "phase_known_cost_yuan": phase_known,
+        "phase_unknown_reserve_yuan": phase_reserve,
+        "phase_accounted_cost_yuan": phase_total,
+        "total_known_cost_yuan": total_known,
+        "total_unknown_reserve_yuan": total_reserve,
+        "total_accounted_cost_yuan": total,
+        "hard_fuse_yuan": hard_fuse,
+        "remaining_headroom_yuan": round(hard_fuse - total, 8),
+    }
+
+
+def prepare_billing_authorization_resolution(
+    *,
+    repo_root: Path | str,
+    pilot_root: Path | str,
+    anchor_a_path: Path | str,
+    output_path: Path | str = DEFAULT_BILLING_AUTHORIZATION_RESOLUTION,
+) -> dict[str, Any]:
+    repo = Path(repo_root).expanduser().resolve(strict=True)
+    pilot = Path(pilot_root).expanduser().resolve(strict=True)
+    a_path = Path(anchor_a_path).expanduser().resolve(strict=True)
+    output = Path(output_path)
+    if not output.is_absolute():
+        output = repo / output
+    output = output.expanduser().resolve(strict=False)
+    if output != (repo / DEFAULT_BILLING_AUTHORIZATION_RESOLUTION).resolve(
+        strict=False
+    ):
+        raise PilotAuditError("billing authorization path is not the fixed path")
+    contract = load_runtime_contract(repo)
+    phase = _read_json(pilot / "phase_provenance.json")
+    tasks = enumerate_tasks(contract, phase="pilot")
+    anchor_a = _read_json(a_path)
+    rebuilt_a = build_phase_evidence_receipt(
+        pilot, phase_provenance=phase, tasks=tasks
+    )
+    if anchor_a != rebuilt_a:
+        raise PilotAuditError("billing authorization anchor A is stale")
+    evidence = _validate_evidence_tree(
+        pilot,
+        providers=EXPECTED_PILOT_PROVIDERS,
+        required_receipts=(anchor_a,),
+    )
+    if set(evidence["phase_receipts"]) != {
+        str(anchor_a["phase_evidence_receipt_sha256"])
+    }:
+        raise PilotAuditError("billing authorization requires the sole internal A")
+    head = _git_head(repo)
+    a_git = _git_committed_file_proof(repo, a_path, head=head)
+    if a_git.get("passed") is not True:
+        raise PilotAuditError("billing authorization requires committed anchor A")
+    carried = _reviewed_carried_forward_cost(repo)
+    receipt = build_billing_authorization_resolution_payload(
+        unknown_attempts=_billing_unknown_attempt_rows(pilot),
+        anchor_a=_billing_anchor_a_binding(anchor_a, a_path),
+        accounting=_billing_accounting(
+            pilot,
+            prior_cost_ledger=contract.prior_cost_ledger,
+            carried_forward_cost=carried,
+        ),
+        authorization=_billing_authorization_sources(repo, audit_head=head),
+        runtime_task_manifest_sha256=str(
+            contract.runtime_manifest["runtime_task_manifest_sha256"]
+        ),
+        freeze_manifest_sha256=str(
+            contract.freeze_manifest["freeze_manifest_sha256"]
+        ),
+        reviewer="codex_budget_resolution_2026_07_16",
+        review_date="2026-07-16",
+    )
+    _write_immutable_json(output, receipt)
+    return receipt
+
+
+def verify_billing_authorization_resolution(
+    *,
+    repo_root: Path,
+    pilot_root: Path,
+    anchor_a_path: Path,
+    resolution_path: Path,
+    contract: Any,
+    audit_head: str,
+) -> dict[str, Any]:
+    expected_path = (repo_root / DEFAULT_BILLING_AUTHORIZATION_RESOLUTION).resolve(
+        strict=False
+    )
+    path = resolution_path.expanduser().resolve(strict=True)
+    if path != expected_path:
+        raise PilotAuditError("billing authorization path differs from fixed path")
+    receipt = _read_json(path)
+    anchor_a = _read_json(anchor_a_path)
+    carried = _reviewed_carried_forward_cost(repo_root)
+    digest = validate_billing_authorization_resolution_payload(
+        receipt,
+        expected_unknown_attempts=_billing_unknown_attempt_rows(pilot_root),
+        expected_anchor_a=_billing_anchor_a_binding(anchor_a, anchor_a_path),
+        expected_accounting=_billing_accounting(
+            pilot_root,
+            prior_cost_ledger=contract.prior_cost_ledger,
+            carried_forward_cost=carried,
+        ),
+        expected_authorization=_billing_authorization_sources(
+            repo_root, audit_head=audit_head
+        ),
+        expected_runtime_task_manifest_sha256=str(
+            contract.runtime_manifest["runtime_task_manifest_sha256"]
+        ),
+        expected_freeze_manifest_sha256=str(
+            contract.freeze_manifest["freeze_manifest_sha256"]
+        ),
+    )
+    resolution_git = _git_committed_file_proof(repo_root, path, head=audit_head)
+    anchor_a_git = _git_committed_file_proof(
+        repo_root, anchor_a_path, head=audit_head
+    )
+    if not (
+        resolution_git.get("passed") is True
+        and resolution_git.get("path")
+        == DEFAULT_BILLING_AUTHORIZATION_RESOLUTION.as_posix()
+        and anchor_a_git.get("passed") is True
+        and _git_is_ancestor(
+            repo_root,
+            str(anchor_a_git.get("anchor_commit") or ""),
+            str(resolution_git.get("anchor_commit") or ""),
+            strict=True,
+        )
+    ):
+        raise PilotAuditError(
+            "billing authorization must be committed after anchor A"
+        )
+    accounting = receipt["accounting"]
+    return {
+        "status": "applied",
+        "billing_fact_status": "unresolved_reserved",
+        "action_disposition": (
+            "continue_under_preexisting_budget_authorization"
+        ),
+        "billing_authorization_resolution_sha256": digest,
+        "file_sha256": resolution_git["file_sha256"],
+        "committed_blob_sha256": resolution_git["committed_blob_sha256"],
+        "receipt_commit": resolution_git["anchor_commit"],
+        "audit_head": resolution_git["git_head"],
+        "anchor_a_commit": anchor_a_git["anchor_commit"],
+        "anchor_a_phase_evidence_receipt_sha256": anchor_a[
+            "phase_evidence_receipt_sha256"
+        ],
+        "unknown_attempt_count": len(receipt["unknown_attempts"]),
+        "unknown_attempt_set_sha256": receipt["unknown_attempt_set_sha256"],
+        "unknown_reserve_yuan": accounting["phase_unknown_reserve_yuan"],
+        "total_accounted_cost_yuan": accounting["total_accounted_cost_yuan"],
+        "hard_fuse_yuan": accounting["hard_fuse_yuan"],
+    }
 
 
 def _evidence_v2_structural_links_are_exact(
@@ -2375,6 +3175,190 @@ def _evidence_v2_structural_links_are_exact(
     return True
 
 
+def _billing_resolution_structure_is_exact(
+    *,
+    gate: Any,
+    source: Any,
+    accounting: Any,
+    providers: Any,
+) -> bool:
+    if not all(
+        isinstance(value, Mapping)
+        for value in (gate, source, accounting, providers)
+    ):
+        return False
+    evidence = gate.get("evidence")
+    if not isinstance(evidence, Mapping):
+        return False
+    if type(accounting.get("unknown_attempt_count")) is not int:
+        return False
+    try:
+        unknown_count = int(accounting["unknown_attempt_count"])
+        unknown_reserve = float(accounting["unknown_cost_reserve_yuan"])
+        total_accounted = float(accounting["total_accounted_cost_yuan"])
+        hard_fuse = float(accounting["hard_fuse_yuan"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if (
+        unknown_count < 0
+        or unknown_reserve < 0
+        or not all(
+            math.isfinite(value)
+            for value in (unknown_reserve, total_accounted, hard_fuse)
+        )
+    ):
+        return False
+
+    provider_unknown_count = 0
+    provider_unknown_reserve = 0.0
+    for provider in EXPECTED_PILOT_PROVIDERS:
+        row = providers.get(provider)
+        if not isinstance(row, Mapping):
+            return False
+        provider_accounting = row.get("accounting")
+        disclosures = row.get("disclosures")
+        needs_user = (
+            disclosures.get("needs_user")
+            if isinstance(disclosures, Mapping)
+            else None
+        )
+        if not isinstance(provider_accounting, Mapping) or not isinstance(
+            needs_user, Mapping
+        ):
+            return False
+        if type(provider_accounting.get("unknown_attempt_count")) is not int:
+            return False
+        try:
+            provider_count = int(provider_accounting["unknown_attempt_count"])
+            provider_reserve = float(
+                provider_accounting["unknown_cost_reserve_yuan"]
+            )
+        except (KeyError, TypeError, ValueError):
+            return False
+        if provider_count < 0 or provider_reserve < 0:
+            return False
+        provider_unknown_count += provider_count
+        provider_unknown_reserve += provider_reserve
+        if (
+            needs_user.get("required") is not bool(provider_count)
+            or needs_user.get("reason")
+            != ("unknown_provider_billing_reserved" if provider_count else None)
+            or needs_user.get("unknown_cost_attempt_count") != provider_count
+            or type(needs_user.get("unknown_cost_attempt_count")) is not int
+            or type(needs_user.get("record_count")) is not int
+            or int(needs_user.get("record_count", -1)) < (1 if provider_count else 0)
+            or not isinstance(needs_user.get("record_task_ids"), list)
+            or len(needs_user.get("record_task_ids", []))
+            != int(needs_user.get("record_count", -1))
+        ):
+            return False
+    if (
+        provider_unknown_count != unknown_count
+        or not math.isclose(
+            provider_unknown_reserve,
+            unknown_reserve,
+            rel_tol=0.0,
+            abs_tol=1e-8,
+        )
+    ):
+        return False
+
+    status = evidence.get("status")
+    source_file_sha = source.get(
+        "billing_authorization_resolution_file_sha256"
+    )
+    source_receipt_sha = source.get(
+        "billing_authorization_resolution_sha256"
+    )
+    if status == "not_required":
+        return (
+            set(evidence) == {"status", "unknown_attempt_count"}
+            and gate.get("passed") is True
+            and type(evidence.get("unknown_attempt_count")) is int
+            and unknown_count == 0
+            and unknown_reserve == 0.0
+            and evidence.get("unknown_attempt_count") == 0
+            and source_file_sha is None
+            and source_receipt_sha is None
+        )
+    if status == "missing_or_invalid":
+        return (
+            set(evidence) == {"status", "unknown_attempt_count", "reason"}
+            and gate.get("passed") is False
+            and type(evidence.get("unknown_attempt_count")) is int
+            and unknown_count > 0
+            and evidence.get("unknown_attempt_count") == unknown_count
+            and isinstance(evidence.get("reason"), str)
+            and bool(evidence.get("reason"))
+            and source_file_sha is None
+            and source_receipt_sha is None
+        )
+    if status != "applied":
+        return False
+    expected_fields = {
+        "status",
+        "billing_fact_status",
+        "action_disposition",
+        "billing_authorization_resolution_sha256",
+        "file_sha256",
+        "committed_blob_sha256",
+        "receipt_commit",
+        "audit_head",
+        "anchor_a_commit",
+        "anchor_a_phase_evidence_receipt_sha256",
+        "unknown_attempt_count",
+        "unknown_attempt_set_sha256",
+        "unknown_reserve_yuan",
+        "total_accounted_cost_yuan",
+        "hard_fuse_yuan",
+    }
+    try:
+        proof_reserve = float(evidence["unknown_reserve_yuan"])
+        proof_total = float(evidence["total_accounted_cost_yuan"])
+        proof_fuse = float(evidence["hard_fuse_yuan"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return (
+        set(evidence) == expected_fields
+        and gate.get("passed") is True
+        and type(evidence.get("unknown_attempt_count")) is int
+        and unknown_count > 0
+        and unknown_reserve > 0.0
+        and total_accounted < hard_fuse
+        and evidence.get("billing_fact_status") == "unresolved_reserved"
+        and evidence.get("action_disposition")
+        == "continue_under_preexisting_budget_authorization"
+        and evidence.get("unknown_attempt_count") == unknown_count
+        and math.isclose(
+            proof_reserve, unknown_reserve, rel_tol=0.0, abs_tol=1e-8
+        )
+        and math.isclose(
+            proof_total, total_accounted, rel_tol=0.0, abs_tol=1e-8
+        )
+        and math.isclose(proof_fuse, hard_fuse, rel_tol=0.0, abs_tol=1e-8)
+        and proof_total < proof_fuse
+        and all(
+            _is_lower_hex(evidence.get(field), length)
+            for field, length in (
+                ("billing_authorization_resolution_sha256", 64),
+                ("file_sha256", 64),
+                ("committed_blob_sha256", 64),
+                ("receipt_commit", 40),
+                ("audit_head", 40),
+                ("anchor_a_commit", 40),
+                ("anchor_a_phase_evidence_receipt_sha256", 64),
+                ("unknown_attempt_set_sha256", 64),
+            )
+        )
+        and evidence.get("file_sha256")
+        == evidence.get("committed_blob_sha256")
+        == source_file_sha
+        and evidence.get("billing_authorization_resolution_sha256")
+        == source_receipt_sha
+        and evidence.get("audit_head") == source.get("audit_git_head")
+    )
+
+
 def verify_pilot_audit(report: Mapping[str, Any]) -> dict[str, Any]:
     """Verify report structure and internal hashes without authenticating sources."""
     if (
@@ -2447,6 +3431,13 @@ def verify_pilot_audit(report: Mapping[str, Any]) -> dict[str, Any]:
         accounting_valid = False
     if not accounting_valid:
         raise PilotAuditError("pilot audit accounting is invalid")
+    if not _billing_resolution_structure_is_exact(
+        gate=gates["billing_authorization_resolution"],
+        source=source,
+        accounting=accounting,
+        providers=providers,
+    ):
+        raise PilotAuditError("pilot audit billing authorization proof is invalid")
     try:
         reviewed_cost_shape = (
             math.isclose(
@@ -2503,6 +3494,9 @@ def verify_pilot_audit(report: Mapping[str, Any]) -> dict[str, Any]:
             resume_evidence.get("git_anchored_receipt")
             if isinstance(resume_evidence, Mapping)
             else None
+        )
+        billing_evidence = gates["billing_authorization_resolution"].get(
+            "evidence"
         )
         anchor_proofs = (
             (
@@ -2589,6 +3583,26 @@ def verify_pilot_audit(report: Mapping[str, Any]) -> dict[str, Any]:
         )
         if not evidence_v2_shape:
             raise PilotAuditError("GO audit lacks its Evidence-v2 transition proof")
+        if (
+            isinstance(billing_evidence, Mapping)
+            and billing_evidence.get("status") == "applied"
+            and (
+                not isinstance(transition_proof, Mapping)
+                or billing_evidence.get("receipt_commit")
+                != transition_proof.get("resume_execution_head")
+                or billing_evidence.get("anchor_a_commit")
+                != transition_proof.get("anchor_a", {}).get("anchor_commit")
+                or billing_evidence.get(
+                    "anchor_a_phase_evidence_receipt_sha256"
+                )
+                != transition_proof.get(
+                    "anchor_a_phase_evidence_receipt_sha256"
+                )
+            )
+        ):
+            raise PilotAuditError(
+                "GO audit billing authorization transition binding is invalid"
+            )
         go_provider_shape = all(
             isinstance(row, Mapping)
             and row.get("expected_task_state_count") == EXPECTED_TASKS_PER_PROVIDER
@@ -3599,6 +4613,22 @@ def run_zero_call_resume_probe(
             "zero-call resume preflight has non-resume blockers: "
             + ", ".join(sorted({str(row["code"]) for row in unexpected}))
         )
+    billing_preflight = preflight.get("gates", {}).get(
+        "billing_authorization_resolution", {}
+    )
+    billing_evidence = (
+        billing_preflight.get("evidence")
+        if isinstance(billing_preflight, Mapping)
+        else None
+    )
+    if (
+        isinstance(billing_evidence, Mapping)
+        and billing_evidence.get("status") == "applied"
+        and billing_evidence.get("receipt_commit") != execution_head
+    ):
+        raise PilotAuditError(
+            "billing resolution commit must equal the zero-call resume execution HEAD"
+        )
     before_files = _phase_store_file_rows(pilot)
     budget = BudgetLedger(
         soft_warning_yuan=float(contract.config["budget_yuan"]["soft_warning"]),
@@ -3745,6 +4775,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--anchor-a", type=Path)
     parser.add_argument("--anchor-b", type=Path)
     parser.add_argument("--prepare-anchor-a", action="store_true")
+    parser.add_argument("--prepare-billing-resolution", action="store_true")
     parser.add_argument("--run-resume", action="store_true")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR)
     return parser
@@ -3757,8 +4788,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     anchor_a_path = args.anchor_a or repo / DEFAULT_ANCHOR_A
     anchor_b_path = args.anchor_b or repo / DEFAULT_ANCHOR_B
     transition_path = args.resume_receipt or repo / DEFAULT_TRANSITION_RECEIPT
-    if args.prepare_anchor_a and args.run_resume:
-        raise PilotAuditError("prepare-anchor-a and run-resume are separate commit stages")
+    if sum(
+        bool(value)
+        for value in (
+            args.prepare_anchor_a,
+            args.prepare_billing_resolution,
+            args.run_resume,
+        )
+    ) > 1:
+        raise PilotAuditError("protocol actions are separate commit stages")
     if args.prepare_anchor_a:
         contract = load_runtime_contract(repo)
         tasks = enumerate_tasks(contract, phase="pilot")
@@ -3777,6 +4815,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         if internal != external:
             raise PilotAuditError("internal and external phase anchor A differ")
         print(json.dumps(external, ensure_ascii=False, sort_keys=True))
+        return 0
+    if args.prepare_billing_resolution:
+        receipt = prepare_billing_authorization_resolution(
+            repo_root=repo,
+            pilot_root=pilot,
+            anchor_a_path=anchor_a_path,
+        )
+        print(json.dumps(receipt, ensure_ascii=False, sort_keys=True))
         return 0
     if args.run_resume:
         result = run_zero_call_resume_probe(
