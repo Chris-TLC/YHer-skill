@@ -1,0 +1,36 @@
+# Anticipated Reviewer Objections and Response Matrix
+
+This is an internal red-team artifact. It separates objections already answerable
+from objections that require new evidence. It does not authorize inserting an
+unobserved result into the manuscript.
+
+| ID | Anticipated objection | Why the objection is credible | Current manuscript response | Evidence required before insertion | Red-team disposition |
+|---|---|---|---|---|---|
+| R01 | The simulator and inference model are circular. | The matched generator samples from production likelihoods. | Matched and misspecified generators are separated; H4 is limited to one perturbation family. | Broader perturbation families or external response data would be needed for a stronger robustness claim. | Keep as a central limitation; do not answer with H4 alone. |
+| R02 | There are no human outcome data. | Programmatic and provider outputs cannot establish student behavior or learning. | The title, abstract, discussion, and ethics statement limit claims to simulation and internal behavior. | A separately approved human study would be required for behavioral or efficacy claims. | Accept the limitation; venue fit must tolerate simulation-based system audits. |
+| R03 | The M/P/C/U labels may not be valid constructs. | They are engineered operational states, not externally established traits. | The manuscript consistently calls them model-defined diagnostic states and avoids ontological claims. | Independent construct work and human response evidence would be needed to upgrade the labels. | Do not defend the labels as psychological truth. |
+| R04 | H1 sounds positive even though the absolute criterion failed. | The A-minus-B contrast was positive, but Arm A reached only 12.9% correct convergence. | H1 is described as partially supported, with the 50% threshold and no-repeat sensitivity beside the primary contrast. | None; the frozen result is sufficient if reported without spin. | Preserve the negative absolute result in abstract and conclusion. |
+| R05 | H2's fixed-quota pattern is cherry-picked. | C exceeded A, but A also exceeded B beyond the no-harm margin. | The three arms and both contrasts are co-reported, and H2 is described as not supported. | None. | Reject any wording that frames H2 as confirmed harm prevention. |
+| R06 | Sparse pools and repeat replenishment drive H1. | The broad support permits family reuse; no-repeat support is small and much less favorable. | Both estimands are reported, including 1/200 versus 0/200 on four-target common support. | A larger family-distinct catalog would be required to resolve the sensitivity. | Treat as a major generalizability constraint. |
+| R07 | Arm-C failures make the three-arm comparison selective. | Four targets cannot instantiate the fixed prerequisite schedule, producing 1,600 structural failures. | The lifecycle count, affected-arm logic, and support restrictions are disclosed. | A pre-declared intention-to-treat alternative or expanded pools would be needed for a different estimand. | Do not impute zero or favorable Arm-C outcomes. |
+| R08 | The terminal-versus-convergence mechanism is post-hoc. | Selector composition was examined after H1-H4 and was not randomized. | The manuscript labels every mechanism statement post-hoc and calls it a selector-stopping mismatch interpretation. | A frozen stopping-rule replay or factorial selector-by-stopper study is required for mechanism confirmation. | Keep the finding descriptive and proposal-generating. |
+| R09 | The headline percentages mix target supports. | A prior narrative paired a full-set terminal rate with an eligible-set convergence rate. | The journal table reports the 27-target pair and 23-target pair separately, with exact denominators. | A dedicated target-set hash and support-aware binder should gate later automatic insertion. | Block any cross-support percentage pair. |
+| R10 | Persona-v2 controlled manipulation measures instruction following, not learner resemblance. | Explicit behavior constraints can manufacture the requested error pattern. | Controlled manipulation is limited to compliance and paired answer behavior; blind response robustness is separate. | Human reference data would be needed for resemblance claims. | Never convert compliance into an authenticity measure. |
+| R11 | Provider calls inflate the Persona-v2 sample. | Each persona is observed repeatedly across providers, conditions, arms, and items. | The independent unit is 50 persona clusters; provider is a repeated measure; bootstrap resamples clusters. | The final analysis must retain cluster identifiers and rectangular-support denominators. | Reject call-count sample sizes. |
+| R12 | Automated adjudicators are not independent semantic truth. | Cross-model judges may share biases and can agree while being wrong. | The protocol reports pairwise agreement, unknown, insufficient evidence, and disagreement examples only. | Human blinded coding would be needed for an external semantic reference. | No realism score or consensus truth label. |
+| R13 | Text-only prompts omit known hard cases. | Diagrams, apparatus, equations, and multi-step open responses are major diagnostic weaknesses. | Text-only is stated in Methods and limitations, with no multimodal claim. | A separately frozen multimodal protocol and validated assets would be required. | Treat as a scope boundary, not a minor implementation detail. |
+| R14 | The mapping collapse makes misconception compliance unmeasurable. | Exact consensus exists for only 6 of 100 calibration rows. | Target-misconception hit rate was removed before provider observation; six rows are sparse descriptive only. | Better item/failure/option mappings reviewed independently would be needed for a confirmatory target-hit metric. | Do not restore the metric after observing providers. |
+| R15 | The prescription analysis may manufacture coverage. | The default library has only 13 nodes and 68 trusted segments, with few physical parts per node. | P2 is illustrative, supply-limited, and has an empty machine result slot; structural failures must remain visible. | Bound posterior inputs, demand utilities, and arm construction are required before any minutes are reported. | Never assign an invented Arm-C value or extrapolate to full chemistry. |
+| R16 | Extensive AI assistance weakens authorship accountability. | AI supported code, analysis, prose, and review. | Methods and Declarations enumerate the roles, exclude AI authorship, and assign final responsibility to the human author. | The selected journal's current disclosure text and author review record must be completed before external action. | Disclose specifically; do not imply a universal publisher policy. |
+
+## Required Pre-Final Checks
+
+1. Replace the Persona-v2 slot only from a lifecycle-complete, persona-clustered,
+   hash-bound analysis artifact.
+2. Replace the P2 slot only after all requested arms are constructible or their
+   structural failures are explicitly represented.
+3. Re-run the full manuscript blacklist, citation, absolute-path, and rendering gates.
+4. Verify every paired percentage has identical support, filter, weighting, and
+   denominator semantics.
+5. Reconcile the AI declaration and data-availability language with the selected
+   journal's current policies.
