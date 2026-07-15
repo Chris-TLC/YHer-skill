@@ -115,6 +115,9 @@ def test_blind_and_judge_scanners_catch_adversarial_fields_values_and_prose():
     judge = prompts.render_judge_export(
         blind_messages=prompts.render_blind_prompt(_row(), _item()),
         model_output={"label": "unknown", "evidence": "insufficient_evidence"},
+        persona=_row(),
+        item=_item(),
+        frozen_leakage_lexicon=(),
     )
     prompts.assert_judge_no_target_labels(judge, persona=_row(), item=_item())
     judge_text = json.dumps(judge, ensure_ascii=False)
@@ -137,6 +140,9 @@ def test_public_question_and_option_text_are_allowed_inside_nested_judge_export(
     judge = prompts.render_judge_export(
         blind_messages=blind,
         model_output={"label": "unknown", "evidence": "public text only"},
+        persona=_row(),
+        item=item,
+        frozen_leakage_lexicon=("confuses conjugate pairs",),
     )
     prompts.assert_judge_no_target_labels(
         judge,

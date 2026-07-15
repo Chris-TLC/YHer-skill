@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from .public import public_question_payload
+
 
 CALIBRATION_ITEMS_PER_ANCHOR = 4
 
@@ -40,7 +42,8 @@ def _candidate(item: Any) -> dict[str, Any] | None:
     item_id = str(_value(item, "item_id", "") or "").strip()
     family_id = str(_value(item, "family_id", "") or "").strip()
     scoring_mode = str(_value(item, "scoring_mode", "") or "").strip()
-    raw_options = _value(item, "options", {}) or {}
+    public_question = public_question_payload(item)
+    raw_options = public_question.get("options", {}) or {}
     if not isinstance(raw_options, Mapping):
         return None
     options = {str(key).strip().upper(): str(value) for key, value in raw_options.items()}
@@ -48,15 +51,10 @@ def _candidate(item: Any) -> dict[str, Any] | None:
     correct = str(answer_values[0]).strip().upper() if answer_values else None
     if not item_id or not family_id or scoring_mode != "mcq" or not options or correct not in options:
         return None
-    question = _value(item, "public_question", None)
-    if question is None:
-        question = _value(item, "stem_text", None)
-    if question is None:
-        question = _value(item, "question", "")
     return {
         "item_id": item_id,
         "family_id": family_id,
-        "public_question": str(question or ""),
+        "public_question": public_question,
         "options": dict(sorted(options.items())),
         "correct_option": correct,
         "private_correct_option": correct,

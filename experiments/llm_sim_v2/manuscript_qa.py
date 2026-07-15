@@ -33,26 +33,29 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("human_or_teacher_validation", re.compile(r"\b(?:human|teacher|expert)[ -](?:gold|validated|validation|validation[- ]set|ground\s+truth)\b|\bvalidated\s+by\s+(?:human|teacher|expert)s?\b|\b(?:human|teacher|expert)\s+ground\s+truth\b", re.I)),
     ("learning_trajectory_simulation", re.compile(r"\blearning[ -]trajector(?:y|ies)(?:\s+simulation|\s+simulated|\s+study)?\b|\b(?:simulated?\s+)?learning\s+trajectories\b|\btrajectory\s+simulation\b", re.I)),
     ("four_state_persona", re.compile(r"\bfour[ -]state(?:s)?\s+persona(?:s)?\b|\bfour\s+states?\s+personas?\b", re.I)),
-    ("novelty_claim", re.compile(r"\bfirst[ -]ever\b|\bfirst[ -]of[ -](?:(?:its|a)[ -])?kind\b", re.I)),
-    ("ceai_index_claim", re.compile(r"(?:C&E:AI|Computers\s*&\s*Education:\s*Artificial\s+Intelligence)[^.\n]{0,120}\b(?:SCIE|SSCI|Q1|impact\s+factor|IF\s*23\.4|23\.4)\b|\b(?:SCIE|SSCI|Q1|impact\s+factor|IF\s*23\.4|23\.4)\b[^.\n]{0,120}(?:C&E:AI|Computers\s*&\s*Education:\s*Artificial\s+Intelligence)", re.I)),
+    ("novelty_claim", re.compile(r"\bfirst[ -]ever\b|\bfirst[ -]of[ -](?:(?:the|its|a)[ -])?kind\b", re.I)),
+    ("ceai_index_claim", re.compile(r"(?:C&E:AI|Computers\s*&\s*Education:\s*Artificial\s+Intelligence)[^.]{0,120}\b(?:SCIE|SSCI|Q1|impact\s+factor|IF\s*23\.4|23\.4)\b|\b(?:SCIE|SSCI|Q1|impact\s+factor|IF\s*23\.4|23\.4)\b[^.]{0,120}(?:C&E:AI|Computers\s*&\s*Education:\s*Artificial\s+Intelligence)", re.I)),
 )
 
 
 def scan_manuscript_text(text: str, *, path: str = "<memory>") -> list[QAFinding]:
     if not isinstance(text, str):
         raise TypeError("manuscript text must be a string")
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    scan_text = normalized.replace("\n", " ")
     findings: list[QAFinding] = []
-    for line_number, line in enumerate(text.splitlines(), start=1):
-        for category, pattern in _PATTERNS:
-            for match in pattern.finditer(line):
-                findings.append(
-                    QAFinding(
-                        path=str(path),
-                        line=line_number,
-                        term=match.group(0),
-                        category=category,
-                    )
+    for category, pattern in _PATTERNS:
+        for match in pattern.finditer(scan_text):
+            line_number = normalized.count("\n", 0, match.start()) + 1
+            findings.append(
+                QAFinding(
+                    path=str(path),
+                    line=line_number,
+                    term=" ".join(match.group(0).split()),
+                    category=category,
                 )
+            )
+    findings.sort(key=lambda finding: (finding.line, finding.category, finding.term.lower()))
     return findings
 
 

@@ -7,9 +7,18 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .public import public_question_payload
+
 
 JUDGE_LABELS = frozenset({"consistent", "inconsistent", "unknown", "insufficient_evidence"})
 _FORBIDDEN_FIELD_NAMES = (
+    "persona_id",
+    "pair_id",
+    "row_id",
+    "anchor_id",
+    "target_node",
+    "deficit_condition",
+    "seed",
     "failure_id",
     "failure_cause",
     "failure_symptom",
@@ -19,7 +28,8 @@ _FORBIDDEN_FIELD_NAMES = (
     "observable_error_policy",
     "misconception_id",
 )
-_PUBLIC_KEYS = {"public_question", "question", "options", "public_text"}
+_PUBLIC_KEY = "public_question"
+_NO_OBSERVATION = object()
 
 
 def _dict(value: Any) -> dict[str, Any]:
@@ -53,18 +63,6 @@ def _dict(value: Any) -> dict[str, Any]:
     raise TypeError("prompt input must be a mapping or PersonaV2 record")
 
 
-def _question(item: Any) -> str:
-    value = _dict(item)
-    return str(value.get("public_question", value.get("question", value.get("stem_text", ""))))
-
-
-def _options(item: Any) -> dict[str, str]:
-    raw = _dict(item).get("options", {}) or {}
-    if not isinstance(raw, Mapping):
-        raise ValueError("public item options must be a mapping")
-    return {str(key): str(value) for key, value in raw.items()}
-
-
 def _json_message(role: str, payload: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "role": role,
@@ -75,6 +73,7 @@ def _json_message(role: str, payload: Mapping[str, Any]) -> dict[str, Any]:
 
 def render_controlled_prompt(persona: Any, item: Any) -> list[dict[str, Any]]:
     row = _dict(persona)
+    public_question = public_question_payload(item)
     payload = {
         "simulated": True,
         "actor": "simulated",
@@ -84,13 +83,11 @@ def render_controlled_prompt(persona: Any, item: Any) -> list[dict[str, Any]]:
         "observable_error_policy": row.get("observable_error_policy", {}),
         "noise_parameters": row.get("noise_parameters", {}),
         "deficit_condition": row.get("deficit_condition"),
-        "public_question": _question(item),
-        "options": _options(item),
+        "public_question": public_question,
         "output_schema": {
             "simulated": "boolean",
             "answer": "option letter or null",
             "rationale": "short string",
-            "manipulation_compliance": "number from 0 to 1",
         },
     }
     system = {
@@ -104,6 +101,7 @@ def render_controlled_prompt(persona: Any, item: Any) -> list[dict[str, Any]]:
 
 def _blind_payload(persona: Any, item: Any) -> dict[str, Any]:
     row = _dict(persona)
+    public_question = public_question_payload(item)
     return {
         "simulated": True,
         "actor": "simulated",
@@ -112,8 +110,7 @@ def _blind_payload(persona: Any, item: Any) -> dict[str, Any]:
         "local_skill_vector": row.get("local_skill_vector", {}),
         "noise_parameters": row.get("noise_parameters", {}),
         "modality_condition": "text_only",
-        "public_question": _question(item),
-        "options": _options(item),
+        "public_question": public_question,
         "output_schema": {
             "simulated": "boolean",
             "answer": "option letter or null",
@@ -148,18 +145,6 @@ def render_blind_prompt(
     return messages
 
 
-def _without_public_payload(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {
-            key: _without_public_payload(value_item)
-            for key, value_item in value.items()
-            if str(key).lower() not in _PUBLIC_KEYS
-        }
-    if isinstance(value, list):
-        return [_without_public_payload(item) for item in value]
-    return value
-
-
 def _message_json(message: Any) -> Any:
     if isinstance(message, Mapping):
         output = dict(message)
@@ -173,19 +158,108 @@ def _message_json(message: Any) -> Any:
     return message
 
 
-def _decode_nested_json(value: Any) -> Any:
+def _decode_nested_json(value: Any, *, _depth: int = 0) -> Any:
+    if _depth > 20:
+        return value
     if isinstance(value, Mapping):
-        return {key: _decode_nested_json(item) for key, item in value.items()}
+        return {key: _decode_nested_json(item, _depth=_depth + 1) for key, item in value.items()}
     if isinstance(value, list):
-        return [_decode_nested_json(item) for item in value]
+        return [_decode_nested_json(item, _depth=_depth + 1) for item in value]
     if isinstance(value, str):
         stripped = value.strip()
-        if stripped.startswith(("{", "[")):
+        if stripped.startswith(("{", "[", '"')):
             try:
-                return _decode_nested_json(json.loads(stripped))
+                decoded = json.loads(stripped)
+                if decoded != value:
+                    return _decode_nested_json(decoded, _depth=_depth + 1)
             except json.JSONDecodeError:
                 return value
     return value
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _public_payload_matches(value: Any, expected: Mapping[str, Any] | None) -> bool:
+    if expected is None or not isinstance(value, Mapping):
+        return False
+    try:
+        return _canonical_json(value) == _canonical_json(expected)
+    except (TypeError, ValueError):
+        return False
+
+
+def _string_leaves(value: Any) -> list[str]:
+    if isinstance(value, Mapping):
+        return [leaf for child in value.values() for leaf in _string_leaves(child)]
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [leaf for child in value for leaf in _string_leaves(child)]
+    if isinstance(value, str) and value.strip():
+        return [value.strip().lower()]
+    return []
+
+
+def _scan_structure(
+    value: Any,
+    *,
+    expected_public: Mapping[str, Any] | None,
+    expected_observed: Any = _NO_OBSERVATION,
+    context_terms: Sequence[str],
+    violations: list[str],
+    path: str = "$",
+    allow_observed_terms: bool = False,
+) -> None:
+    """Scan all rendered structure except one exact public-question subtree."""
+
+    if isinstance(value, Mapping):
+        for key, child in value.items():
+            key_text = str(key)
+            key_lower = key_text.lower()
+            child_path = f"{path}.{key_text}"
+            if key_lower in _FORBIDDEN_FIELD_NAMES:
+                violations.append(f"forbidden field: {key_lower}")
+            if key_lower == _PUBLIC_KEY and _public_payload_matches(child, expected_public):
+                continue
+            candidate_matches = False
+            if key_lower == "candidate_output" and expected_observed is not _NO_OBSERVATION:
+                try:
+                    candidate_matches = _canonical_json(child) == _canonical_json(expected_observed)
+                except (TypeError, ValueError):
+                    candidate_matches = False
+                if not candidate_matches:
+                    violations.append("candidate output differs from supplied observation")
+            _scan_structure(
+                child,
+                expected_public=expected_public,
+                expected_observed=expected_observed,
+                context_terms=context_terms,
+                violations=violations,
+                path=child_path,
+                allow_observed_terms=allow_observed_terms or candidate_matches,
+            )
+        return
+    if isinstance(value, (list, tuple)):
+        for index, child in enumerate(value):
+            _scan_structure(
+                child,
+                expected_public=expected_public,
+                expected_observed=expected_observed,
+                context_terms=context_terms,
+                violations=violations,
+                path=f"{path}[{index}]",
+                allow_observed_terms=allow_observed_terms,
+            )
+        return
+    if not isinstance(value, str) or allow_observed_terms:
+        return
+    lowered = value.lower()
+    for field_name in _FORBIDDEN_FIELD_NAMES:
+        if re.search(rf"(?<![a-z0-9]){re.escape(field_name)}(?![a-z0-9])", lowered):
+            violations.append(f"forbidden field text: {field_name}")
+    for term in context_terms:
+        if term and term in lowered:
+            violations.append(f"forbidden leakage term: {term}")
 
 
 def scan_blind_leakage(
@@ -194,6 +268,7 @@ def scan_blind_leakage(
     persona: Any | None = None,
     item: Any | None = None,
     frozen_leakage_lexicon: Sequence[str] = (),
+    observed_output: Any | None = None,
 ) -> list[str]:
     parsed = [
         _decode_nested_json(_message_json(message))
@@ -203,11 +278,7 @@ def scan_blind_leakage(
             else [messages]
         )
     ]
-    outside = json.dumps([_without_public_payload(payload) for payload in parsed], ensure_ascii=False, sort_keys=True).lower()
     violations: list[str] = []
-    for field_name in _FORBIDDEN_FIELD_NAMES:
-        if re.search(rf"(?<![a-z0-9]){re.escape(field_name)}(?![a-z0-9])", outside):
-            violations.append(f"forbidden field: {field_name}")
     context_values: list[str] = []
     for source in (persona, item):
         if source is None:
@@ -217,9 +288,27 @@ def scan_blind_leakage(
             value = mapping.get(key)
             if value is not None:
                 context_values.append(str(value).strip().lower())
-    for term in [*context_values, *(str(value).strip().lower() for value in frozen_leakage_lexicon)]:
-        if term and term in outside:
-            violations.append(f"forbidden leakage term: {term}")
+        context_values.extend(_string_leaves(mapping.get("observable_error_policy")))
+    expected_public = None
+    if item is not None:
+        expected_public = public_question_payload(item)
+    expected_observed = (
+        _NO_OBSERVATION
+        if observed_output is None
+        else _decode_nested_json(observed_output)
+    )
+    terms = [
+        *context_values,
+        *(str(value).strip().lower() for value in frozen_leakage_lexicon),
+    ]
+    for payload in parsed:
+        _scan_structure(
+            payload,
+            expected_public=expected_public,
+            expected_observed=expected_observed,
+            context_terms=tuple(term for term in terms if term),
+            violations=violations,
+        )
     return sorted(set(violations))
 
 
@@ -229,12 +318,14 @@ def assert_blind_no_leakage(
     persona: Any | None = None,
     item: Any | None = None,
     frozen_leakage_lexicon: Sequence[str] = (),
+    observed_output: Any | None = None,
 ) -> None:
     violations = scan_blind_leakage(
         messages,
         persona=persona,
         item=item,
         frozen_leakage_lexicon=frozen_leakage_lexicon,
+        observed_output=observed_output,
     )
     if violations:
         raise AssertionError("blind prompt leakage: " + "; ".join(violations))
@@ -244,6 +335,9 @@ def render_judge_export(
     *,
     blind_messages: Any,
     model_output: Any,
+    persona: Any,
+    item: Any,
+    frozen_leakage_lexicon: Sequence[str],
 ) -> list[dict[str, Any]]:
     payload = {
         "simulated": True,
@@ -264,7 +358,13 @@ def render_judge_export(
         ),
         _json_message("user", payload),
     ]
-    assert_judge_no_target_labels(export)
+    assert_judge_no_target_labels(
+        export,
+        persona=persona,
+        item=item,
+        frozen_leakage_lexicon=frozen_leakage_lexicon,
+        observed_output=model_output,
+    )
     return export
 
 
@@ -274,12 +374,14 @@ def assert_judge_no_target_labels(
     persona: Any | None = None,
     item: Any | None = None,
     frozen_leakage_lexicon: Sequence[str] = (),
+    observed_output: Any | None = None,
 ) -> None:
     assert_blind_no_leakage(
         messages,
         persona=persona,
         item=item,
         frozen_leakage_lexicon=frozen_leakage_lexicon,
+        observed_output=observed_output,
     )
 
 

@@ -198,7 +198,13 @@ def test_panel_and_mapping_accept_bare_in_memory_item_iterables():
         }
         for item in selected
     ]
-    assert len(mapping.normalize_target_option_map(rows, items=items)["rows"]) == 4
+    assert len(
+        mapping.normalize_target_option_map(
+            rows,
+            items=items,
+            expected_rows=[(item["item_id"], anchor["failure_id"]) for item in selected],
+        )["rows"]
+    ) == 4
 
 
 def test_panel_rejects_when_four_distinct_families_are_not_available():
@@ -267,12 +273,13 @@ def test_target_option_map_normalizes_hashes_and_rejects_invalid_targets():
     )
 
     bad_correct = [dict(row, target_option="A") for row in rows]
+    expected = [(item["item_id"], anchor["failure_id"]) for item in selected]
     with pytest.raises(ValueError, match="correct"):
-        mapping.normalize_target_option_map(bad_correct, catalog=catalog)
+        mapping.normalize_target_option_map(bad_correct, catalog=catalog, expected_rows=expected)
 
     bad_absent = [dict(row, target_option="Z") for row in rows]
     with pytest.raises(ValueError, match="option"):
-        mapping.normalize_target_option_map(bad_absent, catalog=catalog)
+        mapping.normalize_target_option_map(bad_absent, catalog=catalog, expected_rows=expected)
 
 
 def test_mapping_correct_answer_uses_the_frozen_answer_values_contract():
@@ -281,7 +288,11 @@ def test_mapping_correct_answer_uses_the_frozen_answer_values_contract():
     anchor, catalog, selected, rows = _valid_mapping(panel)
     catalog.items[selected[0]["item_id"]]["correct_option"] = "B"
 
-    normalized = mapping.normalize_target_option_map(rows, catalog=catalog)
+    normalized = mapping.normalize_target_option_map(
+        rows,
+        catalog=catalog,
+        expected_rows=[(item["item_id"], anchor["failure_id"]) for item in selected],
+    )
     assert normalized["rows"][0]["target_option"] == "B"
 
 
@@ -293,7 +304,7 @@ def test_target_option_map_rejects_conflicts_missing_rows_and_post_observation_r
 
     conflict = rows + [dict(rows[0], target_option="C")]
     with pytest.raises(ValueError, match="conflict|duplicate"):
-        mapping.normalize_target_option_map(conflict, catalog=catalog)
+        mapping.normalize_target_option_map(conflict, catalog=catalog, expected_rows=expected)
     with pytest.raises(ValueError, match="missing"):
         mapping.normalize_target_option_map(rows[:-1], catalog=catalog, expected_rows=expected)
     with pytest.raises(ValueError, match="unexpected|extra"):
@@ -309,6 +320,7 @@ def test_target_option_map_rejects_conflicts_missing_rows_and_post_observation_r
             [dict(rows[0], target_option="C")] + rows[1:],
             catalog=catalog,
             existing=frozen,
+            expected_rows=expected,
             observation_started=True,
         )
 
@@ -318,6 +330,7 @@ def test_target_option_map_rejects_conflicts_missing_rows_and_post_observation_r
             [dict(rows[0], target_option="C")] + rows[1:],
             catalog=catalog,
             existing=frozen_started,
+            expected_rows=expected,
         )
 
 
@@ -329,6 +342,7 @@ def test_target_option_map_rejects_codex_manual_reviewer_and_accepts_explicit_am
         mapping.normalize_target_option_map(
             [dict(rows[0], reviewer="codex_manual")] + rows[1:],
             catalog=catalog,
+            expected_rows=[(item["item_id"], anchor["failure_id"]) for item in selected],
         )
 
     ambiguous = [
@@ -341,7 +355,11 @@ def test_target_option_map_rejects_codex_manual_reviewer_and_accepts_explicit_am
             "ambiguity_reason": "two distractors encode the same error",
         }
     ]
-    normalized = mapping.normalize_target_option_map(ambiguous, catalog=catalog)
+    normalized = mapping.normalize_target_option_map(
+        ambiguous,
+        catalog=catalog,
+        expected_rows=[(selected[0]["item_id"], anchor["failure_id"])],
+    )
     assert normalized["rows"][0]["status"] == "excluded_ambiguous"
 
 

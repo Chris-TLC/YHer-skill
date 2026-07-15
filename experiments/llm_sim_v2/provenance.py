@@ -88,6 +88,8 @@ def _declared_rows(value: Mapping[str, Any] | Sequence[Any]) -> list[dict[str, s
         if not path or len(digest) != 64:
             raise ValueError("declared provenance rows require path and sha256")
         rows.append({"path": path, "sha256": digest.lower()})
+    if not rows:
+        raise ValueError("declared provenance file set cannot be empty")
     return sorted(rows, key=lambda row: row["path"])
 
 
@@ -117,6 +119,16 @@ def verify_frozen_git_commit(
 
     root = Path(repo_root).expanduser().resolve(strict=True)
     commit_id = subprocess.check_output(["git", "rev-parse", "--verify", commit], cwd=root, text=True).strip()
+    current_head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", commit_id, current_head],
+        cwd=root,
+        capture_output=True,
+    )
+    if ancestry.returncode == 1:
+        raise ValueError("frozen commit is not an ancestor of current HEAD")
+    if ancestry.returncode != 0:
+        raise RuntimeError("cannot verify frozen commit ancestry")
     rows = _declared_rows(declared_files)
     commit_epoch = float(subprocess.check_output(["git", "show", "-s", "--format=%ct", commit_id], cwd=root, text=True).strip())
     observation_epoch = _observation_epoch(observation_timestamp)
@@ -141,6 +153,8 @@ def verify_frozen_git_commit(
         "schema_version": "yher.llm_sim_v2.git_proof.v1",
         "ok": True,
         "commit": commit_id,
+        "current_head": current_head,
+        "ancestor_of_head": True,
         "commit_timestamp_utc": datetime.fromtimestamp(commit_epoch, tz=timezone.utc).isoformat(),
         "observation_timestamp": str(observation_timestamp),
         "precedes_observation": True,

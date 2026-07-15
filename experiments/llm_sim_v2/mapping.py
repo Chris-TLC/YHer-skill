@@ -10,6 +10,10 @@ from typing import Any
 
 SCHEMA_VERSION = "yher.llm_sim_v2.target_option_map.v1"
 STATUSES = {"mapped", "excluded_ambiguous"}
+REVIEWER_PROVENANCE_POLICY = (
+    "Manual target-option alignment and exclusion reviewer fields cannot use codex_*; "
+    "Codex code/test gate self-signing is a separate engineering review scope."
+)
 
 
 def _canonical(value: Any) -> bytes:
@@ -118,8 +122,8 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
             row["ambiguity_reason"] = str(raw["ambiguity_reason"])
         key = (item_id, failure_id)
         previous = seen.get(key)
-        if previous is not None and previous != row:
-            raise ValueError("mapping contains a conflicting duplicate entry")
+        if previous is not None:
+            raise ValueError("mapping contains a duplicate entry")
         seen[key] = row
     output.extend(seen.values())
     output.sort(key=lambda row: (row["item_id"], row["failure_id"]))
@@ -128,7 +132,12 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
 
 def _contains_codex_reviewer(value: Any) -> bool:
     if isinstance(value, Mapping):
-        return any(_contains_codex_reviewer(item) for item in value.values())
+        signer_keys = {"reviewer", "manual_reviewer", "signer", "signed_by", "reviewed_by"}
+        return any(
+            _contains_codex_reviewer(item)
+            for key, item in value.items()
+            if str(key).strip().lower() in signer_keys
+        )
     if isinstance(value, (list, tuple, set, frozenset)):
         return any(_contains_codex_reviewer(item) for item in value)
     return str(value).strip().lower().startswith(("codex_", "codex-"))
@@ -167,16 +176,24 @@ def normalize_target_option_map(
         if existing is None:
             raise ValueError("post-observation mapping replacement is forbidden")
     normalized_rows = _normalize_rows(rows)
-    expected = _expected_pairs(expected_rows)
-    if expected:
-        actual = {(row["item_id"], row["failure_id"]) for row in normalized_rows}
-        missing = expected - actual
-        unexpected = actual - expected
-        if missing:
-            raise ValueError(f"mapping rows are missing: {sorted(missing)}")
-        if unexpected:
-            raise ValueError(f"mapping rows are unexpected extras: {sorted(unexpected)}")
+    if expected_rows is None:
+        raise ValueError("a non-empty expected row set is required")
+    expected_values = list(expected_rows)
+    expected = _expected_pairs(expected_values)
+    if not expected:
+        raise ValueError("a non-empty expected row set is required")
+    if len(expected) != len(expected_values) or any(not item_id or not failure_id for item_id, failure_id in expected):
+        raise ValueError("expected rows must be unique non-empty item/failure pairs")
+    actual = {(row["item_id"], row["failure_id"]) for row in normalized_rows}
+    missing = expected - actual
+    unexpected = actual - expected
+    if missing:
+        raise ValueError(f"mapping rows are missing: {sorted(missing)}")
+    if unexpected:
+        raise ValueError(f"mapping rows are unexpected extras: {sorted(unexpected)}")
     lookup = _item_lookup(catalog, items)
+    if not lookup:
+        raise ValueError("a non-empty catalog/items lookup is required")
     for row in normalized_rows:
         item = lookup.get(row["item_id"])
         if item is None:
@@ -184,6 +201,8 @@ def normalize_target_option_map(
         options = _value(item, "options", {}) or {}
         option_keys = {str(key).strip().upper() for key in options} if isinstance(options, Mapping) else set()
         answer = _correct_option(item)
+        if not answer or answer not in option_keys:
+            raise ValueError(f"mapping item has no known correct answer: {row['item_id']}")
         if row["status"] == "mapped":
             if row["target_option"] is None:
                 raise ValueError("mapped rows require a target option")
@@ -211,6 +230,13 @@ def normalize_target_option_map(
     ]
     mapping_hash = hashlib.sha256(_canonical(normalized_rows)).hexdigest()
     target_hash = hashlib.sha256(_canonical(mapped_targets)).hexdigest()
+    if isinstance(rows, Mapping):
+        advertised_mapping = rows.get("mapping_sha256")
+        advertised_targets = rows.get("target_set_hash")
+        if advertised_mapping is not None and str(advertised_mapping) != mapping_hash:
+            raise ValueError("advertised mapping_sha256 does not match canonical rows")
+        if advertised_targets is not None and str(advertised_targets) != target_hash:
+            raise ValueError("advertised target_set_hash does not match canonical rows")
     return {
         "schema_version": SCHEMA_VERSION,
         "frozen": True,
@@ -226,13 +252,30 @@ def validate_target_option_map(*args: Any, **kwargs: Any) -> dict[str, Any]:
 
 
 def mapping_sha256(value: Mapping[str, Any] | Any) -> str:
-    normalized = normalize_target_option_map(value) if not isinstance(value, Mapping) or "mapping_sha256" not in value else value
-    return str(normalized["mapping_sha256"])
+    rows = _normalize_rows(value)
+    computed = hashlib.sha256(_canonical(rows)).hexdigest()
+    if isinstance(value, Mapping) and value.get("mapping_sha256") is not None:
+        if str(value["mapping_sha256"]) != computed:
+            raise ValueError("advertised mapping_sha256 does not match canonical rows")
+    return computed
 
 
 def target_set_hash(value: Mapping[str, Any] | Any) -> str:
-    normalized = normalize_target_option_map(value) if not isinstance(value, Mapping) or "target_set_hash" not in value else value
-    return str(normalized["target_set_hash"])
+    rows = _normalize_rows(value)
+    mapped_targets = [
+        {
+            "item_id": row["item_id"],
+            "failure_id": row["failure_id"],
+            "target_option": row["target_option"],
+        }
+        for row in rows
+        if row["status"] == "mapped"
+    ]
+    computed = hashlib.sha256(_canonical(mapped_targets)).hexdigest()
+    if isinstance(value, Mapping) and value.get("target_set_hash") is not None:
+        if str(value["target_set_hash"]) != computed:
+            raise ValueError("advertised target_set_hash does not match canonical rows")
+    return computed
 
 
 normalize_mapping = normalize_target_option_map
@@ -241,6 +284,7 @@ validate_mapping = validate_target_option_map
 
 __all__ = [
     "SCHEMA_VERSION",
+    "REVIEWER_PROVENANCE_POLICY",
     "normalize_target_option_map",
     "validate_target_option_map",
     "mapping_sha256",

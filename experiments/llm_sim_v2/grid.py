@@ -43,11 +43,13 @@ def _anchor_rows(anchors: Sequence[Any]) -> list[dict[str, Any]]:
                 "anchor_id": anchor_id,
                 "target_node": target_node,
                 "failure_id": failure_id,
-                "failure_cause": str(_value(anchor, "failure_cause", "") or ""),
-                "failure_symptom": str(_value(anchor, "failure_symptom", "") or ""),
+                "failure_cause": str(_value(anchor, "failure_cause", "") or "").strip(),
+                "failure_symptom": str(_value(anchor, "failure_symptom", "") or "").strip(),
                 "curriculum_exposure": _value(anchor, "curriculum_exposure", (target_node,)),
             }
         )
+        if not normalized[-1]["failure_cause"] or not normalized[-1]["failure_symptom"]:
+            raise ValueError("each anchor requires non-empty failure cause and symptom")
     normalized.sort(key=lambda row: (row["anchor_id"], row["target_node"], row["failure_id"]))
     return normalized
 
@@ -83,16 +85,24 @@ def build_persona_grid(
                 "hesitation_rate": 0.15 if noise_level == "low" else 0.45,
                 "slip_rate": 0.05 if noise_level == "low" else 0.20,
             }
-            skill = {
-                "ability_band": ability_band,
-                "target_skill": 0.35 if ability_band == "lower" else 0.75,
-            }
+            base_skill = 0.35 if ability_band == "lower" else 0.75
             for condition in ("deficit", "control"):
-                policy = {
-                    "error_mode": "targeted" if condition == "deficit" else "baseline",
-                    "guessing_allowed": True,
-                    "omit_work_rate": 0.20 if condition == "deficit" else 0.10,
+                adjustment = -0.12 if condition == "deficit" else 0.0
+                skill = {
+                    "ability_band": ability_band,
+                    "prerequisite_skill": round(max(0.0, base_skill + adjustment), 3),
+                    "target_skill": round(max(0.0, base_skill + adjustment), 3),
+                    "reasoning_skill": round(max(0.0, base_skill + adjustment), 3),
                 }
+                if condition == "deficit":
+                    policy = {
+                        "strategy": "apply_observed_failure_pattern",
+                        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+                        "cause": anchor["failure_cause"],
+                        "symptom": anchor["failure_symptom"],
+                    }
+                else:
+                    policy = {"strategy": "solve_normally"}
                 rows.append(
                     PersonaV2(
                         persona_id=persona_id,
