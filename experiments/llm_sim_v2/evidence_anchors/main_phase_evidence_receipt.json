@@ -1,0 +1,80 @@
+{
+  "authority": "post_invocation_phase_receipt",
+  "phase": "main",
+  "phase_evidence_receipt_sha256": "31ddabc3fc5ac2079997d97f24fe327b0b011b79422b1b0c7973251784ffa6d7",
+  "phase_provenance_file_sha256": "40de3f1be9c7b11ac88d48fdf1ed590e7bac2eca11876e7bc5ffdea6bce30b93",
+  "phase_provenance_sha256": "68a9aa716bd758e326a8a00f0b33d362d9e73ae3f0c5802cbec6a4c52cf8bf74",
+  "providers": {
+    "deepseek": {
+      "evidence_chain_head_sha256": "179c0c85c5d87c5aea94ecae5376524772efa21941ff79e93df740adb38815db",
+      "evidence_event_count": 18,
+      "provider_call_count": 16,
+      "provider_manifest_path": "provider_manifests/deepseek.json",
+      "provider_manifest_sha256": "5aff45f02cf51342934e6717986a3e282858c86c4f9a0f23cfffdbdda9dfa898",
+      "record_count": 4,
+      "record_set_sha256": "0b1f464f1d7b2e29a8dcd8d72d854c25b0e4841aca0517c92f2b48b472917b66",
+      "validated_attempt_count": 16
+    },
+    "doubao": {
+      "evidence_chain_head_sha256": "e19bada62993502cdf88c9b63fc2218e591d0aa4d314eacea89c401a920aab83",
+      "evidence_event_count": 1543,
+      "provider_call_count": 1541,
+      "provider_manifest_path": "provider_manifests/doubao.json",
+      "provider_manifest_sha256": "04ee57396c3265d15852eecaeb3d56d9846fab1d28675d9007ac55398f6081f3",
+      "record_count": 1528,
+      "record_set_sha256": "66ce36818bf1498fb5e628f6f0582fe7eb11d1e69a9c6ad89fa3f8858ecfc727",
+      "validated_attempt_count": 1541
+    },
+    "glm": {
+      "evidence_chain_head_sha256": "b338efbd1e59419f44099329c3c4c69d47e475e6057b5de2503d07dcf07b4f38",
+      "evidence_event_count": 14,
+      "provider_call_count": 12,
+      "provider_manifest_path": "provider_manifests/glm.json",
+      "provider_manifest_sha256": "a01be7c7415e1fee37b99e7c15a74b7bc0531d600bb6ec30ac0ce45d110d04d3",
+      "record_count": 4,
+      "record_set_sha256": "d41f9a68862894d9cd63e4b564382bb9cd7a058e238dd69a3be2350077c2d8aa",
+      "validated_attempt_count": 12
+    },
+    "kimi": {
+      "evidence_chain_head_sha256": "c50c1313b5d5ffde542dfb4034e9fd0fd83feeb652acb4943714d8aeafcd8348",
+      "evidence_event_count": 1530,
+      "provider_call_count": 1528,
+      "provider_manifest_path": "provider_manifests/kimi.json",
+      "provider_manifest_sha256": "1fee2e3421348e0e737ae383b063ac6cd0e047a26ba4890445f123a5e0d75675",
+      "record_count": 1528,
+      "record_set_sha256": "9a8b406de3796e74cafd6190466fb18d53db780fddbb2378f3061ad230700ac0",
+      "validated_attempt_count": 1528
+    },
+    "minimax": {
+      "evidence_chain_head_sha256": "51e66e4e53edb3f13438dc62e9ef9e8737b1dff647f2809a884074610a74804c",
+      "evidence_event_count": 64,
+      "provider_call_count": 62,
+      "provider_manifest_path": "provider_manifests/minimax.json",
+      "provider_manifest_sha256": "9a0f8cdf157ff9f4d2e405979b028d8a2692d1b420e1d67f9d7862a7e5ec6274",
+      "record_count": 56,
+      "record_set_sha256": "1a39d3446dd21e36f5bb2ed331bfe641055a4c0bdea537ebe533e64876ea7126",
+      "validated_attempt_count": 62
+    },
+    "tongyi": {
+      "evidence_chain_head_sha256": "1004903ab7feea49219e15e3fe922b85090bf4f844c88883f50b0ed33100f92d",
+      "evidence_event_count": 1535,
+      "provider_call_count": 1533,
+      "provider_manifest_path": "provider_manifests/tongyi.json",
+      "provider_manifest_sha256": "9e60254fecd646ef3f2a1e4649b93855b50adf219fcd036ae6ff07a1266f36ed",
+      "record_count": 1528,
+      "record_set_sha256": "a62a4dfad5b8342cbc9585bb7813e646d8b7e9808851d4b0ea43b6bbb5c87f8b",
+      "validated_attempt_count": 1533
+    }
+  },
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.phase_evidence_receipt.v1",
+  "simulated": true,
+  "store_snapshot": {
+    "file_count": 9371,
+    "file_set_sha256": "f4506cf29b4224392f59a9b88cc26758ddf6b1a68450e7301f9901d488aad5d5",
+    "phase": "main",
+    "run_id": "llm-personas-v2-dual",
+    "schema_version": "yher.llm_sim_v2.phase_store_snapshot.v1",
+    "total_bytes": 30872169
+  }
+}
