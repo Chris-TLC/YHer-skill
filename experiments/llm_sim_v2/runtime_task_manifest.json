@@ -1,7 +1,7 @@
 {
   "freeze_commit": "e3c0d4dbe6f37303d9eac86ecd9c1af823f152b9",
   "freeze_manifest_sha256": "2d0ea5608dd4ab277106bd5a8effe978d575f93b77193747efc6d37b9473245e",
-  "frozen_at_utc": "2026-07-15T10:04:40Z",
+  "frozen_at_utc": "2026-07-15T10:44:18Z",
   "phases": {
     "main": {
       "providers": [
@@ -1688,8 +1688,8 @@
   "prompt_ledger_sha256": "cc6eeff0cf32f1800c4472634a2a88f4983628eda67e89488b5d769e67352427",
   "prompt_revision": 0,
   "run_id": "llm-personas-v2-dual",
-  "runtime_commit": "b4cd03ad2e793077affe5139e2b3e07b13a2baec",
-  "runtime_file_set_sha256": "43cca380a4348561c40bf19d6ae1f466691822e27db129869ff8ab83b9d562f1",
+  "runtime_commit": "6918d5d41c0cbb08e03bd86df0e67de2ce0dc1e5",
+  "runtime_file_set_sha256": "0af165d398f0b3cc50bbf11fb66e355f901629d4aaa9b16613f677823d2a32ed",
   "runtime_files": [
     {
       "path": "experiments/config/llm_transport_v2.json",
@@ -1713,11 +1713,11 @@
     },
     {
       "path": "experiments/llm_sim_v2/runner.py",
-      "sha256": "f4a30a60c5b6188b464bb11ffc83d4c5276c95ed06e0eaf217ade2d78dbeca88",
-      "size": 85054
+      "sha256": "217d506dc3a839455dca72772fc48c6710cf854edee13d38f4abd69192c66dba",
+      "size": 88890
     }
   ],
-  "runtime_task_manifest_sha256": "d046ca0aab52ff68a51d9d9027b3273cc3ab6fb05bc71da3224c122ef8c91086",
+  "runtime_task_manifest_sha256": "4882aeef7d2106acfb543f01e6f3d956722c7ffa52fe1ba677c8ffd8daad4938",
   "schema_version": "yher.llm_sim_v2.runtime_task_manifest.v1",
   "simulated": true
 }
