@@ -20,6 +20,10 @@ from .runner import (
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", required=True)
+    parser.add_argument(
+        "--secrets-root",
+        help="read-only .env location for transport; never copied into the run store",
+    )
     parser.add_argument("--phase", choices=("pilot", "main"), required=True)
     parser.add_argument("--provider", action="append", dest="providers")
     parser.add_argument(
@@ -45,6 +49,7 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
     if args.limit is not None and not args.allow_partial:
         raise SystemExit("--limit requires --allow-partial and is not a formal collection")
     root = Path(args.repo_root).expanduser().resolve(strict=True)
+    secrets_root = Path(args.secrets_root or args.repo_root).expanduser().resolve(strict=True)
     contract = load_runtime_contract(root)
     configured = tuple(args.providers or contract.config[args.phase]["providers"])
     unknown = sorted(set(configured) - set(contract.config["providers"]))
@@ -57,7 +62,7 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
     for provider in configured:
         transport = HTTPProviderTransport.from_environment(
             provider,
-            repo_root=root,
+            repo_root=secrets_root,
             version="v2",
         )
         runner = V2ProviderRunner(
