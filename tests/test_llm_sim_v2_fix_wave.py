@@ -164,6 +164,16 @@ def test_public_question_rejects_private_target_metadata_even_when_structured():
         "target_node",
         "candidate_output",
         "secret_token",
+        "persona_id",
+        "pair_id",
+        "row_id",
+        "anchor_id",
+        "deficit_condition",
+        "seed",
+        "modality_condition",
+        "local_skill_vector",
+        "noise_parameters",
+        "curriculum_exposure",
     ):
         poisoned = copy.deepcopy(base)
         poisoned["public_question"]["stem_blocks"][0][private_key] = "private metadata"
@@ -209,6 +219,14 @@ def test_blind_leakage_validation_allows_only_the_exact_public_subtree():
     latent_metadata[1]["content"] = json.dumps(payload)
     with pytest.raises(AssertionError, match="deficit_condition|persona_id"):
         assert_blind_no_leakage(latent_metadata, persona=row, item=item)
+
+    for forbidden_key in ("target-option", "failure-cause", "failure‐cause"):
+        lexical_variant = copy.deepcopy(messages)
+        payload = _content(lexical_variant)
+        payload["metadata"] = {forbidden_key: "private target metadata"}
+        lexical_variant[1]["content"] = json.dumps(payload, ensure_ascii=False)
+        with pytest.raises(AssertionError, match="forbidden|target|failure"):
+            assert_blind_no_leakage(lexical_variant, persona=row, item=item)
 
     modified_public = copy.deepcopy(messages)
     payload = _content(modified_public)
@@ -436,6 +454,16 @@ def test_manual_mapping_reviewer_rule_is_separate_from_code_gate_self_signing():
         )
     accepted = [{**rows[0], "reviewer_provenance": {"reviewer": "claude", "drafted_by": "codex_agent", "crosschecked_by": "model"}}, *rows[1:]]
     assert mapping.normalize_target_option_map(accepted, catalog=catalog, expected_rows=expected)["rows"][0]["reviewer_provenance"]["reviewer"] == "claude"
+    for provenance in (
+        {"metadata": {"reviewer": "codex_gate"}},
+        {"foo": [{"reviewed_by": "codex_gate"}]},
+    ):
+        with pytest.raises(ValueError, match="codex|reviewer"):
+            mapping.normalize_target_option_map(
+                [{**rows[0], "reviewer_provenance": provenance}, *rows[1:]],
+                catalog=catalog,
+                expected_rows=expected,
+            )
 
 
 def test_manuscript_qa_scans_wrapped_claims_from_the_correct_starting_line():

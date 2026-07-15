@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from collections.abc import Mapping
+import re
 from typing import Any
 
 
@@ -25,6 +26,16 @@ _PRIVATE_PUBLIC_KEYS = frozenset(
         "response",
         "outcome",
         "run_id",
+        "persona_id",
+        "pair_id",
+        "row_id",
+        "anchor_id",
+        "deficit_condition",
+        "seed",
+        "modality_condition",
+        "local_skill_vector",
+        "noise_parameters",
+        "curriculum_exposure",
         "rubric",
         "secret",
         "secret_token",
@@ -45,6 +56,10 @@ _PUBLIC_SCHEMA_KEYS = frozenset(
 )
 
 
+def _normalize_key(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
+
+
 def _value(record: Any, key: str, default: Any = None) -> Any:
     if isinstance(record, Mapping):
         return record.get(key, default)
@@ -54,7 +69,7 @@ def _value(record: Any, key: str, default: Any = None) -> Any:
 def _private_key(value: Any) -> str | None:
     if isinstance(value, Mapping):
         for key, child in value.items():
-            normalized = str(key).strip().lower().replace("-", "_")
+            normalized = _normalize_key(key)
             if normalized in _PRIVATE_PUBLIC_KEYS:
                 return normalized
             found = _private_key(child)
@@ -104,9 +119,9 @@ def public_question_payload(item: Any) -> dict[str, Any]:
         raise ValueError("public_question must return a mapping")
     payload = deepcopy(dict(candidate))
     unknown_keys = {
-        str(key).strip().lower().replace("-", "_")
+        _normalize_key(key)
         for key in payload
-        if str(key).strip().lower().replace("-", "_") not in _PUBLIC_SCHEMA_KEYS
+        if _normalize_key(key) not in _PUBLIC_SCHEMA_KEYS
     }
     if unknown_keys:
         raise ValueError(f"public_question contains fields outside the public schema: {sorted(unknown_keys)}")

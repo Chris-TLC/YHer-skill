@@ -32,6 +32,10 @@ _PUBLIC_KEY = "public_question"
 _NO_OBSERVATION = object()
 
 
+def _normalize_field_token(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
+
+
 def _dict(value: Any) -> dict[str, Any]:
     if hasattr(value, "to_dict"):
         return dict(value.to_dict())
@@ -216,9 +220,12 @@ def _scan_structure(
         for key, child in value.items():
             key_text = str(key)
             key_lower = key_text.lower()
+            key_normalized = _normalize_field_token(key_text)
             child_path = f"{path}.{key_text}"
-            if key_lower in _FORBIDDEN_FIELD_NAMES:
-                violations.append(f"forbidden field: {key_lower}")
+            if key_normalized in _FORBIDDEN_FIELD_NAMES:
+                violations.append(f"forbidden field: {key_normalized}")
+            elif key_normalized == "candidate_output" and key_lower != "candidate_output":
+                violations.append("forbidden field: candidate_output")
             if key_lower == _PUBLIC_KEY and _public_payload_matches(child, expected_public):
                 continue
             candidate_matches = False
@@ -254,8 +261,9 @@ def _scan_structure(
     if not isinstance(value, str) or allow_observed_terms:
         return
     lowered = value.lower()
+    normalized_text = _normalize_field_token(lowered)
     for field_name in _FORBIDDEN_FIELD_NAMES:
-        if re.search(rf"(?<![a-z0-9]){re.escape(field_name)}(?![a-z0-9])", lowered):
+        if re.search(rf"(?:^|_){re.escape(field_name)}(?:_|$)", normalized_text):
             violations.append(f"forbidden field text: {field_name}")
     for term in context_terms:
         if term and term in lowered:

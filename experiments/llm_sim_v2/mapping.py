@@ -109,7 +109,7 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
         reviewer = raw.get("reviewer_provenance", raw.get("reviewer", raw.get("provenance")))
         if reviewer is None or (isinstance(reviewer, str) and not reviewer.strip()):
             raise ValueError("mapping rows require reviewer provenance")
-        if _contains_codex_reviewer(reviewer):
+        if _contains_codex_reviewer(reviewer, _signer_context=True):
             raise ValueError("reviewer provenance cannot use a codex_* manual reviewer")
         row: dict[str, Any] = {
             "item_id": item_id,
@@ -130,17 +130,21 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
     return output
 
 
-def _contains_codex_reviewer(value: Any) -> bool:
+def _contains_codex_reviewer(value: Any, *, _signer_context: bool = False) -> bool:
+    signer_keys = {"reviewer", "manual_reviewer", "signer", "signed_by", "reviewed_by"}
     if isinstance(value, Mapping):
-        signer_keys = {"reviewer", "manual_reviewer", "signer", "signed_by", "reviewed_by"}
-        return any(
-            _contains_codex_reviewer(item)
-            for key, item in value.items()
-            if str(key).strip().lower() in signer_keys
-        )
+        for key, item in value.items():
+            normalized = str(key).strip().lower().replace("-", "_")
+            if normalized in signer_keys:
+                if _contains_codex_reviewer(item, _signer_context=True):
+                    return True
+            elif isinstance(item, Mapping) or isinstance(item, (list, tuple, set, frozenset)):
+                if _contains_codex_reviewer(item, _signer_context=False):
+                    return True
+        return False
     if isinstance(value, (list, tuple, set, frozenset)):
-        return any(_contains_codex_reviewer(item) for item in value)
-    return str(value).strip().lower().startswith(("codex_", "codex-"))
+        return any(_contains_codex_reviewer(item, _signer_context=_signer_context) for item in value)
+    return _signer_context and str(value).strip().lower().startswith(("codex_", "codex-"))
 
 
 def _correct_option(item: Any) -> str | None:
