@@ -40,6 +40,16 @@ from .prompts import render_blind_prompt, render_controlled_prompt
 from .provenance import verify_frozen_git_commit
 from .public import public_question_payload
 from .store import RUN_ID, V2Store
+from .evidence import (
+    ProviderEvidenceLedger,
+    REVIEWED_CARRIED_LEDGER_SHA256,
+    REVIEWED_LEGACY_KNOWN_COST_YUAN,
+    REVIEWED_LEGACY_RECEIPT_SHA256,
+    REVIEWED_LEGACY_RECORD_SET_SHA256,
+    bind_response_content,
+    build_provider_record_set,
+    validate_v2_response_record,
+)
 
 
 FROZEN_COMMIT = "e3c0d4dbe6f37303d9eac86ecd9c1af823f152b9"
@@ -54,8 +64,12 @@ RUNTIME_PATHS = (
     "experiments/config/llm_transport_v2.json",
     "experiments/llm_sim/transport.py",
     "experiments/llm_sim_v2/collect.py",
+    "experiments/llm_sim_v2/evidence.py",
+    "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_carried_forward_cost.json",
+    "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_retrospective_receipt.json",
     "experiments/llm_sim_v2/prior_cost_ledger.json",
     "experiments/llm_sim_v2/runner.py",
+    "experiments/llm_sim_v2/store.py",
 )
 _JSON_KEYS = {"simulated", "answer", "rationale"}
 _BLIND_JSON_KEYS = _JSON_KEYS | {"abstain"}
@@ -882,6 +896,7 @@ def build_phase_provenance(
     tasks: Sequence[Task],
     collection_scope: Mapping[str, Any],
     prior_cost_ledger: Mapping[str, Any],
+    carried_forward_cost: Mapping[str, Any] | None = None,
     first_observation_at_utc: str,
 ) -> dict[str, Any]:
     phase_name = str(phase).strip().lower()
@@ -938,6 +953,48 @@ def build_phase_provenance(
     verify_prior_cost_ledger(prior_cost_ledger)
     if dict(prior_cost_ledger) != dict(contract.prior_cost_ledger):
         raise ValueError("phase provenance prior cost ledger differs from runtime contract")
+    carried = dict(carried_forward_cost or {})
+    carried_digest = carried.get("carried_forward_cost_ledger_sha256")
+    carried_receipt = carried.get("source_phase_receipt_sha256")
+    carried_record_set = carried.get("source_record_set_sha256")
+    try:
+        carried_known = float(carried.get("known_cost_yuan", 0.0))
+        carried_reserve = float(carried.get("unknown_cost_reserve_yuan", 0.0))
+        carried_total = float(carried.get("total_accounted_cost_yuan", 0.0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("phase provenance carried-forward cost is invalid") from exc
+    if carried_digest is not None:
+        for value in (carried_digest, carried_receipt, carried_record_set):
+            text = str(value or "")
+            if len(text) != 64 or any(char not in "0123456789abcdef" for char in text):
+                raise ValueError("phase provenance carried-forward binding is invalid")
+    elif carried_receipt is not None or carried_record_set is not None or any(
+        value != 0.0 for value in (carried_known, carried_reserve, carried_total)
+    ):
+        raise ValueError("phase provenance carried-forward binding is invalid")
+    if (
+        any(not math.isfinite(value) or value < 0 for value in (
+            carried_known,
+            carried_reserve,
+            carried_total,
+        ))
+        or not math.isclose(
+            carried_total,
+            carried_known + carried_reserve,
+            rel_tol=0.0,
+            abs_tol=1e-8,
+        )
+    ):
+        raise ValueError("phase provenance carried-forward totals are invalid")
+    if formal and not (
+        carried_digest == REVIEWED_CARRIED_LEDGER_SHA256
+        and carried_record_set == REVIEWED_LEGACY_RECORD_SET_SHA256
+        and carried_receipt == REVIEWED_LEGACY_RECEIPT_SHA256
+        and carried_known == REVIEWED_LEGACY_KNOWN_COST_YUAN
+        and carried_reserve == 0.0
+        and carried_total == REVIEWED_LEGACY_KNOWN_COST_YUAN
+    ):
+        raise ValueError("formal phase requires the reviewed carried-forward ledger")
     prompt = active_prompt_revision(contract)
     roster_rows = [
         {
@@ -1034,6 +1091,12 @@ def build_phase_provenance(
             "prior_documented_cost_yuan": prior_cost_ledger[
                 "pre_run_total_bound_yuan"
             ],
+            "carried_forward_cost_ledger_sha256": carried_digest,
+            "source_phase_receipt_sha256": carried_receipt,
+            "source_record_set_sha256": carried_record_set,
+            "carried_forward_known_cost_yuan": round(carried_known, 8),
+            "carried_forward_unknown_reserve_yuan": round(carried_reserve, 8),
+            "carried_forward_total_accounted_cost_yuan": round(carried_total, 8),
             "unknown_attempt_reserve_yuan": prior_cost_ledger[
                 "unknown_attempt_reserve_yuan"
             ],
@@ -1203,6 +1266,7 @@ def verify_phase_provenance_against_contract(
     runtime_proof: Mapping[str, Any],
     tasks: Sequence[Task],
     collection_scope: Mapping[str, Any],
+    carried_forward_cost: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     proof = verify_phase_provenance(artifact)
     freeze_binding = artifact.get("freeze")
@@ -1243,6 +1307,7 @@ def verify_phase_provenance_against_contract(
         tasks=tasks,
         collection_scope=collection_scope,
         prior_cost_ledger=contract.prior_cost_ledger,
+        carried_forward_cost=carried_forward_cost,
         first_observation_at_utc=first_observation,
     )
     if dict(artifact) != expected:
@@ -1259,6 +1324,21 @@ def validate_formal_phase_provenance(artifact: Mapping[str, Any]) -> dict[str, A
         or artifact.get("formal_analysis_eligible") is not True
     ):
         raise ValueError("partial or development-only phase is ineligible for formal analysis")
+    budget = artifact.get("budget")
+    if not isinstance(budget, Mapping) or not (
+        budget.get("carried_forward_cost_ledger_sha256")
+        == REVIEWED_CARRIED_LEDGER_SHA256
+        and budget.get("source_phase_receipt_sha256")
+        == REVIEWED_LEGACY_RECEIPT_SHA256
+        and budget.get("source_record_set_sha256")
+        == REVIEWED_LEGACY_RECORD_SET_SHA256
+        and float(budget.get("carried_forward_known_cost_yuan", -1.0))
+        == REVIEWED_LEGACY_KNOWN_COST_YUAN
+        and float(budget.get("carried_forward_unknown_reserve_yuan", -1.0)) == 0.0
+        and float(budget.get("carried_forward_total_accounted_cost_yuan", -1.0))
+        == REVIEWED_LEGACY_KNOWN_COST_YUAN
+    ):
+        raise ValueError("formal phase lacks the reviewed carried-forward ledger")
     return proof
 
 
@@ -1272,7 +1352,7 @@ def write_phase_provenance(
     return store.write_json("phase_provenance.json", phase, immutable=True)
 
 
-def _phase_provenance_binding(artifact: Mapping[str, Any]) -> dict[str, Any]:
+def phase_provenance_binding(artifact: Mapping[str, Any]) -> dict[str, Any]:
     verify_phase_provenance(artifact)
     return {
         "collection_mode": artifact["collection_mode"],
@@ -1294,6 +1374,18 @@ def _phase_provenance_binding(artifact: Mapping[str, Any]) -> dict[str, Any]:
         "runtime_file_set_sha256": artifact["runtime"][
             "runtime_file_set_sha256"
         ],
+        "carried_forward_cost_ledger_sha256": artifact["budget"].get(
+            "carried_forward_cost_ledger_sha256"
+        ),
+        "source_phase_receipt_sha256": artifact["budget"].get(
+            "source_phase_receipt_sha256"
+        ),
+        "source_record_set_sha256": artifact["budget"].get(
+            "source_record_set_sha256"
+        ),
+        "carried_forward_total_accounted_cost_yuan": artifact["budget"].get(
+            "carried_forward_total_accounted_cost_yuan", 0.0
+        ),
     }
 
 
@@ -1349,6 +1441,103 @@ def _backoff(
     )
 
 
+def _build_response_record(
+    task: Task,
+    *,
+    provider: str,
+    model: str,
+    returned_model: str | None,
+    final_status: str,
+    final_error: str | None,
+    parsed: Mapping[str, Any] | None,
+    attempts: Sequence[Mapping[str, Any]],
+    provenance: Mapping[str, Any],
+) -> dict[str, Any]:
+    parsed_output = dict(parsed) if parsed is not None else None
+    outcomes = (
+        compute_outcomes(
+            condition=task.condition,
+            response_arm=task.response_arm,
+            answer=parsed_output.get("answer") if parsed_output else None,
+            abstain=bool(parsed_output.get("abstain")) if parsed_output else False,
+            correct_option=task.correct_option,
+            target_option=task.target_option,
+        )
+        if parsed_output
+        else {
+            "is_correct": None,
+            "target_option_hit": None,
+            "manipulation_compliance": None,
+        }
+    )
+    attempt_rows = [dict(row) for row in attempts]
+    known_cost_yuan = round(
+        sum(
+            float(row.get("cost_yuan") or 0.0)
+            for row in attempt_rows
+            if row.get("cost_known") is True
+        ),
+        8,
+    )
+    unknown_cost_reserve_yuan = round(
+        sum(
+            float(row.get("cost_reserve_yuan") or 0.0)
+            for row in attempt_rows
+            if row.get("cost_known") is False
+        ),
+        8,
+    )
+    has_unknown_cost_attempts = unknown_cost_reserve_yuan > 0.0
+    return {
+        "schema_version": "yher.llm_sim_v2.response_record.v2",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "phase": task.phase,
+        "analysis_population": task.analysis_population,
+        "collection_mode": provenance.get("collection_mode", "development_partial"),
+        "development_only": provenance.get("development_only", True),
+        "partial": provenance.get("partial", True),
+        "formal_analysis_eligible": provenance.get("formal_analysis_eligible", False),
+        "provider": provider,
+        "model_id": returned_model,
+        "requested_model": model,
+        "prompt_revision": task.prompt_revision,
+        "prompt_contract_sha256": task.prompt_contract_sha256,
+        "task_id": task.task_id,
+        "logical_key": task.logical_key,
+        "persona_id": task.persona_id,
+        "pair_id": task.pair_id,
+        "row_id": task.row_id,
+        "anchor_id": task.anchor_id,
+        "target_node": task.target_node,
+        "response_arm": task.response_arm,
+        "condition": task.condition,
+        "item_id": task.item_id,
+        "family_id": task.family_id,
+        "is_stability_repeat": task.is_stability_repeat,
+        "attempt_id": task.attempt_id,
+        "message_sha256": task.message_sha256,
+        "wire_message_sha256": task.wire_message_sha256,
+        "status": final_status,
+        "error": final_error,
+        "parsed_output": parsed_output,
+        "outcomes": outcomes,
+        "attempts": attempt_rows,
+        "retry_count": max(0, len(attempt_rows) - 1),
+        "known_cost_yuan": known_cost_yuan,
+        "unknown_cost_reserve_yuan": unknown_cost_reserve_yuan,
+        "cost_yuan": round(known_cost_yuan + unknown_cost_reserve_yuan, 8),
+        "has_unknown_cost_attempts": has_unknown_cost_attempts,
+        "needs_user": has_unknown_cost_attempts,
+        "needs_user_reasons": (
+            ["unknown_provider_billing_reserved"]
+            if has_unknown_cost_attempts
+            else []
+        ),
+        "provenance": dict(provenance),
+    }
+
+
 def execute_task(
     task: Task,
     *,
@@ -1362,6 +1551,8 @@ def execute_task(
     sleep: Callable[[float], None] = time.sleep,
     random_value: Callable[[], float] | None = None,
     wall_time: Callable[[], float] = time.time,
+    on_provider_call_started: Callable[[Mapping[str, Any]], None] | None = None,
+    on_provider_call_interrupted: Callable[[Mapping[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     unknown_reserve = float(unknown_attempt_reserve_yuan)
     if (
@@ -1370,6 +1561,13 @@ def execute_task(
     ):
         raise ValueError("unknown attempt reserve must equal the frozen CNY 10 policy")
     retry_random = random_value or _SYSTEM_RANDOM.random
+    if (
+        on_provider_call_started is not None
+        and on_provider_call_interrupted is None
+    ):
+        raise ValueError(
+            "provider call evidence requires terminal interruption persistence"
+        )
     provenance_binding = dict(provenance or {})
     attempts: list[dict[str, Any]] = []
     request_max_tokens = policy.max_tokens
@@ -1388,17 +1586,61 @@ def execute_task(
             break
         started = time.monotonic()
         try:
-            response = transport.complete(
-                provider=provider,
-                model=model,
-                messages=list(task.wire_messages),
-                timeout_seconds=policy.timeout_seconds,
-                max_tokens=request_max_tokens,
-            )
+            if on_provider_call_started is not None:
+                on_provider_call_started(
+                    {
+                        "task_id": task.task_id,
+                        "attempt": attempt_index + 1,
+                        "model": model,
+                        "request_max_tokens": request_max_tokens,
+                        "wire_message_sha256": task.wire_message_sha256,
+                    }
+                )
+            try:
+                response = transport.complete(
+                    provider=provider,
+                    model=model,
+                    messages=list(task.wire_messages),
+                    timeout_seconds=policy.timeout_seconds,
+                    max_tokens=request_max_tokens,
+                )
+            except Exception:
+                raise
+            except BaseException:
+                if on_provider_call_interrupted is None:
+                    raise
+                budget.add_cost(unknown_reserve)
+                attempts.append(
+                    {
+                        "attempt": attempt_index + 1,
+                        "status": "failed",
+                        "error_category": "interrupted_provider_call",
+                        "request_max_tokens": request_max_tokens,
+                        "cost_yuan": None,
+                        "cost_known": False,
+                        "billing_ambiguity": True,
+                        "cost_reserve_yuan": unknown_reserve,
+                        "provider_response_received": False,
+                    }
+                )
+                interrupted_record = _build_response_record(
+                    task,
+                    provider=provider,
+                    model=model,
+                    returned_model=returned_model,
+                    final_status="technical_failure",
+                    final_error="interrupted_provider_call",
+                    parsed=None,
+                    attempts=attempts,
+                    provenance=provenance_binding,
+                )
+                on_provider_call_interrupted(interrupted_record)
+                raise
             cost = max(0.0, float(response.get("cost_yuan") or 0.0))
             budget.add_cost(cost)
             returned_model = str(response.get("model_returned") or "").strip()
             usage = response.get("usage") if isinstance(response.get("usage"), Mapping) else {}
+            response_content = str(response.get("content") or "")
             attempts.append(
                 {
                     "attempt": attempt_index + 1,
@@ -1415,6 +1657,7 @@ def execute_task(
                     "cost_known": True,
                     "billing_ambiguity": False,
                     "cost_reserve_yuan": 0.0,
+                    **bind_response_content(response_content),
                 }
             )
             if returned_model != model:
@@ -1427,7 +1670,7 @@ def execute_task(
                     for key in (task.item.get("options") or {})
                 }
                 parsed = parse_provider_output(
-                    str(response.get("content") or ""),
+                    response_content,
                     condition=task.condition,
                     option_keys=option_keys,
                 )
@@ -1457,6 +1700,7 @@ def execute_task(
         except BudgetFuseOpen:
             raise
         except Exception as exc:
+            final_status = "technical_failure"
             final_error = _error_category(exc)
             if isinstance(exc, ProviderTruncatedResponseError):
                 truncated_usage = exc.usage
@@ -1480,6 +1724,7 @@ def execute_task(
                     "cost_known": True,
                     "billing_ambiguity": False,
                     "cost_reserve_yuan": 0.0,
+                    "provider_response_received": False,
                 }
             else:
                 budget.add_cost(unknown_reserve)
@@ -1487,11 +1732,13 @@ def execute_task(
                     "attempt": attempt_index + 1,
                     "status": "failed",
                     "error_category": final_error,
+                    "request_max_tokens": request_max_tokens,
                     "latency_ms": round((time.monotonic() - started) * 1000, 3),
                     "cost_yuan": None,
                     "cost_known": False,
                     "billing_ambiguity": True,
                     "cost_reserve_yuan": unknown_reserve,
+                    "provider_response_received": False,
                 }
             attempts.append(
                 attempt
@@ -1517,87 +1764,17 @@ def execute_task(
                 )
             )
 
-    outcomes = compute_outcomes(
-        condition=task.condition,
-        response_arm=task.response_arm,
-        answer=parsed.get("answer") if parsed else None,
-        abstain=bool(parsed.get("abstain")) if parsed else False,
-        correct_option=task.correct_option,
-        target_option=task.target_option,
-    ) if parsed else {
-        "is_correct": None,
-        "target_option_hit": None,
-        "manipulation_compliance": None,
-    }
-    known_cost_yuan = round(
-        sum(
-            float(row.get("cost_yuan") or 0.0)
-            for row in attempts
-            if row.get("cost_known") is True
-        ),
-        8,
+    return _build_response_record(
+        task,
+        provider=provider,
+        model=model,
+        returned_model=returned_model,
+        final_status=final_status,
+        final_error=final_error,
+        parsed=parsed,
+        attempts=attempts,
+        provenance=provenance_binding,
     )
-    unknown_cost_reserve_yuan = round(
-        sum(
-            float(row.get("cost_reserve_yuan") or 0.0)
-            for row in attempts
-            if row.get("cost_known") is False
-        ),
-        8,
-    )
-    has_unknown_cost_attempts = unknown_cost_reserve_yuan > 0.0
-    return {
-        "schema_version": "yher.llm_sim_v2.response_record.v1",
-        "simulated": True,
-        "run_id": RUN_ID,
-        "phase": task.phase,
-        "analysis_population": task.analysis_population,
-        "collection_mode": provenance_binding.get(
-            "collection_mode", "development_partial"
-        ),
-        "development_only": provenance_binding.get("development_only", True),
-        "partial": provenance_binding.get("partial", True),
-        "formal_analysis_eligible": provenance_binding.get(
-            "formal_analysis_eligible", False
-        ),
-        "provider": provider,
-        "model_id": returned_model,
-        "requested_model": model,
-        "prompt_revision": task.prompt_revision,
-        "prompt_contract_sha256": task.prompt_contract_sha256,
-        "task_id": task.task_id,
-        "logical_key": task.logical_key,
-        "persona_id": task.persona_id,
-        "pair_id": task.pair_id,
-        "row_id": task.row_id,
-        "anchor_id": task.anchor_id,
-        "target_node": task.target_node,
-        "response_arm": task.response_arm,
-        "condition": task.condition,
-        "item_id": task.item_id,
-        "family_id": task.family_id,
-        "is_stability_repeat": task.is_stability_repeat,
-        "attempt_id": task.attempt_id,
-        "message_sha256": task.message_sha256,
-        "wire_message_sha256": task.wire_message_sha256,
-        "status": final_status,
-        "error": final_error,
-        "parsed_output": parsed,
-        "outcomes": outcomes,
-        "attempts": attempts,
-        "retry_count": max(0, len(attempts) - 1),
-        "known_cost_yuan": known_cost_yuan,
-        "unknown_cost_reserve_yuan": unknown_cost_reserve_yuan,
-        "cost_yuan": round(known_cost_yuan + unknown_cost_reserve_yuan, 8),
-        "has_unknown_cost_attempts": has_unknown_cost_attempts,
-        "needs_user": has_unknown_cost_attempts,
-        "needs_user_reasons": (
-            ["unknown_provider_billing_reserved"]
-            if has_unknown_cost_attempts
-            else []
-        ),
-        "provenance": provenance_binding,
-    }
 
 
 class V2ProviderRunner:
@@ -1632,12 +1809,18 @@ class V2ProviderRunner:
         if phase_provenance is not None:
             if phase_provenance.get("phase") != phase_name:
                 raise ValueError("phase provenance does not match provider runner phase")
-            self.provenance = _phase_provenance_binding(phase_provenance)
+            self.provenance = phase_provenance_binding(phase_provenance)
             self.phase_provenance = dict(phase_provenance)
         else:
             self.provenance = {}
             self.phase_provenance = None
         self._write_lock = threading.Lock()
+        self.evidence = ProviderEvidenceLedger(
+            self.store.root,
+            run_id=RUN_ID,
+            phase=self.phase,
+            provider=self.provider,
+        )
 
     def _record_path(self, task: Task) -> Path:
         return self.store.path(
@@ -1651,19 +1834,19 @@ class V2ProviderRunner:
         record = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(record, Mapping):
             raise ValueError("existing v2 record is not an object")
-        if (
-            record.get("task_id") != task.task_id
-            or record.get("logical_key") != task.logical_key
-            or record.get("phase") != self.phase
-            or record.get("analysis_population") != self.phase
-            or record.get("provider") != self.provider
-            or record.get("requested_model") != self.model
-            or (
-                self.provenance
-                and record.get("provenance") != self.provenance
+        try:
+            validate_v2_response_record(
+                record,
+                provider=self.provider,
+                requested_model=self.model,
+                phase=self.phase,
+                task=task,
+                expected_provenance=self.provenance,
             )
-        ):
-            raise ValueError("existing v2 record does not match the frozen task")
+        except ValueError as exc:
+            raise ValueError(
+                f"existing v2 record failed evidence validation: {exc}"
+            ) from exc
         return dict(record)
 
     def _write_record(self, task: Task, record: Mapping[str, Any]) -> None:
@@ -1690,6 +1873,14 @@ class V2ProviderRunner:
             ],
             sleep=self.sleep,
             random_value=self.random_value,
+            on_provider_call_started=lambda event: self.evidence.record_provider_call_started(
+                task_id=str(event["task_id"]),
+                attempt=int(event["attempt"]),
+                model=str(event["model"]),
+                request_max_tokens=int(event["request_max_tokens"]),
+                wire_message_sha256=str(event["wire_message_sha256"]),
+            ),
+            on_provider_call_interrupted=lambda record: self._write_record(task, record),
         )
         self._write_record(task, record)
         return record
@@ -1905,6 +2096,15 @@ class V2ProviderRunner:
             else None
         )
         scope = self.phase_provenance or {}
+        (self.store.root / "records" / self.provider).mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        record_set = build_provider_record_set(
+            self.store.root,
+            provider=self.provider,
+            expected_task_ids=expected_ids,
+        )
         summary = {
             "schema_version": "yher.llm_sim_v2.provider_manifest.v1",
             "simulated": True,
@@ -1928,6 +2128,7 @@ class V2ProviderRunner:
             "freeze_commit": FROZEN_COMMIT,
             "prompt_revision": active_prompt_revision(self.contract)["revision"],
             "record_count": len(records),
+            "record_set": record_set,
             "complete_records": counts.get("complete", 0),
             "resumed_records": resumed_count,
             "status_counts": dict(sorted(counts.items())),
@@ -2019,6 +2220,18 @@ class V2ProviderRunner:
         *,
         error_category: str,
     ) -> dict[str, Any]:
+        with self.evidence.provider_lock():
+            return self._write_unavailable_manifest_locked(
+                tasks,
+                error_category=error_category,
+            )
+
+    def _write_unavailable_manifest_locked(
+        self,
+        tasks: Sequence[Task],
+        *,
+        error_category: str,
+    ) -> dict[str, Any]:
         selected = [task for task in tasks if task.phase == self.phase]
         if self.phase_provenance is not None and [task.task_id for task in selected] != list(
             self.phase_provenance["task_roster"]["expected_task_ids"]
@@ -2029,7 +2242,11 @@ class V2ProviderRunner:
             for task in selected
             if (record := self._read_existing(task)) is not None
         }
-        return self._write_manifest(
+        invocation = self.evidence.begin_invocation(
+            expected_task_ids=[task.task_id for task in selected],
+            resumed_task_ids=list(records),
+        )
+        summary = self._write_manifest(
             selected=selected,
             records=records,
             resumed_count=len(records),
@@ -2041,8 +2258,18 @@ class V2ProviderRunner:
             consecutive_failures=0,
             unavailable_error_category=str(error_category),
         )
+        receipt = self.evidence.finish_invocation(
+            invocation,
+            status="unavailable",
+        )
+        summary["evidence_receipt"] = receipt
+        return summary
 
     def run_tasks(self, tasks: Sequence[Task]) -> dict[str, Any]:
+        with self.evidence.provider_lock():
+            return self._run_tasks_locked(tasks)
+
+    def _run_tasks_locked(self, tasks: Sequence[Task]) -> dict[str, Any]:
         selected = [task for task in tasks if task.phase == self.phase]
         if len({task.task_id for task in selected}) != len(selected):
             raise ValueError("provider task roster contains duplicate task IDs")
@@ -2096,7 +2323,12 @@ class V2ProviderRunner:
             breaker_opened_at_epoch = self.clock()
             breaker_skipped.update(task.task_id for task in pending)
             pending.clear()
+        invocation = self.evidence.begin_invocation(
+            expected_task_ids=[task.task_id for task in selected],
+            resumed_task_ids=list(existing),
+        )
         summary: dict[str, Any] | None = None
+        invocation_status = "complete"
         try:
             while pending:
                 if self.budget.hard_fuse_triggered:
@@ -2141,6 +2373,7 @@ class V2ProviderRunner:
         except BaseException as exc:
             interrupted = True
             interruption_type = type(exc).__name__
+            invocation_status = "interrupted"
             raise
         finally:
             # Workers persist before returning, so a completed in-flight response
@@ -2161,6 +2394,11 @@ class V2ProviderRunner:
                 breaker_opened_at_epoch=breaker_opened_at_epoch,
                 consecutive_failures=consecutive_failures,
             )
+            receipt = self.evidence.finish_invocation(
+                invocation,
+                status=invocation_status,
+            )
+            summary["evidence_receipt"] = receipt
         assert summary is not None
         return summary
 
@@ -2183,6 +2421,7 @@ __all__ = [
     "execute_task",
     "load_runtime_contract",
     "parse_provider_output",
+    "phase_provenance_binding",
     "validate_formal_phase_provenance",
     "verify_phase_provenance",
     "verify_phase_provenance_against_contract",

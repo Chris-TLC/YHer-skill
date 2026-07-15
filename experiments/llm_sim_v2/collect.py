@@ -13,6 +13,15 @@ from typing import Sequence
 
 from experiments.llm_sim.transport import HTTPProviderTransport
 
+from .evidence import (
+    REVIEWED_CARRIED_LEDGER_SHA256,
+    REVIEWED_LEGACY_KNOWN_COST_YUAN,
+    REVIEWED_LEGACY_RECEIPT_SHA256,
+    REVIEWED_LEGACY_RECORD_SET_SHA256,
+    canonical_sha256,
+    write_phase_evidence_receipt,
+)
+
 from .runner import (
     BudgetLedger,
     V2ProviderRunner,
@@ -216,10 +225,99 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def verify_carried_forward_cost_ledger(
+    ledger: Mapping[str, object] | None,
+) -> dict[str, object]:
+    if ledger is None:
+        return {
+            "carried_forward_cost_ledger_sha256": None,
+            "known_cost_yuan": 0.0,
+            "unknown_cost_reserve_yuan": 0.0,
+            "total_accounted_cost_yuan": 0.0,
+        }
+    payload = dict(ledger)
+    advertised = payload.pop("carried_forward_cost_ledger_sha256", None)
+
+    def is_sha256(value: object) -> bool:
+        text = str(value or "")
+        return len(text) == 64 and all(char in "0123456789abcdef" for char in text)
+
+    try:
+        known = float(ledger["known_cost_yuan"])
+        reserve = float(ledger["unknown_cost_reserve_yuan"])
+        total = float(ledger["total_accounted_cost_yuan"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("carried-forward cost ledger amounts are invalid") from exc
+    valid = (
+        ledger.get("schema_version")
+        == "yher.llm_sim_v2.carried_forward_cost_ledger.v1"
+        and ledger.get("simulated") is True
+        and ledger.get("run_id") == RUN_ID
+        and ledger.get("source_phase") in {"pilot", "main"}
+        and is_sha256(ledger.get("source_record_set_sha256"))
+        and is_sha256(ledger.get("source_phase_receipt_sha256"))
+        and isinstance(advertised, str)
+        and advertised == canonical_sha256(payload)
+        and all(math.isfinite(value) and value >= 0 for value in (known, reserve, total))
+        and math.isclose(total, known + reserve, rel_tol=0.0, abs_tol=1e-8)
+    )
+    if not valid:
+        raise ValueError("carried-forward cost ledger identity or totals are invalid")
+    return {
+        "carried_forward_cost_ledger_sha256": advertised,
+        "known_cost_yuan": round(known, 8),
+        "unknown_cost_reserve_yuan": round(reserve, 8),
+        "total_accounted_cost_yuan": round(total, 8),
+        "source_phase": ledger["source_phase"],
+        "source_record_set_sha256": ledger["source_record_set_sha256"],
+        "source_phase_receipt_sha256": ledger["source_phase_receipt_sha256"],
+    }
+
+
+def verify_formal_carried_forward_cost_ledger(
+    ledger: Mapping[str, object] | None,
+) -> dict[str, object]:
+    try:
+        proof = verify_carried_forward_cost_ledger(ledger)
+    except ValueError as exc:
+        raise ValueError("formal run lacks the reviewed carried-forward ledger") from exc
+    if ledger is None or not (
+        proof["carried_forward_cost_ledger_sha256"]
+        == REVIEWED_CARRIED_LEDGER_SHA256
+        and proof.get("source_record_set_sha256")
+        == REVIEWED_LEGACY_RECORD_SET_SHA256
+        and proof.get("source_phase_receipt_sha256")
+        == REVIEWED_LEGACY_RECEIPT_SHA256
+        and float(proof["known_cost_yuan"])
+        == REVIEWED_LEGACY_KNOWN_COST_YUAN
+        and float(proof["unknown_cost_reserve_yuan"]) == 0.0
+        and float(proof["total_accounted_cost_yuan"])
+        == REVIEWED_LEGACY_KNOWN_COST_YUAN
+    ):
+        raise ValueError("formal run lacks the reviewed carried-forward ledger")
+    return proof
+
+
+def _load_carried_forward_cost_ledger(
+    path: Path | None,
+) -> dict[str, object] | None:
+    if path is None:
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError("carried-forward cost ledger is invalid") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("carried-forward cost ledger is invalid")
+    verify_carried_forward_cost_ledger(value)
+    return dict(value)
+
+
 def reconcile_run_budget_ledger(
     output_base: str | Path,
     *,
     prior_cost_ledger: Mapping[str, object],
+    carried_forward_cost_ledger: Mapping[str, object] | None = None,
     soft_warning_yuan: float,
     hard_fuse_yuan: float,
 ) -> dict[str, object]:
@@ -231,6 +329,11 @@ def reconcile_run_budget_ledger(
         prior_cost_ledger["unknown_attempt_reserve_yuan"]
     )
     prior_digest = str(prior_cost_ledger["prior_cost_ledger_sha256"])
+    carried = verify_carried_forward_cost_ledger(carried_forward_cost_ledger)
+    carried_digest = carried["carried_forward_cost_ledger_sha256"]
+    carried_known = float(carried["known_cost_yuan"])
+    carried_reserve = float(carried["unknown_cost_reserve_yuan"])
+    carried_total = float(carried["total_accounted_cost_yuan"])
     validate_budget_thresholds(
         soft_warning_yuan=soft_warning_yuan,
         hard_fuse_yuan=hard_fuse_yuan,
@@ -255,6 +358,13 @@ def reconcile_run_budget_ledger(
             or float(loaded.get("prior_documented_cost_yuan", -1)) != prior_total
             or float(loaded.get("soft_warning_yuan", -1)) != float(soft_warning_yuan)
             or float(loaded.get("hard_fuse_yuan", -1)) != float(hard_fuse_yuan)
+            or loaded.get("carried_forward_cost_ledger_sha256") != carried_digest
+            or not math.isclose(
+                float(loaded.get("carried_forward_total_accounted_cost_yuan", 0.0)),
+                carried_total,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
         ):
             raise ValueError("machine prior cost or frozen budget identity changed")
     record_costs = _stored_record_costs(
@@ -267,7 +377,9 @@ def reconcile_run_budget_ledger(
         previous.get("immutable_record_cost_yuan", 0.0)
     ):
         raise ValueError("immutable run record cost decreased")
-    needs_user = record_costs["unknown_attempt_count"] > 0
+    needs_user = (
+        record_costs["unknown_attempt_count"] > 0 or carried_reserve > 0
+    )
     ledger: dict[str, object] = {
         "schema_version": "yher.llm_sim_v2.run_budget_ledger.v2",
         "simulated": True,
@@ -276,6 +388,17 @@ def reconcile_run_budget_ledger(
         "prior_known_cost_yuan": round(prior_known, 8),
         "prior_ambiguity_reserve_yuan": round(prior_reserve, 8),
         "prior_documented_cost_yuan": round(prior_total, 8),
+        "carried_forward_cost_ledger_sha256": carried_digest,
+        "carried_forward_source_phase": carried.get("source_phase"),
+        "carried_forward_source_record_set_sha256": carried.get(
+            "source_record_set_sha256"
+        ),
+        "carried_forward_source_phase_receipt_sha256": carried.get(
+            "source_phase_receipt_sha256"
+        ),
+        "carried_forward_known_cost_yuan": round(carried_known, 8),
+        "carried_forward_unknown_reserve_yuan": round(carried_reserve, 8),
+        "carried_forward_total_accounted_cost_yuan": round(carried_total, 8),
         "unknown_attempt_reserve_yuan": unknown_attempt_reserve,
         "immutable_record_known_cost_yuan": record_costs["known_cost_yuan"],
         "immutable_record_unknown_reserve_yuan": record_costs[
@@ -283,12 +406,17 @@ def reconcile_run_budget_ledger(
         ],
         "immutable_record_cost_yuan": round(record_cost, 8),
         "total_known_cost_yuan": round(
-            prior_known + record_costs["known_cost_yuan"], 8
+            prior_known + carried_known + record_costs["known_cost_yuan"], 8
         ),
         "total_unknown_reserve_yuan": round(
-            prior_reserve + record_costs["unknown_cost_reserve_yuan"], 8
+            prior_reserve
+            + carried_reserve
+            + record_costs["unknown_cost_reserve_yuan"],
+            8,
         ),
-        "total_accounted_cost_yuan": round(prior_total + record_cost, 8),
+        "total_accounted_cost_yuan": round(
+            prior_total + carried_total + record_cost, 8
+        ),
         "needs_user": needs_user,
         "needs_user_reasons": (
             ["unknown_provider_billing_reserved"] if needs_user else []
@@ -336,6 +464,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--allow-partial", action="store_true")
     parser.add_argument("--soft-warning", type=float, default=300.0)
     parser.add_argument("--hard-fuse", type=float, default=450.0)
+    parser.add_argument(
+        "--carried-forward-cost-ledger",
+        help=(
+            "separate, hash-bound legacy epoch cost ledger; never rewrites the "
+            "frozen prior-cost ledger"
+        ),
+    )
+    parser.add_argument(
+        "--phase-receipt-output",
+        help="optional Git-trackable copy of the deterministic phase evidence receipt",
+    )
     return parser
 
 
@@ -376,9 +515,29 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
     )
     prior_cost_ledger = contract.prior_cost_ledger
     verify_prior_cost_ledger(prior_cost_ledger)
+    carried_forward_path = (
+        (root / args.carried_forward_cost_ledger).resolve(strict=True)
+        if args.carried_forward_cost_ledger
+        else None
+    )
+    carried_forward_cost_ledger = _load_carried_forward_cost_ledger(
+        carried_forward_path
+    )
+    carried_forward_cost = verify_carried_forward_cost_ledger(
+        carried_forward_cost_ledger
+    )
+    if not scope["development_only"]:
+        if carried_forward_cost_ledger is None:
+            raise SystemExit(
+                "formal collection requires --carried-forward-cost-ledger"
+            )
+        carried_forward_cost = verify_formal_carried_forward_cost_ledger(
+            carried_forward_cost_ledger
+        )
     run_budget = reconcile_run_budget_ledger(
         output_base,
         prior_cost_ledger=prior_cost_ledger,
+        carried_forward_cost_ledger=carried_forward_cost_ledger,
         soft_warning_yuan=float(args.soft_warning),
         hard_fuse_yuan=float(args.hard_fuse),
     )
@@ -395,6 +554,7 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
             runtime_proof=runtime_proof,
             tasks=tasks,
             collection_scope=scope,
+            carried_forward_cost=carried_forward_cost,
         )
     else:
         phase_provenance = build_phase_provenance(
@@ -405,6 +565,7 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
             tasks=tasks,
             collection_scope=scope,
             prior_cost_ledger=prior_cost_ledger,
+            carried_forward_cost=carried_forward_cost,
             first_observation_at_utc=runtime_proof["git_proof"][
                 "observation_timestamp"
             ],
@@ -459,9 +620,26 @@ def run_collection(args: argparse.Namespace) -> list[dict[str, object]]:
         reconcile_run_budget_ledger(
             output_base,
             prior_cost_ledger=prior_cost_ledger,
+            carried_forward_cost_ledger=carried_forward_cost_ledger,
             soft_warning_yuan=float(args.soft_warning),
             hard_fuse_yuan=float(args.hard_fuse),
         )
+        phase_root = _run_root(output_base) / args.phase
+        write_phase_evidence_receipt(
+            phase_root,
+            phase_provenance=phase_provenance,
+            tasks=tasks,
+        )
+        if args.phase_receipt_output:
+            external_receipt = (root / args.phase_receipt_output).resolve(
+                strict=False
+            )
+            write_phase_evidence_receipt(
+                phase_root,
+                output=external_receipt,
+                phase_provenance=phase_provenance,
+                tasks=tasks,
+            )
     return results
 
 

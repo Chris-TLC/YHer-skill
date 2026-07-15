@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from email.utils import formatdate
 import hashlib
 import json
+import multiprocessing
+import os
 from pathlib import Path
 import subprocess
 from typing import Any
@@ -122,6 +124,133 @@ class SequenceTransport:
         if isinstance(result, BaseException):
             raise result
         return dict(result)
+
+
+def _write_runner_phase_stub(
+    phase_root: Path,
+    *,
+    phase: str,
+    providers: tuple[str, ...],
+    task_ids: tuple[str, ...],
+) -> dict[str, Any]:
+    artifact: dict[str, Any] = {
+        "schema_version": "yher.llm_sim_v2.phase_provenance.v1",
+        "simulated": True,
+        "run_id": "llm-personas-v2-dual",
+        "phase": phase,
+        "analysis_population": phase,
+        "collection_mode": "development_partial",
+        "development_only": True,
+        "partial": True,
+        "formal_analysis_eligible": False,
+        "selected_providers": list(providers),
+        "frozen_providers": list(providers),
+        "task_roster": {
+            "expected_task_count": len(task_ids),
+            "expected_task_ids": list(task_ids),
+        },
+        "budget": {
+            "carried_forward_cost_ledger_sha256": None,
+            "source_phase_receipt_sha256": None,
+            "carried_forward_known_cost_yuan": 0.0,
+            "carried_forward_unknown_reserve_yuan": 0.0,
+            "carried_forward_total_accounted_cost_yuan": 0.0,
+        },
+    }
+    artifact["phase_provenance_sha256"] = _canonical_sha(artifact)
+    phase_root.mkdir(parents=True, exist_ok=True)
+    (phase_root / "phase_provenance.json").write_text(
+        json.dumps(artifact, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return artifact
+
+
+class _BlockingProcessTransport:
+    def __init__(
+        self,
+        *,
+        task: Any,
+        call_log: str,
+        started: object,
+        release: object,
+        block: bool,
+    ) -> None:
+        self.task = task
+        self.call_log = call_log
+        self.started = started
+        self.release = release
+        self.block = block
+        self.calls = 0
+
+    def complete(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls += 1
+        descriptor = os.open(
+            self.call_log,
+            os.O_CREAT | os.O_WRONLY | os.O_APPEND,
+            0o600,
+        )
+        try:
+            os.write(descriptor, f"{os.getpid()}\n".encode("ascii"))
+        finally:
+            os.close(descriptor)
+        if self.block:
+            self.started.set()
+            self.release.wait(5)
+        return _response(
+            answer=self.task.correct_option,
+            blind=self.task.condition == "blind",
+            returned_model=kwargs["model"],
+        )
+
+
+def _runner_process_worker(
+    contract: Any,
+    task: Any,
+    output_base: str,
+    call_log: str,
+    started: object,
+    release: object,
+    results: object,
+    block: bool,
+) -> None:
+    from experiments.llm_sim_v2.runner import BudgetLedger, V2ProviderRunner
+
+    transport = _BlockingProcessTransport(
+        task=task,
+        call_log=call_log,
+        started=started,
+        release=release,
+        block=block,
+    )
+    summary = V2ProviderRunner(
+        contract=contract,
+        output_base=output_base,
+        phase="pilot",
+        provider="deepseek",
+        transport=transport,
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    ).run_tasks([task])
+    results.put(
+        {
+            "transport_calls": transport.calls,
+            "receipt_calls": summary["evidence_receipt"]["provider_call_count"],
+        }
+    )
+
+
+def _crash_open_invocation_worker(phase_root: str, task_id: str) -> None:
+    from experiments.llm_sim_v2.evidence import ProviderEvidenceLedger
+
+    ledger = ProviderEvidenceLedger(
+        Path(phase_root),
+        run_id="llm-personas-v2-dual",
+        phase="pilot",
+        provider="deepseek",
+    )
+    ledger.begin_invocation(expected_task_ids=(task_id,), resumed_task_ids=())
+    os._exit(0)
 
 
 def test_frozen_task_enumerator_uses_paired_rows_and_exact_panel_support():
@@ -275,6 +404,104 @@ def test_execute_task_retries_same_messages_and_records_every_attempt(tmp_path: 
     assert record["needs_user"] is True
 
 
+def test_response_attempt_retains_exact_content_for_strict_replay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.runner as runner_module
+    from experiments.llm_sim_v2.runner import (
+        BudgetLedger,
+        execute_task,
+        parse_provider_output,
+    )
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in runner_module.enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    raw_content = (
+        ' { "simulated" : true, "answer" : "a", '
+        '"rationale" : "exact UTF-8: 化学" }\n'
+    )
+    response = _response(answer=task.correct_option)
+    response["content"] = raw_content
+
+    record = execute_task(
+        task,
+        provider="deepseek",
+        model="deepseek-v4-pro",
+        transport=SequenceTransport([response]),
+        policy=contract.provider_policy("deepseek"),
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+
+    attempt = record["attempts"][0]
+    assert attempt["response_content"] == raw_content
+    assert attempt["response_content_utf8_bytes"] == len(
+        raw_content.encode("utf-8")
+    )
+    assert attempt["response_content_sha256"] == hashlib.sha256(
+        raw_content.encode("utf-8")
+    ).hexdigest()
+    assert parse_provider_output(
+        attempt["response_content"],
+        condition=task.condition,
+        option_keys={str(key).upper() for key in task.item["options"]},
+    ) == record["parsed_output"]
+
+
+def test_invalid_schema_attempt_retains_exact_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from dataclasses import replace
+
+    import experiments.llm_sim_v2.runner as runner_module
+    from experiments.llm_sim_v2.runner import BudgetLedger, execute_task
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in runner_module.enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    raw_content = (
+        '{"simulated":true,"answer":"A","answer":"B",'
+        '"rationale":"duplicate key"}'
+    )
+    response = _response(answer=task.correct_option)
+    response["content"] = raw_content
+
+    record = execute_task(
+        task,
+        provider="deepseek",
+        model="deepseek-v4-pro",
+        transport=SequenceTransport([response]),
+        policy=replace(contract.provider_policy("deepseek"), max_attempts=1),
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+
+    assert record["status"] == "excluded_schema"
+    assert record["attempts"][0]["response_content"] == raw_content
+    assert record["attempts"][0]["response_content_sha256"] == hashlib.sha256(
+        raw_content.encode("utf-8")
+    ).hexdigest()
+
+
 def test_truncated_attempt_usage_and_cost_are_counted_before_retry():
     from experiments.llm_sim.transport import ProviderTruncatedResponseError
     from experiments.llm_sim_v2.runner import (
@@ -333,6 +560,7 @@ def test_truncated_attempt_usage_and_cost_are_counted_before_retry():
         "cost_known": True,
         "billing_ambiguity": False,
         "cost_reserve_yuan": 0.0,
+        "provider_response_received": False,
     }
     assert record["attempts"][1]["request_max_tokens"] == 2048
     assert [call["max_tokens"] for call in transport.calls] == [1024, 2048]
@@ -455,6 +683,530 @@ def test_provider_runner_is_resumable_and_phase_isolated(tmp_path: Path):
     assert len(second_transport.calls) == 0
     assert (tmp_path / "llm-personas-v2-dual/pilot").is_dir()
     assert not (tmp_path / "llm-personas-v2-dual/main").exists()
+
+
+def test_runner_manifest_binds_record_bytes_and_resume_receipt_counts_zero_calls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.runner as runner_module
+    from experiments.llm_sim_v2.runner import BudgetLedger, V2ProviderRunner
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in runner_module.enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    first_transport = SequenceTransport([_response(answer=task.correct_option)])
+    first = V2ProviderRunner(
+        contract=contract,
+        output_base=tmp_path,
+        phase="pilot",
+        provider="deepseek",
+        transport=first_transport,
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+    collected = first.run_tasks([task])
+    record_path = (
+        tmp_path
+        / "llm-personas-v2-dual/pilot/records/deepseek"
+        / f"{task.task_id}.json"
+    )
+
+    assert collected["record_set"]["records"] == [
+        {
+            "attempt_count": 1,
+            "bytes": record_path.stat().st_size,
+            "path": f"records/deepseek/{task.task_id}.json",
+            "response_attempt_count": 1,
+            "sha256": hashlib.sha256(record_path.read_bytes()).hexdigest(),
+            "task_id": task.task_id,
+        }
+    ]
+    assert collected["evidence_receipt"]["provider_call_count"] == 1
+
+    resumed_transport = SequenceTransport([])
+    resumed = V2ProviderRunner(
+        contract=contract,
+        output_base=tmp_path,
+        phase="pilot",
+        provider="deepseek",
+        transport=resumed_transport,
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    ).run_tasks([task])
+
+    assert resumed_transport.calls == []
+    assert resumed["evidence_receipt"]["invocation_kind"] == "resume"
+    assert resumed["evidence_receipt"]["provider_call_count"] == 0
+    assert resumed["evidence_receipt"]["before_store"]["file_set_sha256"]
+    assert resumed["evidence_receipt"]["after_store"]["file_set_sha256"]
+
+    from experiments.llm_sim_v2.evidence import build_phase_evidence_receipt
+
+    phase_root = tmp_path / "llm-personas-v2-dual/pilot"
+    phase = _write_runner_phase_stub(
+        phase_root,
+        phase="pilot",
+        providers=("deepseek",),
+        task_ids=(task.task_id,),
+    )
+    phase_receipt = build_phase_evidence_receipt(
+        phase_root,
+        phase_provenance=phase,
+        tasks=(task,),
+    )
+    provider_anchor = phase_receipt["providers"]["deepseek"]
+    assert (
+        provider_anchor["evidence_chain_head_sha256"]
+        == resumed["evidence_receipt"]["event_sha256"]
+    )
+    assert (
+        provider_anchor["record_set_sha256"]
+        == resumed["record_set"]["record_set_sha256"]
+    )
+
+
+def test_new_runner_rejects_legacy_response_record_without_raw_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.runner as runner_module
+    from experiments.llm_sim_v2.runner import BudgetLedger, V2ProviderRunner
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in runner_module.enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    first = V2ProviderRunner(
+        contract=contract,
+        output_base=tmp_path,
+        phase="pilot",
+        provider="deepseek",
+        transport=SequenceTransport([_response(answer=task.correct_option)]),
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+    first.run_tasks([task])
+    record_path = (
+        tmp_path
+        / "llm-personas-v2-dual/pilot/records/deepseek"
+        / f"{task.task_id}.json"
+    )
+    legacy = json.loads(record_path.read_text(encoding="utf-8"))
+    legacy["schema_version"] = "yher.llm_sim_v2.response_record.v1"
+    for attempt in legacy["attempts"]:
+        attempt.pop("provider_response_received", None)
+        attempt.pop("response_content", None)
+        attempt.pop("response_content_utf8_bytes", None)
+        attempt.pop("response_content_sha256", None)
+    record_path.write_text(
+        json.dumps(legacy, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="existing v2 record"):
+        V2ProviderRunner(
+            contract=contract,
+            output_base=tmp_path,
+            phase="pilot",
+            provider="deepseek",
+            transport=SequenceTransport([]),
+            budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+            sleep=lambda _: None,
+            random_value=lambda: 0.5,
+        ).run_tasks([task])
+
+
+def test_provider_runner_process_lock_prevents_duplicate_transport_calls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.runner as runner_module
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in runner_module.enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    context = multiprocessing.get_context("fork")
+    started = context.Event()
+    release = context.Event()
+    results = context.Queue()
+    call_log = tmp_path / "transport-calls.txt"
+    first = context.Process(
+        target=_runner_process_worker,
+        args=(
+            contract,
+            task,
+            str(tmp_path),
+            str(call_log),
+            started,
+            release,
+            results,
+            True,
+        ),
+    )
+    second = context.Process(
+        target=_runner_process_worker,
+        args=(
+            contract,
+            task,
+            str(tmp_path),
+            str(call_log),
+            started,
+            release,
+            results,
+            False,
+        ),
+    )
+    first.start()
+    assert started.wait(3)
+    second.start()
+    release.set()
+    first.join(10)
+    second.join(10)
+    assert first.exitcode == second.exitcode == 0
+    rows = [results.get(timeout=1), results.get(timeout=1)]
+    assert sorted(row["transport_calls"] for row in rows) == [0, 1]
+    assert sorted(row["receipt_calls"] for row in rows) == [0, 1]
+    assert call_log.read_text(encoding="ascii").splitlines() == [
+        str(first.pid)
+    ]
+
+
+def test_hard_crash_open_invocation_blocks_next_runner_before_transport(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.runner as runner_module
+    from experiments.llm_sim_v2.runner import BudgetLedger, V2ProviderRunner
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    task = next(
+        task
+        for task in runner_module.enumerate_tasks(contract, phase="pilot")
+        if task.condition == "controlled"
+    )
+    phase_root = tmp_path / "llm-personas-v2-dual/pilot"
+    context = multiprocessing.get_context("fork")
+    crashed = context.Process(
+        target=_crash_open_invocation_worker,
+        args=(str(phase_root), task.task_id),
+    )
+    crashed.start()
+    crashed.join(5)
+    assert crashed.exitcode == 0
+
+    transport = SequenceTransport([_response(answer=task.correct_option)])
+    with pytest.raises(ValueError, match="unmatched invocation"):
+        V2ProviderRunner(
+            contract=contract,
+            output_base=tmp_path,
+            phase="pilot",
+            provider="deepseek",
+            transport=transport,
+            budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+            sleep=lambda _: None,
+            random_value=lambda: 0.5,
+        ).run_tasks([task])
+    assert transport.calls == []
+
+
+def test_carried_forward_cost_ledger_is_separate_and_strictly_added(
+    tmp_path: Path,
+) -> None:
+    from experiments.llm_sim_v2.collect import reconcile_run_budget_ledger
+    from experiments.llm_sim_v2.evidence import canonical_sha256
+
+    prior_path = REPO_ROOT / "experiments/llm_sim_v2/prior_cost_ledger.json"
+    prior_bytes = prior_path.read_bytes()
+    prior = json.loads(prior_bytes)
+    carried = {
+        "schema_version": "yher.llm_sim_v2.carried_forward_cost_ledger.v1",
+        "simulated": True,
+        "run_id": "llm-personas-v2-dual",
+        "source_phase": "pilot",
+        "source_record_set_sha256": "a" * 64,
+        "source_phase_receipt_sha256": "b" * 64,
+        "known_cost_yuan": 1.91386592,
+        "unknown_cost_reserve_yuan": 0.0,
+        "total_accounted_cost_yuan": 1.91386592,
+    }
+    carried["carried_forward_cost_ledger_sha256"] = canonical_sha256(carried)
+
+    ledger = reconcile_run_budget_ledger(
+        tmp_path,
+        prior_cost_ledger=prior,
+        carried_forward_cost_ledger=carried,
+        soft_warning_yuan=300.0,
+        hard_fuse_yuan=450.0,
+    )
+
+    assert prior_path.read_bytes() == prior_bytes
+    assert ledger["prior_documented_cost_yuan"] == pytest.approx(0.65766321)
+    assert ledger["carried_forward_known_cost_yuan"] == pytest.approx(1.91386592)
+    assert ledger["carried_forward_unknown_reserve_yuan"] == 0.0
+    assert ledger["carried_forward_total_accounted_cost_yuan"] == pytest.approx(
+        1.91386592
+    )
+    assert ledger["total_accounted_cost_yuan"] == pytest.approx(2.57152913)
+    assert (
+        ledger["carried_forward_cost_ledger_sha256"]
+        == carried["carried_forward_cost_ledger_sha256"]
+    )
+
+
+def test_carried_forward_cost_ledger_rejects_coordinated_total_drift(
+    tmp_path: Path,
+) -> None:
+    from experiments.llm_sim_v2.collect import reconcile_run_budget_ledger
+    from experiments.llm_sim_v2.evidence import canonical_sha256
+
+    prior = json.loads(
+        (REPO_ROOT / "experiments/llm_sim_v2/prior_cost_ledger.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    carried = {
+        "schema_version": "yher.llm_sim_v2.carried_forward_cost_ledger.v1",
+        "simulated": True,
+        "run_id": "llm-personas-v2-dual",
+        "source_phase": "pilot",
+        "source_record_set_sha256": "a" * 64,
+        "source_phase_receipt_sha256": "b" * 64,
+        "known_cost_yuan": 1.0,
+        "unknown_cost_reserve_yuan": 0.0,
+        "total_accounted_cost_yuan": 2.0,
+    }
+    carried["carried_forward_cost_ledger_sha256"] = canonical_sha256(carried)
+
+    with pytest.raises(ValueError, match="carried-forward cost"):
+        reconcile_run_budget_ledger(
+            tmp_path,
+            prior_cost_ledger=prior,
+            carried_forward_cost_ledger=carried,
+            soft_warning_yuan=300.0,
+            hard_fuse_yuan=450.0,
+        )
+
+
+def test_formal_carried_forward_cost_requires_exact_reviewed_anchor() -> None:
+    from experiments.llm_sim_v2.collect import (
+        verify_formal_carried_forward_cost_ledger,
+    )
+    from experiments.llm_sim_v2.evidence import canonical_sha256
+
+    reviewed = json.loads(
+        (
+            REPO_ROOT
+            / "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_carried_forward_cost.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert verify_formal_carried_forward_cost_ledger(reviewed)[
+        "total_accounted_cost_yuan"
+    ] == pytest.approx(1.91386592)
+
+    with pytest.raises(ValueError, match="reviewed carried-forward"):
+        verify_formal_carried_forward_cost_ledger(None)
+    counterfeit = {
+        "schema_version": "yher.llm_sim_v2.carried_forward_cost_ledger.v1",
+        "simulated": True,
+        "run_id": "llm-personas-v2-dual",
+        "source_phase": "pilot",
+        "source_record_set_sha256": "a" * 64,
+        "source_phase_receipt_sha256": "b" * 64,
+        "known_cost_yuan": 0.0,
+        "unknown_cost_reserve_yuan": 0.0,
+        "total_accounted_cost_yuan": 0.0,
+    }
+    counterfeit["carried_forward_cost_ledger_sha256"] = canonical_sha256(
+        counterfeit
+    )
+    with pytest.raises(ValueError, match="reviewed carried-forward"):
+        verify_formal_carried_forward_cost_ledger(counterfeit)
+
+
+def test_collection_parser_exposes_evidence_and_carried_cost_inputs() -> None:
+    from experiments.llm_sim_v2.collect import build_parser
+
+    parsed = build_parser().parse_args(
+        [
+            "--repo-root",
+            str(REPO_ROOT),
+            "--phase",
+            "pilot",
+            "--carried-forward-cost-ledger",
+            "legacy-cost.json",
+            "--phase-receipt-output",
+            "tracked-phase-anchor.json",
+        ]
+    )
+
+    assert parsed.carried_forward_cost_ledger == "legacy-cost.json"
+    assert parsed.phase_receipt_output == "tracked-phase-anchor.json"
+
+
+def test_phase_provenance_binds_carried_forward_digest_and_totals(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.runner as runner_module
+    from experiments.llm_sim_v2.collect import resolve_collection_scope
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    head = _git_head()
+    runtime = runner_module.build_runtime_task_manifest(
+        contract,
+        runtime_commit=head,
+        frozen_at_utc="2026-07-15T12:00:00Z",
+    )
+    runtime_proof = {
+        "ok": True,
+        "runtime_task_manifest_sha256": runtime["runtime_task_manifest_sha256"],
+        "runtime_commit": head,
+        "git_proof": {
+            "ok": True,
+            "byte_identical": True,
+            "commit": head,
+        },
+    }
+    tasks = runner_module.enumerate_tasks(contract, phase="pilot")
+    scope = resolve_collection_scope(
+        frozen_providers=contract.config["pilot"]["providers"],
+        requested_providers=None,
+        limit=None,
+        allow_partial=False,
+    )
+    carried = json.loads(
+        (
+            REPO_ROOT
+            / "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_carried_forward_cost.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    phase = runner_module.build_phase_provenance(
+        contract,
+        runtime_manifest=runtime,
+        runtime_proof=runtime_proof,
+        phase="pilot",
+        tasks=tasks,
+        collection_scope=scope,
+        prior_cost_ledger=contract.prior_cost_ledger,
+        carried_forward_cost=carried,
+        first_observation_at_utc="2026-07-15T12:00:01Z",
+    )
+
+    assert (
+        phase["budget"]["carried_forward_cost_ledger_sha256"]
+        == "87ff7a3d08df64d67df2372188d6f707ddb4deb295a85300aae0b6190d48be35"
+    )
+    assert (
+        phase["budget"]["source_phase_receipt_sha256"]
+        == "2ea161a0f29e3a8bac1eeee38cb238f7cb722a38b809997172b933e063e82999"
+    )
+    assert (
+        phase["budget"]["source_record_set_sha256"]
+        == "1490e7d35410717614ba9fd2d37e1eda12d824fa247bff29ae29ff9a0b6c58c0"
+    )
+    assert phase["budget"]["carried_forward_known_cost_yuan"] == pytest.approx(
+        1.91386592
+    )
+    assert phase["budget"]["carried_forward_total_accounted_cost_yuan"] == (
+        pytest.approx(1.91386592)
+    )
+
+    with pytest.raises(ValueError, match="reviewed carried-forward"):
+        runner_module.build_phase_provenance(
+            contract,
+            runtime_manifest=runtime,
+            runtime_proof=runtime_proof,
+            phase="pilot",
+            tasks=tasks,
+            collection_scope=scope,
+            prior_cost_ledger=contract.prior_cost_ledger,
+            carried_forward_cost=None,
+            first_observation_at_utc="2026-07-15T12:00:01Z",
+        )
+
+
+def test_unavailable_provider_emits_zero_call_evidence_receipt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.runner as runner_module
+    from experiments.llm_sim_v2.evidence import build_phase_evidence_receipt
+    from experiments.llm_sim_v2.runner import BudgetLedger, V2ProviderRunner
+
+    monkeypatch.setattr(
+        runner_module,
+        "RUNTIME_MANIFEST_REL",
+        Path("experiments/llm_sim_v2/runtime_task_manifest.not-present.json"),
+    )
+    contract = runner_module.load_runtime_contract(REPO_ROOT)
+    task = runner_module.enumerate_tasks(contract, phase="pilot")[0]
+    summary = V2ProviderRunner(
+        contract=contract,
+        output_base=tmp_path,
+        phase="pilot",
+        provider="deepseek",
+        transport=None,
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+    ).write_unavailable_manifest(
+        [task],
+        error_category="transport_configuration_or_credential_unavailable",
+    )
+
+    assert summary["evidence_receipt"]["provider_call_count"] == 0
+    assert summary["evidence_receipt"]["status"] == "unavailable"
+    phase_root = tmp_path / "llm-personas-v2-dual/pilot"
+    phase = _write_runner_phase_stub(
+        phase_root,
+        phase="pilot",
+        providers=("deepseek",),
+        task_ids=(task.task_id,),
+    )
+    phase_receipt = build_phase_evidence_receipt(
+        phase_root,
+        phase_provenance=phase,
+        tasks=(task,),
+    )
+    assert (
+        phase_receipt["providers"]["deepseek"]["evidence_chain_head_sha256"]
+        == summary["evidence_receipt"]["event_sha256"]
+    )
 
 
 def test_provider_runner_scopes_identical_tasks_by_provider(tmp_path: Path):
@@ -1061,16 +1813,18 @@ def test_paid_attempt_that_opens_fuse_is_still_returned_for_immutable_storage():
 
 def _phase_provenance_fixture(*, partial: bool = False):
     from experiments.llm_sim_v2.collect import resolve_collection_scope
-    from experiments.llm_sim_v2.runner import (
-        build_phase_provenance,
-        build_runtime_task_manifest,
-        enumerate_tasks,
-        load_runtime_contract,
-    )
+    import experiments.llm_sim_v2.runner as runner_module
 
-    contract = load_runtime_contract(REPO_ROOT)
+    original_manifest = runner_module.RUNTIME_MANIFEST_REL
+    runner_module.RUNTIME_MANIFEST_REL = Path(
+        "experiments/llm_sim_v2/runtime_task_manifest.not-present.json"
+    )
+    try:
+        contract = runner_module.load_runtime_contract(REPO_ROOT)
+    finally:
+        runner_module.RUNTIME_MANIFEST_REL = original_manifest
     runtime_commit = str(contract.freeze_proof["commit"])
-    runtime = build_runtime_task_manifest(
+    runtime = runner_module.build_runtime_task_manifest(
         contract,
         runtime_commit=runtime_commit,
         frozen_at_utc="2026-07-15T07:05:00Z",
@@ -1113,10 +1867,18 @@ def _phase_provenance_fixture(*, partial: bool = False):
         limit=1 if partial else None,
         allow_partial=partial,
     )
-    tasks = enumerate_tasks(contract, phase="pilot")
+    tasks = runner_module.enumerate_tasks(contract, phase="pilot")
     if partial:
         tasks = [next(task for task in tasks if task.condition == "controlled")]
-    phase = build_phase_provenance(
+    carried = None
+    if not partial:
+        carried = json.loads(
+            (
+                REPO_ROOT
+                / "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_carried_forward_cost.json"
+            ).read_text(encoding="utf-8")
+        )
+    phase = runner_module.build_phase_provenance(
         contract,
         runtime_manifest=runtime,
         runtime_proof=proof,
@@ -1124,11 +1886,21 @@ def _phase_provenance_fixture(*, partial: bool = False):
         tasks=tasks,
         collection_scope=scope,
         prior_cost_ledger=contract.prior_cost_ledger,
+        carried_forward_cost=carried,
         first_observation_at_utc=contract.freeze_proof[
             "observation_timestamp"
         ],
     )
     return contract, runtime, tasks, phase
+
+
+def _reviewed_carried() -> dict[str, Any]:
+    return json.loads(
+        (
+            REPO_ROOT
+            / "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_carried_forward_cost.json"
+        ).read_text(encoding="utf-8")
+    )
 
 
 def _active_runtime_proof(
@@ -1227,6 +1999,7 @@ def test_rehashed_stored_phase_provenance_is_revalidated_against_active_contract
         runtime_proof=runtime_proof,
         tasks=tasks,
         collection_scope=scope,
+        carried_forward_cost=_reviewed_carried(),
     )["ok"] is True
 
     tampered = copy.deepcopy(phase)
@@ -1240,6 +2013,7 @@ def test_rehashed_stored_phase_provenance_is_revalidated_against_active_contract
             runtime_proof=runtime_proof,
             tasks=tasks,
             collection_scope=scope,
+            carried_forward_cost=_reviewed_carried(),
         )
 
 
@@ -1267,6 +2041,7 @@ def test_rehashed_phase_rejects_coordinated_precommit_observation_timestamps():
             runtime_proof=runtime_proof,
             tasks=tasks,
             collection_scope=_phase_scope(phase),
+            carried_forward_cost=_reviewed_carried(),
         )
 
 
@@ -1292,6 +2067,7 @@ def test_rehashed_phase_rejects_stored_commit_timestamp_drift(binding: str):
             runtime_proof=runtime_proof,
             tasks=tasks,
             collection_scope=_phase_scope(phase),
+            carried_forward_cost=_reviewed_carried(),
         )
 
 
@@ -1317,6 +2093,7 @@ def test_rehashed_phase_rejects_impossible_stored_runtime_head_ancestry():
             runtime_proof=runtime_proof,
             tasks=tasks,
             collection_scope=_phase_scope(phase),
+            carried_forward_cost=_reviewed_carried(),
         )
 
 
@@ -1337,6 +2114,7 @@ def test_stored_runtime_head_may_precede_active_head_when_ancestry_is_valid():
         runtime_proof=_active_runtime_proof(runtime, phase),
         tasks=tasks,
         collection_scope=_phase_scope(phase),
+        carried_forward_cost=_reviewed_carried(),
     )["contract_revalidated"] is True
 
 
@@ -1433,12 +2211,10 @@ def test_keyboard_interrupt_always_writes_interrupted_provider_manifest(tmp_path
     from experiments.llm_sim_v2.runner import (
         BudgetLedger,
         V2ProviderRunner,
-        enumerate_tasks,
-        load_runtime_contract,
     )
 
-    contract = load_runtime_contract(REPO_ROOT)
-    task = enumerate_tasks(contract, phase="pilot")[0]
+    contract, _, tasks, phase = _phase_provenance_fixture(partial=True)
+    task = tasks[0]
     runner = V2ProviderRunner(
         contract=contract,
         output_base=tmp_path,
@@ -1446,6 +2222,7 @@ def test_keyboard_interrupt_always_writes_interrupted_provider_manifest(tmp_path
         provider="deepseek",
         transport=SequenceTransport([KeyboardInterrupt()]),
         budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        phase_provenance=phase,
         sleep=lambda _: None,
         random_value=lambda: 0.5,
     )
@@ -1456,10 +2233,17 @@ def test_keyboard_interrupt_always_writes_interrupted_provider_manifest(tmp_path
     manifest = json.loads(path.read_text(encoding="utf-8"))
     assert manifest["provider_lifecycle"] == "interrupted"
     assert manifest["lifecycle"]["expected_count"] == 1
-    assert manifest["lifecycle"]["present_count"] == 0
-    assert manifest["lifecycle"]["missing_count"] == 1
-    assert manifest["lifecycle"]["interrupted_count"] == 1
-    assert manifest["lifecycle"]["interrupted_task_ids"] == [task.task_id]
+    assert manifest["lifecycle"]["present_count"] == 1
+    assert manifest["lifecycle"]["missing_count"] == 0
+    assert manifest["lifecycle"]["interrupted_count"] == 0
+    assert manifest["needs_user"] == {
+        "required": True,
+        "reason": "unknown_provider_billing_reserved",
+        "record_count": 1,
+        "record_task_ids": [task.task_id],
+        "unknown_cost_attempt_count": 1,
+    }
+    assert manifest["budget"]["provider_record_unknown_reserve_yuan"] == 10.0
 
 
 def test_provider_breaker_uses_bounded_batches_and_discloses_skipped_tasks(tmp_path: Path):
@@ -1711,16 +2495,19 @@ def test_retry_after_http_date_is_parsed_then_capped():
     assert delays == [30.0]
 
 
-def test_interrupt_then_resume_retains_immutable_lifecycle_history(tmp_path: Path):
+def test_interrupt_after_transport_entry_persists_reserve_and_zero_call_resume(
+    tmp_path: Path,
+):
+    from experiments.llm_sim_v2.evidence import build_phase_evidence_receipt
     from experiments.llm_sim_v2.runner import (
         BudgetLedger,
         V2ProviderRunner,
-        enumerate_tasks,
-        load_runtime_contract,
+        write_phase_provenance,
     )
 
-    contract = load_runtime_contract(REPO_ROOT)
-    task = enumerate_tasks(contract, phase="pilot")[0]
+    contract, _, tasks, phase = _phase_provenance_fixture(partial=True)
+    task = tasks[0]
+    write_phase_provenance(tmp_path, phase=phase)
     interrupted = V2ProviderRunner(
         contract=contract,
         output_base=tmp_path,
@@ -1728,17 +2515,92 @@ def test_interrupt_then_resume_retains_immutable_lifecycle_history(tmp_path: Pat
         provider="deepseek",
         transport=SequenceTransport([KeyboardInterrupt()]),
         budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        phase_provenance=phase,
         sleep=lambda _: None,
         random_value=lambda: 0.5,
     )
     with pytest.raises(KeyboardInterrupt):
         interrupted.run_tasks([task])
 
+    record_path = (
+        tmp_path
+        / "llm-personas-v2-dual/pilot/records/deepseek"
+        / f"{task.task_id}.json"
+    )
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    assert record["status"] == "technical_failure"
+    assert record["attempts"] == [
+        {
+            "attempt": 1,
+            "status": "failed",
+            "error_category": "interrupted_provider_call",
+            "request_max_tokens": 1024,
+            "cost_yuan": None,
+            "cost_known": False,
+            "billing_ambiguity": True,
+            "cost_reserve_yuan": 10.0,
+            "provider_response_received": False,
+        }
+    ]
+    assert record["unknown_cost_reserve_yuan"] == 10.0
+    assert record["needs_user"] is True
+
+    resume_transport = SequenceTransport(
+        [
+            _response(
+                answer=task.correct_option,
+                blind=task.condition == "blind",
+            )
+        ]
+    )
     resumed = V2ProviderRunner(
         contract=contract,
         output_base=tmp_path,
         phase="pilot",
         provider="deepseek",
+        transport=resume_transport,
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        phase_provenance=phase,
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+    resumed.run_tasks([task])
+    assert resume_transport.calls == []
+    receipt = build_phase_evidence_receipt(
+        tmp_path / "llm-personas-v2-dual/pilot",
+        phase_provenance=phase,
+        tasks=tasks,
+    )
+    assert receipt["providers"]["deepseek"]["provider_call_count"] == 1
+
+
+def test_resume_rejects_valid_response_relabelled_technical_failure(
+    tmp_path: Path,
+) -> None:
+    from experiments.llm_sim_v2.runner import (
+        BudgetLedger,
+        V2ProviderRunner,
+        execute_task,
+    )
+
+    contract, _, tasks, phase = _phase_provenance_fixture(partial=True)
+    task = tasks[0]
+    resume_transport = SequenceTransport([])
+    runner = V2ProviderRunner(
+        contract=contract,
+        output_base=tmp_path,
+        phase="pilot",
+        provider="deepseek",
+        transport=resume_transport,
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        phase_provenance=phase,
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+    record = execute_task(
+        task,
+        provider="deepseek",
+        model=runner.model,
         transport=SequenceTransport(
             [
                 _response(
@@ -1747,24 +2609,68 @@ def test_interrupt_then_resume_retains_immutable_lifecycle_history(tmp_path: Pat
                 )
             ]
         ),
+        policy=runner.policy,
+        budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
+        provenance=runner.provenance,
+        sleep=lambda _: None,
+        random_value=lambda: 0.5,
+    )
+    record.update(
+        {
+            "status": "technical_failure",
+            "error": "network_timeout",
+            "parsed_output": None,
+            "outcomes": {
+                "is_correct": None,
+                "target_option_hit": None,
+                "manipulation_compliance": None,
+            },
+        }
+    )
+    path = runner._record_path(task)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="status semantics"):
+        runner.run_tasks(tasks)
+    assert resume_transport.calls == []
+
+
+def test_invalid_schema_then_network_failure_uses_final_attempt_status() -> None:
+    from dataclasses import replace
+
+    from experiments.llm_sim.transport import ProviderNetworkError
+    from experiments.llm_sim_v2.evidence import validate_v2_response_record
+    from experiments.llm_sim_v2.runner import BudgetLedger, execute_task
+
+    contract, _, tasks, _ = _phase_provenance_fixture(partial=True)
+    task = tasks[0]
+    invalid_response = _response(answer=task.correct_option)
+    invalid_response["content"] = "not-json"
+    policy = replace(contract.provider_policy("deepseek"), max_attempts=2)
+    record = execute_task(
+        task,
+        provider="deepseek",
+        model=contract.provider_model("deepseek"),
+        transport=SequenceTransport(
+            [invalid_response, ProviderNetworkError()]
+        ),
+        policy=policy,
         budget=BudgetLedger(soft_warning_yuan=300.0, hard_fuse_yuan=450.0),
         sleep=lambda _: None,
         random_value=lambda: 0.5,
     )
-    manifest = resumed.run_tasks([task])
-    assert manifest["provider_lifecycle"] == "complete"
-    assert [row["provider_lifecycle"] for row in manifest["lifecycle_history"]] == [
-        "interrupted",
-        "complete",
-    ]
-    event_paths = sorted(
-        (
-            tmp_path
-            / "llm-personas-v2-dual/pilot/provider_lifecycle/deepseek"
-        ).glob("*.json")
+
+    assert record["status"] == "technical_failure"
+    assert record["attempts"][-1]["provider_response_received"] is False
+    validate_v2_response_record(
+        record,
+        provider="deepseek",
+        requested_model=contract.provider_model("deepseek"),
+        phase="pilot",
+        task=task,
+        expected_provenance={},
     )
-    assert len(event_paths) == 2
-    assert all(json.loads(path.read_text())["event_index"] == index for index, path in enumerate(event_paths))
 
 
 def test_collection_records_unavailable_provider_and_continues_frozen_roster(

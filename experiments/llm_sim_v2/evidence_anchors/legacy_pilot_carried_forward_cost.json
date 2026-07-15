@@ -1,0 +1,12 @@
+{
+  "carried_forward_cost_ledger_sha256": "87ff7a3d08df64d67df2372188d6f707ddb4deb295a85300aae0b6190d48be35",
+  "known_cost_yuan": 1.91386592,
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.carried_forward_cost_ledger.v1",
+  "simulated": true,
+  "source_phase": "pilot",
+  "source_phase_receipt_sha256": "2ea161a0f29e3a8bac1eeee38cb238f7cb722a38b809997172b933e063e82999",
+  "source_record_set_sha256": "1490e7d35410717614ba9fd2d37e1eda12d824fa247bff29ae29ff9a0b6c58c0",
+  "total_accounted_cost_yuan": 1.91386592,
+  "unknown_cost_reserve_yuan": 0.0
+}
