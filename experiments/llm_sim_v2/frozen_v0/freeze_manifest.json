@@ -1,0 +1,176 @@
+{
+  "analysis_plan_sha256": "0e6d935c782fc4eb8989d10546676a52ae6b56181e5058f4f956a8c0e33fa866",
+  "artifact_set_sha256": "d5ab8a17390c3573da70f425c94e0ee2298e814107b13a7dfc19752036800347",
+  "freeze_manifest_sha256": "2d0ea5608dd4ab277106bd5a8effe978d575f93b77193747efc6d37b9473245e",
+  "frozen_at_utc": "2026-07-15T05:29:53Z",
+  "frozen_files": [
+    {
+      "category": "plan",
+      "path": "experiments/h5v2_analysis_plan.md",
+      "sha256": "0e6d935c782fc4eb8989d10546676a52ae6b56181e5058f4f956a8c0e33fa866",
+      "size": 6055
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/freeze.py",
+      "sha256": "31045c43ab3402500da2ea10a6348f98058f6cfd894dddfe9e953f04ead9e123",
+      "size": 28348
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/blind_panel.json",
+      "sha256": "181f3ed448b283b31c920789423beee97e0672565476f2991309c243d9b09223",
+      "size": 695497
+    },
+    {
+      "category": "mapping",
+      "path": "experiments/llm_sim_v2/frozen_v0/codex_mapping_draft.json",
+      "sha256": "4f95fd509b957595b17cba382675ce68d448d20a68cd1206f7ea7ddccfc4008a",
+      "size": 34388
+    },
+    {
+      "category": "mapping",
+      "path": "experiments/llm_sim_v2/frozen_v0/deepseek_mapping_crosscheck.json",
+      "sha256": "4366a7b21f8f83eb5590714f826d75875e970407b574473bbd856f9ce2cac822",
+      "size": 55919
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/leakage_lexicon.json",
+      "sha256": "ce990af49e9f335f33db7d45fdc6abaf845a6f47115452135a89a31df8d9433a",
+      "size": 8372
+    },
+    {
+      "category": "mapping",
+      "path": "experiments/llm_sim_v2/frozen_v0/mapping_audit_sample.json",
+      "sha256": "17afcbe0dd674aee6229fa8fedcd33c796fb9858f5d176d100d3b55c5946d12b",
+      "size": 58160
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/official_inputs.json",
+      "sha256": "79e0b9dd1d958ab2a136d5432b630204bccd0e48ff80f8f55a11cc042d2dbdee",
+      "size": 269540
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/persona_grid.json",
+      "sha256": "b0daee218c2c9742f2c5669538cc8cb5e99aa25ae17269c46571114eb43375ac",
+      "size": 133470
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/population_manifest.json",
+      "sha256": "f9bc55f41e4f2c6787468077d914c713a88a51ae1c5beb7c0fc8a4f196f13fbd",
+      "size": 4692
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/prompt_revision_ledger.json",
+      "sha256": "ac6688dfe157ae08ce65b44b6028e8bee6d97b63df586aaef2edb679bfe16a08",
+      "size": 2540
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/source_manifest.json",
+      "sha256": "952ccd636888f6245d05ca8b9d2b9f5068dbc753c531f4aba5caf01dab73c7ed",
+      "size": 1258
+    },
+    {
+      "category": "config",
+      "path": "experiments/llm_sim_v2/frozen_v0/study_config.json",
+      "sha256": "0487d1c3118bb3f5e65dc6ace5e3750e0b6b8f4806169275b3b7a44177b1d1da",
+      "size": 7100
+    },
+    {
+      "category": "mapping",
+      "path": "experiments/llm_sim_v2/frozen_v0/target_option_mapping.json",
+      "sha256": "faab83654d97caa3909adfa1260f00c7b1b46c42e22250c2b1124d05f94a111f",
+      "size": 46518
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/generate_freeze.py",
+      "sha256": "becada772522f08c51caab8fa4fe6f31d39c2682c9754811cbf9ec961427f1dd",
+      "size": 12400
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/grid.py",
+      "sha256": "9bcd7b9bc67894cb9c8fef1a60579de18cd1d9d7222ea09c851cd8d10c172264",
+      "size": 6772
+    },
+    {
+      "category": "prompt",
+      "path": "experiments/llm_sim_v2/keys.py",
+      "sha256": "f1c0ca25ca3404edbef9d93efe437971673b7a508db77ea40a940731cda89238",
+      "size": 551
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/mapping.py",
+      "sha256": "73038a05644e637d8abd7d2dadb2ab78b5445c93fc50cf66b52007dd0a40b0d8",
+      "size": 13034
+    },
+    {
+      "category": "prompt",
+      "path": "experiments/llm_sim_v2/models.py",
+      "sha256": "e98455cb81cd6b59dcaf1d3ce0fe8bff097f158ac63e4bf6a521cca09a8edfd8",
+      "size": 7072
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/official.py",
+      "sha256": "ea5873b16b657334e1c8fd4d3008bd858b9678bacc013271e66effd325cc911f",
+      "size": 17398
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/panel.py",
+      "sha256": "110f58af5be7e35fb35754139f861d5fefb51a113eb35a424161ee102f7dcca9",
+      "size": 5975
+    },
+    {
+      "category": "prompt",
+      "path": "experiments/llm_sim_v2/prompts.py",
+      "sha256": "17de39902faa2df00b4f6665add8b10b1c09a1228a1499157d917dc5d80a99b1",
+      "size": 15776
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/provenance.py",
+      "sha256": "5f792eacf136900c1ddf5260f8f4baac7654b9c63619cb1ae7085fda4b5025e6",
+      "size": 8676
+    },
+    {
+      "category": "prompt",
+      "path": "experiments/llm_sim_v2/public.py",
+      "sha256": "d5eec1ffa2543c313abf77d52bcad468a37eaa8e92f6290a73edd95d359ec44b",
+      "size": 4790
+    },
+    {
+      "category": "code",
+      "path": "experiments/llm_sim_v2/store.py",
+      "sha256": "61204110acc76d87b2c3444783aedf4e94b2b503f4e37266dac3203a22411a2e",
+      "size": 6201
+    },
+    {
+      "category": "code",
+      "path": "tests/test_llm_sim_v2_freeze.py",
+      "sha256": "615863ec26d1ebaf389461a051f16d5835233ba283391c48c754c0159836e9e3",
+      "size": 25088
+    }
+  ],
+  "grid_sha256": "a0a8788bd1c08a4c1430bbc3e11ee2dc0fb55deed7a98be4f2b54d7a798c4bd4",
+  "mapping_sha256": "af995de4500842397d5584e5cecc0d8f3e48d415fe4fde0dba2a3ea6814d99da",
+  "observation_started_at": null,
+  "official_inputs_sha256": "0e6ef5cc74f59aa0dc6ec8e55f8ec35d0c28096604d17575c44618aed6dc0575",
+  "population_manifest_sha256": "17e2f06d97ab5db04bb1658db71eb1b68e1e6c90db235fbf31029f7dfa8b9b50",
+  "prompt_ledger_sha256": "cc6eeff0cf32f1800c4472634a2a88f4983628eda67e89488b5d769e67352427",
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.freeze_manifest.v1",
+  "simulated": true,
+  "source_set_sha256": "946701a2d9e2387f1eb3eb03890a843c81e104ae213ce6a4cb3724e9aff531c0",
+  "status": "pre_observation_frozen",
+  "target_set_hash": "d1e6d3ba43a2e1d33bf16bc45a9a8ec07a2995fa441eaf23faf637ee168d1b57"
+}

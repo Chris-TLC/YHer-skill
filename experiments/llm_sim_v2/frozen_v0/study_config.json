@@ -1,0 +1,220 @@
+{
+  "blind": {
+    "additional_diagnostic_items_maximum": 21,
+    "calibration_items_per_row": 4,
+    "maximum_items_per_row": 25,
+    "primary_outcomes": [
+      "terminal_response_consistency",
+      "provider_pairwise_agreement",
+      "failure_rate",
+      "output_stability"
+    ],
+    "terminal_repeat_subset_persona_count": 10
+  },
+  "bootstrap": {
+    "cluster_unit": "persona_id",
+    "confidence_level": 0.95,
+    "resamples": 10000,
+    "seed": 2026071503
+  },
+  "budget_yuan": {
+    "hard_fuse": 450.0,
+    "soft_warning": 300.0
+  },
+  "cluster_count": 50,
+  "cluster_unit": "persona_id",
+  "controlled": {
+    "items_per_row": 4,
+    "manipulation_compliance": "sparse_descriptive_only",
+    "primary_outcomes": [
+      "paired_correctness_difference",
+      "paired_error_rate_difference",
+      "valid_response_rate",
+      "abstention_rate"
+    ]
+  },
+  "frozen_at_utc": "2026-07-15T05:29:53Z",
+  "judge": {
+    "authenticity_score_forbidden": true,
+    "blind_to_target_labels": true,
+    "labels": [
+      "consistent",
+      "inconsistent",
+      "unknown",
+      "insufficient_evidence"
+    ],
+    "outputs": [
+      "pairwise_agreement",
+      "error_category",
+      "disagreement_examples"
+    ]
+  },
+  "leakage_lexicon_sha256": "fea441de5c2465f3ef6d65c6b78f42f9e17dbcd4b235bfaa58b3a1bde5ca73a8",
+  "main": {
+    "persona_ids": [
+      "persona-v2:anchor-v2:00:元素周期律/周期表:high",
+      "persona-v2:anchor-v2:00:元素周期律/周期表:low",
+      "persona-v2:anchor-v2:01:分子间作用力/氢键:high",
+      "persona-v2:anchor-v2:01:分子间作用力/氢键:low",
+      "persona-v2:anchor-v2:02:分离提纯:high",
+      "persona-v2:anchor-v2:02:分离提纯:low",
+      "persona-v2:anchor-v2:03:化学平衡:high",
+      "persona-v2:anchor-v2:03:化学平衡:low",
+      "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:high",
+      "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:low",
+      "persona-v2:anchor-v2:05:化学键:high",
+      "persona-v2:anchor-v2:05:化学键:low",
+      "persona-v2:anchor-v2:06:原子结构:high",
+      "persona-v2:anchor-v2:06:原子结构:low",
+      "persona-v2:anchor-v2:07:反应热/焓变:high",
+      "persona-v2:anchor-v2:07:反应热/焓变:low",
+      "persona-v2:anchor-v2:08:基本操作:high",
+      "persona-v2:anchor-v2:08:基本操作:low",
+      "persona-v2:anchor-v2:09:弱电解质电离平衡:high",
+      "persona-v2:anchor-v2:09:弱电解质电离平衡:low",
+      "persona-v2:anchor-v2:10:晶体结构:high",
+      "persona-v2:anchor-v2:10:晶体结构:low",
+      "persona-v2:anchor-v2:11:有机推断:high",
+      "persona-v2:anchor-v2:11:有机推断:low",
+      "persona-v2:anchor-v2:12:氧化还原反应:high",
+      "persona-v2:anchor-v2:12:氧化还原反应:low",
+      "persona-v2:anchor-v2:13:氮及其化合物:high",
+      "persona-v2:anchor-v2:13:氮及其化合物:low",
+      "persona-v2:anchor-v2:14:氯及其化合物:high",
+      "persona-v2:anchor-v2:14:氯及其化合物:low",
+      "persona-v2:anchor-v2:15:烷烃:high",
+      "persona-v2:anchor-v2:15:烷烃:low",
+      "persona-v2:anchor-v2:16:物质分类:high",
+      "persona-v2:anchor-v2:16:物质分类:low",
+      "persona-v2:anchor-v2:17:物质制备:high",
+      "persona-v2:anchor-v2:17:物质制备:low",
+      "persona-v2:anchor-v2:18:物质检验:high",
+      "persona-v2:anchor-v2:18:物质检验:low",
+      "persona-v2:anchor-v2:19:电解质与非电解质:high",
+      "persona-v2:anchor-v2:19:电解质与非电解质:low",
+      "persona-v2:anchor-v2:20:盐类水解:high",
+      "persona-v2:anchor-v2:20:盐类水解:low",
+      "persona-v2:anchor-v2:21:硫及其化合物:high",
+      "persona-v2:anchor-v2:21:硫及其化合物:low",
+      "persona-v2:anchor-v2:22:芳香烃:high",
+      "persona-v2:anchor-v2:22:芳香烃:low",
+      "persona-v2:anchor-v2:23:误差分析:high",
+      "persona-v2:anchor-v2:23:误差分析:low",
+      "persona-v2:anchor-v2:24:铁及其化合物:high",
+      "persona-v2:anchor-v2:24:铁及其化合物:low"
+    ],
+    "physical_phase": "main",
+    "providers": [
+      "deepseek",
+      "glm",
+      "kimi",
+      "minimax",
+      "doubao",
+      "tongyi"
+    ]
+  },
+  "mapping_gate": {
+    "confirmatory_target_misconception_hit_rate": false,
+    "mapped_fraction": 0.06,
+    "mapped_rows": 6,
+    "minimum_fraction": 0.6,
+    "passed": false,
+    "sparse_descriptive_only": true,
+    "total_rows": 100
+  },
+  "mapping_sha256": "af995de4500842397d5584e5cecc0d8f3e48d415fe4fde0dba2a3ea6814d99da",
+  "maximum_prompt_rewrites": 1,
+  "modality_condition": "text_only",
+  "paired_response_rows": 100,
+  "phase_isolation": {
+    "cross_population_ingestion_forbidden": true,
+    "main_population": "main",
+    "pilot_population": "pilot"
+  },
+  "pilot": {
+    "excluded_from_main_analysis": true,
+    "persona_ids": [
+      "persona-v2:anchor-v2:00:元素周期律/周期表:high",
+      "persona-v2:anchor-v2:23:误差分析:low",
+      "persona-v2:anchor-v2:20:盐类水解:low",
+      "persona-v2:anchor-v2:19:电解质与非电解质:low",
+      "persona-v2:anchor-v2:08:基本操作:low"
+    ],
+    "physical_phase": "pilot",
+    "providers": [
+      "deepseek",
+      "doubao"
+    ]
+  },
+  "prompt_revision": 0,
+  "provider_exclusion": {
+    "blind_invalid_schema_fraction_strictly_above": 0.5,
+    "minimum_complete_clusters_per_condition": 45,
+    "model_drift": "exclude_and_disclose",
+    "technical_failure": "retain_in_denominator_and_disclose"
+  },
+  "providers": {
+    "deepseek": {
+      "concurrency": 4,
+      "max_attempts": 4,
+      "max_tokens": 1024,
+      "model": "deepseek-v4-pro",
+      "retry_max_tokens": 2048,
+      "timeout_seconds": 90
+    },
+    "doubao": {
+      "concurrency": 2,
+      "max_attempts": 4,
+      "max_tokens": 1024,
+      "model": "doubao-seed-2-0-mini-260428",
+      "retry_max_tokens": 2048,
+      "timeout_seconds": 120
+    },
+    "glm": {
+      "concurrency": 4,
+      "max_attempts": 3,
+      "max_tokens": 512,
+      "model": "glm-4-plus",
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60
+    },
+    "kimi": {
+      "concurrency": 4,
+      "max_attempts": 3,
+      "max_tokens": 512,
+      "model": "moonshot-v1-128k",
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60
+    },
+    "minimax": {
+      "concurrency": 4,
+      "max_attempts": 3,
+      "max_tokens": 512,
+      "model": "abab6.5s-chat",
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60
+    },
+    "tongyi": {
+      "concurrency": 4,
+      "max_attempts": 3,
+      "max_tokens": 512,
+      "model": "qwen-max",
+      "retry_max_tokens": 1024,
+      "timeout_seconds": 60
+    }
+  },
+  "repeated_measure_factors": [
+    "provider",
+    "response_arm"
+  ],
+  "response_arms": [
+    "deficit",
+    "control"
+  ],
+  "rewrite_requires_pre_observation_commit": true,
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.study_config.v1",
+  "simulated": true,
+  "study_seed": 20260715,
+  "target_set_hash": "d1e6d3ba43a2e1d33bf16bc45a9a8ec07a2995fa441eaf23faf637ee168d1b57"
+}

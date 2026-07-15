@@ -1,0 +1,725 @@
+{
+  "content_sha256": "eeb41c2b9a9fb4791add2342d0ec09a98338fd74b64e0bb9bd4fd94975e0a083",
+  "decisions": [
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "427d92541a3467de8c37ff0f74fed49376d791cf",
+      "reason": "The failure cause is about confusing group notation (e.g., writing ⅥA as Ⅵ or Ⅷ). None of the wrong options A, B, D directly relate to this confusion; they involve ion radius, hydride stability, and intermolecular forces. Option C is correct and not a wrong option. Thus no option matches the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "ebae7a35ce8215d080d71a8194536c70eb033137",
+      "reason": "The failure cause is about misidentifying group numbers (e.g., writing VIA as VI or VIII). None of the wrong options (B, C, D) relate to group number notation; they involve chemical properties and reactions. Thus, no option matches the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "d4f3b46e45103af1028e3cbb49d15492367cadce",
+      "reason": "The failure cause is about misidentifying group notation (e.g., writing VIA as VI or VIII). The item's stem asks about elements with 1 or 2 outer electrons, which includes both metals and nonmetals (H, He, etc.), so the correct answer is D (cannot determine). The wrong options A, B, C are all specific classifications. The failure symptom (misreading atomic structure) does not match any wrong option uniquely; the failure is about group notation, not about classifying elements based on outer electrons. Thus, no wrong option semantically expresses the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "1aabac0bfe08235b8cf263746cbe9081608c9818",
+      "reason": "The failure cause is about misidentifying group numbers (e.g., writing VIA as VI or VIII), but the question asks for first ionization energy, not group identification. None of the wrong options (B, C, D) semantically match the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "2bae88b8d2eb935fd3ff8ea2ebc4e0680bad3f25",
+      "reason": "The failure cause is about confusing molecular polarity with bond polarity, leading to misjudgment of polar/nonpolar molecules. The item is about changes in paraffin processing, which involves intermolecular forces and covalent bonds, not molecular polarity. None of the wrong options semantically express the stated failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "0c5aa3711bd351125f832761fac90d1805b4c632",
+      "reason": "The failure cause is about confusing molecular polarity with bond polarity, leading to misjudgment of polar/nonpolar molecules. The question asks which substance's phase change involves only intermolecular forces. Option A (CCl4) is nonpolar and correct. Option B (NaCl) is ionic, C (Al) is metallic, D (KClO3) is ionic with covalent bonds; all involve stronger forces. None of the wrong options directly relate to the specific failure of misjudging polarity of CO2/CH4/HCN. Thus, no option uniquely matches the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "88e3affb59876164ba6807bb88aa10362655226e",
+      "reason": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子。该题中，CO₂是直线型非极性分子，但学生可能因有极性键而误判为极性分子；CH₄是正四面体非极性分子，学生也可能误判。但选项D是正确选项（直线型），而错误选项A、B、C均非直线型，且与极性混淆无关。因此无法唯一映射到一个错误选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "adb711ad2e39ffdb2d7f724cf89eaec764a3b3ae",
+      "reason": "The failure cause is about confusing molecular polarity with bond polarity, leading to misjudgment of molecular polarity. Option C '分子的极性' directly relates to this concept, while the other wrong options (A, B) are about geometry and bond angle, not polarity. Option D is correct. Thus, only option C uniquely matches the failure.",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "5d68ef5c399a2031e50100c0c55334b63f05c68c",
+      "reason": "The failure cause is about confusing evaporation and cooling crystallization, but the question is about separation methods (分液、萃取、蒸馏) for organic mixtures, not crystallization. None of the wrong options semantically express the stated failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "504b3da9677c66b64b0acd1b85649ae89abad3d8",
+      "reason": "该题涉及石油分馏和裂解，与蒸发结晶/冷却结晶的混淆无关，所有选项均不匹配该失败原因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "06653f0fa763a19bb6fd49cb2ef48c48bb0528bd",
+      "reason": "The failure cause is about confusing evaporation and cooling crystallization for purification. The item involves separating chloroform from water, which is a liquid-liquid mixture, not a crystallization problem. Option C (重结晶) is a wrong option that uniquely relates to crystallization, matching the failure cause. Options A and D are also wrong but not specifically about crystallization confusion.",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "6b9fae8e015ac38a444f04db087d7f3015a4a8c2",
+      "reason": "选项C涉及己烷（己烯）用溴水、分液，但己烯与溴加成后生成二溴己烷仍溶于己烷，无法分液，属于分离提纯方法错误，与蒸发结晶/冷却结晶混淆无关。其他选项均不涉及结晶。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "2b410c2ce110114f9f06a93fbd7d5e0d713fb665",
+      "reason": "选项C错误地认为增大压强时各物质浓度保持不变，实际上增大压强平衡向正反应方向移动，各物质浓度会变化。这体现了学生混淆提高转化率与提高反应速率的措施，忽略平衡移动方向。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "0eebe5d9f34351f88c63c172a01f9a956757c505",
+      "reason": "选项D涉及平衡标志，与提高转化率/速率混淆无关；A、B、C均涉及平衡计算或移动，但无混淆转化率与速率。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "353559742f4dba757289109f1639f5b98a012227",
+      "reason": "选项C错误地将海水吸收CO₂导致pH增大，实际上CO₂溶于水生成碳酸，使pH减小。该错误涉及平衡移动方向（CO₂+H₂O⇌H₂CO₃⇌H⁺+HCO₃⁻），与混淆提高转化率与反应速率的措施无关。其他选项A、B、D均正确，故无唯一匹配的选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "5edd8c8b6d33aa54087a3fc939e3036782f145c8",
+      "reason": "选项B合成氨采用高压既提高速率也提高转化率，选项C通入过量空气提高氧气浓度使平衡正向移动提高转化率，选项D加入食盐利用同离子效应使平衡移动提高产率，三者均可用勒夏特列原理解释提高转化率，但学生可能误认为这些措施仅提高速率而忽略平衡移动。选项A通入过量氢气是为了提高氯气的转化率，但工业制盐酸反应不可逆，不存在化学平衡，不能用勒夏特列原理解释，因此A是正确选项，不是错误选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "39c3906a9bcfac551c0fde59949d4a5d0c909420",
+      "reason": "The failure cause is about misapplying the molar volume concept (22.4 L = 1 mol) without considering conditions. The item tests properties of O2 isotopes under same T,P,V, not molar volume. None of the wrong options (B, C, D) relate to this failure; they involve boiling point, isotope definition, and molecular mass. Thus, no option maps to the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "8c874712cf8ff8274b5e6826c83fc8a64b321cf0",
+      "reason": "选项C涉及同温同压下的气体原子数，学生可能忽略气体摩尔体积的条件，但该选项本身正确，不体现混淆标准状况与非标准状况的错误。选项A和D与气体摩尔体积无关。因此没有选项唯一对应所述失败原因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "41572cee43dc9babb2819b29d1f67e10a01e17af",
+      "reason": "该题考查阿伏伽德罗定律，同温同压同体积下气体分子数相同，但原子数、质量、电子数可能不同。学生若误认为22.4 L气体在任何条件下均为1 mol，则可能错误判断分子数相同，但本题中分子数必然相同，故分子数不是错误选项。原子数、质量、电子数均可能不同，但题目要求选出不可能相同的，正确选项为原子数。学生错误可能表现为误选分子数，但分子数实际相同，故分子数不是错误选项。根据决策规则，需选出唯一一个错误选项，但本题中错误选项有多个（B、C、D），且学生错误可能对应多个选项，因此无法唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "a49693244d225d03e4828322eb328cec024dfb2d",
+      "reason": "Option B incorrectly assumes 2.24 L of C2H2 at unspecified conditions corresponds to 0.1 mol, ignoring temperature and pressure, which matches the failure cause of misapplying 22.4 L/mol.",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "baf9107da93c1e34b64c2d64bc2254dd2a4806f7",
+      "reason": "Option D incorrectly states that sodium has stronger metallic bonds than aluminum, confusing atomic radius with bond strength. This reflects the failure cause of confusing intermolecular forces with chemical bonds, as metallic bonds are chemical bonds.",
+      "status": "mapped",
+      "target_option": "D"
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "5e67dc7cb43c77c014f1c13a1b61f67ad39625b4",
+      "reason": "选项B '只含有离子键' 是正确选项，而错误选项A、C、D均不涉及分子间作用力与化学键的混淆。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "afbecc52e8982054df1d0283d70ea75f3a31097b",
+      "reason": "冰醋酸是共价化合物，含有共价键，是正确选项。液氯是单质，不是化合物；氨水是混合物；盐酸是混合物。学生可能误认为液氯、氨水或盐酸是化合物，但题目要求化合物，且冰醋酸是唯一正确选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "45db9b7c0d6a2b4c0cfc0ef0b9d69f42bc1792da",
+      "reason": "The failure cause is about confusing intermolecular forces with chemical bonds, specifically in sublimation/melting. The item asks which type of compound cannot be formed by nonmetals. The correct answer is C (metal crystal). The wrong options A, B, D are all possible for nonmetal compounds. None of them uniquely matches the failure cause, as the failure is about bond breaking, not compound type.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "266a945c23084241db97fbfaf261c0c239e7d635",
+      "reason": "The failure cause is about confusing energy levels and orbitals, thinking different orbitals in the same energy level have different energies. None of the wrong options (B, C, D) relate to this concept; they are about atomic number, electron configuration, and periodic table position. Thus, no option maps to the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "671008013023d98e5d4e670b0d9b525b95754915",
+      "reason": "The failure cause is about confusing energy levels and orbitals, thinking different orbitals in same energy level have different energies. None of the wrong options (A, B, C) relate to this concept; they are about nuclear composition. Option D is correct, so no mapping.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "bd452b9e0aa9cf24c97fc383fb5de5f534665f26",
+      "reason": "The failure cause is about confusing energy levels and orbitals, but the item is about isotopes and nuclear properties, not electron energy levels. None of the wrong options relate to the stated failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "8863b5de1c1d1671033dfaabb45cbea16a36f816",
+      "reason": "The failure cause is about confusing energy levels and orbitals, but the question is about NH5, which involves oxidation states and electron configurations, not orbital energy differences. None of the wrong options directly relate to the stated failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "f6b2d005d77f11264bca307b35190380d1de0da0",
+      "reason": "The failure cause is about confusing the order of reactants and products in bond energy calculation for enthalpy change, which is unrelated to the spontaneity condition of a reaction. The question asks for temperature condition for spontaneous forward reaction, which depends on ΔH and ΔS, not on bond energy calculation order. None of the wrong options semantically express the stated failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "c5019ec96f5c2fdfc3bc71412fbb6b764b286935",
+      "reason": "该题考查反应物与生成物总能量高低，与键能计算中的加减顺序无关。所有选项均不涉及键能计算，因此无法映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "e8bf50f48b7b5132eb2d0fb0a780ff44b9d2db25",
+      "reason": "The failure cause is about bond energy calculation order, but the item tests dissolution enthalpy (exothermic vs endothermic). None of the wrong options (A:浓硫酸, B:NaOH, C:NaCl) relate to bond energy calculation; they are about dissolution. Thus, no option matches the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "16b149bf9fb892a621eceabc23bd327573300698",
+      "reason": "The failure cause is about confusion in the sign of enthalpy change calculation (ΔH = bonds broken - bonds formed). None of the wrong options (B, C, D) directly relate to this specific error; they are general misconceptions about reaction types and bond breaking. Option B is about redox reactions always being exothermic, C about catalysts always making reactions exothermic, D about bond breaking always being endothermic. None uniquely express the stated failure cause/symptom.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "5488073a6517593953afc448d5ad1a785aacd90c",
+      "reason": "选项A描述滴定管洗净后直接加液，未用待装液润洗，会导致浓度误差，属于操作错误；但该错误与过滤留错相态无关。其他选项B、C、D均为正确操作，不匹配。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "0a412bb27dd1c3def9882c64baabb43c6bbc2d5e",
+      "reason": "The failure cause is about forgetting to keep the hot filtrate during hot filtration, leading to discarding the liquid containing the product. The wrong options A, B, C are all related to reaction column operations (HgO treatment, gas ratio, flow rate), which do not involve filtration or phase retention. Option D (heating the column) is also unrelated to filtration. None of the wrong options semantically express the stated failure cause/symptom.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "9156bcaf3e1f7e2e70fcbcf507bf383778b2cabf",
+      "reason": "The failure cause is about forgetting to keep the hot filtrate and discarding the solid, which relates to phase retention errors. Option B (using alcohol to extract iodine from iodine water) is wrong because alcohol is miscible with water and cannot be used as an extraction solvent, but this error is about extraction, not phase retention in filtration. Options A, C, D are correct procedures. Thus, no wrong option uniquely matches the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "ab7c02d8b3d7fe83250035adb01087c842cb04d5",
+      "reason": "选项D描述配制硫酸溶液时直接在容量瓶中稀释浓硫酸，这是错误操作，但错误原因是未冷却至室温等，与忘记趁热过滤导致留错相态无关。其他选项均不涉及过滤或相态错误。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "dcc5779552eaac34d6adbb24021aef67438fb38f",
+      "reason": "选项D涉及还原性，与酸性强弱无关，但题目要求比较酸性强弱，D不能用于比较酸性，因此是错误选项。然而，失败原因和症状是关于pH与pOH关系及温度影响Kw，与选项D无关。其他选项A、B、C均与酸性比较相关，且没有涉及pH+pOH=14的误用。因此，没有选项能唯一对应失败原因，故排除。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "60f71b45d394b6ac730b3c873fd6c3e94ad58c59",
+      "reason": "The failure cause is about confusing pOH and pH and ignoring temperature effect on Kw, which is unrelated to the given question about comparing properties of two acetic acid solutions at room temperature. None of the wrong options semantically express this failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "6cded697a9750d99065595aedf5001aa47d3d139",
+      "reason": "Option D involves an incorrect ion concentration order for an acidic solution of CH3COOH and CH3COONa mixture, which is unrelated to the failure cause of confusing pOH and pH or ignoring temperature effect on Kw.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "275a793a4de8dd058352d66251e7a43f962b92be",
+      "reason": "The failure cause involves confusing pOH and pH and ignoring temperature effects on Kw, leading to incorrect pOH calculation. Among wrong options, only option C (氯化铝) is a salt that undergoes hydrolysis, making its pH calculation susceptible to such confusion. Options A (醋酸) and B (硫酸) are acids where pH is directly determined by H+ concentration, not involving pOH or Kw temperature dependence in the same way. Thus, only option C uniquely matches the failure.",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "593833c03f44afdcc5f217c4e333e9b19751d343",
+      "reason": "该题问检测晶体结构的方法，正确选项为X射线衍射。错误选项B、C、D均为光谱或波谱方法，用于元素分析或结构鉴定，但并非直接测定晶体结构。然而，该失败原因描述的是混淆晶体类型与化学键类型，误判C₆₀或干冰为原子晶体，与本题检测晶体结构的方法选择无关，因此无法唯一映射到任何一个错误选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "19c2b3e5555c1c8bb37ba46dc4bb15f1cf2e5b8a",
+      "reason": "干冰（CO2）是分子晶体，熔化时破坏分子间作用力；而食盐是离子晶体，熔化破坏离子键。学生若混淆晶体类型与化学键类型，可能认为干冰中有共价键所以是原子晶体，从而误判干冰熔化破坏共价键，与其他选项不同。但题目中干冰是正确选项，而失败原因指向误判干冰为原子晶体，因此干冰是目标选项。",
+      "status": "mapped",
+      "target_option": "D"
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "93313c9b34f157965659780dbba9433c66716275",
+      "reason": "砒霜(As2O3)是分子晶体，学生因As2O3中有共价键而误判为共价晶体，符合failure cause中混淆晶体类型与化学键类型，认为有共价键就是原子晶体。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "30f5a98c3921983e546a626bce35c8384bb12fef",
+      "reason": "选项A错误地认为该二氧化碳晶体属于原子晶体，这直接对应了混淆晶体类型与化学键类型、认为有共价键就是原子晶体的失败原因。",
+      "status": "mapped",
+      "target_option": "A"
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "6269dfceccc90c68074cbb78eff81fb178c24f68",
+      "reason": "该题考查官能团检测方法，与反应条件或反应类型无关，因此无法映射到任何错误选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "6505345c625db8451ed93840f2099d69bc01f9d4",
+      "reason": "重油裂化的主要目的是生产更多的汽油，而选项A（获得短链气态烃）是裂解的目的，选项C（提高汽油品质）是重整的目的，选项D（将直链烃转化为芳香烃）也是重整的目的。其中，选项A与裂解混淆，选项C和D与重整混淆，但只有选项A明确涉及反应类型（裂解）的混淆，且与光照无关。然而，根据决策规则，需要唯一一个错误选项语义上表达失败原因。失败原因强调光照与取代反应混淆，但本题无光照条件，且所有错误选项均不涉及光照。因此，没有选项能唯一表达该失败原因，应返回excluded_ambiguous。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "5d9c71f772b86366829a7495192c7e95b7cfed13",
+      "reason": "该题考查原子共面，与反应条件无关，所有选项均不涉及反应条件或反应类型，因此无法映射到该失败原因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "77530f6bf766e82e2b69122e6d0ea6b359109d4c",
+      "reason": "The failure cause is about confusing reaction conditions with reaction types, specifically that students mistakenly think light always indicates substitution. The symptom is that students overlook specific reactants. Option B '产率较高' (high yield) is the correct answer for the public question (organic reactions generally do not have high yield). The wrong options A, C, D are all characteristics of organic reactions. None of them uniquely express the stated failure cause/symptom. Therefore, no mapping is possible.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "98fd6378a3ed456ce228a170e40a69bc6e914ed3",
+      "reason": "选项C正确，不符合映射条件；选项A、B、D均为错误选项，但A和D与归中/歧化混淆无关，只有B涉及氧化性比较，可能因混淆强制弱方向而误判，但B并非唯一表达该失败原因，且A和D也可能因其他错误导致，故无唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "223eeb45e3c02166564fde22c9e40bca62f1e10f",
+      "reason": "选项B涉及铁与浓硫酸的钝化反应，属于氧化还原反应中特殊条件导致反应停止，与归中/歧化反应电子转移方向判断无关；选项C中浓盐酸与二氧化锰反应因盐酸浓度降低而停止，涉及氧化还原反应中反应物浓度影响，但非归中/歧化；选项D合成氨为可逆反应，不能完全消耗，涉及平衡移动，与归中/歧化无关。三个选项均不直接对应归中或歧化反应中电子转移方向的错误判断。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "3aba969970d2db20d29451e901a0b2145ee3adf7",
+      "reason": "The failure cause is about misunderstanding redox directionality in comproportionation/disproportionation. The question asks which process involves nitrogen being oxidized. Option C (大气固氮) involves N2 being oxidized to NOx, which is an oxidation. However, the failure symptom describes students thinking such reactions impossible due to misunderstanding of '强制弱' rule. Option C is the correct answer, not a wrong option. Among wrong options, A (铵根离子的检验) involves NH4+ reacting with base to produce NH3, no redox; B (工业固氮) is Haber process, N2 reduced to NH3; D (生物固氮) is N2 reduced to NH3. None of these wrong options directly relate to the failure cause about comproportionation/disproportionation. Thus, no single wrong option uniquely matches the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "dc6190b37292d12b09d1d0ef87e37b632a4e8947",
+      "reason": "选项A是Cu与FeCl3反应，属于强制弱规律，学生可能认为反应发生但固体质量减少；选项B是Zn与H2SO4反应，固体溶解质量减少；选项C是H2还原CuO，固体质量减少。这些选项均不涉及归中或歧化反应，而学生错误认为归中/歧化不可能发生，但本题中D是水蒸气与Fe反应生成Fe3O4，固体质量增加，且该反应是氧化还原但非归中/歧化，学生可能因混淆规律而误判。但根据决策规则，需选出唯一一个与失败原因和症状最匹配的选项。症状是学生无法判断归中/歧化中电子转移方向，认为反应不可能发生。选项A、B、C均为强制弱反应，学生可能认为它们发生，但症状特指归中/歧化。选项D是水蒸气与铁反应，属于强制弱（Fe还原H2O），但学生可能因混淆规律而认为该反应不可能发生？实际上，症状明确指向归中/歧化，而D不是归中/歧化。因此，没有选项直接匹配症状。但根据规则，需返回mapped仅当恰好一个错误选项语义上唯一表达失败原因/症状。这里所有错误选项均不表达归中/歧化，因此应返回excluded_ambiguous。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "1284cddbc252c8313bd7f0652ffacf2e4606e39d",
+      "reason": "The failure cause is about confusing ammonia's physical property (odorless vs. pungent). None of the wrong options (A, B, D) relate to ammonia's physical properties; they are about nitrogen fertilizer usage. Thus, no option matches the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "34a68f741fc14828fc5a88702405a6a99a6319b6",
+      "reason": "The failure cause is about confusing ammonia's physical properties (mistaking it as odorless), but the question is about nitrogen fixation. None of the wrong options relate to ammonia's odor. Option D is the correct answer (not nitrogen fixation), but it involves ammonia and CO2, not odor. Thus no option matches the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "9ddf28549874b9d4636d9e6931a08fafeb23ce66",
+      "reason": "The failure cause is about confusing ammonia's physical properties (mistaking pungent odor as odorless), but the item is about synthetic ammonia catalyst. None of the wrong options relate to this failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "6396830926fe41dd904d2fcb441f05be156f4420",
+      "reason": "The failure cause is confusing ammonia's physical property (mistaking pungent odor as odorless). The symptom is selecting 'colorless and odorless' for ammonia. In this question, the correct answer is NH4Cl (A) which produces ammonia with pungent odor. The wrong options B, C, D are all odorless. However, the failure specifically involves mistaking ammonia's odor, not about which fertilizer reacts. The wrong options do not directly relate to the failure cause; they are just other fertilizers. Thus, no single wrong option uniquely expresses the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "51685ff33599daf0a4bff53fdd9d730ea5d5d1ab",
+      "reason": "选项A液氯只含氯分子，不含氯离子；选项C氯化钙只含氯离子，不含氯分子；选项D盐酸只含氯离子，不含氯分子。这些选项的错误与混淆漂白性来源无关，因此不映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "620901882a2e0c38b237b892793b138233a40084",
+      "reason": "选项C涉及联合制碱法和氨碱法的CO2来源，与氯气漂白性无关，其他选项均不涉及漂白性，因此无选项映射该失败原因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "a99e97f6c1f18d66add9205248560a85ac24f007",
+      "reason": "选项D中S与O2反应生成SO2，改变O2量不会改变生成物，而其他选项改变条件会改变生成物。但失败原因涉及氯气漂白性，与选项D无关，且无选项直接对应此错误。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "6de40ad6f2779151fd4f5538f91e0425862aec8a",
+      "reason": "Option D states '干燥的氯气不能使鲜花褪色', which is correct because dry chlorine does not bleach; the failure is about confusing bleaching source, thinking Cl2 has bleaching ability. Option D correctly reflects that dry chlorine cannot bleach, so it is not the wrong option expressing the failure. Option A and B are unrelated to bleaching. No option uniquely and semantically expresses the failure cause/symptom.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "4b50060180084e8dd0a6b57ab15603513e29cc83",
+      "reason": "The failure cause is about confusing CnH2n formula with homologous series, but the question is about naming alkanes. Option B is the only wrong option due to incorrect numbering (should be 2,2-dimethylbutane), which matches the symptom of being misled by a formula pattern? Actually, the failure is about homologous series, not naming. None of the wrong options directly relate to the failure cause. However, the symptom '判断同系物时直接被CnH2n通式迷惑而出错' suggests a confusion with CnH2n, which is the general formula for alkenes and cycloalkanes. Option B '3,3-二甲基丁烷' is incorrectly named (should be 2,2-dimethylbutane), but this is a naming error, not a homologous series error. The other wrong options are correctly named. So no option uniquely matches the failure cause. Thus excluded_ambiguous.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "55da46bf53b45e56b02f6f945d7a920f021485b3",
+      "reason": "The failure is about confusing homologous series with same general formula but different structures. The question tests IUPAC naming of alkanes, not homology. None of the wrong options relate to the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "2fcd17c3cc99b462a3e29c035df194b5a157f48f",
+      "reason": "选项C '4—甲基戊烷' 命名错误，因为未选择最长碳链（实际应为己烷），且编号未从靠近支链端开始，这反映了学生因忽略结构相似性（如碳链选择）而犯的命名错误，与同系物判断中忽略结构相似性的错误类似。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "f42cef41788ff83a32c97201c64f86920dd87d23",
+      "reason": "选项C '1,2-二甲基丁烷' 的命名错误，因为主链选择不当，导致编号不是最小，这反映了学生因忽略结构相似性而错误命名，与同系物判断中的混淆类似。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "f2ba2d276c5221b6ae67370a53bf192434e81eb1",
+      "reason": "该题涉及合金与纯金属的性质比较，与酸酐定义无关，无选项对应混淆酸酐为氧化物的错误。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "1a8387f993c9387dd57825f02286f19c3a79e6fb",
+      "reason": "The failure cause is about acid anhydride definition confusion, but the question is about chemical vs physical changes. None of the wrong options relate to acid anhydrides.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "dd439a3f8f8dd8d9c013e27f17a1224ae054bcd4",
+      "reason": "The failure cause is about acid anhydride definition confusion, but the question is about classifying household waste (plastics, paper, rubber) as organic or inorganic. None of the wrong options (A: inorganic, C: salt, D: nonmetal element) relate to acid anhydrides. The failure cause does not map to any option.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "bcfe12f0ac456d12e61d29b038da89f372dde7d2",
+      "reason": "The failure cause is about confusing the definition of acid anhydride, but the question is about CH3COONa, not acid anhydrides. None of the wrong options directly relate to the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "33b071b7bca9dadaa4e8bb94ec71bc73a000ab9c",
+      "reason": "The failure cause is about incorrect order of adding reactants in the Hou's process, which is unrelated to the question about raw materials for industrial products. None of the wrong options (A, B, C) relate to this failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "0c766f3b5123ac5f26ad2a7afadbe1541723c051",
+      "reason": "选项B涉及反应物添加顺序（先加饱和食盐水与电石反应），但该顺序错误导致乙炔生成速率过快而非无法生成产物，与侯氏制碱法中先通CO₂后通NH₃导致无沉淀的失败原因不完全一致；选项C涉及过量乙酸的使用，与添加顺序无关；选项D涉及除杂试剂选择，与添加顺序无关。因此无唯一匹配选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "d0aad43e7415bba4642aa9548f30653a5cb3d485",
+      "reason": "该题涉及乙酸乙酯制备，与侯氏制碱法中反应物添加顺序无关，且选项D是唯一错误操作（产物用NaOH溶液洗涤会导致酯水解），但D不是正确选项，故无匹配。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "87694d82cdaad2c7bef6a84051751fb59a568f62",
+      "reason": "The failure cause is about confusing the order of adding reactants in the Hou's process, but the question is about ethylene preparation. None of the wrong options (A, B, D) relate to reactant addition order in Hou's process. Option A involves order of adding ethanol and sulfuric acid, which is a different context. Thus, no option uniquely matches the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "c428316edc19163defdfe4f620ca0477096a6261",
+      "reason": "该题涉及亚硫酸钠变质检验，属于无机物检验，与有机物官能团检验无关，因此所有错误选项均不匹配所述失败原因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "50bd9b5b2e7c859ccba6c95472ef4623102eae25",
+      "reason": "The failure cause is about misusing reagents for organic functional group tests, but the item is about inorganic reactions with no organic functional groups involved. None of the wrong options relate to the failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "729c1a58ae2b5e0e7d5719bf85d77c79cdbd52fd",
+      "reason": "选项D使用酸性高锰酸钾除杂二氧化碳中的二氧化硫，但酸性高锰酸钾会氧化二氧化硫生成硫酸，同时可能氧化其他还原性气体，且二氧化碳不反应，但该操作属于除杂而非检验，与题干中检验试剂误用无关。其他选项均涉及除杂试剂选择，但A、B、C选项的试剂使用错误与检验条件混淆无关。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "a0510f8de3f6c361fac5e190d7bccbbd460d4a70",
+      "reason": "The failure cause is about misusing reagents for functional group tests, but the item is about using NaOH for purification, not about Cu(OH)2 or bromine tests. None of the wrong options directly relate to the stated failure cause.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "9563407b232b7edf35e6eaa4fde278b3f981c208",
+      "reason": "二氧化硫是非电解质，但溶于水导电，学生易误判为电解质；而硫化氢是电解质，氢氧化钠是电解质，苯是非电解质但不与溴水反应。",
+      "status": "mapped",
+      "target_option": "A"
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "2de28c82037d3bd8d041285b69f25f6b24e71c72",
+      "reason": "选项B中CO2是非电解质，但学生可能因CO2水溶液导电而误判为电解质，符合failure-00的典型错误。",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "12fea558ae05640dfc65f830973569e92ade70b6",
+      "reason": "选项C错误，因为醋酸钠是离子化合物，不是分子，不存在极性分子概念；而A、B、D均正确，但题目要求选出错误选项，故C是正确选项，不应被映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "676f173f36cb51024f3a905fabf793e069f81ef6",
+      "reason": "选项B自来水是混合物，但学生可能因自来水导电而误判为电解质，符合混淆水溶液导电与自身电离的失败原因。",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "014659c4dcd7aa414546cac938bd51f26a001430",
+      "reason": "选项C是纯碱溶液，涉及水解平衡，与失败原因中混淆水解与电离平衡移动方向相关，且是正确选项；其他选项A、B、D均不涉及水解平衡，无法映射失败原因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "103eae99775969fa306aa0047998763e47dcdc64",
+      "reason": "选项A涉及胆矾与石灰乳反应生成碱式硫酸铜，与水解无关；而B、C、D均与盐类水解相关。但失败原因强调混淆水解与电离平衡移动，选项C中热的纯碱溶液去油污效果好，是因为加热促进碳酸根水解，使溶液碱性增强，去油污能力增强，这涉及水解平衡移动，与失败原因中加热NaHCO₃溶液时水解与电离平衡混淆类似，因此C是唯一与失败原因相关的选项。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "5e80ce5b4155a28f62b8e7fe84029070e43e83ce",
+      "reason": "选项B硫酸铵是强酸弱碱盐，加热促进水解，pH变化，与水解平衡移动相关；选项A氢氧化钠是强碱，加热促进水的电离，pH变化；选项C氯化钠是强酸强碱盐，加热促进水的电离，pH变化；选项D硫酸是强酸，加热几乎不影响其完全电离，pH几乎不变。学生误认为加热NaHCO₃溶液时HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，该错误与水解平衡移动判断混淆有关。选项B涉及水解平衡，最能映射该失败原因。",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "6517db20d948cbb2ba15edd1321acb9ae728b18f",
+      "reason": "The failure cause is about confusing hydrolysis and ionization equilibrium shifts. Option B (③②①④) orders FeCl3 before NaCl, which might arise from overemphasizing Fe3+ hydrolysis producing H+ (ionization) while ignoring that Fe3+ hydrolysis also consumes OH- and affects pH, but the question is about cation number, not pH. However, the failure symptom specifically mentions pH change misinterpretation, which is not directly about cation counting. Option B is the only wrong option that could be linked to the failure cause because it places FeCl3 (which undergoes hydrolysis) before NaCl, possibly due to misunderstanding hydrolysis effects on cation concentration. Options C and D are more random and not uniquely tied to the failure. Thus, B is the mapped option.",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "7ffd365e2dc281dc648da3a3dc0a4c38014b6a60",
+      "reason": "The failure cause is about confusing industrial tail gas absorption with laboratory tail gas absorption, but the question is about sulfuric acid industrial production, not tail gas absorption. None of the wrong options (A, C, D) relate to absorption reagents or economic fertilizer production. Option B is the correct answer (incorrect condition), so no wrong option matches the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "3ae34de5e605089d30803fa822b4ac7694a2cccb",
+      "reason": "该题考查浓硫酸的脱水性，与工业尾气吸收无关，所有选项均不涉及尾气吸收或化肥经济性，因此无法映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "6129700486df134f60783921838ffbc643b62d1a",
+      "reason": "选项B涉及浓硫酸与铁的反应，属于工业制备或尾气处理范畴，学生可能混淆工业吸收目的，误选此选项。",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "ea825f997ea6481bdb5d2e23ad509e70eea710ac",
+      "reason": "该题考查硫酸工业催化氧化反应，与尾气吸收无关，所有选项均不涉及吸收剂选择，因此无法映射到任何错误选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "f94a94988df71865edd6c22f1aeaf6cf1cde06d7",
+      "reason": "选项C '苯能发生取代反应' 是苯的真实化学性质，但学生因混淆苯使溴水褪色的原理（物理萃取 vs 化学取代）而误选C作为实验验证方法，这与失败原因和症状完全匹配。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "43a142f5e6f8e230ebe498f6eb1529ab56bf90dc",
+      "reason": "选项B涉及溴苯中溴的除去，与苯使溴水褪色的原理（物理萃取）无关，不匹配失败原因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "b816e16aba70070f9b895ee6f05f4bdfc4b91256",
+      "reason": "The failure cause is about confusing benzene's physical extraction with chemical substitution when it decolorizes bromine water. The question asks which molecule's carbon atoms are not coplanar. Option C (2-methylpropane) is the only alkane with sp3 carbons, not planar, while A (toluene), B (ethylene), and D (2-methylpropene) are planar or have planar parts. The failure symptom 'seeing benzene decolorize bromine water and thinking addition/substitution' does not map to any specific wrong option here; the wrong options A, B, D are all planar, so the failure is not uniquely expressed by one wrong option.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "fe0df5fb853e1ebcef29672172908754c8b78d5b",
+      "reason": "Option C '苯不能发生取代反应' is wrong because benzene can undergo substitution reactions (e.g., bromination with catalyst). The failure cause is confusing physical extraction with chemical substitution, and the symptom is mistakenly thinking benzene reacts with bromine water via addition or substitution. Option C directly states a false inability to undergo substitution, which matches the misconception. Options A and B are true statements about benzene's properties and do not reflect the failure.",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "3d5bcbd950be81bd12c979d20997a9e1ab93a7cc",
+      "reason": "The failure cause describes confusion about the '仰视/俯视' (looking up/down) rule in volumetric measurements, which is unrelated to the given options. None of the wrong options (A, B, C) match this failure cause. Option D is the correct option for the question, so it cannot be selected. Therefore, the failure cause cannot be mapped to any wrong option.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "7544df2965a97b50a69a5178530d1f804992479a",
+      "reason": "The failure cause/symptom is about misapplying the '仰视/俯视' rule for volume measurement, which is unrelated to the given options about weighing method for copper sulfate crystal water content. None of the wrong options match the failure.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "f2ef96f3552c85dae90a033f31c7022b4e5525ce",
+      "reason": "选项B描述的是加热后未冷却导致称量偏轻，计算n偏低，与仰视/俯视口诀无关；而A、C、D均涉及称量或加热操作，与口诀无直接关联。但根据决策规则，需选出唯一一个与仰视/俯视口诀错误相关的选项，而所有选项均不涉及该口诀，因此无唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "4ffd5e31cabb71237baf72b19291b5d454369e8b",
+      "reason": "The failure cause is about misapplying the '仰视/俯视' rule for volumetric instruments, which is unrelated to the determination of water of crystallization in copper sulfate. None of the wrong options (A, C, D) match this specific error.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "2678440d2bad12ec4358cab796bd056ea75a30fc",
+      "reason": "The failure cause is about confusing Fe²⁺/Fe³⁺ redox properties, but the question is about Na2FeO4 as a water purifier. None of the wrong options (A, B, C) semantically match the stated failure cause/symptom. The failure is unrelated to the options.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "6dd22ea9bef67a7e5a7cc4500efc31b6bcce6845",
+      "reason": "The failure cause is about confusing Fe²⁺ and Fe³⁺ redox properties, specifically thinking Fe³⁺ can be reduced to Fe by Fe. The symptom is selecting Zn or Mg to remove FeCl₃ from FeCl₂, or thinking Fe introduces impurities. Among wrong options, only B (镁) matches the symptom of selecting a metal that would reduce Fe³⁺ to Fe (Mg is a strong reductant). A (钾) and D (铜) do not fit: K reacts violently with water, Cu does not reduce Fe³⁺ to Fe. Thus only B is uniquely mapped.",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "2b35f8def0f6ffccff09ac28c99d238b758ace62",
+      "reason": "The failure cause and symptom are about Fe²⁺/Fe³⁺ redox confusion, but the question is about alloy properties (corrosion, melting point, hardness, color). None of the wrong options (A, B, D) relate to the stated failure cause/symptom.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "d2f0a6b986f06e65f8cba3fab3257234c3af3080",
+      "reason": "The failure cause is about confusing Fe²⁺ and Fe³⁺ redox properties, but the question asks for the main component of a natural magnet (magnetite, Fe₃O₄). None of the wrong options (Fe, FeO, Fe₂O₃) relate to the stated failure cause/symptom.",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    }
+  ],
+  "decisions_sha256": "37766ad20f53629c31135533207af5fc7e7c72c2df8583e0a4645fce58e01cf2",
+  "purpose": "pre_observation_mapping_crosscheck",
+  "requested_model": "deepseek-chat",
+  "returned_models": [
+    "deepseek-v4-flash"
+  ],
+  "roster_sha256": "214458f96f723b75309a079a1e68575dbd0410101b1cbf4f5308216d80342e33",
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.mapping_crosscheck.v1",
+  "simulated": true,
+  "source_file_sha256": "e2f1e5533f0b962c60f140d0d1a07f36d03ab37d5531741c1b8ad554009a7a69",
+  "summary": {
+    "completed": 100,
+    "cost_yuan": 0.28948744,
+    "input_tokens": 63892,
+    "output_tokens": 14298,
+    "requested": 100,
+    "requests_including_retries": 111,
+    "technical_failures": 0
+  }
+}

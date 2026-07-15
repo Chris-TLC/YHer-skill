@@ -1,0 +1,41 @@
+{
+  "files": [
+    {
+      "exists": true,
+      "path": "data/item_bank/v4/chemistry_v4_1_3329.jsonl",
+      "role": "item_bank_v4",
+      "sha256": "19593010773b5c060901526ec58bb049dcdb16946a27d290d9a47c552282c219",
+      "size": 21213051
+    },
+    {
+      "exists": true,
+      "path": "data/knowledge_graph_150_enriched.jsonl",
+      "role": "knowledge_graph",
+      "sha256": "1a767171e26f26f25334a5b56fe2f0c805118119d7708a4c04f874d9f97c9aa5",
+      "size": 693886
+    },
+    {
+      "exists": true,
+      "path": "data/item_bank/v4/usability_r5_v1.jsonl",
+      "role": "r5_usability",
+      "sha256": "a126d3959ec98bd489400c0256bd016b3b48af28ced58e8593016f51e72fd205",
+      "size": 672365
+    },
+    {
+      "exists": false,
+      "path": "data/item_bank/v4/service_exclusions.jsonl",
+      "role": "service_exclusions",
+      "sha256": null,
+      "size": null
+    },
+    {
+      "exists": true,
+      "path": "data/item_bank/chemistry_v3_6695.jsonl",
+      "role": "v3_catalog",
+      "sha256": "7623a139254e2161b0b57c1e8c11fcdd4674a47d7fd58bf61a15b23a4d0911cf",
+      "size": 14482196
+    }
+  ],
+  "schema_version": "yher.llm_sim_v2.source_manifest.v1",
+  "source_set_sha256": "946701a2d9e2387f1eb3eb03890a843c81e104ae213ce6a4cb3724e9aff531c0"
+}

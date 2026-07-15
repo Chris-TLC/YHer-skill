@@ -1,0 +1,1786 @@
+{
+  "audit_sample_sha256": "6ee60be8c5f704d553dc06ad0fc84aa7004410395efb21b6aabdcca33f356f0e",
+  "rows": [
+    {
+      "anchor_id": "anchor-v2:01:分子间作用力/氢键",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+        "item_id": "2bae88b8d2eb935fd3ff8ea2ebc4e0680bad3f25",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "D",
+      "failure_cause": "混淆分子极性与键的极性，认为有极性键的分子一定是极性分子",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "failure_symptom": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子",
+      "family_id": "aligned:1ad2a21103923240",
+      "item_id": "2bae88b8d2eb935fd3ff8ea2ebc4e0680bad3f25",
+      "options": {
+        "A": "范德华力、范德华力、范德华力",
+        "B": "共价键、共价键、共价键",
+        "C": "范德华力、共价键、共价键",
+        "D": "范德华力、范德华力、共价键"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "分子间作用力/氢键"
+        ],
+        "options": {
+          "A": "范德华力、范德华力、范德华力",
+          "B": "共价键、共价键、共价键",
+          "C": "范德华力、共价键、共价键",
+          "D": "范德华力、范德华力、共价键"
+        },
+        "source_label": "上海市嘉定区2023届高三一模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "5. 在“石蜡 →石蜡油 →石蜡气体→裂化气”的变化过程中，被破坏的作用力依次是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 范德华力、范德华力、范德华力",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 共价键、共价键、共价键",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 范德华力、共价键、共价键",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 范德华力、范德华力、共价键",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "5. 在“石蜡 →石蜡油 →石蜡气体→裂化气”的变化过程中，被破坏的作用力依次是A. 范德华力、范德华力、范德华力B. 共价键、共价键、共价键C. 范德华力、共价键、共价键D. 范德华力、范德华力、共价键"
+      },
+      "target_node": "分子间作用力/氢键",
+      "wrong_options": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:04:化学计量（摩尔/阿伏伽德罗）",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+        "item_id": "41572cee43dc9babb2819b29d1f67e10a01e17af",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "A",
+      "failure_cause": "混淆标准状况与非标准状况，误认为任何条件下22.4 L气体都含1 mol分子",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "failure_symptom": "学生看到22.4 L直接认为气体物质的量为1 mol，忽略温度压强条件",
+      "family_id": "aligned:704594399916a54b",
+      "item_id": "41572cee43dc9babb2819b29d1f67e10a01e17af",
+      "options": {
+        "A": "原子数",
+        "B": "分子数",
+        "C": "质量",
+        "D": "电子数"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "化学计量（摩尔/阿伏伽德罗）"
+        ],
+        "options": {
+          "A": "原子数",
+          "B": "分子数",
+          "C": "质量",
+          "D": "电子数"
+        },
+        "source_label": "上海市虹口区2022~2023学年高三下学期二模测试化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "5. 在两个容积相同的容器中，一个盛有NH3气体，另一个盛有H2和O2的混合气体。在同温同压下，两容器内的气体不可能具有相同的",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 原子数",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 分子数",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 质量",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 电子数",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "5. 在两个容积相同的容器中，一个盛有NH3气体，另一个盛有H2和O2的混合气体。在同温同压下，两容器内的气体不可能具有相同的A. 原子数B. 分子数C. 质量D. 电子数"
+      },
+      "target_node": "化学计量（摩尔/阿伏伽德罗）",
+      "wrong_options": [
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:05:化学键",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "化学键-变化与破坏#failure-00",
+        "item_id": "baf9107da93c1e34b64c2d64bc2254dd2a4806f7",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "B",
+      "failure_cause": "混淆分子间作用力与化学键的破坏",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "failure_symptom": "学生误认为碘升华或氯化钠熔化破坏共价键，或认为金刚石熔化只破坏分子间作用力",
+      "family_id": "aligned:0d2d4f76c5c11f32",
+      "item_id": "baf9107da93c1e34b64c2d64bc2254dd2a4806f7",
+      "options": {
+        "A": "该合金的熔点介于钠、铝之间",
+        "B": "铝钠合金的良好传热性与自由电子有关",
+        "C": "钠或铝形成的氧化物均为碱性氧化物",
+        "D": "原子半径钠大于铝，金属键钠强于铝"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "化学键"
+        ],
+        "options": {
+          "A": "该合金的熔点介于钠、铝之间",
+          "B": "铝钠合金的良好传热性与自由电子有关",
+          "C": "钠或铝形成的氧化物均为碱性氧化物",
+          "D": "原子半径钠大于铝，金属键钠强于铝"
+        },
+        "source_label": "上海市崇明区2022届高三下学期二模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "10. 核潜艇上的核反应堆使用液态铝钠合金作载热介质。有关说法中正确的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 该合金的熔点介于钠、铝之间",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 铝钠合金的良好传热性与自由电子有关",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 钠或铝形成的氧化物均为碱性氧化物",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 原子半径钠大于铝，金属键钠强于铝",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "10. 核潜艇上的核反应堆使用液态铝钠合金作载热介质。有关说法中正确的是A. 该合金的熔点介于钠、铝之间B. 铝钠合金的良好传热性与自由电子有关C. 钠或铝形成的氧化物均为碱性氧化物D. 原子半径钠大于铝，金属键钠强于铝"
+      },
+      "target_node": "化学键",
+      "wrong_options": [
+        "A",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:06:原子结构",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+        "item_id": "671008013023d98e5d4e670b0d9b525b95754915",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "D",
+      "failure_cause": "混淆能级与轨道概念，误认为同一能级的不同轨道能量不同",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "failure_symptom": "学生认为2px与2py能量不同，或认为2p与3p能量相同",
+      "family_id": "aligned:4dd22f369ea833c5",
+      "item_id": "671008013023d98e5d4e670b0d9b525b95754915",
+      "options": {
+        "A": "质子数为2",
+        "B": "电子数为3",
+        "C": "质量数为4",
+        "D": "氚原子和¹H化学性质相似"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "原子结构"
+        ],
+        "options": {
+          "A": "质子数为2",
+          "B": "电子数为3",
+          "C": "质量数为4",
+          "D": "氚原子和¹H化学性质相似"
+        },
+        "source_label": "2021年高考化学试卷上海",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "2.以下关于氚的说法正确的是（     ）",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A.质子数为2",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B.电子数为3",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C.质量数为4",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D.氚原子和1H化学性质相似",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "2.以下关于氚的说法正确的是（     ）A.质子数为2                       B.电子数为3C.质量数为4                       D.氚原子和1H化学性质相似"
+      },
+      "target_node": "原子结构",
+      "wrong_options": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:07:反应热/焓变",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "反应热-焓变计算#failure-00",
+        "item_id": "f6b2d005d77f11264bca307b35190380d1de0da0",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "B",
+      "failure_cause": "混淆键能计算中反应物与生成物的加减顺序",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "failure_symptom": "学生常写成ΔH=生成物键能总和-反应物键能总和，导致符号错误",
+      "family_id": "aligned:064832245431b5a3",
+      "item_id": "f6b2d005d77f11264bca307b35190380d1de0da0",
+      "options": {
+        "A": "任何温度下",
+        "B": "较低温度下",
+        "C": "较高温度下",
+        "D": "无法确定"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "反应热/焓变"
+        ],
+        "options": {
+          "A": "任何温度下",
+          "B": "较低温度下",
+          "C": "较高温度下",
+          "D": "无法确定"
+        },
+        "source_label": "上海市杨浦区2024届高三质量调研二模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "28. 该反应在_______能向正反应方向自发进行。",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 任何温度下",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 较低温度下",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 较高温度下",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 无法确定",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "28. 该反应在_______能向正反应方向自发进行。A. 任何温度下B. 较低温度下C. 较高温度下D. 无法确定"
+      },
+      "target_node": "反应热/焓变",
+      "wrong_options": [
+        "A",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:08:基本操作",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "基本操作#failure-00",
+        "item_id": "0a412bb27dd1c3def9882c64baabb43c6bbc2d5e",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "D",
+      "failure_cause": "忘记趁热过滤时目标产物在滤液还是滤渣，习惯性保留固体丢弃液体",
+      "failure_id": "基本操作#failure-00",
+      "failure_symptom": "过滤操作将需要的物质留错相态，比如趁热过滤把含产品的热滤液直接倒了",
+      "family_id": "aligned:22f9da1ef5314822",
+      "item_id": "0a412bb27dd1c3def9882c64baabb43c6bbc2d5e",
+      "options": {
+        "A": "将 HgO 粉末热处理除水分、增加表面积后填入反应柱",
+        "B": "调控进入反应柱的混合气中 Cl₂ 和 N₂ 的比例",
+        "C": "调控混合气从下口进入反应柱的流速",
+        "D": "将加热带缠绕于反应柱并加热"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "基本操作"
+        ],
+        "options": {
+          "A": "将 HgO 粉末热处理除水分、增加表面积后填入反应柱",
+          "B": "调控进入反应柱的混合气中 Cl₂ 和 N₂ 的比例",
+          "C": "调控混合气从下口进入反应柱的流速",
+          "D": "将加热带缠绕于反应柱并加热"
+        },
+        "source_label": "上海市长宁区2023-2024学年高三下学期二模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "37. 有关反应柱B，无需进行的操作是__________。",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 将HgO粉末热处理除水分、增加表面积后填入反应柱",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 调控进入反应柱的混合气中Cl2和N2的比例",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 调控混合气从下口进入反应柱的流速",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 将加热带缠绕于反应柱并加热",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "37. 有关反应柱B，无需进行的操作是__________。A. 将HgO粉末热处理除水分、增加表面积后填入反应柱B. 调控进入反应柱的混合气中Cl2和N2的比例C. 调控混合气从下口进入反应柱的流速D. 将加热带缠绕于反应柱并加热"
+      },
+      "target_node": "基本操作",
+      "wrong_options": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:09:弱电解质电离平衡",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+        "item_id": "dcc5779552eaac34d6adbb24021aef67438fb38f",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "D",
+      "failure_cause": "混淆pOH与pH的关系，忽略温度对Kw的影响",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "failure_symptom": "学生直接套用常温下pH+pOH=14的公式，未考虑体温高于室温时Kw增大，导致pOH计算错误",
+      "family_id": "aligned:62f43d83e1f5139d",
+      "item_id": "dcc5779552eaac34d6adbb24021aef67438fb38f",
+      "options": {
+        "A": "氢硫酸不能与碳酸氢钠溶液反应，而亚硫酸可以",
+        "B": "氢硫酸的导电能力低于相同浓度的亚硫酸",
+        "C": "0.10 mol·L⁻¹的氢硫酸和亚硫酸的pH分别为4.5和2.1",
+        "D": "氢硫酸的还原性强于亚硫酸"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "弱电解质电离平衡"
+        ],
+        "options": {
+          "A": "氢硫酸不能与碳酸氢钠溶液反应，而亚硫酸可以",
+          "B": "氢硫酸的导电能力低于相同浓度的亚硫酸",
+          "C": "0.10 mol·L⁻¹的氢硫酸和亚硫酸的pH分别为4.5和2.1",
+          "D": "氢硫酸的还原性强于亚硫酸"
+        },
+        "source_label": "上海市奉贤区2025届高三一模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "21. 下列事实中，不能比较氢硫酸与亚硫酸的酸性强弱的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 氢硫酸不能与碳酸氢钠溶液反应，而亚硫酸可以",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 氢硫酸的导电能力低于相同浓度的亚硫酸",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 0.10 mol·L－1的氢硫酸和亚硫酸的pH分别为4.5和2.1",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 氢硫酸的还原性强于亚硫酸",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "21. 下列事实中，不能比较氢硫酸与亚硫酸的酸性强弱的是A. 氢硫酸不能与碳酸氢钠溶液反应，而亚硫酸可以B. 氢硫酸的导电能力低于相同浓度的亚硫酸C. 0.10 mol·L－1的氢硫酸和亚硫酸的pH分别为4.5和2.1D. 氢硫酸的还原性强于亚硫酸"
+      },
+      "target_node": "弱电解质电离平衡",
+      "wrong_options": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:10:晶体结构",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "晶体结构-晶体类型与性质#failure-00",
+        "item_id": "593833c03f44afdcc5f217c4e333e9b19751d343",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "A",
+      "failure_cause": "混淆晶体类型与化学键类型，认为有共价键就是原子晶体",
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "failure_symptom": "误判C₆₀晶体为原子晶体，或认为干冰中存在共价键所以是原子晶体",
+      "family_id": "aligned:08d535de866d124b",
+      "item_id": "593833c03f44afdcc5f217c4e333e9b19751d343",
+      "options": {
+        "A": "X 射线衍射",
+        "B": "原子发射光谱",
+        "C": "原子吸收光谱",
+        "D": "核磁共振波谱"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "晶体结构"
+        ],
+        "options": {
+          "A": "X 射线衍射",
+          "B": "原子发射光谱",
+          "C": "原子吸收光谱",
+          "D": "核磁共振波谱"
+        },
+        "source_label": "上海市松江区2024-2025学年高三下学期二模考试化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "2. 如要检测H3NBH3的晶体结构，可采用的仪器分析方法为___________。",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. X射线衍射",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 原子发射光谱",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 原子吸收光谱",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 核磁共振波谱",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "2. 如要检测H3NBH3的晶体结构，可采用的仪器分析方法为___________。A. X射线衍射B. 原子发射光谱C. 原子吸收光谱D. 核磁共振波谱"
+      },
+      "target_node": "晶体结构",
+      "wrong_options": [
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:11:有机推断",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "有机推断-反应类型判断#failure-00",
+        "item_id": "77530f6bf766e82e2b69122e6d0ea6b359109d4c",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "B",
+      "failure_cause": "混淆反应条件与反应类型的对应关系",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "failure_symptom": "看到光照就认为是取代反应，但实际光照可能用于自由基反应或特定条件，学生易忽略具体反应物",
+      "family_id": "aligned:216eae26d01d2a6a",
+      "item_id": "77530f6bf766e82e2b69122e6d0ea6b359109d4c",
+      "options": {
+        "A": "反应比较复杂",
+        "B": "产率较高",
+        "C": "副产物较多",
+        "D": "反应速率较慢"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "有机推断"
+        ],
+        "options": {
+          "A": "反应比较复杂",
+          "B": "产率较高",
+          "C": "副产物较多",
+          "D": "反应速率较慢"
+        },
+        "source_label": "2018年高考化学试卷上海",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "5. 有机反应一般不具有的特点是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A．反应比较复杂",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B．产率较高",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C．副产物较多",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D．反应速率较慢",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "5. 有机反应一般不具有的特点是A．反应比较复杂                     B．产率较高C．副产物较多                       D．反应速率较慢"
+      },
+      "target_node": "有机推断",
+      "wrong_options": [
+        "A",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:12:氧化还原反应",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+        "item_id": "3aba969970d2db20d29451e901a0b2145ee3adf7",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "C",
+      "failure_cause": "混淆氧化还原反应规律中的‘强制弱’方向，误认为强氧化剂与强还原剂反应生成弱氧化剂和弱还原剂是唯一可能。",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "failure_symptom": "学生无法判断归中反应（如Cl₂+NaOH生成NaCl和NaClO）或歧化反应（如NO₂+H₂O）中电子转移方向，认为反应不可能发生。",
+      "family_id": "aligned:0bd8aaee2d35e633",
+      "item_id": "3aba969970d2db20d29451e901a0b2145ee3adf7",
+      "options": {
+        "A": "铵根离子的检验",
+        "B": "工业固氮",
+        "C": "大气固氮",
+        "D": "生物固氮"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "氧化还原反应"
+        ],
+        "options": {
+          "A": "铵根离子的检验",
+          "B": "工业固氮",
+          "C": "大气固氮",
+          "D": "生物固氮"
+        },
+        "source_label": "上海市松江区2022届高三等级考二模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "2. 下列过程中，氮元素被氧化的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 铵根离子的检验",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 工业固氮",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 大气固氮",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 生物固氮",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "2. 下列过程中，氮元素被氧化的是A. 铵根离子的检验B. 工业固氮C. 大气固氮D. 生物固氮"
+      },
+      "target_node": "氧化还原反应",
+      "wrong_options": [
+        "A",
+        "B",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:13:氮及其化合物",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+        "item_id": "6396830926fe41dd904d2fcb441f05be156f4420",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "A",
+      "failure_cause": "混淆氨气的物理性质，将刺激性气味误记为无味",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "failure_symptom": "学生误选氨气是无色无味气体（如真题1中选D为正确选项）",
+      "family_id": "aligned:59c583a711ac061c",
+      "item_id": "6396830926fe41dd904d2fcb441f05be156f4420",
+      "options": {
+        "A": "NH₄Cl",
+        "B": "KNO₃",
+        "C": "NaNO₃",
+        "D": "CO(NH₂)₂"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "氮及其化合物"
+        ],
+        "options": {
+          "A": "NH₄Cl",
+          "B": "KNO₃",
+          "C": "NaNO₃",
+          "D": "CO(NH₂)₂"
+        },
+        "source_label": "上海市黄浦区2023年高中学业等级考调研测试4月化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "11. 下列化肥与熟石灰研磨有刺激性气味的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. NH4Cl",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. KNO3",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. NaNO3",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. CO（NH2）2",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "11. 下列化肥与熟石灰研磨有刺激性气味的是A. NH4ClB. KNO3C. NaNO3D. CO（NH2）2"
+      },
+      "target_node": "氮及其化合物",
+      "wrong_options": [
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:15:烷烃",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "烷烃#failure-00",
+        "item_id": "4b50060180084e8dd0a6b57ab15603513e29cc83",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "B",
+      "failure_cause": "以为只要通式相同且分子组成相差CH2就是同系物，忽略结构必须相似的前提，未考虑官能团异构（如烯烃与环烷烃）。",
+      "failure_id": "烷烃#failure-00",
+      "failure_symptom": "判断同系物时直接被CnH2n通式迷惑而出错。",
+      "family_id": "aligned:09adfbf9868f797c",
+      "item_id": "4b50060180084e8dd0a6b57ab15603513e29cc83",
+      "options": {
+        "A": "2，3-二甲基丁烷",
+        "B": "3，3-二甲基丁烷",
+        "C": "3-乙基戊烷",
+        "D": "2，2，3，3-四甲基丁烷"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "烷烃"
+        ],
+        "options": {
+          "A": "2，3-二甲基丁烷",
+          "B": "3，3-二甲基丁烷",
+          "C": "3-乙基戊烷",
+          "D": "2，2，3，3-四甲基丁烷"
+        },
+        "source_label": "上海市奉贤区2022届高三下学期等级考二模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "5. 下列烷烃的系统命名中，错误的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 2，3-二甲基丁烷",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 3，3-二甲基丁烷",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 3-乙基戊烷",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 2，2，3，3-四甲基丁烷",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "5. 下列烷烃的系统命名中，错误的是A. 2，3-二甲基丁烷B. 3，3-二甲基丁烷C. 3-乙基戊烷D. 2，2，3，3-四甲基丁烷"
+      },
+      "target_node": "烷烃",
+      "wrong_options": [
+        "A",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:16:物质分类",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "物质分类-化学概念与逻辑#failure-00",
+        "item_id": "bcfe12f0ac456d12e61d29b038da89f372dde7d2",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "C",
+      "failure_cause": "混淆酸酐的定义，认为所有酸酐都是氧化物",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "failure_symptom": "学生误判HCrO₂的酸酐为CrO₂或忽略非氧化物酸酐的存在",
+      "family_id": "aligned:03e97ff8a9742a89",
+      "item_id": "bcfe12f0ac456d12e61d29b038da89f372dde7d2",
+      "options": {
+        "A": "是弱电解质",
+        "B": "不含非极性键",
+        "C": "是离子晶体",
+        "D": "溶于水显酸性"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "物质分类"
+        ],
+        "options": {
+          "A": "是弱电解质",
+          "B": "不含非极性键",
+          "C": "是离子晶体",
+          "D": "溶于水显酸性"
+        },
+        "source_label": "化学上海A卷",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "2．2022年3月“天宫课堂”中，神舟十三号航天员用过饱和CH3COONa溶液做结晶实验，制造了美丽的“冰雪”，有关CH3COONa固体说法正确的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A．是弱电解质",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B．不含非极性键",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C．是离子晶体",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D．溶于水显酸性",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "2．2022年3月“天宫课堂”中，神舟十三号航天员用过饱和CH3COONa溶液做结晶实验，制造了美丽的“冰雪”，有关CH3COONa固体说法正确的是A．是弱电解质B．不含非极性键C．是离子晶体D．溶于水显酸性"
+      },
+      "target_node": "物质分类",
+      "wrong_options": [
+        "A",
+        "B",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:17:物质制备",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+        "item_id": "33b071b7bca9dadaa4e8bb94ec71bc73a000ab9c",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "D",
+      "failure_cause": "混淆反应物添加顺序对产物生成的影响",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "failure_symptom": "在侯氏制碱法中错误地先通CO₂后通NH₃，导致无法生成NaHCO₃沉淀",
+      "family_id": "aligned:049abdcd162ea7c9",
+      "item_id": "33b071b7bca9dadaa4e8bb94ec71bc73a000ab9c",
+      "options": {
+        "A": "乙烯",
+        "B": "汽油",
+        "C": "液化石油气",
+        "D": "煤焦油"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "物质制备"
+        ],
+        "options": {
+          "A": "乙烯",
+          "B": "汽油",
+          "C": "液化石油气",
+          "D": "煤焦油"
+        },
+        "source_label": "上海市长宁区2022届高三下学期二模考试化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "6. 下列工业产品，一般不是以石油为原料制备的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 乙烯",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 汽油",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 液化石油气",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 煤焦油",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "6. 下列工业产品，一般不是以石油为原料制备的是A. 乙烯B. 汽油C. 液化石油气D. 煤焦油"
+      },
+      "target_node": "物质制备",
+      "wrong_options": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:18:物质检验",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+        "item_id": "50bd9b5b2e7c859ccba6c95472ef4623102eae25",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "B",
+      "failure_cause": "混淆有机官能团检验试剂的适用条件",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "failure_symptom": "学生误用新制Cu(OH)₂检验醛基时未先中和酸性环境，或误用溴水检验碳碳双键时忽略苯酚的干扰",
+      "family_id": "aligned:0978412c4f527323",
+      "item_id": "50bd9b5b2e7c859ccba6c95472ef4623102eae25",
+      "options": {
+        "A": "Cl₂ 通入 FeCl₂ 溶液中",
+        "B": "SO₂ 通入 BaCl₂ 溶液中",
+        "C": "NH₃ 通入 AlCl₃ 溶液中",
+        "D": "硫酸铜固体加入饱和硫酸铜溶液中"
+      },
+      "public_question": {
+        "difficulty": 0.5,
+        "kind": "mcq",
+        "nodes": [
+          "物质检验"
+        ],
+        "options": {
+          "A": "Cl₂ 通入 FeCl₂ 溶液中",
+          "B": "SO₂ 通入 BaCl₂ 溶液中",
+          "C": "NH₃ 通入 AlCl₃ 溶液中",
+          "D": "硫酸铜固体加入饱和硫酸铜溶液中"
+        },
+        "source_label": "上海市青浦区2021-2022学年高三下学期适应性练习二模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "11. 下列实验过程中，始终无明显现象的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. Cl2通入FeCl2溶液中",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. SO2通入BaCl2溶液中",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. NH3通入AlCl3溶液中",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 硫酸铜固体加入饱和硫酸铜溶液中",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "11. 下列实验过程中，始终无明显现象的是A. Cl2通入FeCl2溶液中B. SO2通入BaCl2溶液中C. NH3通入AlCl3溶液中D. 硫酸铜固体加入饱和硫酸铜溶液中"
+      },
+      "target_node": "物质检验",
+      "wrong_options": [
+        "A",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:19:电解质与非电解质",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "电解质与非电解质#failure-00",
+        "item_id": "9563407b232b7edf35e6eaa4fde278b3f981c208",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "B",
+      "failure_cause": "混淆“水溶液导电”与“自身电离”，将 SO2、CO2、NH3 等误判为电解质",
+      "failure_id": "电解质与非电解质#failure-00",
+      "failure_symptom": "看到“溶于水能导电”就不假思索归为电解质",
+      "family_id": "aligned:02610edb3fed71f6",
+      "item_id": "9563407b232b7edf35e6eaa4fde278b3f981c208",
+      "options": {
+        "A": "硫化氢",
+        "B": "二氧化硫",
+        "C": "氢氧化钠",
+        "D": "苯"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "电解质与非电解质"
+        ],
+        "options": {
+          "A": "硫化氢",
+          "B": "二氧化硫",
+          "C": "氢氧化钠",
+          "D": "苯"
+        },
+        "source_label": "上海市闵行区2022-2023学年高三上学期一模质量调研化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "4. 能与溴水反应的非电解质是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. 硫化氢",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. 二氧化硫",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. 氢氧化钠",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. 苯",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "4. 能与溴水反应的非电解质是A. 硫化氢B. 二氧化硫C. 氢氧化钠D. 苯"
+      },
+      "target_node": "电解质与非电解质",
+      "wrong_options": [
+        "A",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:20:盐类水解",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+        "item_id": "6517db20d948cbb2ba15edd1321acb9ae728b18f",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "A",
+      "failure_cause": "混淆水解平衡移动与电离平衡移动的方向判断",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "failure_symptom": "学生误认为加热NaHCO₃溶液时，HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，导致对pH变化曲线解释错误。",
+      "family_id": "aligned:71038fac05c6bf8d",
+      "item_id": "6517db20d948cbb2ba15edd1321acb9ae728b18f",
+      "options": {
+        "A": "③①②④",
+        "B": "③②①④",
+        "C": "①④③②",
+        "D": "④②①③"
+      },
+      "public_question": {
+        "difficulty": 0.75,
+        "kind": "mcq",
+        "nodes": [
+          "盐类水解"
+        ],
+        "options": {
+          "A": "③①②④",
+          "B": "③②①④",
+          "C": "①④③②",
+          "D": "④②①③"
+        },
+        "source_label": "上海市嘉定区2022届高三一模化学试题",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "18. 室温下，等体积0.1mol·L-1的①NaCl ②FeCl3 ③HCl ④Na2CO3四种物质的水溶液中，所含阳离子数目由少到多的顺序是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A. ③①②④",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B. ③②①④",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C. ①④③②",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D. ④②①③",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "18. 室温下，等体积0.1mol·L-1的①NaCl ②FeCl3 ③HCl ④Na2CO3四种物质的水溶液中，所含阳离子数目由少到多的顺序是A. ③①②④B. ③②①④C. ①④③②D. ④②①③"
+      },
+      "target_node": "盐类水解",
+      "wrong_options": [
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:21:硫及其化合物",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+        "item_id": "3ae34de5e605089d30803fa822b4ac7694a2cccb",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "B",
+      "failure_cause": "混淆工业尾气吸收与实验室尾气吸收的目的和试剂",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "failure_symptom": "学生误选NaOH溶液或新制氯水作为工业吸收剂，忽略生成化肥的经济性",
+      "family_id": "aligned:116b63fa95ca7474",
+      "item_id": "3ae34de5e605089d30803fa822b4ac7694a2cccb",
+      "options": {
+        "A": "铁遇浓硫酸发生钝化",
+        "B": "蔗糖遇浓硫酸变黑",
+        "C": "加热时碳与浓硫酸反应",
+        "D": "加热时铜与浓硫酸反应"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "硫及其化合物"
+        ],
+        "options": {
+          "A": "铁遇浓硫酸发生钝化",
+          "B": "蔗糖遇浓硫酸变黑",
+          "C": "加热时碳与浓硫酸反应",
+          "D": "加热时铜与浓硫酸反应"
+        },
+        "source_label": "2018年高考化学试卷上海",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "8. 下列变化说明浓硫酸具有脱水性的是",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A.铁遇浓硫酸发生变化",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B.蔗糖遇浓硫酸变黑",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C.加热时碳与浓硫酸反应",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D.加热时铜与浓硫酸反应",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "8. 下列变化说明浓硫酸具有脱水性的是A.铁遇浓硫酸发生变化                 B.蔗糖遇浓硫酸变黑   C.加热时碳与浓硫酸反应               D.加热时铜与浓硫酸反应"
+      },
+      "target_node": "硫及其化合物",
+      "wrong_options": [
+        "A",
+        "C",
+        "D"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:22:芳香烃",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "芳香烃#failure-00",
+        "item_id": "fe0df5fb853e1ebcef29672172908754c8b78d5b",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "D",
+      "failure_cause": "混淆苯使溴水褪色的原理，把物理萃取当成化学取代反应。",
+      "failure_id": "芳香烃#failure-00",
+      "failure_symptom": "看到“苯使溴水褪色”就以为发生了加成或取代，错选实验验证方法。",
+      "family_id": "aligned:d4a9725b44505c26",
+      "item_id": "fe0df5fb853e1ebcef29672172908754c8b78d5b",
+      "options": {
+        "A": "苯是非极性分子",
+        "B": "苯溶于四氯化碳",
+        "C": "苯不能发生取代反应",
+        "D": "苯中不存在烯烃典型的碳碳双键"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "芳香烃"
+        ],
+        "options": {
+          "A": "苯是非极性分子",
+          "B": "苯溶于四氯化碳",
+          "C": "苯不能发生取代反应",
+          "D": "苯中不存在烯烃典型的碳碳双键"
+        },
+        "source_label": "2022年高考化学试卷上海",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "5．（2分）苯是不饱和烃，但不能使溴的四氯化碳溶液褪色，是因为（　　）",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "A．苯是非极性分子",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "B．苯溶于四氯化碳",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "C．苯不能发生取代反应",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "D．苯中不存在烯烃典型的碳碳双键",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "5．（2分）苯是不饱和烃，但不能使溴的四氯化碳溶液褪色，是因为（　　）A．苯是非极性分子B．苯溶于四氯化碳C．苯不能发生取代反应D．苯中不存在烯烃典型的碳碳双键"
+      },
+      "target_node": "芳香烃",
+      "wrong_options": [
+        "A",
+        "B",
+        "C"
+      ]
+    },
+    {
+      "anchor_id": "anchor-v2:24:铁及其化合物",
+      "consensus_decision": {
+        "ambiguity_reason": "independent_mapping_disagreement",
+        "failure_id": "铁及其化合物-制备与转化#failure-00",
+        "item_id": "d2f0a6b986f06e65f8cba3fab3257234c3af3080",
+        "reviewer_provenance": {
+          "crosschecked_by": "deepseek_chat",
+          "drafted_by": "codex_gpt_5_6_sol_ultra",
+          "method": "independent_dual_model_consensus"
+        },
+        "status": "excluded_ambiguous",
+        "target_option": null
+      },
+      "correct_option": "D",
+      "failure_cause": "混淆Fe²⁺和Fe³⁺的氧化还原性质，误认为Fe³⁺能被Fe还原为Fe单质。",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "failure_symptom": "学生误选锌粉或镁粉除去FeCl₂中的FeCl₃，或认为铁粉会引入新杂质。",
+      "family_id": "aligned:5291804caf4c1a49",
+      "item_id": "d2f0a6b986f06e65f8cba3fab3257234c3af3080",
+      "options": {
+        "A": "Fe",
+        "B": "FeO",
+        "C": "Fe₂O₃",
+        "D": "Fe₃O₄"
+      },
+      "public_question": {
+        "difficulty": 0.25,
+        "kind": "mcq",
+        "nodes": [
+          "铁及其化合物"
+        ],
+        "options": {
+          "a": "Fe",
+          "b": "FeO",
+          "c": "Fe₂O₃",
+          "d": "Fe₃O₄"
+        },
+        "source_label": "上海市静安区2023届高三二模化学变式题库",
+        "stem_blocks": [
+          {
+            "para": [
+              {
+                "text": "2、古代中国四大发明之一的司南是由天然的磁石制成的，其主要成分是_______(选填编号)。",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "para": [
+              {
+                "text": "a.Fe b.FeO c.Fe2O3 d.Fe3O4",
+                "type": "text"
+              }
+            ]
+          }
+        ],
+        "stem_text": "2、古代中国四大发明之一的司南是由天然的磁石制成的，其主要成分是_______(选填编号)。a.Fe b.FeO c.Fe2O3 d.Fe3O4"
+      },
+      "target_node": "铁及其化合物",
+      "wrong_options": [
+        "A",
+        "B",
+        "C"
+      ]
+    }
+  ],
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.mapping_audit_sample.v1",
+  "seed": 20260715,
+  "selection_is_outcome_independent": true,
+  "simulated": true
+}

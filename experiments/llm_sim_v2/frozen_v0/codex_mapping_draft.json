@@ -1,0 +1,725 @@
+{
+  "decisions_sha256": "2f9c44ef6794408bb0b290edfb5b5fbc881a68175ba114c25bd53ba2892da443",
+  "rows": [
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "427d92541a3467de8c37ff0f74fed49376d791cf",
+      "reason": "题目考查短周期元素性质比较，错误项均未涉及主族、副族或族序数表示法。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "ebae7a35ce8215d080d71a8194536c70eb033137",
+      "reason": "题目考查铬的金属性及反应性质，没有选项体现主族与副族族序数混淆。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "d4f3b46e45103af1028e3cbb49d15492367cadce",
+      "reason": "题目根据最外层电子数判断元素类别，不要求写族序数，A、B、C均不能唯一归因于所给failure。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "1aabac0bfe08235b8cf263746cbe9081608c9818",
+      "reason": "题目考查第一电离能大小，错误项不涉及主族、副族或ⅥA族表示。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "2bae88b8d2eb935fd3ff8ea2ebc4e0680bad3f25",
+      "reason": "题目区分物理变化中的范德华力与裂化时的共价键，不考查极性键与分子极性的关系。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "0c5aa3711bd351125f832761fac90d1805b4c632",
+      "reason": "题目区分分子晶体、离子晶体和金属，误判分子极性不会唯一导向B、C或D。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "88e3affb59876164ba6807bb88aa10362655226e",
+      "reason": "题目问分子空间结构；即使误判CO2极性，也不会唯一导向某个非直线型选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "adb711ad2e39ffdb2d7f724cf89eaec764a3b3ae",
+      "reason": "将含极性键的CO2误判为极性分子后，会认为NH3与CO2的分子极性相同，唯一对应错误项C。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "5d68ef5c399a2031e50100c0c55334b63f05c68c",
+      "reason": "题目考查分液、蒸馏和萃取的组合，没有蒸发结晶与冷却结晶的对比。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "504b3da9677c66b64b0acd1b85649ae89abad3d8",
+      "reason": "题目考查石油加工方法，不涉及蒸发结晶或冷却结晶。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "06653f0fa763a19bb6fd49cb2ef48c48bb0528bd",
+      "reason": "水与氯仿应分液；A、C、D是不同分离法误用，不能唯一归因于蒸发结晶和冷却结晶混淆。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "6b9fae8e015ac38a444f04db087d7f3015a4a8c2",
+      "reason": "各选项考查蒸馏、洗气和分液除杂，没有结晶方式选择。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "2b410c2ce110114f9f06a93fbd7d5e0d713fb665",
+      "reason": "错误项分别涉及反应热、组成及压强后的浓度，未有一个选项唯一表达将速率提高等同于转化率提高。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "0eebe5d9f34351f88c63c172a01f9a956757c505",
+      "reason": "压缩后的选项C考查平衡浓度的特殊关系，并未直接把反应速率与转化率等同，无法唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "353559742f4dba757289109f1639f5b98a012227",
+      "reason": "题目考查CO2溶于海水后的酸碱与碳酸盐反应，不涉及工业条件下速率和转化率的区分。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "5edd8c8b6d33aa54087a3fc939e3036782f145c8",
+      "reason": "B、C、D均是可用勒夏特列原理解释的措施；所给failure不会唯一导向其中某一错误作答。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "39c3906a9bcfac551c0fde59949d4a5d0c909420",
+      "reason": "题目比较同温同压同体积的氧同位素分子，不出现22.4 L或标准状况判断。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "8c874712cf8ff8274b5e6826c83fc8a64b321cf0",
+      "reason": "选项C的问题是缺少等体积条件，并非看到22.4 L而忽略温压条件；其余错误项也不体现该failure。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "41572cee43dc9babb2819b29d1f67e10a01e17af",
+      "reason": "题目给定同温同压同容积，阿伏伽德罗定律可直接适用，不涉及非标准状况下误用22.4 L。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "a49693244d225d03e4828322eb328cec024dfb2d",
+      "reason": "B未给温度和压强，却把2.24 L C2H2直接换算为0.1 mol并推出0.25NA个O2分子，唯一直接体现该failure。",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "baf9107da93c1e34b64c2d64bc2254dd2a4806f7",
+      "reason": "题目考查合金熔点、导热性、氧化物和金属键强弱，不考查物态变化中破坏何种作用力。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "5e67dc7cb43c77c014f1c13a1b61f67ad39625b4",
+      "reason": "题目考查Na2O2中的键类型；与failure最接近的B本身是正确作答，其他错误项不体现变化时的键破坏混淆。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "afbecc52e8982054df1d0283d70ea75f3a31097b",
+      "reason": "题目辨认含共价键的化合物，错误项主要混淆单质、混合物与化合物，不涉及变化时破坏化学键或分子间作用力。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "45db9b7c0d6a2b4c0cfc0ef0b9d69f42bc1792da",
+      "reason": "题目考查非金属元素形成物的晶体或化合物类型，没有物态变化及作用力破坏情境。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "266a945c23084241db97fbfaf261c0c239e7d635",
+      "reason": "题目判断由原子序数可确定的信息，不比较能级或同能级轨道能量。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "671008013023d98e5d4e670b0d9b525b95754915",
+      "reason": "题目考查氚的质子数、电子数、质量数和化学性质，不涉及能级与轨道。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "bd452b9e0aa9cf24c97fc383fb5de5f534665f26",
+      "reason": "题目考查氚的同位素组成、丰度和化学性质，不涉及2p轨道或跨能级能量比较。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "8863b5de1c1d1671033dfaabb45cbea16a36f816",
+      "reason": "题目考查NH5的离子组成、化合价和电子数，不涉及能级与轨道概念。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "f6b2d005d77f11264bca307b35190380d1de0da0",
+      "reason": "题目考查ΔG与温度的自发性条件，未给出可据键能加减顺序唯一推出的错误项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "c5019ec96f5c2fdfc3bc71412fbb6b764b286935",
+      "reason": "反转吸放热符号会使B、C、D三个放热反应都可能被误判为生成物能量更高，不能唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "e8bf50f48b7b5132eb2d0fb0a780ff44b9d2db25",
+      "reason": "题目考查物质溶解的热效应，不是利用反应物与生成物键能求ΔH；错误项A、B等也不能由该failure唯一确定。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "16b149bf9fb892a621eceabc23bd327573300698",
+      "reason": "D体现只看断键吸热而忽略成键，但不等同于冻结的键能加减顺序反转；其余错误项又属其他泛化，不能确定唯一目标。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "5488073a6517593953afc448d5ad1a785aacd90c",
+      "reason": "过滤相关的D只考查漏斗尖端位置，未涉及趁热过滤后应保留滤液还是滤渣。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "0a412bb27dd1c3def9882c64baabb43c6bbc2d5e",
+      "reason": "题目考查反应柱预处理、配气、流速和加热，不包含过滤或产物所在相态。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "9156bcaf3e1f7e2e70fcbcf507bf383778b2cabf",
+      "reason": "题目考查试剂选择，题干和选项没有过滤时产物在滤液或滤渣中的相态判断，未出现唯一对应错项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "基本操作#failure-00",
+      "item_id": "ab7c02d8b3d7fe83250035adb01087c842cb04d5",
+      "reason": "题目考查实验操作，选项没有趁热过滤及保留滤液/滤渣的判断，D虽错误但与该错因无关。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "dcc5779552eaac34d6adbb24021aef67438fb38f",
+      "reason": "题目比较酸性强弱，未要求pOH、Kw或温度修正，任何错误选项都不能唯一体现该计算错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "60f71b45d394b6ac730b3c873fd6c3e94ad58c59",
+      "reason": "题目比较两种醋酸溶液的稀释、反应速率和中和量，不呈现pH+pOH=14或温度影响Kw的唯一错项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "6cded697a9750d99065595aedf5001aa47d3d139",
+      "reason": "题目考查弱酸弱碱溶液关系，选项未涉及高温Kw或pOH换算，无法唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "275a793a4de8dd058352d66251e7a43f962b92be",
+      "reason": "虽问pH，但各选项是不同溶液的酸碱性判断，没有温度变化下pOH/Kw计算，不能唯一指向该错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "593833c03f44afdcc5f217c4e333e9b19751d343",
+      "reason": "题目考查检测晶体结构的仪器，错误光谱方法没有体现把共价键误当原子晶体的具体判断。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "19c2b3e5555c1c8bb37ba46dc4bb15f1cf2e5b8a",
+      "reason": "D为干冰，正是症状点名的把含分子内共价键的分子晶体误判为原子晶体；其余选项不提供该唯一线索。",
+      "status": "mapped",
+      "target_option": "D"
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "93313c9b34f157965659780dbba9433c66716275",
+      "reason": "砒霜正确为分子晶体，C把晶体类型判为共价晶体，直接体现有共价键即误判为原子晶体。",
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "30f5a98c3921983e546a626bce35c8384bb12fef",
+      "reason": "A明确断言该高压二氧化碳晶体属于原子晶体，正对应把共价键存在等同于原子晶体的错误。",
+      "status": "mapped",
+      "target_option": "A"
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "6269dfceccc90c68074cbb78eff81fb178c24f68",
+      "reason": "题目考查官能团检测仪器，没有反应条件与反应类型的对应判断，无法唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "6505345c625db8451ed93840f2099d69bc01f9d4",
+      "reason": "题目考查重油裂化目的，选项不涉及光照或具体反应物导致的反应类型判断。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "5d9c71f772b86366829a7495192c7e95b7cfed13",
+      "reason": "题目考查原子共面性，没有反应条件或反应类型信息，不能把任一错误选项唯一归因于该错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "77530f6bf766e82e2b69122e6d0ea6b359109d4c",
+      "reason": "题目考查有机反应一般特点，未提供条件与反应类型对应关系，错误选项不具唯一错因指向。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "98fd6378a3ed456ce228a170e40a69bc6e914ed3",
+      "reason": "A和B都可能由氧化还原方向/强弱判断错误导致，无法从该题唯一确定目标错项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "223eeb45e3c02166564fde22c9e40bca62f1e10f",
+      "reason": "题目主要考查各反应物限量与反应条件，多个错误选项涉及不同原因，不能唯一体现归中/歧化方向错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "3aba969970d2db20d29451e901a0b2145ee3adf7",
+      "reason": "A、B、D均是不同氮转化过程，错误可来自氧化数、固氮定义等多种原因，没有唯一目标选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "dc6190b37292d12b09d1d0ef87e37b632a4e8947",
+      "reason": "四个反应均涉及氧化还原或质量变化，错误选项不能唯一指向强制弱方向或电子转移错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "1284cddbc252c8313bd7f0652ffacf2e4606e39d",
+      "reason": "题目考查氮肥性质，未出现氨气气味或无味的陈述，不能唯一映射该物理性质错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "34a68f741fc14828fc5a88702405a6a99a6319b6",
+      "reason": "题目考查氮的固定，选项没有氨气气味信息，无法唯一指向把刺激性气味记成无味。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "9ddf28549874b9d4636d9e6931a08fafeb23ce66",
+      "reason": "题目只问合成氨催化剂，未呈现氨气物理性质，任何错误选项都不是唯一气味错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "6396830926fe41dd904d2fcb441f05be156f4420",
+      "reason": "正确项A本身是铵盐放氨的实例；其余选项未以唯一方式表达把氨气刺激性气味误记为无味。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "51685ff33599daf0a4bff53fdd9d730ea5d5d1ab",
+      "reason": "A为液氯，仅有Cl2而没有Cl−，是把氯分子本身当作含氯离子/漂白来源的直接错误；B为正确项。",
+      "status": "mapped",
+      "target_option": "A"
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "620901882a2e0c38b237b892793b138233a40084",
+      "reason": "题目考查化工生产来源，选项没有干燥氯气或Cl2漂白性判断，未出现唯一错项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "a99e97f6c1f18d66add9205248560a85ac24f007",
+      "reason": "题目考查反应条件改变产物，虽含Cl2与NaOH但未测试氯的漂白性来源，不能唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "6de40ad6f2779151fd4f5538f91e0425862aec8a",
+      "reason": "D直接涉及干燥氯气是否使鲜花褪色，正对应把Cl2分子/干燥氯气误认为具有漂白性的症状；C为正确项。",
+      "status": "mapped",
+      "target_option": "D"
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "4b50060180084e8dd0a6b57ab15603513e29cc83",
+      "reason": "题目考查烷烃系统命名，未涉及通式相同或相差CH2的同系物判定，错误选项不能唯一体现该错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "55da46bf53b45e56b02f6f945d7a920f021485b3",
+      "reason": "题目只考命名规则，未提供同系物或CnH2n判断，无法唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "2fcd17c3cc99b462a3e29c035df194b5a157f48f",
+      "reason": "题目考查烷烃命名，不涉及结构相似性与同系物定义，错误选项没有唯一错因指向。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "烷烃#failure-00",
+      "item_id": "f42cef41788ff83a32c97201c64f86920dd87d23",
+      "reason": "题目考查系统命名，未涉及通式或官能团异构导致的同系物误判，按保守规则排除。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "f2ba2d276c5221b6ae67370a53bf192434e81eb1",
+      "reason": "题目考查合金性质，未出现酸酐定义或非氧化物酸酐，无法唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "1a8387f993c9387dd57825f02286f19c3a79e6fb",
+      "reason": "题目考查化学变化，选项没有酸酐定义判断，任何错误选项都不能唯一体现该概念错因。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "dd439a3f8f8dd8d9c013e27f17a1224ae054bcd4",
+      "reason": "题目考查垃圾的物质分类，未涉及酸酐或氧化物定义，按保守规则排除。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "bcfe12f0ac456d12e61d29b038da89f372dde7d2",
+      "reason": "题目考查醋酸钠的电解质、晶体和酸碱性，未涉及酸酐定义或非氧化物酸酐。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "33b071b7bca9dadaa4e8bb94ec71bc73a000ab9c",
+      "reason": "题目考查石油产品来源，没有侯氏制碱法中反应物通入顺序。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "0c766f3b5123ac5f26ad2a7afadbe1541723c051",
+      "reason": "题目考查有机物制备和除杂，未出现侯氏制碱法的加料顺序。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "d0aad43e7415bba4642aa9548f30653a5cb3d485",
+      "reason": "题目考查乙酸乙酯实验操作，错误项不涉及先通CO2或先通NH3。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "87694d82cdaad2c7bef6a84051751fb59a568f62",
+      "reason": "题目考查乙烯制备的加酸、加热和收集，未涉及侯氏制碱反应物顺序。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "c428316edc19163defdfe4f620ca0477096a6261",
+      "reason": "题目检验亚硫酸盐变质，不涉及醛基或碳碳双键检验试剂的适用条件。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "50bd9b5b2e7c859ccba6c95472ef4623102eae25",
+      "reason": "题目考查无机反应的现象，错误项没有有机官能团检验条件。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "729c1a58ae2b5e0e7d5719bf85d77c79cdbd52fd",
+      "reason": "题目考查无机盐和有机物除杂，未给出醛基中和或苯酚干扰的检验情境。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "a0510f8de3f6c361fac5e190d7bccbbd460d4a70",
+      "reason": "题目考查NaOH除杂，错误项不唯一对应有机官能团检验试剂条件。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "9563407b232b7edf35e6eaa4fde278b3f981c208",
+      "reason": "正确项B本身是SO2为非电解质；其余错误项分别涉及物质反应性或分类，不能唯一体现将水溶液导电等同于自身电离。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "2de28c82037d3bd8d041285b69f25f6b24e71c72",
+      "reason": "选项B把CO2列为电解质，正是因其水溶液能导电而误判为自身电离；其他错误项是金属或难溶电解质等不同问题。",
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "12fea558ae05640dfc65f830973569e92ade70b6",
+      "reason": "题目考查醋酸钠的晶体和溶液性质，错误项C是分子概念错误，不是水溶液导电与自身电离混淆。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "676f173f36cb51024f3a905fabf793e069f81ef6",
+      "reason": "正确项小苏打为强电解质；其他选项没有唯一呈现将溶于水导电物质误判为电解质的机制。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "014659c4dcd7aa414546cac938bd51f26a001430",
+      "reason": "题目比较水的电离程度，未涉及加热NaHCO3时水解与电离平衡方向的具体判断。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "103eae99775969fa306aa0047998763e47dcdc64",
+      "reason": "题目判断与盐类水解无关的事实，B、C、D均是不同水解应用，不能唯一对应所给方向混淆。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "5e80ce5b4155a28f62b8e7fe84029070e43e83ce",
+      "reason": "题目比较不同溶液升温后的pH，未给出NaHCO3曲线或唯一的水解与电离方向错误项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "6517db20d948cbb2ba15edd1321acb9ae728b18f",
+      "reason": "题目考查不同溶液阳离子数排序，多个选项涉及浓度和水解，无法唯一归因于该failure。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "7ffd365e2dc281dc648da3a3dc0a4c38014b6a60",
+      "reason": "题目考查硫酸工业反应条件，没有工业尾气吸收剂、经济性或化肥副产物选项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "3ae34de5e605089d30803fa822b4ac7694a2cccb",
+      "reason": "题目考查浓硫酸脱水性，未涉及工业和实验室尾气吸收目的及试剂。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "6129700486df134f60783921838ffbc643b62d1a",
+      "reason": "题目考查硫酸的制备与性质，错误项没有尾气吸收剂或工业经济性判断。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "ea825f997ea6481bdb5d2e23ad509e70eea710ac",
+      "reason": "题目考查接触法催化氧化条件，未出现工业尾气吸收与实验室尾气吸收的对比。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "f94a94988df71865edd6c22f1aeaf6cf1cde06d7",
+      "reason": "A、B、C均是与苯性质相关的干扰解释，不能仅凭物理萃取与化学取代混淆唯一确定一个错误项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "43a142f5e6f8e230ebe498f6eb1529ab56bf90dc",
+      "reason": "题目错误项B涉及溴苯中溴的萃取，和苯使溴水褪色的原理并非同一情境，不能唯一映射。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "b816e16aba70070f9b895ee6f05f4bdfc4b91256",
+      "reason": "题目考查分子共面性，错误项不涉及苯使溴水褪色的物理萃取或化学取代机制。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "fe0df5fb853e1ebcef29672172908754c8b78d5b",
+      "reason": "该题同时提供溶解性和取代反应干扰项，不能在物理萃取与化学取代之间唯一确定目标错误项。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "3d5bcbd950be81bd12c979d20997a9e1ab93a7cc",
+      "reason": "题目考查结晶水测定误差，选项没有量筒或容量瓶仰视、俯视情境。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "7544df2965a97b50a69a5178530d1f804992479a",
+      "reason": "题目考查灼烧和冷却造成的结晶水测定误差，未涉及仰视俯视口诀。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "f2ef96f3552c85dae90a033f31c7022b4e5525ce",
+      "reason": "题目考查结晶水测定n偏低的误差，选项没有量筒与容量瓶视角差异。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "误差分析#failure-00",
+      "item_id": "4ffd5e31cabb71237baf72b19291b5d454369e8b",
+      "reason": "题目考查结晶水测定n偏低的原因，未出现仰视或俯视读数。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "2678440d2bad12ec4358cab796bd056ea75a30fc",
+      "reason": "题目考查高铁酸钠净水机理，没有Fe2+、Fe3+与铁粉还原关系。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "6dd22ea9bef67a7e5a7cc4500efc31b6bcce6845",
+      "reason": "题目考查金属与水反应，未涉及Fe3+被铁还原或除去FeCl3杂质。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "2b35f8def0f6ffccff09ac28c99d238b758ace62",
+      "reason": "题目考查铜镍合金性质，与Fe2+、Fe3+氧化还原判断无关。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "d2f0a6b986f06e65f8cba3fab3257234c3af3080",
+      "reason": "题目只考查磁石主要成分，未涉及Fe3+被铁还原为单质或除杂选择。",
+      "status": "excluded_ambiguous",
+      "target_option": null
+    }
+  ],
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.codex_mapping_draft.v1",
+  "simulated": true,
+  "sources": [
+    {
+      "path_hint": "codex_draft_part1.json",
+      "rows": 34,
+      "sha256": "38e64942dec1e413411f83cb5fa19abc20de026c34fbef1721699fb36da527e1"
+    },
+    {
+      "path_hint": "codex_draft_part2.json",
+      "rows": 33,
+      "sha256": "415fe397e1cc6d7a8cf8490829ed876ac1ecc89312da47a02132361fd3d143ac"
+    },
+    {
+      "path_hint": "codex_draft_part3.json",
+      "rows": 33,
+      "sha256": "46621dec73c7844daa597a70c086d872c0594efab1e647f24d5510875736894a"
+    }
+  ]
+}

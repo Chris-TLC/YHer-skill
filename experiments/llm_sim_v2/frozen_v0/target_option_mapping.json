@@ -1,0 +1,1230 @@
+{
+  "candidate_frame_sha256": "d18fb3baafca508efeb0fb956f2dc9471ccc3f7e1c0dafaa286d5da0cb510ab0",
+  "confirmatory_target_misconception_hit_rate": false,
+  "consensus": {
+    "crosscheck_sha256": "37766ad20f53629c31135533207af5fc7e7c72c2df8583e0a4645fce58e01cf2",
+    "draft_sha256": "2f9c44ef6794408bb0b290edfb5b5fbc881a68175ba114c25bd53ba2892da443",
+    "excluded_ambiguous_rows": 94,
+    "mapped_rows": 6
+  },
+  "crosscheck_provenance": {
+    "content_sha256": "eeb41c2b9a9fb4791add2342d0ec09a98338fd74b64e0bb9bd4fd94975e0a083",
+    "requested_model": "deepseek-chat",
+    "returned_models": [
+      "deepseek-v4-flash"
+    ],
+    "source_file_sha256": "e2f1e5533f0b962c60f140d0d1a07f36d03ab37d5531741c1b8ad554009a7a69",
+    "summary": {
+      "completed": 100,
+      "cost_yuan": 0.28948744,
+      "input_tokens": 63892,
+      "output_tokens": 14298,
+      "requested": 100,
+      "requests_including_retries": 111,
+      "technical_failures": 0
+    },
+    "technical_failures": 0
+  },
+  "frozen": true,
+  "mapped_fraction": 0.06,
+  "mapping_sha256": "af995de4500842397d5584e5cecc0d8f3e48d415fe4fde0dba2a3ea6814d99da",
+  "observation_started": false,
+  "rows": [
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "014659c4dcd7aa414546cac938bd51f26a001430",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "06653f0fa763a19bb6fd49cb2ef48c48bb0528bd",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "基本操作#failure-00",
+      "item_id": "0a412bb27dd1c3def9882c64baabb43c6bbc2d5e",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "0c5aa3711bd351125f832761fac90d1805b4c632",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "0c766f3b5123ac5f26ad2a7afadbe1541723c051",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "0eebe5d9f34351f88c63c172a01f9a956757c505",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "103eae99775969fa306aa0047998763e47dcdc64",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "1284cddbc252c8313bd7f0652ffacf2e4606e39d",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "12fea558ae05640dfc65f830973569e92ade70b6",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "16b149bf9fb892a621eceabc23bd327573300698",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "19c2b3e5555c1c8bb37ba46dc4bb15f1cf2e5b8a",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "mapped",
+      "target_option": "D"
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "1a8387f993c9387dd57825f02286f19c3a79e6fb",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "1aabac0bfe08235b8cf263746cbe9081608c9818",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "223eeb45e3c02166564fde22c9e40bca62f1e10f",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "266a945c23084241db97fbfaf261c0c239e7d635",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "2678440d2bad12ec4358cab796bd056ea75a30fc",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "275a793a4de8dd058352d66251e7a43f962b92be",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "2b35f8def0f6ffccff09ac28c99d238b758ace62",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "2b410c2ce110114f9f06a93fbd7d5e0d713fb665",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "2bae88b8d2eb935fd3ff8ea2ebc4e0680bad3f25",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "2de28c82037d3bd8d041285b69f25f6b24e71c72",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "烷烃#failure-00",
+      "item_id": "2fcd17c3cc99b462a3e29c035df194b5a157f48f",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "30f5a98c3921983e546a626bce35c8384bb12fef",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "mapped",
+      "target_option": "A"
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "33b071b7bca9dadaa4e8bb94ec71bc73a000ab9c",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "34a68f741fc14828fc5a88702405a6a99a6319b6",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "353559742f4dba757289109f1639f5b98a012227",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "39c3906a9bcfac551c0fde59949d4a5d0c909420",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "3aba969970d2db20d29451e901a0b2145ee3adf7",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "3ae34de5e605089d30803fa822b4ac7694a2cccb",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "误差分析#failure-00",
+      "item_id": "3d5bcbd950be81bd12c979d20997a9e1ab93a7cc",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "41572cee43dc9babb2819b29d1f67e10a01e17af",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "427d92541a3467de8c37ff0f74fed49376d791cf",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "43a142f5e6f8e230ebe498f6eb1529ab56bf90dc",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "45db9b7c0d6a2b4c0cfc0ef0b9d69f42bc1792da",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "烷烃#failure-00",
+      "item_id": "4b50060180084e8dd0a6b57ab15603513e29cc83",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "误差分析#failure-00",
+      "item_id": "4ffd5e31cabb71237baf72b19291b5d454369e8b",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "504b3da9677c66b64b0acd1b85649ae89abad3d8",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "50bd9b5b2e7c859ccba6c95472ef4623102eae25",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "51685ff33599daf0a4bff53fdd9d730ea5d5d1ab",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "基本操作#failure-00",
+      "item_id": "5488073a6517593953afc448d5ad1a785aacd90c",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "烷烃#failure-00",
+      "item_id": "55da46bf53b45e56b02f6f945d7a920f021485b3",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "593833c03f44afdcc5f217c4e333e9b19751d343",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "5d68ef5c399a2031e50100c0c55334b63f05c68c",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "5d9c71f772b86366829a7495192c7e95b7cfed13",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "5e67dc7cb43c77c014f1c13a1b61f67ad39625b4",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "5e80ce5b4155a28f62b8e7fe84029070e43e83ce",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "item_id": "5edd8c8b6d33aa54087a3fc939e3036782f145c8",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "60f71b45d394b6ac730b3c873fd6c3e94ad58c59",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "6129700486df134f60783921838ffbc643b62d1a",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "620901882a2e0c38b237b892793b138233a40084",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "6269dfceccc90c68074cbb78eff81fb178c24f68",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "6396830926fe41dd904d2fcb441f05be156f4420",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "6505345c625db8451ed93840f2099d69bc01f9d4",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "item_id": "6517db20d948cbb2ba15edd1321acb9ae728b18f",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "671008013023d98e5d4e670b0d9b525b95754915",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "676f173f36cb51024f3a905fabf793e069f81ef6",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "item_id": "6b9fae8e015ac38a444f04db087d7f3015a4a8c2",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "6cded697a9750d99065595aedf5001aa47d3d139",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "6dd22ea9bef67a7e5a7cc4500efc31b6bcce6845",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "6de40ad6f2779151fd4f5538f91e0425862aec8a",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "729c1a58ae2b5e0e7d5719bf85d77c79cdbd52fd",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "误差分析#failure-00",
+      "item_id": "7544df2965a97b50a69a5178530d1f804992479a",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "item_id": "77530f6bf766e82e2b69122e6d0ea6b359109d4c",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "7ffd365e2dc281dc648da3a3dc0a4c38014b6a60",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "87694d82cdaad2c7bef6a84051751fb59a568f62",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "8863b5de1c1d1671033dfaabb45cbea16a36f816",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "88e3affb59876164ba6807bb88aa10362655226e",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "8c874712cf8ff8274b5e6826c83fc8a64b321cf0",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "基本操作#failure-00",
+      "item_id": "9156bcaf3e1f7e2e70fcbcf507bf383778b2cabf",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "item_id": "93313c9b34f157965659780dbba9433c66716275",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "电解质与非电解质#failure-00",
+      "item_id": "9563407b232b7edf35e6eaa4fde278b3f981c208",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "98fd6378a3ed456ce228a170e40a69bc6e914ed3",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "item_id": "9ddf28549874b9d4636d9e6931a08fafeb23ce66",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "a0510f8de3f6c361fac5e190d7bccbbd460d4a70",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "item_id": "a49693244d225d03e4828322eb328cec024dfb2d",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "mapped",
+      "target_option": "B"
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氯及其化合物#failure-00",
+      "item_id": "a99e97f6c1f18d66add9205248560a85ac24f007",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "基本操作#failure-00",
+      "item_id": "ab7c02d8b3d7fe83250035adb01087c842cb04d5",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "item_id": "adb711ad2e39ffdb2d7f724cf89eaec764a3b3ae",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "mapped",
+      "target_option": "C"
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "afbecc52e8982054df1d0283d70ea75f3a31097b",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "b816e16aba70070f9b895ee6f05f4bdfc4b91256",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "item_id": "baf9107da93c1e34b64c2d64bc2254dd2a4806f7",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "bcfe12f0ac456d12e61d29b038da89f372dde7d2",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "item_id": "bd452b9e0aa9cf24c97fc383fb5de5f534665f26",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "item_id": "c428316edc19163defdfe4f620ca0477096a6261",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "c5019ec96f5c2fdfc3bc71412fbb6b764b286935",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "item_id": "d0aad43e7415bba4642aa9548f30653a5cb3d485",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "item_id": "d2f0a6b986f06e65f8cba3fab3257234c3af3080",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "d4f3b46e45103af1028e3cbb49d15492367cadce",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "item_id": "dc6190b37292d12b09d1d0ef87e37b632a4e8947",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "item_id": "dcc5779552eaac34d6adbb24021aef67438fb38f",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "dd439a3f8f8dd8d9c013e27f17a1224ae054bcd4",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "e8bf50f48b7b5132eb2d0fb0a780ff44b9d2db25",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "item_id": "ea825f997ea6481bdb5d2e23ad509e70eea710ac",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "item_id": "ebae7a35ce8215d080d71a8194536c70eb033137",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "item_id": "f2ba2d276c5221b6ae67370a53bf192434e81eb1",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "误差分析#failure-00",
+      "item_id": "f2ef96f3552c85dae90a033f31c7022b4e5525ce",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "烷烃#failure-00",
+      "item_id": "f42cef41788ff83a32c97201c64f86920dd87d23",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "item_id": "f6b2d005d77f11264bca307b35190380d1de0da0",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "f94a94988df71865edd6c22f1aeaf6cf1cde06d7",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    },
+    {
+      "ambiguity_reason": "independent_mapping_disagreement",
+      "failure_id": "芳香烃#failure-00",
+      "item_id": "fe0df5fb853e1ebcef29672172908754c8b78d5b",
+      "reviewer_provenance": {
+        "crosschecked_by": "deepseek_chat",
+        "drafted_by": "codex_gpt_5_6_sol_ultra",
+        "method": "independent_dual_model_consensus"
+      },
+      "status": "excluded_ambiguous",
+      "target_option": null
+    }
+  ],
+  "schema_version": "yher.llm_sim_v2.target_option_map.v1",
+  "target_set_hash": "d1e6d3ba43a2e1d33bf16bc45a9a8ec07a2995fa441eaf23faf637ee168d1b57"
+}

@@ -1,0 +1,125 @@
+{
+  "ingestion_policy": {
+    "accepted_analysis_population": "main",
+    "accepted_phase": "main",
+    "filesystem_glob_forbidden": true,
+    "logical_key": [
+      "phase",
+      "provider",
+      "persona_id",
+      "response_arm",
+      "condition",
+      "prompt_revision",
+      "item_id",
+      "attempt_id"
+    ],
+    "pilot_records_never_join_main": true,
+    "same_cluster_recollection_allowed": true
+  },
+  "main": {
+    "analysis_population": "main",
+    "conditions": [
+      "controlled",
+      "blind"
+    ],
+    "include_in_main": true,
+    "manifest_sha256": "4e8f02d1f1d20a703ad4035a60c6f9ffa63d21378562448f7b35492348c3c642",
+    "persona_ids": [
+      "persona-v2:anchor-v2:00:元素周期律/周期表:high",
+      "persona-v2:anchor-v2:00:元素周期律/周期表:low",
+      "persona-v2:anchor-v2:01:分子间作用力/氢键:high",
+      "persona-v2:anchor-v2:01:分子间作用力/氢键:low",
+      "persona-v2:anchor-v2:02:分离提纯:high",
+      "persona-v2:anchor-v2:02:分离提纯:low",
+      "persona-v2:anchor-v2:03:化学平衡:high",
+      "persona-v2:anchor-v2:03:化学平衡:low",
+      "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:high",
+      "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:low",
+      "persona-v2:anchor-v2:05:化学键:high",
+      "persona-v2:anchor-v2:05:化学键:low",
+      "persona-v2:anchor-v2:06:原子结构:high",
+      "persona-v2:anchor-v2:06:原子结构:low",
+      "persona-v2:anchor-v2:07:反应热/焓变:high",
+      "persona-v2:anchor-v2:07:反应热/焓变:low",
+      "persona-v2:anchor-v2:08:基本操作:high",
+      "persona-v2:anchor-v2:08:基本操作:low",
+      "persona-v2:anchor-v2:09:弱电解质电离平衡:high",
+      "persona-v2:anchor-v2:09:弱电解质电离平衡:low",
+      "persona-v2:anchor-v2:10:晶体结构:high",
+      "persona-v2:anchor-v2:10:晶体结构:low",
+      "persona-v2:anchor-v2:11:有机推断:high",
+      "persona-v2:anchor-v2:11:有机推断:low",
+      "persona-v2:anchor-v2:12:氧化还原反应:high",
+      "persona-v2:anchor-v2:12:氧化还原反应:low",
+      "persona-v2:anchor-v2:13:氮及其化合物:high",
+      "persona-v2:anchor-v2:13:氮及其化合物:low",
+      "persona-v2:anchor-v2:14:氯及其化合物:high",
+      "persona-v2:anchor-v2:14:氯及其化合物:low",
+      "persona-v2:anchor-v2:15:烷烃:high",
+      "persona-v2:anchor-v2:15:烷烃:low",
+      "persona-v2:anchor-v2:16:物质分类:high",
+      "persona-v2:anchor-v2:16:物质分类:low",
+      "persona-v2:anchor-v2:17:物质制备:high",
+      "persona-v2:anchor-v2:17:物质制备:low",
+      "persona-v2:anchor-v2:18:物质检验:high",
+      "persona-v2:anchor-v2:18:物质检验:low",
+      "persona-v2:anchor-v2:19:电解质与非电解质:high",
+      "persona-v2:anchor-v2:19:电解质与非电解质:low",
+      "persona-v2:anchor-v2:20:盐类水解:high",
+      "persona-v2:anchor-v2:20:盐类水解:low",
+      "persona-v2:anchor-v2:21:硫及其化合物:high",
+      "persona-v2:anchor-v2:21:硫及其化合物:low",
+      "persona-v2:anchor-v2:22:芳香烃:high",
+      "persona-v2:anchor-v2:22:芳香烃:low",
+      "persona-v2:anchor-v2:23:误差分析:high",
+      "persona-v2:anchor-v2:23:误差分析:low",
+      "persona-v2:anchor-v2:24:铁及其化合物:high",
+      "persona-v2:anchor-v2:24:铁及其化合物:low"
+    ],
+    "phase": "main",
+    "providers": [
+      "deepseek",
+      "glm",
+      "kimi",
+      "minimax",
+      "doubao",
+      "tongyi"
+    ],
+    "response_arms": [
+      "deficit",
+      "control"
+    ],
+    "root_relative": "data/sim_store/llm_personas/llm-personas-v2-dual/main"
+  },
+  "pilot": {
+    "analysis_population": "pilot",
+    "conditions": [
+      "controlled",
+      "blind"
+    ],
+    "include_in_main": false,
+    "manifest_sha256": "f43e26eaf37a9bc5d91dd90c6c82467276bdef819099755ca61e1debd0526e33",
+    "persona_ids": [
+      "persona-v2:anchor-v2:00:元素周期律/周期表:high",
+      "persona-v2:anchor-v2:23:误差分析:low",
+      "persona-v2:anchor-v2:20:盐类水解:low",
+      "persona-v2:anchor-v2:19:电解质与非电解质:low",
+      "persona-v2:anchor-v2:08:基本操作:low"
+    ],
+    "phase": "pilot",
+    "providers": [
+      "deepseek",
+      "doubao"
+    ],
+    "response_arms": [
+      "deficit",
+      "control"
+    ],
+    "root_relative": "data/sim_store/llm_personas/llm-personas-v2-dual/pilot"
+  },
+  "population_manifest_sha256": "17e2f06d97ab5db04bb1658db71eb1b68e1e6c90db235fbf31029f7dfa8b9b50",
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.population_manifest.v1",
+  "selection_seed": 20260715,
+  "simulated": true
+}

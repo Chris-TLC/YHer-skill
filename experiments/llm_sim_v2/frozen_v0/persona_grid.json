@@ -1,0 +1,3261 @@
+{
+  "cluster_count": 50,
+  "cluster_unit": "persona_id",
+  "grid_sha256": "a0a8788bd1c08a4c1430bbc3e11ee2dc0fb55deed7a98be4f2b54d7a798c4bd4",
+  "paired_response_rows": 100,
+  "rows": [
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:00:元素周期律/周期表",
+      "curriculum_exposure": [
+        "元素周期律/周期表"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆主族与副族、Ⅷ族的族序数表示法，误将ⅥA族写成Ⅵ族或第Ⅷ族。",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "failure_symptom": "学生看到原子结构示意图（+16）2 8 8，误判为第三周期第Ⅵ族或第Ⅷ族，忽略主族用A表示。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆主族与副族、Ⅷ族的族序数表示法，误将ⅥA族写成Ⅵ族或第Ⅷ族。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生看到原子结构示意图（+16）2 8 8，误判为第三周期第Ⅵ族或第Ⅷ族，忽略主族用A表示。"
+      },
+      "pair_id": "pair-v2:00",
+      "persona_id": "persona-v2:anchor-v2:00:元素周期律/周期表:low",
+      "row_id": "persona-v2:anchor-v2:00:元素周期律/周期表:low:deficit",
+      "seed": 9138645939134320275,
+      "target_node": "元素周期律/周期表"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:00:元素周期律/周期表",
+      "curriculum_exposure": [
+        "元素周期律/周期表"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆主族与副族、Ⅷ族的族序数表示法，误将ⅥA族写成Ⅵ族或第Ⅷ族。",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "failure_symptom": "学生看到原子结构示意图（+16）2 8 8，误判为第三周期第Ⅵ族或第Ⅷ族，忽略主族用A表示。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:00",
+      "persona_id": "persona-v2:anchor-v2:00:元素周期律/周期表:low",
+      "row_id": "persona-v2:anchor-v2:00:元素周期律/周期表:low:control",
+      "seed": 9138645939134320275,
+      "target_node": "元素周期律/周期表"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:00:元素周期律/周期表",
+      "curriculum_exposure": [
+        "元素周期律/周期表"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆主族与副族、Ⅷ族的族序数表示法，误将ⅥA族写成Ⅵ族或第Ⅷ族。",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "failure_symptom": "学生看到原子结构示意图（+16）2 8 8，误判为第三周期第Ⅵ族或第Ⅷ族，忽略主族用A表示。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆主族与副族、Ⅷ族的族序数表示法，误将ⅥA族写成Ⅵ族或第Ⅷ族。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生看到原子结构示意图（+16）2 8 8，误判为第三周期第Ⅵ族或第Ⅷ族，忽略主族用A表示。"
+      },
+      "pair_id": "pair-v2:01",
+      "persona_id": "persona-v2:anchor-v2:00:元素周期律/周期表:high",
+      "row_id": "persona-v2:anchor-v2:00:元素周期律/周期表:high:deficit",
+      "seed": 10307620219265021391,
+      "target_node": "元素周期律/周期表"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:00:元素周期律/周期表",
+      "curriculum_exposure": [
+        "元素周期律/周期表"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆主族与副族、Ⅷ族的族序数表示法，误将ⅥA族写成Ⅵ族或第Ⅷ族。",
+      "failure_id": "元素周期律_周期表-位置与结构推断#failure-00",
+      "failure_symptom": "学生看到原子结构示意图（+16）2 8 8，误判为第三周期第Ⅵ族或第Ⅷ族，忽略主族用A表示。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:01",
+      "persona_id": "persona-v2:anchor-v2:00:元素周期律/周期表:high",
+      "row_id": "persona-v2:anchor-v2:00:元素周期律/周期表:high:control",
+      "seed": 10307620219265021391,
+      "target_node": "元素周期律/周期表"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:01:分子间作用力/氢键",
+      "curriculum_exposure": [
+        "分子间作用力/氢键"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆分子极性与键的极性，认为有极性键的分子一定是极性分子",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "failure_symptom": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆分子极性与键的极性，认为有极性键的分子一定是极性分子",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子"
+      },
+      "pair_id": "pair-v2:02",
+      "persona_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:low",
+      "row_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:low:deficit",
+      "seed": 10250310917679565064,
+      "target_node": "分子间作用力/氢键"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:01:分子间作用力/氢键",
+      "curriculum_exposure": [
+        "分子间作用力/氢键"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆分子极性与键的极性，认为有极性键的分子一定是极性分子",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "failure_symptom": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:02",
+      "persona_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:low",
+      "row_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:low:control",
+      "seed": 10250310917679565064,
+      "target_node": "分子间作用力/氢键"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:01:分子间作用力/氢键",
+      "curriculum_exposure": [
+        "分子间作用力/氢键"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆分子极性与键的极性，认为有极性键的分子一定是极性分子",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "failure_symptom": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆分子极性与键的极性，认为有极性键的分子一定是极性分子",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子"
+      },
+      "pair_id": "pair-v2:03",
+      "persona_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:high",
+      "row_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:high:deficit",
+      "seed": 13446377259513639813,
+      "target_node": "分子间作用力/氢键"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:01:分子间作用力/氢键",
+      "curriculum_exposure": [
+        "分子间作用力/氢键"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆分子极性与键的极性，认为有极性键的分子一定是极性分子",
+      "failure_id": "分子间作用力_氢键-分子极性与分子间作用力#failure-00",
+      "failure_symptom": "学生误判CO₂或CH₄为极性分子，或误判HCN为非极性分子",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:03",
+      "persona_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:high",
+      "row_id": "persona-v2:anchor-v2:01:分子间作用力/氢键:high:control",
+      "seed": 13446377259513639813,
+      "target_node": "分子间作用力/氢键"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:02:分离提纯",
+      "curriculum_exposure": [
+        "分离提纯"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆蒸发结晶与冷却结晶的适用条件",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "failure_symptom": "学生误将蒸发结晶用于提纯硝酸钾，或误将冷却结晶用于提纯氯化钠",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆蒸发结晶与冷却结晶的适用条件",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误将蒸发结晶用于提纯硝酸钾，或误将冷却结晶用于提纯氯化钠"
+      },
+      "pair_id": "pair-v2:04",
+      "persona_id": "persona-v2:anchor-v2:02:分离提纯:low",
+      "row_id": "persona-v2:anchor-v2:02:分离提纯:low:deficit",
+      "seed": 2869247452519033885,
+      "target_node": "分离提纯"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:02:分离提纯",
+      "curriculum_exposure": [
+        "分离提纯"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆蒸发结晶与冷却结晶的适用条件",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "failure_symptom": "学生误将蒸发结晶用于提纯硝酸钾，或误将冷却结晶用于提纯氯化钠",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:04",
+      "persona_id": "persona-v2:anchor-v2:02:分离提纯:low",
+      "row_id": "persona-v2:anchor-v2:02:分离提纯:low:control",
+      "seed": 2869247452519033885,
+      "target_node": "分离提纯"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:02:分离提纯",
+      "curriculum_exposure": [
+        "分离提纯"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆蒸发结晶与冷却结晶的适用条件",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "failure_symptom": "学生误将蒸发结晶用于提纯硝酸钾，或误将冷却结晶用于提纯氯化钠",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆蒸发结晶与冷却结晶的适用条件",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误将蒸发结晶用于提纯硝酸钾，或误将冷却结晶用于提纯氯化钠"
+      },
+      "pair_id": "pair-v2:05",
+      "persona_id": "persona-v2:anchor-v2:02:分离提纯:high",
+      "row_id": "persona-v2:anchor-v2:02:分离提纯:high:deficit",
+      "seed": 3139930446508497869,
+      "target_node": "分离提纯"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:02:分离提纯",
+      "curriculum_exposure": [
+        "分离提纯"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆蒸发结晶与冷却结晶的适用条件",
+      "failure_id": "分离提纯-结晶与重结晶#failure-00",
+      "failure_symptom": "学生误将蒸发结晶用于提纯硝酸钾，或误将冷却结晶用于提纯氯化钠",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:05",
+      "persona_id": "persona-v2:anchor-v2:02:分离提纯:high",
+      "row_id": "persona-v2:anchor-v2:02:分离提纯:high:control",
+      "seed": 3139930446508497869,
+      "target_node": "分离提纯"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:03:化学平衡",
+      "curriculum_exposure": [
+        "化学平衡"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆提高转化率与提高反应速率的措施",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "failure_symptom": "学生误将加压、升温等提高速率的措施当作提高转化率的措施，忽略平衡移动方向",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆提高转化率与提高反应速率的措施",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误将加压、升温等提高速率的措施当作提高转化率的措施，忽略平衡移动方向"
+      },
+      "pair_id": "pair-v2:06",
+      "persona_id": "persona-v2:anchor-v2:03:化学平衡:low",
+      "row_id": "persona-v2:anchor-v2:03:化学平衡:low:deficit",
+      "seed": 877765650741594291,
+      "target_node": "化学平衡"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:03:化学平衡",
+      "curriculum_exposure": [
+        "化学平衡"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆提高转化率与提高反应速率的措施",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "failure_symptom": "学生误将加压、升温等提高速率的措施当作提高转化率的措施，忽略平衡移动方向",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:06",
+      "persona_id": "persona-v2:anchor-v2:03:化学平衡:low",
+      "row_id": "persona-v2:anchor-v2:03:化学平衡:low:control",
+      "seed": 877765650741594291,
+      "target_node": "化学平衡"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:03:化学平衡",
+      "curriculum_exposure": [
+        "化学平衡"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆提高转化率与提高反应速率的措施",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "failure_symptom": "学生误将加压、升温等提高速率的措施当作提高转化率的措施，忽略平衡移动方向",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆提高转化率与提高反应速率的措施",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误将加压、升温等提高速率的措施当作提高转化率的措施，忽略平衡移动方向"
+      },
+      "pair_id": "pair-v2:07",
+      "persona_id": "persona-v2:anchor-v2:03:化学平衡:high",
+      "row_id": "persona-v2:anchor-v2:03:化学平衡:high:deficit",
+      "seed": 3863432443299838352,
+      "target_node": "化学平衡"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:03:化学平衡",
+      "curriculum_exposure": [
+        "化学平衡"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆提高转化率与提高反应速率的措施",
+      "failure_id": "化学平衡-工业应用与图像分析#failure-00",
+      "failure_symptom": "学生误将加压、升温等提高速率的措施当作提高转化率的措施，忽略平衡移动方向",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:07",
+      "persona_id": "persona-v2:anchor-v2:03:化学平衡:high",
+      "row_id": "persona-v2:anchor-v2:03:化学平衡:high:control",
+      "seed": 3863432443299838352,
+      "target_node": "化学平衡"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:04:化学计量（摩尔/阿伏伽德罗）",
+      "curriculum_exposure": [
+        "化学计量（摩尔/阿伏伽德罗）"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆标准状况与非标准状况，误认为任何条件下22.4 L气体都含1 mol分子",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "failure_symptom": "学生看到22.4 L直接认为气体物质的量为1 mol，忽略温度压强条件",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆标准状况与非标准状况，误认为任何条件下22.4 L气体都含1 mol分子",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生看到22.4 L直接认为气体物质的量为1 mol，忽略温度压强条件"
+      },
+      "pair_id": "pair-v2:08",
+      "persona_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:low",
+      "row_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:low:deficit",
+      "seed": 8620579789621319489,
+      "target_node": "化学计量（摩尔/阿伏伽德罗）"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:04:化学计量（摩尔/阿伏伽德罗）",
+      "curriculum_exposure": [
+        "化学计量（摩尔/阿伏伽德罗）"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆标准状况与非标准状况，误认为任何条件下22.4 L气体都含1 mol分子",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "failure_symptom": "学生看到22.4 L直接认为气体物质的量为1 mol，忽略温度压强条件",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:08",
+      "persona_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:low",
+      "row_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:low:control",
+      "seed": 8620579789621319489,
+      "target_node": "化学计量（摩尔/阿伏伽德罗）"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:04:化学计量（摩尔/阿伏伽德罗）",
+      "curriculum_exposure": [
+        "化学计量（摩尔/阿伏伽德罗）"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆标准状况与非标准状况，误认为任何条件下22.4 L气体都含1 mol分子",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "failure_symptom": "学生看到22.4 L直接认为气体物质的量为1 mol，忽略温度压强条件",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆标准状况与非标准状况，误认为任何条件下22.4 L气体都含1 mol分子",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生看到22.4 L直接认为气体物质的量为1 mol，忽略温度压强条件"
+      },
+      "pair_id": "pair-v2:09",
+      "persona_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:high",
+      "row_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:high:deficit",
+      "seed": 6141197609443821644,
+      "target_node": "化学计量（摩尔/阿伏伽德罗）"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:04:化学计量（摩尔/阿伏伽德罗）",
+      "curriculum_exposure": [
+        "化学计量（摩尔/阿伏伽德罗）"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆标准状况与非标准状况，误认为任何条件下22.4 L气体都含1 mol分子",
+      "failure_id": "化学计量-气体摩尔体积与阿伏伽德罗定律#failure-00",
+      "failure_symptom": "学生看到22.4 L直接认为气体物质的量为1 mol，忽略温度压强条件",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:09",
+      "persona_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:high",
+      "row_id": "persona-v2:anchor-v2:04:化学计量（摩尔/阿伏伽德罗）:high:control",
+      "seed": 6141197609443821644,
+      "target_node": "化学计量（摩尔/阿伏伽德罗）"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:05:化学键",
+      "curriculum_exposure": [
+        "化学键"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆分子间作用力与化学键的破坏",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "failure_symptom": "学生误认为碘升华或氯化钠熔化破坏共价键，或认为金刚石熔化只破坏分子间作用力",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆分子间作用力与化学键的破坏",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误认为碘升华或氯化钠熔化破坏共价键，或认为金刚石熔化只破坏分子间作用力"
+      },
+      "pair_id": "pair-v2:10",
+      "persona_id": "persona-v2:anchor-v2:05:化学键:low",
+      "row_id": "persona-v2:anchor-v2:05:化学键:low:deficit",
+      "seed": 1173970410310445457,
+      "target_node": "化学键"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:05:化学键",
+      "curriculum_exposure": [
+        "化学键"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆分子间作用力与化学键的破坏",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "failure_symptom": "学生误认为碘升华或氯化钠熔化破坏共价键，或认为金刚石熔化只破坏分子间作用力",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:10",
+      "persona_id": "persona-v2:anchor-v2:05:化学键:low",
+      "row_id": "persona-v2:anchor-v2:05:化学键:low:control",
+      "seed": 1173970410310445457,
+      "target_node": "化学键"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:05:化学键",
+      "curriculum_exposure": [
+        "化学键"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆分子间作用力与化学键的破坏",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "failure_symptom": "学生误认为碘升华或氯化钠熔化破坏共价键，或认为金刚石熔化只破坏分子间作用力",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆分子间作用力与化学键的破坏",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误认为碘升华或氯化钠熔化破坏共价键，或认为金刚石熔化只破坏分子间作用力"
+      },
+      "pair_id": "pair-v2:11",
+      "persona_id": "persona-v2:anchor-v2:05:化学键:high",
+      "row_id": "persona-v2:anchor-v2:05:化学键:high:deficit",
+      "seed": 12624951575268425213,
+      "target_node": "化学键"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:05:化学键",
+      "curriculum_exposure": [
+        "化学键"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆分子间作用力与化学键的破坏",
+      "failure_id": "化学键-变化与破坏#failure-00",
+      "failure_symptom": "学生误认为碘升华或氯化钠熔化破坏共价键，或认为金刚石熔化只破坏分子间作用力",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:11",
+      "persona_id": "persona-v2:anchor-v2:05:化学键:high",
+      "row_id": "persona-v2:anchor-v2:05:化学键:high:control",
+      "seed": 12624951575268425213,
+      "target_node": "化学键"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:06:原子结构",
+      "curriculum_exposure": [
+        "原子结构"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆能级与轨道概念，误认为同一能级的不同轨道能量不同",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "failure_symptom": "学生认为2px与2py能量不同，或认为2p与3p能量相同",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆能级与轨道概念，误认为同一能级的不同轨道能量不同",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生认为2px与2py能量不同，或认为2p与3p能量相同"
+      },
+      "pair_id": "pair-v2:12",
+      "persona_id": "persona-v2:anchor-v2:06:原子结构:low",
+      "row_id": "persona-v2:anchor-v2:06:原子结构:low:deficit",
+      "seed": 13637838495526285558,
+      "target_node": "原子结构"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:06:原子结构",
+      "curriculum_exposure": [
+        "原子结构"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆能级与轨道概念，误认为同一能级的不同轨道能量不同",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "failure_symptom": "学生认为2px与2py能量不同，或认为2p与3p能量相同",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:12",
+      "persona_id": "persona-v2:anchor-v2:06:原子结构:low",
+      "row_id": "persona-v2:anchor-v2:06:原子结构:low:control",
+      "seed": 13637838495526285558,
+      "target_node": "原子结构"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:06:原子结构",
+      "curriculum_exposure": [
+        "原子结构"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆能级与轨道概念，误认为同一能级的不同轨道能量不同",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "failure_symptom": "学生认为2px与2py能量不同，或认为2p与3p能量相同",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆能级与轨道概念，误认为同一能级的不同轨道能量不同",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生认为2px与2py能量不同，或认为2p与3p能量相同"
+      },
+      "pair_id": "pair-v2:13",
+      "persona_id": "persona-v2:anchor-v2:06:原子结构:high",
+      "row_id": "persona-v2:anchor-v2:06:原子结构:high:deficit",
+      "seed": 3126735602786406066,
+      "target_node": "原子结构"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:06:原子结构",
+      "curriculum_exposure": [
+        "原子结构"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆能级与轨道概念，误认为同一能级的不同轨道能量不同",
+      "failure_id": "原子结构-原子核外电子能量与能级#failure-00",
+      "failure_symptom": "学生认为2px与2py能量不同，或认为2p与3p能量相同",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:13",
+      "persona_id": "persona-v2:anchor-v2:06:原子结构:high",
+      "row_id": "persona-v2:anchor-v2:06:原子结构:high:control",
+      "seed": 3126735602786406066,
+      "target_node": "原子结构"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:07:反应热/焓变",
+      "curriculum_exposure": [
+        "反应热/焓变"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆键能计算中反应物与生成物的加减顺序",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "failure_symptom": "学生常写成ΔH=生成物键能总和-反应物键能总和，导致符号错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆键能计算中反应物与生成物的加减顺序",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生常写成ΔH=生成物键能总和-反应物键能总和，导致符号错误"
+      },
+      "pair_id": "pair-v2:14",
+      "persona_id": "persona-v2:anchor-v2:07:反应热/焓变:low",
+      "row_id": "persona-v2:anchor-v2:07:反应热/焓变:low:deficit",
+      "seed": 14726450983703821898,
+      "target_node": "反应热/焓变"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:07:反应热/焓变",
+      "curriculum_exposure": [
+        "反应热/焓变"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆键能计算中反应物与生成物的加减顺序",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "failure_symptom": "学生常写成ΔH=生成物键能总和-反应物键能总和，导致符号错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:14",
+      "persona_id": "persona-v2:anchor-v2:07:反应热/焓变:low",
+      "row_id": "persona-v2:anchor-v2:07:反应热/焓变:low:control",
+      "seed": 14726450983703821898,
+      "target_node": "反应热/焓变"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:07:反应热/焓变",
+      "curriculum_exposure": [
+        "反应热/焓变"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆键能计算中反应物与生成物的加减顺序",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "failure_symptom": "学生常写成ΔH=生成物键能总和-反应物键能总和，导致符号错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆键能计算中反应物与生成物的加减顺序",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生常写成ΔH=生成物键能总和-反应物键能总和，导致符号错误"
+      },
+      "pair_id": "pair-v2:15",
+      "persona_id": "persona-v2:anchor-v2:07:反应热/焓变:high",
+      "row_id": "persona-v2:anchor-v2:07:反应热/焓变:high:deficit",
+      "seed": 14557974854898957837,
+      "target_node": "反应热/焓变"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:07:反应热/焓变",
+      "curriculum_exposure": [
+        "反应热/焓变"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆键能计算中反应物与生成物的加减顺序",
+      "failure_id": "反应热-焓变计算#failure-00",
+      "failure_symptom": "学生常写成ΔH=生成物键能总和-反应物键能总和，导致符号错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:15",
+      "persona_id": "persona-v2:anchor-v2:07:反应热/焓变:high",
+      "row_id": "persona-v2:anchor-v2:07:反应热/焓变:high:control",
+      "seed": 14557974854898957837,
+      "target_node": "反应热/焓变"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:08:基本操作",
+      "curriculum_exposure": [
+        "基本操作"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "忘记趁热过滤时目标产物在滤液还是滤渣，习惯性保留固体丢弃液体",
+      "failure_id": "基本操作#failure-00",
+      "failure_symptom": "过滤操作将需要的物质留错相态，比如趁热过滤把含产品的热滤液直接倒了",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "忘记趁热过滤时目标产物在滤液还是滤渣，习惯性保留固体丢弃液体",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "过滤操作将需要的物质留错相态，比如趁热过滤把含产品的热滤液直接倒了"
+      },
+      "pair_id": "pair-v2:16",
+      "persona_id": "persona-v2:anchor-v2:08:基本操作:low",
+      "row_id": "persona-v2:anchor-v2:08:基本操作:low:deficit",
+      "seed": 8308165660934331058,
+      "target_node": "基本操作"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:08:基本操作",
+      "curriculum_exposure": [
+        "基本操作"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "忘记趁热过滤时目标产物在滤液还是滤渣，习惯性保留固体丢弃液体",
+      "failure_id": "基本操作#failure-00",
+      "failure_symptom": "过滤操作将需要的物质留错相态，比如趁热过滤把含产品的热滤液直接倒了",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:16",
+      "persona_id": "persona-v2:anchor-v2:08:基本操作:low",
+      "row_id": "persona-v2:anchor-v2:08:基本操作:low:control",
+      "seed": 8308165660934331058,
+      "target_node": "基本操作"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:08:基本操作",
+      "curriculum_exposure": [
+        "基本操作"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "忘记趁热过滤时目标产物在滤液还是滤渣，习惯性保留固体丢弃液体",
+      "failure_id": "基本操作#failure-00",
+      "failure_symptom": "过滤操作将需要的物质留错相态，比如趁热过滤把含产品的热滤液直接倒了",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "忘记趁热过滤时目标产物在滤液还是滤渣，习惯性保留固体丢弃液体",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "过滤操作将需要的物质留错相态，比如趁热过滤把含产品的热滤液直接倒了"
+      },
+      "pair_id": "pair-v2:17",
+      "persona_id": "persona-v2:anchor-v2:08:基本操作:high",
+      "row_id": "persona-v2:anchor-v2:08:基本操作:high:deficit",
+      "seed": 12661220646448384618,
+      "target_node": "基本操作"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:08:基本操作",
+      "curriculum_exposure": [
+        "基本操作"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "忘记趁热过滤时目标产物在滤液还是滤渣，习惯性保留固体丢弃液体",
+      "failure_id": "基本操作#failure-00",
+      "failure_symptom": "过滤操作将需要的物质留错相态，比如趁热过滤把含产品的热滤液直接倒了",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:17",
+      "persona_id": "persona-v2:anchor-v2:08:基本操作:high",
+      "row_id": "persona-v2:anchor-v2:08:基本操作:high:control",
+      "seed": 12661220646448384618,
+      "target_node": "基本操作"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:09:弱电解质电离平衡",
+      "curriculum_exposure": [
+        "弱电解质电离平衡"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆pOH与pH的关系，忽略温度对Kw的影响",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "failure_symptom": "学生直接套用常温下pH+pOH=14的公式，未考虑体温高于室温时Kw增大，导致pOH计算错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆pOH与pH的关系，忽略温度对Kw的影响",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生直接套用常温下pH+pOH=14的公式，未考虑体温高于室温时Kw增大，导致pOH计算错误"
+      },
+      "pair_id": "pair-v2:18",
+      "persona_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:low",
+      "row_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:low:deficit",
+      "seed": 14993961414819460043,
+      "target_node": "弱电解质电离平衡"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:09:弱电解质电离平衡",
+      "curriculum_exposure": [
+        "弱电解质电离平衡"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆pOH与pH的关系，忽略温度对Kw的影响",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "failure_symptom": "学生直接套用常温下pH+pOH=14的公式，未考虑体温高于室温时Kw增大，导致pOH计算错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:18",
+      "persona_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:low",
+      "row_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:low:control",
+      "seed": 14993961414819460043,
+      "target_node": "弱电解质电离平衡"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:09:弱电解质电离平衡",
+      "curriculum_exposure": [
+        "弱电解质电离平衡"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆pOH与pH的关系，忽略温度对Kw的影响",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "failure_symptom": "学生直接套用常温下pH+pOH=14的公式，未考虑体温高于室温时Kw增大，导致pOH计算错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆pOH与pH的关系，忽略温度对Kw的影响",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生直接套用常温下pH+pOH=14的公式，未考虑体温高于室温时Kw增大，导致pOH计算错误"
+      },
+      "pair_id": "pair-v2:19",
+      "persona_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:high",
+      "row_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:high:deficit",
+      "seed": 7564113334098916679,
+      "target_node": "弱电解质电离平衡"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:09:弱电解质电离平衡",
+      "curriculum_exposure": [
+        "弱电解质电离平衡"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆pOH与pH的关系，忽略温度对Kw的影响",
+      "failure_id": "弱电解质电离平衡-电离平衡常数与计算#failure-00",
+      "failure_symptom": "学生直接套用常温下pH+pOH=14的公式，未考虑体温高于室温时Kw增大，导致pOH计算错误",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:19",
+      "persona_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:high",
+      "row_id": "persona-v2:anchor-v2:09:弱电解质电离平衡:high:control",
+      "seed": 7564113334098916679,
+      "target_node": "弱电解质电离平衡"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:10:晶体结构",
+      "curriculum_exposure": [
+        "晶体结构"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆晶体类型与化学键类型，认为有共价键就是原子晶体",
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "failure_symptom": "误判C₆₀晶体为原子晶体，或认为干冰中存在共价键所以是原子晶体",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆晶体类型与化学键类型，认为有共价键就是原子晶体",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "误判C₆₀晶体为原子晶体，或认为干冰中存在共价键所以是原子晶体"
+      },
+      "pair_id": "pair-v2:20",
+      "persona_id": "persona-v2:anchor-v2:10:晶体结构:low",
+      "row_id": "persona-v2:anchor-v2:10:晶体结构:low:deficit",
+      "seed": 13277524344414974790,
+      "target_node": "晶体结构"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:10:晶体结构",
+      "curriculum_exposure": [
+        "晶体结构"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆晶体类型与化学键类型，认为有共价键就是原子晶体",
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "failure_symptom": "误判C₆₀晶体为原子晶体，或认为干冰中存在共价键所以是原子晶体",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:20",
+      "persona_id": "persona-v2:anchor-v2:10:晶体结构:low",
+      "row_id": "persona-v2:anchor-v2:10:晶体结构:low:control",
+      "seed": 13277524344414974790,
+      "target_node": "晶体结构"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:10:晶体结构",
+      "curriculum_exposure": [
+        "晶体结构"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆晶体类型与化学键类型，认为有共价键就是原子晶体",
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "failure_symptom": "误判C₆₀晶体为原子晶体，或认为干冰中存在共价键所以是原子晶体",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆晶体类型与化学键类型，认为有共价键就是原子晶体",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "误判C₆₀晶体为原子晶体，或认为干冰中存在共价键所以是原子晶体"
+      },
+      "pair_id": "pair-v2:21",
+      "persona_id": "persona-v2:anchor-v2:10:晶体结构:high",
+      "row_id": "persona-v2:anchor-v2:10:晶体结构:high:deficit",
+      "seed": 4337703413647627377,
+      "target_node": "晶体结构"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:10:晶体结构",
+      "curriculum_exposure": [
+        "晶体结构"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆晶体类型与化学键类型，认为有共价键就是原子晶体",
+      "failure_id": "晶体结构-晶体类型与性质#failure-00",
+      "failure_symptom": "误判C₆₀晶体为原子晶体，或认为干冰中存在共价键所以是原子晶体",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:21",
+      "persona_id": "persona-v2:anchor-v2:10:晶体结构:high",
+      "row_id": "persona-v2:anchor-v2:10:晶体结构:high:control",
+      "seed": 4337703413647627377,
+      "target_node": "晶体结构"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:11:有机推断",
+      "curriculum_exposure": [
+        "有机推断"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆反应条件与反应类型的对应关系",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "failure_symptom": "看到光照就认为是取代反应，但实际光照可能用于自由基反应或特定条件，学生易忽略具体反应物",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆反应条件与反应类型的对应关系",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "看到光照就认为是取代反应，但实际光照可能用于自由基反应或特定条件，学生易忽略具体反应物"
+      },
+      "pair_id": "pair-v2:22",
+      "persona_id": "persona-v2:anchor-v2:11:有机推断:low",
+      "row_id": "persona-v2:anchor-v2:11:有机推断:low:deficit",
+      "seed": 8485546887475686498,
+      "target_node": "有机推断"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:11:有机推断",
+      "curriculum_exposure": [
+        "有机推断"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆反应条件与反应类型的对应关系",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "failure_symptom": "看到光照就认为是取代反应，但实际光照可能用于自由基反应或特定条件，学生易忽略具体反应物",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:22",
+      "persona_id": "persona-v2:anchor-v2:11:有机推断:low",
+      "row_id": "persona-v2:anchor-v2:11:有机推断:low:control",
+      "seed": 8485546887475686498,
+      "target_node": "有机推断"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:11:有机推断",
+      "curriculum_exposure": [
+        "有机推断"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆反应条件与反应类型的对应关系",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "failure_symptom": "看到光照就认为是取代反应，但实际光照可能用于自由基反应或特定条件，学生易忽略具体反应物",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆反应条件与反应类型的对应关系",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "看到光照就认为是取代反应，但实际光照可能用于自由基反应或特定条件，学生易忽略具体反应物"
+      },
+      "pair_id": "pair-v2:23",
+      "persona_id": "persona-v2:anchor-v2:11:有机推断:high",
+      "row_id": "persona-v2:anchor-v2:11:有机推断:high:deficit",
+      "seed": 16771509841738480941,
+      "target_node": "有机推断"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:11:有机推断",
+      "curriculum_exposure": [
+        "有机推断"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆反应条件与反应类型的对应关系",
+      "failure_id": "有机推断-反应类型判断#failure-00",
+      "failure_symptom": "看到光照就认为是取代反应，但实际光照可能用于自由基反应或特定条件，学生易忽略具体反应物",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:23",
+      "persona_id": "persona-v2:anchor-v2:11:有机推断:high",
+      "row_id": "persona-v2:anchor-v2:11:有机推断:high:control",
+      "seed": 16771509841738480941,
+      "target_node": "有机推断"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:12:氧化还原反应",
+      "curriculum_exposure": [
+        "氧化还原反应"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆氧化还原反应规律中的‘强制弱’方向，误认为强氧化剂与强还原剂反应生成弱氧化剂和弱还原剂是唯一可能。",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "failure_symptom": "学生无法判断归中反应（如Cl₂+NaOH生成NaCl和NaClO）或歧化反应（如NO₂+H₂O）中电子转移方向，认为反应不可能发生。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆氧化还原反应规律中的‘强制弱’方向，误认为强氧化剂与强还原剂反应生成弱氧化剂和弱还原剂是唯一可能。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生无法判断归中反应（如Cl₂+NaOH生成NaCl和NaClO）或歧化反应（如NO₂+H₂O）中电子转移方向，认为反应不可能发生。"
+      },
+      "pair_id": "pair-v2:24",
+      "persona_id": "persona-v2:anchor-v2:12:氧化还原反应:low",
+      "row_id": "persona-v2:anchor-v2:12:氧化还原反应:low:deficit",
+      "seed": 3583305008902695269,
+      "target_node": "氧化还原反应"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:12:氧化还原反应",
+      "curriculum_exposure": [
+        "氧化还原反应"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆氧化还原反应规律中的‘强制弱’方向，误认为强氧化剂与强还原剂反应生成弱氧化剂和弱还原剂是唯一可能。",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "failure_symptom": "学生无法判断归中反应（如Cl₂+NaOH生成NaCl和NaClO）或歧化反应（如NO₂+H₂O）中电子转移方向，认为反应不可能发生。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:24",
+      "persona_id": "persona-v2:anchor-v2:12:氧化还原反应:low",
+      "row_id": "persona-v2:anchor-v2:12:氧化还原反应:low:control",
+      "seed": 3583305008902695269,
+      "target_node": "氧化还原反应"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:12:氧化还原反应",
+      "curriculum_exposure": [
+        "氧化还原反应"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆氧化还原反应规律中的‘强制弱’方向，误认为强氧化剂与强还原剂反应生成弱氧化剂和弱还原剂是唯一可能。",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "failure_symptom": "学生无法判断归中反应（如Cl₂+NaOH生成NaCl和NaClO）或歧化反应（如NO₂+H₂O）中电子转移方向，认为反应不可能发生。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆氧化还原反应规律中的‘强制弱’方向，误认为强氧化剂与强还原剂反应生成弱氧化剂和弱还原剂是唯一可能。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生无法判断归中反应（如Cl₂+NaOH生成NaCl和NaClO）或歧化反应（如NO₂+H₂O）中电子转移方向，认为反应不可能发生。"
+      },
+      "pair_id": "pair-v2:25",
+      "persona_id": "persona-v2:anchor-v2:12:氧化还原反应:high",
+      "row_id": "persona-v2:anchor-v2:12:氧化还原反应:high:deficit",
+      "seed": 2872533659477289076,
+      "target_node": "氧化还原反应"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:12:氧化还原反应",
+      "curriculum_exposure": [
+        "氧化还原反应"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆氧化还原反应规律中的‘强制弱’方向，误认为强氧化剂与强还原剂反应生成弱氧化剂和弱还原剂是唯一可能。",
+      "failure_id": "氧化还原反应-反应规律与应用#failure-00",
+      "failure_symptom": "学生无法判断归中反应（如Cl₂+NaOH生成NaCl和NaClO）或歧化反应（如NO₂+H₂O）中电子转移方向，认为反应不可能发生。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:25",
+      "persona_id": "persona-v2:anchor-v2:12:氧化还原反应:high",
+      "row_id": "persona-v2:anchor-v2:12:氧化还原反应:high:control",
+      "seed": 2872533659477289076,
+      "target_node": "氧化还原反应"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:13:氮及其化合物",
+      "curriculum_exposure": [
+        "氮及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆氨气的物理性质，将刺激性气味误记为无味",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "failure_symptom": "学生误选氨气是无色无味气体（如真题1中选D为正确选项）",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆氨气的物理性质，将刺激性气味误记为无味",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误选氨气是无色无味气体（如真题1中选D为正确选项）"
+      },
+      "pair_id": "pair-v2:26",
+      "persona_id": "persona-v2:anchor-v2:13:氮及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:13:氮及其化合物:low:deficit",
+      "seed": 8919576684661379940,
+      "target_node": "氮及其化合物"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:13:氮及其化合物",
+      "curriculum_exposure": [
+        "氮及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆氨气的物理性质，将刺激性气味误记为无味",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "failure_symptom": "学生误选氨气是无色无味气体（如真题1中选D为正确选项）",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:26",
+      "persona_id": "persona-v2:anchor-v2:13:氮及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:13:氮及其化合物:low:control",
+      "seed": 8919576684661379940,
+      "target_node": "氮及其化合物"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:13:氮及其化合物",
+      "curriculum_exposure": [
+        "氮及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆氨气的物理性质，将刺激性气味误记为无味",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "failure_symptom": "学生误选氨气是无色无味气体（如真题1中选D为正确选项）",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆氨气的物理性质，将刺激性气味误记为无味",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误选氨气是无色无味气体（如真题1中选D为正确选项）"
+      },
+      "pair_id": "pair-v2:27",
+      "persona_id": "persona-v2:anchor-v2:13:氮及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:13:氮及其化合物:high:deficit",
+      "seed": 7491679693332125055,
+      "target_node": "氮及其化合物"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:13:氮及其化合物",
+      "curriculum_exposure": [
+        "氮及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆氨气的物理性质，将刺激性气味误记为无味",
+      "failure_id": "氮及其化合物-氨与铵盐的性质#failure-00",
+      "failure_symptom": "学生误选氨气是无色无味气体（如真题1中选D为正确选项）",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:27",
+      "persona_id": "persona-v2:anchor-v2:13:氮及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:13:氮及其化合物:high:control",
+      "seed": 7491679693332125055,
+      "target_node": "氮及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:14:氯及其化合物",
+      "curriculum_exposure": [
+        "氯及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆漂白性来源，认为氯单质有漂白性",
+      "failure_id": "氯及其化合物#failure-00",
+      "failure_symptom": "错误判断干燥氯气能使有色布条褪色，或在选项中认为Cl2分子是漂白剂",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆漂白性来源，认为氯单质有漂白性",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "错误判断干燥氯气能使有色布条褪色，或在选项中认为Cl2分子是漂白剂"
+      },
+      "pair_id": "pair-v2:28",
+      "persona_id": "persona-v2:anchor-v2:14:氯及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:14:氯及其化合物:low:deficit",
+      "seed": 9287513481082411016,
+      "target_node": "氯及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:14:氯及其化合物",
+      "curriculum_exposure": [
+        "氯及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆漂白性来源，认为氯单质有漂白性",
+      "failure_id": "氯及其化合物#failure-00",
+      "failure_symptom": "错误判断干燥氯气能使有色布条褪色，或在选项中认为Cl2分子是漂白剂",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:28",
+      "persona_id": "persona-v2:anchor-v2:14:氯及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:14:氯及其化合物:low:control",
+      "seed": 9287513481082411016,
+      "target_node": "氯及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:14:氯及其化合物",
+      "curriculum_exposure": [
+        "氯及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆漂白性来源，认为氯单质有漂白性",
+      "failure_id": "氯及其化合物#failure-00",
+      "failure_symptom": "错误判断干燥氯气能使有色布条褪色，或在选项中认为Cl2分子是漂白剂",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆漂白性来源，认为氯单质有漂白性",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "错误判断干燥氯气能使有色布条褪色，或在选项中认为Cl2分子是漂白剂"
+      },
+      "pair_id": "pair-v2:29",
+      "persona_id": "persona-v2:anchor-v2:14:氯及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:14:氯及其化合物:high:deficit",
+      "seed": 18229230484997126001,
+      "target_node": "氯及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:14:氯及其化合物",
+      "curriculum_exposure": [
+        "氯及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆漂白性来源，认为氯单质有漂白性",
+      "failure_id": "氯及其化合物#failure-00",
+      "failure_symptom": "错误判断干燥氯气能使有色布条褪色，或在选项中认为Cl2分子是漂白剂",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:29",
+      "persona_id": "persona-v2:anchor-v2:14:氯及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:14:氯及其化合物:high:control",
+      "seed": 18229230484997126001,
+      "target_node": "氯及其化合物"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:15:烷烃",
+      "curriculum_exposure": [
+        "烷烃"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "以为只要通式相同且分子组成相差CH2就是同系物，忽略结构必须相似的前提，未考虑官能团异构（如烯烃与环烷烃）。",
+      "failure_id": "烷烃#failure-00",
+      "failure_symptom": "判断同系物时直接被CnH2n通式迷惑而出错。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "以为只要通式相同且分子组成相差CH2就是同系物，忽略结构必须相似的前提，未考虑官能团异构（如烯烃与环烷烃）。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "判断同系物时直接被CnH2n通式迷惑而出错。"
+      },
+      "pair_id": "pair-v2:30",
+      "persona_id": "persona-v2:anchor-v2:15:烷烃:low",
+      "row_id": "persona-v2:anchor-v2:15:烷烃:low:deficit",
+      "seed": 15265469170450559797,
+      "target_node": "烷烃"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:15:烷烃",
+      "curriculum_exposure": [
+        "烷烃"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "以为只要通式相同且分子组成相差CH2就是同系物，忽略结构必须相似的前提，未考虑官能团异构（如烯烃与环烷烃）。",
+      "failure_id": "烷烃#failure-00",
+      "failure_symptom": "判断同系物时直接被CnH2n通式迷惑而出错。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:30",
+      "persona_id": "persona-v2:anchor-v2:15:烷烃:low",
+      "row_id": "persona-v2:anchor-v2:15:烷烃:low:control",
+      "seed": 15265469170450559797,
+      "target_node": "烷烃"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:15:烷烃",
+      "curriculum_exposure": [
+        "烷烃"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "以为只要通式相同且分子组成相差CH2就是同系物，忽略结构必须相似的前提，未考虑官能团异构（如烯烃与环烷烃）。",
+      "failure_id": "烷烃#failure-00",
+      "failure_symptom": "判断同系物时直接被CnH2n通式迷惑而出错。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "以为只要通式相同且分子组成相差CH2就是同系物，忽略结构必须相似的前提，未考虑官能团异构（如烯烃与环烷烃）。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "判断同系物时直接被CnH2n通式迷惑而出错。"
+      },
+      "pair_id": "pair-v2:31",
+      "persona_id": "persona-v2:anchor-v2:15:烷烃:high",
+      "row_id": "persona-v2:anchor-v2:15:烷烃:high:deficit",
+      "seed": 6001388052127943451,
+      "target_node": "烷烃"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:15:烷烃",
+      "curriculum_exposure": [
+        "烷烃"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "以为只要通式相同且分子组成相差CH2就是同系物，忽略结构必须相似的前提，未考虑官能团异构（如烯烃与环烷烃）。",
+      "failure_id": "烷烃#failure-00",
+      "failure_symptom": "判断同系物时直接被CnH2n通式迷惑而出错。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:31",
+      "persona_id": "persona-v2:anchor-v2:15:烷烃:high",
+      "row_id": "persona-v2:anchor-v2:15:烷烃:high:control",
+      "seed": 6001388052127943451,
+      "target_node": "烷烃"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:16:物质分类",
+      "curriculum_exposure": [
+        "物质分类"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆酸酐的定义，认为所有酸酐都是氧化物",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "failure_symptom": "学生误判HCrO₂的酸酐为CrO₂或忽略非氧化物酸酐的存在",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆酸酐的定义，认为所有酸酐都是氧化物",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误判HCrO₂的酸酐为CrO₂或忽略非氧化物酸酐的存在"
+      },
+      "pair_id": "pair-v2:32",
+      "persona_id": "persona-v2:anchor-v2:16:物质分类:low",
+      "row_id": "persona-v2:anchor-v2:16:物质分类:low:deficit",
+      "seed": 13790472070066995679,
+      "target_node": "物质分类"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:16:物质分类",
+      "curriculum_exposure": [
+        "物质分类"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆酸酐的定义，认为所有酸酐都是氧化物",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "failure_symptom": "学生误判HCrO₂的酸酐为CrO₂或忽略非氧化物酸酐的存在",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:32",
+      "persona_id": "persona-v2:anchor-v2:16:物质分类:low",
+      "row_id": "persona-v2:anchor-v2:16:物质分类:low:control",
+      "seed": 13790472070066995679,
+      "target_node": "物质分类"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:16:物质分类",
+      "curriculum_exposure": [
+        "物质分类"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆酸酐的定义，认为所有酸酐都是氧化物",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "failure_symptom": "学生误判HCrO₂的酸酐为CrO₂或忽略非氧化物酸酐的存在",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆酸酐的定义，认为所有酸酐都是氧化物",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误判HCrO₂的酸酐为CrO₂或忽略非氧化物酸酐的存在"
+      },
+      "pair_id": "pair-v2:33",
+      "persona_id": "persona-v2:anchor-v2:16:物质分类:high",
+      "row_id": "persona-v2:anchor-v2:16:物质分类:high:deficit",
+      "seed": 12510855212470886503,
+      "target_node": "物质分类"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:16:物质分类",
+      "curriculum_exposure": [
+        "物质分类"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆酸酐的定义，认为所有酸酐都是氧化物",
+      "failure_id": "物质分类-化学概念与逻辑#failure-00",
+      "failure_symptom": "学生误判HCrO₂的酸酐为CrO₂或忽略非氧化物酸酐的存在",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:33",
+      "persona_id": "persona-v2:anchor-v2:16:物质分类:high",
+      "row_id": "persona-v2:anchor-v2:16:物质分类:high:control",
+      "seed": 12510855212470886503,
+      "target_node": "物质分类"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:17:物质制备",
+      "curriculum_exposure": [
+        "物质制备"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆反应物添加顺序对产物生成的影响",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "failure_symptom": "在侯氏制碱法中错误地先通CO₂后通NH₃，导致无法生成NaHCO₃沉淀",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆反应物添加顺序对产物生成的影响",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "在侯氏制碱法中错误地先通CO₂后通NH₃，导致无法生成NaHCO₃沉淀"
+      },
+      "pair_id": "pair-v2:34",
+      "persona_id": "persona-v2:anchor-v2:17:物质制备:low",
+      "row_id": "persona-v2:anchor-v2:17:物质制备:low:deficit",
+      "seed": 13694995027564074033,
+      "target_node": "物质制备"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:17:物质制备",
+      "curriculum_exposure": [
+        "物质制备"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆反应物添加顺序对产物生成的影响",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "failure_symptom": "在侯氏制碱法中错误地先通CO₂后通NH₃，导致无法生成NaHCO₃沉淀",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:34",
+      "persona_id": "persona-v2:anchor-v2:17:物质制备:low",
+      "row_id": "persona-v2:anchor-v2:17:物质制备:low:control",
+      "seed": 13694995027564074033,
+      "target_node": "物质制备"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:17:物质制备",
+      "curriculum_exposure": [
+        "物质制备"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆反应物添加顺序对产物生成的影响",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "failure_symptom": "在侯氏制碱法中错误地先通CO₂后通NH₃，导致无法生成NaHCO₃沉淀",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆反应物添加顺序对产物生成的影响",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "在侯氏制碱法中错误地先通CO₂后通NH₃，导致无法生成NaHCO₃沉淀"
+      },
+      "pair_id": "pair-v2:35",
+      "persona_id": "persona-v2:anchor-v2:17:物质制备:high",
+      "row_id": "persona-v2:anchor-v2:17:物质制备:high:deficit",
+      "seed": 3732301656249116148,
+      "target_node": "物质制备"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:17:物质制备",
+      "curriculum_exposure": [
+        "物质制备"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆反应物添加顺序对产物生成的影响",
+      "failure_id": "物质制备-无机物制备与条件控制#failure-00",
+      "failure_symptom": "在侯氏制碱法中错误地先通CO₂后通NH₃，导致无法生成NaHCO₃沉淀",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:35",
+      "persona_id": "persona-v2:anchor-v2:17:物质制备:high",
+      "row_id": "persona-v2:anchor-v2:17:物质制备:high:control",
+      "seed": 3732301656249116148,
+      "target_node": "物质制备"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:18:物质检验",
+      "curriculum_exposure": [
+        "物质检验"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆有机官能团检验试剂的适用条件",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "failure_symptom": "学生误用新制Cu(OH)₂检验醛基时未先中和酸性环境，或误用溴水检验碳碳双键时忽略苯酚的干扰",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆有机官能团检验试剂的适用条件",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误用新制Cu(OH)₂检验醛基时未先中和酸性环境，或误用溴水检验碳碳双键时忽略苯酚的干扰"
+      },
+      "pair_id": "pair-v2:36",
+      "persona_id": "persona-v2:anchor-v2:18:物质检验:low",
+      "row_id": "persona-v2:anchor-v2:18:物质检验:low:deficit",
+      "seed": 3458001291042620489,
+      "target_node": "物质检验"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:18:物质检验",
+      "curriculum_exposure": [
+        "物质检验"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆有机官能团检验试剂的适用条件",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "failure_symptom": "学生误用新制Cu(OH)₂检验醛基时未先中和酸性环境，或误用溴水检验碳碳双键时忽略苯酚的干扰",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:36",
+      "persona_id": "persona-v2:anchor-v2:18:物质检验:low",
+      "row_id": "persona-v2:anchor-v2:18:物质检验:low:control",
+      "seed": 3458001291042620489,
+      "target_node": "物质检验"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:18:物质检验",
+      "curriculum_exposure": [
+        "物质检验"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆有机官能团检验试剂的适用条件",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "failure_symptom": "学生误用新制Cu(OH)₂检验醛基时未先中和酸性环境，或误用溴水检验碳碳双键时忽略苯酚的干扰",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆有机官能团检验试剂的适用条件",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误用新制Cu(OH)₂检验醛基时未先中和酸性环境，或误用溴水检验碳碳双键时忽略苯酚的干扰"
+      },
+      "pair_id": "pair-v2:37",
+      "persona_id": "persona-v2:anchor-v2:18:物质检验:high",
+      "row_id": "persona-v2:anchor-v2:18:物质检验:high:deficit",
+      "seed": 7779882334270280039,
+      "target_node": "物质检验"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:18:物质检验",
+      "curriculum_exposure": [
+        "物质检验"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆有机官能团检验试剂的适用条件",
+      "failure_id": "物质检验-有机物检验与鉴别#failure-00",
+      "failure_symptom": "学生误用新制Cu(OH)₂检验醛基时未先中和酸性环境，或误用溴水检验碳碳双键时忽略苯酚的干扰",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:37",
+      "persona_id": "persona-v2:anchor-v2:18:物质检验:high",
+      "row_id": "persona-v2:anchor-v2:18:物质检验:high:control",
+      "seed": 7779882334270280039,
+      "target_node": "物质检验"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:19:电解质与非电解质",
+      "curriculum_exposure": [
+        "电解质与非电解质"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆“水溶液导电”与“自身电离”，将 SO2、CO2、NH3 等误判为电解质",
+      "failure_id": "电解质与非电解质#failure-00",
+      "failure_symptom": "看到“溶于水能导电”就不假思索归为电解质",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆“水溶液导电”与“自身电离”，将 SO2、CO2、NH3 等误判为电解质",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "看到“溶于水能导电”就不假思索归为电解质"
+      },
+      "pair_id": "pair-v2:38",
+      "persona_id": "persona-v2:anchor-v2:19:电解质与非电解质:low",
+      "row_id": "persona-v2:anchor-v2:19:电解质与非电解质:low:deficit",
+      "seed": 2060788689157575616,
+      "target_node": "电解质与非电解质"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:19:电解质与非电解质",
+      "curriculum_exposure": [
+        "电解质与非电解质"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆“水溶液导电”与“自身电离”，将 SO2、CO2、NH3 等误判为电解质",
+      "failure_id": "电解质与非电解质#failure-00",
+      "failure_symptom": "看到“溶于水能导电”就不假思索归为电解质",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:38",
+      "persona_id": "persona-v2:anchor-v2:19:电解质与非电解质:low",
+      "row_id": "persona-v2:anchor-v2:19:电解质与非电解质:low:control",
+      "seed": 2060788689157575616,
+      "target_node": "电解质与非电解质"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:19:电解质与非电解质",
+      "curriculum_exposure": [
+        "电解质与非电解质"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆“水溶液导电”与“自身电离”，将 SO2、CO2、NH3 等误判为电解质",
+      "failure_id": "电解质与非电解质#failure-00",
+      "failure_symptom": "看到“溶于水能导电”就不假思索归为电解质",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆“水溶液导电”与“自身电离”，将 SO2、CO2、NH3 等误判为电解质",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "看到“溶于水能导电”就不假思索归为电解质"
+      },
+      "pair_id": "pair-v2:39",
+      "persona_id": "persona-v2:anchor-v2:19:电解质与非电解质:high",
+      "row_id": "persona-v2:anchor-v2:19:电解质与非电解质:high:deficit",
+      "seed": 449825161486338601,
+      "target_node": "电解质与非电解质"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:19:电解质与非电解质",
+      "curriculum_exposure": [
+        "电解质与非电解质"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆“水溶液导电”与“自身电离”，将 SO2、CO2、NH3 等误判为电解质",
+      "failure_id": "电解质与非电解质#failure-00",
+      "failure_symptom": "看到“溶于水能导电”就不假思索归为电解质",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:39",
+      "persona_id": "persona-v2:anchor-v2:19:电解质与非电解质:high",
+      "row_id": "persona-v2:anchor-v2:19:电解质与非电解质:high:control",
+      "seed": 449825161486338601,
+      "target_node": "电解质与非电解质"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:20:盐类水解",
+      "curriculum_exposure": [
+        "盐类水解"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆水解平衡移动与电离平衡移动的方向判断",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "failure_symptom": "学生误认为加热NaHCO₃溶液时，HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，导致对pH变化曲线解释错误。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆水解平衡移动与电离平衡移动的方向判断",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误认为加热NaHCO₃溶液时，HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，导致对pH变化曲线解释错误。"
+      },
+      "pair_id": "pair-v2:40",
+      "persona_id": "persona-v2:anchor-v2:20:盐类水解:low",
+      "row_id": "persona-v2:anchor-v2:20:盐类水解:low:deficit",
+      "seed": 5842165184873044053,
+      "target_node": "盐类水解"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:20:盐类水解",
+      "curriculum_exposure": [
+        "盐类水解"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆水解平衡移动与电离平衡移动的方向判断",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "failure_symptom": "学生误认为加热NaHCO₃溶液时，HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，导致对pH变化曲线解释错误。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:40",
+      "persona_id": "persona-v2:anchor-v2:20:盐类水解:low",
+      "row_id": "persona-v2:anchor-v2:20:盐类水解:low:control",
+      "seed": 5842165184873044053,
+      "target_node": "盐类水解"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:20:盐类水解",
+      "curriculum_exposure": [
+        "盐类水解"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆水解平衡移动与电离平衡移动的方向判断",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "failure_symptom": "学生误认为加热NaHCO₃溶液时，HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，导致对pH变化曲线解释错误。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆水解平衡移动与电离平衡移动的方向判断",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误认为加热NaHCO₃溶液时，HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，导致对pH变化曲线解释错误。"
+      },
+      "pair_id": "pair-v2:41",
+      "persona_id": "persona-v2:anchor-v2:20:盐类水解:high",
+      "row_id": "persona-v2:anchor-v2:20:盐类水解:high:deficit",
+      "seed": 3540847985320848181,
+      "target_node": "盐类水解"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:20:盐类水解",
+      "curriculum_exposure": [
+        "盐类水解"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆水解平衡移动与电离平衡移动的方向判断",
+      "failure_id": "盐类水解-水解平衡与影响因素#failure-00",
+      "failure_symptom": "学生误认为加热NaHCO₃溶液时，HCO₃⁻电离增强导致pH下降，而忽略水解平衡也受影响，导致对pH变化曲线解释错误。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:41",
+      "persona_id": "persona-v2:anchor-v2:20:盐类水解:high",
+      "row_id": "persona-v2:anchor-v2:20:盐类水解:high:control",
+      "seed": 3540847985320848181,
+      "target_node": "盐类水解"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:21:硫及其化合物",
+      "curriculum_exposure": [
+        "硫及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆工业尾气吸收与实验室尾气吸收的目的和试剂",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "failure_symptom": "学生误选NaOH溶液或新制氯水作为工业吸收剂，忽略生成化肥的经济性",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆工业尾气吸收与实验室尾气吸收的目的和试剂",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误选NaOH溶液或新制氯水作为工业吸收剂，忽略生成化肥的经济性"
+      },
+      "pair_id": "pair-v2:42",
+      "persona_id": "persona-v2:anchor-v2:21:硫及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:21:硫及其化合物:low:deficit",
+      "seed": 2337902045089543290,
+      "target_node": "硫及其化合物"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:21:硫及其化合物",
+      "curriculum_exposure": [
+        "硫及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆工业尾气吸收与实验室尾气吸收的目的和试剂",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "failure_symptom": "学生误选NaOH溶液或新制氯水作为工业吸收剂，忽略生成化肥的经济性",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:42",
+      "persona_id": "persona-v2:anchor-v2:21:硫及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:21:硫及其化合物:low:control",
+      "seed": 2337902045089543290,
+      "target_node": "硫及其化合物"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:21:硫及其化合物",
+      "curriculum_exposure": [
+        "硫及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆工业尾气吸收与实验室尾气吸收的目的和试剂",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "failure_symptom": "学生误选NaOH溶液或新制氯水作为工业吸收剂，忽略生成化肥的经济性",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆工业尾气吸收与实验室尾气吸收的目的和试剂",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误选NaOH溶液或新制氯水作为工业吸收剂，忽略生成化肥的经济性"
+      },
+      "pair_id": "pair-v2:43",
+      "persona_id": "persona-v2:anchor-v2:21:硫及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:21:硫及其化合物:high:deficit",
+      "seed": 8511011663182709432,
+      "target_node": "硫及其化合物"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:21:硫及其化合物",
+      "curriculum_exposure": [
+        "硫及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆工业尾气吸收与实验室尾气吸收的目的和试剂",
+      "failure_id": "硫及其化合物-工业制备与尾气处理#failure-00",
+      "failure_symptom": "学生误选NaOH溶液或新制氯水作为工业吸收剂，忽略生成化肥的经济性",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:43",
+      "persona_id": "persona-v2:anchor-v2:21:硫及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:21:硫及其化合物:high:control",
+      "seed": 8511011663182709432,
+      "target_node": "硫及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:22:芳香烃",
+      "curriculum_exposure": [
+        "芳香烃"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆苯使溴水褪色的原理，把物理萃取当成化学取代反应。",
+      "failure_id": "芳香烃#failure-00",
+      "failure_symptom": "看到“苯使溴水褪色”就以为发生了加成或取代，错选实验验证方法。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆苯使溴水褪色的原理，把物理萃取当成化学取代反应。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "看到“苯使溴水褪色”就以为发生了加成或取代，错选实验验证方法。"
+      },
+      "pair_id": "pair-v2:44",
+      "persona_id": "persona-v2:anchor-v2:22:芳香烃:low",
+      "row_id": "persona-v2:anchor-v2:22:芳香烃:low:deficit",
+      "seed": 10554005985622981264,
+      "target_node": "芳香烃"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:22:芳香烃",
+      "curriculum_exposure": [
+        "芳香烃"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆苯使溴水褪色的原理，把物理萃取当成化学取代反应。",
+      "failure_id": "芳香烃#failure-00",
+      "failure_symptom": "看到“苯使溴水褪色”就以为发生了加成或取代，错选实验验证方法。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:44",
+      "persona_id": "persona-v2:anchor-v2:22:芳香烃:low",
+      "row_id": "persona-v2:anchor-v2:22:芳香烃:low:control",
+      "seed": 10554005985622981264,
+      "target_node": "芳香烃"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:22:芳香烃",
+      "curriculum_exposure": [
+        "芳香烃"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆苯使溴水褪色的原理，把物理萃取当成化学取代反应。",
+      "failure_id": "芳香烃#failure-00",
+      "failure_symptom": "看到“苯使溴水褪色”就以为发生了加成或取代，错选实验验证方法。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆苯使溴水褪色的原理，把物理萃取当成化学取代反应。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "看到“苯使溴水褪色”就以为发生了加成或取代，错选实验验证方法。"
+      },
+      "pair_id": "pair-v2:45",
+      "persona_id": "persona-v2:anchor-v2:22:芳香烃:high",
+      "row_id": "persona-v2:anchor-v2:22:芳香烃:high:deficit",
+      "seed": 15039763010641134383,
+      "target_node": "芳香烃"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:22:芳香烃",
+      "curriculum_exposure": [
+        "芳香烃"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆苯使溴水褪色的原理，把物理萃取当成化学取代反应。",
+      "failure_id": "芳香烃#failure-00",
+      "failure_symptom": "看到“苯使溴水褪色”就以为发生了加成或取代，错选实验验证方法。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:45",
+      "persona_id": "persona-v2:anchor-v2:22:芳香烃:high",
+      "row_id": "persona-v2:anchor-v2:22:芳香烃:high:control",
+      "seed": 15039763010641134383,
+      "target_node": "芳香烃"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:23:误差分析",
+      "curriculum_exposure": [
+        "误差分析"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "乱套“仰小俯大”口诀，不理解量筒与容量瓶的视角差异。量筒是“流出式”，仰视时认为液面在刻度处，实际已加多；容量瓶定容时，仰视则水加多。",
+      "failure_id": "误差分析#failure-00",
+      "failure_symptom": "一看到仰视/俯视就背口诀，但时常背反或直接判错，题型一变就懵。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "乱套“仰小俯大”口诀，不理解量筒与容量瓶的视角差异。量筒是“流出式”，仰视时认为液面在刻度处，实际已加多；容量瓶定容时，仰视则水加多。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "一看到仰视/俯视就背口诀，但时常背反或直接判错，题型一变就懵。"
+      },
+      "pair_id": "pair-v2:46",
+      "persona_id": "persona-v2:anchor-v2:23:误差分析:low",
+      "row_id": "persona-v2:anchor-v2:23:误差分析:low:deficit",
+      "seed": 3052014981256529962,
+      "target_node": "误差分析"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:23:误差分析",
+      "curriculum_exposure": [
+        "误差分析"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "乱套“仰小俯大”口诀，不理解量筒与容量瓶的视角差异。量筒是“流出式”，仰视时认为液面在刻度处，实际已加多；容量瓶定容时，仰视则水加多。",
+      "failure_id": "误差分析#failure-00",
+      "failure_symptom": "一看到仰视/俯视就背口诀，但时常背反或直接判错，题型一变就懵。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:46",
+      "persona_id": "persona-v2:anchor-v2:23:误差分析:low",
+      "row_id": "persona-v2:anchor-v2:23:误差分析:low:control",
+      "seed": 3052014981256529962,
+      "target_node": "误差分析"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:23:误差分析",
+      "curriculum_exposure": [
+        "误差分析"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "乱套“仰小俯大”口诀，不理解量筒与容量瓶的视角差异。量筒是“流出式”，仰视时认为液面在刻度处，实际已加多；容量瓶定容时，仰视则水加多。",
+      "failure_id": "误差分析#failure-00",
+      "failure_symptom": "一看到仰视/俯视就背口诀，但时常背反或直接判错，题型一变就懵。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.63,
+        "reasoning_skill": 0.63,
+        "target_skill": 0.63
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "乱套“仰小俯大”口诀，不理解量筒与容量瓶的视角差异。量筒是“流出式”，仰视时认为液面在刻度处，实际已加多；容量瓶定容时，仰视则水加多。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "一看到仰视/俯视就背口诀，但时常背反或直接判错，题型一变就懵。"
+      },
+      "pair_id": "pair-v2:47",
+      "persona_id": "persona-v2:anchor-v2:23:误差分析:high",
+      "row_id": "persona-v2:anchor-v2:23:误差分析:high:deficit",
+      "seed": 15757156743577998889,
+      "target_node": "误差分析"
+    },
+    {
+      "ability_band": "higher",
+      "anchor_id": "anchor-v2:23:误差分析",
+      "curriculum_exposure": [
+        "误差分析"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "乱套“仰小俯大”口诀，不理解量筒与容量瓶的视角差异。量筒是“流出式”，仰视时认为液面在刻度处，实际已加多；容量瓶定容时，仰视则水加多。",
+      "failure_id": "误差分析#failure-00",
+      "failure_symptom": "一看到仰视/俯视就背口诀，但时常背反或直接判错，题型一变就懵。",
+      "local_skill_vector": {
+        "ability_band": "higher",
+        "prerequisite_skill": 0.75,
+        "reasoning_skill": 0.75,
+        "target_skill": 0.75
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:47",
+      "persona_id": "persona-v2:anchor-v2:23:误差分析:high",
+      "row_id": "persona-v2:anchor-v2:23:误差分析:high:control",
+      "seed": 15757156743577998889,
+      "target_node": "误差分析"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:24:铁及其化合物",
+      "curriculum_exposure": [
+        "铁及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆Fe²⁺和Fe³⁺的氧化还原性质，误认为Fe³⁺能被Fe还原为Fe单质。",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "failure_symptom": "学生误选锌粉或镁粉除去FeCl₂中的FeCl₃，或认为铁粉会引入新杂质。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "cause": "混淆Fe²⁺和Fe³⁺的氧化还原性质，误认为Fe³⁺能被Fe还原为Fe单质。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误选锌粉或镁粉除去FeCl₂中的FeCl₃，或认为铁粉会引入新杂质。"
+      },
+      "pair_id": "pair-v2:48",
+      "persona_id": "persona-v2:anchor-v2:24:铁及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:24:铁及其化合物:low:deficit",
+      "seed": 4026640441410581981,
+      "target_node": "铁及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:24:铁及其化合物",
+      "curriculum_exposure": [
+        "铁及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆Fe²⁺和Fe³⁺的氧化还原性质，误认为Fe³⁺能被Fe还原为Fe单质。",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "failure_symptom": "学生误选锌粉或镁粉除去FeCl₂中的FeCl₃，或认为铁粉会引入新杂质。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.15,
+        "level": "low",
+        "slip_rate": 0.05
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:48",
+      "persona_id": "persona-v2:anchor-v2:24:铁及其化合物:low",
+      "row_id": "persona-v2:anchor-v2:24:铁及其化合物:low:control",
+      "seed": 4026640441410581981,
+      "target_node": "铁及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:24:铁及其化合物",
+      "curriculum_exposure": [
+        "铁及其化合物"
+      ],
+      "deficit_condition": "deficit",
+      "failure_cause": "混淆Fe²⁺和Fe³⁺的氧化还原性质，误认为Fe³⁺能被Fe还原为Fe单质。",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "failure_symptom": "学生误选锌粉或镁粉除去FeCl₂中的FeCl₃，或认为铁粉会引入新杂质。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.23,
+        "reasoning_skill": 0.23,
+        "target_skill": 0.23
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "cause": "混淆Fe²⁺和Fe³⁺的氧化还原性质，误认为Fe³⁺能被Fe还原为Fe单质。",
+        "observable_behavior": "select the response pattern matching the predeclared cause and symptom",
+        "strategy": "apply_observed_failure_pattern",
+        "symptom": "学生误选锌粉或镁粉除去FeCl₂中的FeCl₃，或认为铁粉会引入新杂质。"
+      },
+      "pair_id": "pair-v2:49",
+      "persona_id": "persona-v2:anchor-v2:24:铁及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:24:铁及其化合物:high:deficit",
+      "seed": 1770074958908711160,
+      "target_node": "铁及其化合物"
+    },
+    {
+      "ability_band": "lower",
+      "anchor_id": "anchor-v2:24:铁及其化合物",
+      "curriculum_exposure": [
+        "铁及其化合物"
+      ],
+      "deficit_condition": "control",
+      "failure_cause": "混淆Fe²⁺和Fe³⁺的氧化还原性质，误认为Fe³⁺能被Fe还原为Fe单质。",
+      "failure_id": "铁及其化合物-制备与转化#failure-00",
+      "failure_symptom": "学生误选锌粉或镁粉除去FeCl₂中的FeCl₃，或认为铁粉会引入新杂质。",
+      "local_skill_vector": {
+        "ability_band": "lower",
+        "prerequisite_skill": 0.35,
+        "reasoning_skill": 0.35,
+        "target_skill": 0.35
+      },
+      "modality_condition": "text_only",
+      "noise_parameters": {
+        "hesitation_rate": 0.45,
+        "level": "high",
+        "slip_rate": 0.2
+      },
+      "observable_error_policy": {
+        "strategy": "solve_normally"
+      },
+      "pair_id": "pair-v2:49",
+      "persona_id": "persona-v2:anchor-v2:24:铁及其化合物:high",
+      "row_id": "persona-v2:anchor-v2:24:铁及其化合物:high:control",
+      "seed": 1770074958908711160,
+      "target_node": "铁及其化合物"
+    }
+  ],
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.persona_grid.v1",
+  "simulated": true
+}

@@ -1,0 +1,63 @@
+{
+  "current_revision": 0,
+  "maximum_prompt_rewrites": 1,
+  "observation_started_at": null,
+  "prompt_ledger_sha256": "cc6eeff0cf32f1800c4472634a2a88f4983628eda67e89488b5d769e67352427",
+  "revisions": [
+    {
+      "blind_lexicon_sha256": "fea441de5c2465f3ef6d65c6b78f42f9e17dbcd4b235bfaa58b3a1bde5ca73a8",
+      "calibration_rewrite_required": false,
+      "committed_at_utc": "2026-07-15T05:29:53Z",
+      "grid_sha256": "a0a8788bd1c08a4c1430bbc3e11ee2dc0fb55deed7a98be4f2b54d7a798c4bd4",
+      "mapping_sha256": "af995de4500842397d5584e5cecc0d8f3e48d415fe4fde0dba2a3ea6814d99da",
+      "observed_row_count": 0,
+      "panel_sha256": "b2567df96fea65bccde9610fda7433f3b3f11f82606a9e35bfb8dfa2b148b9de",
+      "parent_revision": null,
+      "prompt_contract_sha256": "bfb09fdfd349196a10e2b7c85d41392c4337360b727b8fa4b06944dcd22d81ad",
+      "prompt_files": [
+        {
+          "category": "prompt",
+          "path": "experiments/llm_sim_v2/keys.py",
+          "sha256": "f1c0ca25ca3404edbef9d93efe437971673b7a508db77ea40a940731cda89238",
+          "size": 551
+        },
+        {
+          "category": "prompt",
+          "path": "experiments/llm_sim_v2/models.py",
+          "sha256": "e98455cb81cd6b59dcaf1d3ce0fe8bff097f158ac63e4bf6a521cca09a8edfd8",
+          "size": 7072
+        },
+        {
+          "category": "prompt",
+          "path": "experiments/llm_sim_v2/prompts.py",
+          "sha256": "17de39902faa2df00b4f6665add8b10b1c09a1228a1499157d917dc5d80a99b1",
+          "size": 15776
+        },
+        {
+          "category": "prompt",
+          "path": "experiments/llm_sim_v2/public.py",
+          "sha256": "d5eec1ffa2543c313abf77d52bcad468a37eaa8e92f6290a73edd95d359ec44b",
+          "size": 4790
+        }
+      ],
+      "reason": "initial_pre_observation_freeze",
+      "rendered_contract_sha256": {
+        "blind": "a64129a7ba36e128a9de83e1655525e0ef7207e561810ff9622cdbd7b0635e79",
+        "controlled": "b8f2b60d827066204a9d79278ac63cd716b373ac8e9923d80640e29381b52d93",
+        "judge": "11b2a5db3f55dc7c658e39e08e997b30e704e68790d6c0694335345b8bb2a344"
+      },
+      "revision": 0,
+      "status": "pre_observation_frozen"
+    }
+  ],
+  "run_id": "llm-personas-v2-dual",
+  "schema_version": "yher.llm_sim_v2.prompt_revision_ledger.v1",
+  "simulated": true,
+  "transition_policy": {
+    "main_observation_forbids_transition": true,
+    "only_transition": "0_to_1",
+    "requires_calibration_rewrite_required": true,
+    "requires_pre_observation_commit": true,
+    "retry_does_not_change_revision": true
+  }
+}
