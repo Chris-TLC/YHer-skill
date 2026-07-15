@@ -14,6 +14,9 @@ from .mapping import (
     mapping_sha256,
     target_set_hash,
 )
+from .panel import select_blind_items, select_calibration_items
+from .prompts import render_blind_prompt, render_controlled_prompt, render_judge_export
+from .provenance import hash_declared_files
 from .store import RUN_ID
 
 
@@ -175,6 +178,366 @@ def validate_analysis_population(
             raise ValueError("analysis record phase/population does not match the requested population")
         output.append(dict(record))
     return output
+
+
+def _with_digest(value: Mapping[str, Any], field: str) -> dict[str, Any]:
+    output = dict(value)
+    output[field] = hashlib.sha256(_canonical(output)).hexdigest()
+    return output
+
+
+def _digest(value: Any, *, name: str) -> str:
+    digest = str(value or "")
+    if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+        raise ValueError(f"{name} must be a lowercase sha256 digest")
+    return digest
+
+
+def build_population_manifest(config: Mapping[str, Any]) -> dict[str, Any]:
+    """Bind separate pilot/main roots without globally excluding shared IDs."""
+
+    if not isinstance(config, Mapping) or config.get("run_id") != RUN_ID:
+        raise ValueError("population manifest requires the frozen v2 config")
+    pilot = config.get("pilot")
+    main = config.get("main")
+    if not isinstance(pilot, Mapping) or not isinstance(main, Mapping):
+        raise ValueError("population config requires pilot and main blocks")
+
+    def block(name: str, source: Mapping[str, Any], *, include: bool) -> dict[str, Any]:
+        ids = [str(value) for value in source.get("persona_ids", ())]
+        providers = [str(value) for value in source.get("providers", ())]
+        if not ids or len(set(ids)) != len(ids) or not providers or len(set(providers)) != len(providers):
+            raise ValueError(f"{name} population IDs/providers must be unique and non-empty")
+        value = {
+            "phase": name,
+            "analysis_population": name,
+            "root_relative": f"data/sim_store/llm_personas/{RUN_ID}/{name}",
+            "providers": providers,
+            "persona_ids": ids,
+            "response_arms": list(config.get("response_arms", ())),
+            "conditions": ["controlled", "blind"],
+            "include_in_main": include,
+        }
+        return _with_digest(value, "manifest_sha256")
+
+    pilot_block = block("pilot", pilot, include=False)
+    main_block = block("main", main, include=True)
+    if not set(pilot_block["persona_ids"]).issubset(main_block["persona_ids"]):
+        raise ValueError("pilot persona IDs must be a frozen subset of main persona IDs")
+    manifest = {
+        "schema_version": "yher.llm_sim_v2.population_manifest.v1",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "selection_seed": int(config.get("study_seed", 0)),
+        "pilot": pilot_block,
+        "main": main_block,
+        "ingestion_policy": {
+            "accepted_phase": "main",
+            "accepted_analysis_population": "main",
+            "pilot_records_never_join_main": True,
+            "same_cluster_recollection_allowed": True,
+            "filesystem_glob_forbidden": True,
+            "logical_key": [
+                "phase",
+                "provider",
+                "persona_id",
+                "response_arm",
+                "condition",
+                "prompt_revision",
+                "item_id",
+                "attempt_id",
+            ],
+        },
+    }
+    return _with_digest(manifest, "population_manifest_sha256")
+
+
+def build_prompt_revision_ledger(
+    repo_root: str | Any,
+    *,
+    prompt_paths: Sequence[str],
+    rendered_contract_sha256: Mapping[str, str],
+    leakage_lexicon_sha256: str,
+    mapping_sha256: str,
+    grid_sha256: str,
+    panel_sha256: str,
+    frozen_at_utc: str,
+) -> dict[str, Any]:
+    """Build immutable revision zero; later rewrites require a separate commit."""
+
+    if set(rendered_contract_sha256) != {"controlled", "blind", "judge"}:
+        raise ValueError("rendered prompt contracts must bind controlled, blind, and judge")
+    rendered = {
+        name: _digest(digest, name=f"rendered {name} contract")
+        for name, digest in sorted(rendered_contract_sha256.items())
+    }
+    files = hash_declared_files(repo_root, {"prompt": list(prompt_paths)})["files"]
+    revision = {
+        "revision": 0,
+        "parent_revision": None,
+        "status": "pre_observation_frozen",
+        "prompt_files": files,
+        "rendered_contract_sha256": rendered,
+        "blind_lexicon_sha256": _digest(
+            leakage_lexicon_sha256, name="blind leakage lexicon"
+        ),
+        "mapping_sha256": _digest(mapping_sha256, name="mapping"),
+        "grid_sha256": _digest(grid_sha256, name="grid"),
+        "panel_sha256": _digest(panel_sha256, name="panel"),
+        "committed_at_utc": _validate_timestamp(frozen_at_utc),
+        "reason": "initial_pre_observation_freeze",
+        "calibration_rewrite_required": False,
+        "observed_row_count": 0,
+    }
+    revision["prompt_contract_sha256"] = hashlib.sha256(_canonical(revision)).hexdigest()
+    ledger = {
+        "schema_version": "yher.llm_sim_v2.prompt_revision_ledger.v1",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "maximum_prompt_rewrites": 1,
+        "current_revision": 0,
+        "observation_started_at": None,
+        "revisions": [revision],
+        "transition_policy": {
+            "only_transition": "0_to_1",
+            "requires_calibration_rewrite_required": True,
+            "requires_pre_observation_commit": True,
+            "main_observation_forbids_transition": True,
+            "retry_does_not_change_revision": True,
+        },
+    }
+    return _with_digest(ledger, "prompt_ledger_sha256")
+
+
+_FREEZE_SUMMARY_FIELDS = {
+    "analysis_plan_sha256",
+    "source_set_sha256",
+    "official_inputs_sha256",
+    "grid_sha256",
+    "mapping_sha256",
+    "target_set_hash",
+    "prompt_ledger_sha256",
+    "population_manifest_sha256",
+}
+
+
+def build_freeze_manifest(
+    repo_root: str | Any,
+    *,
+    declared_paths: Mapping[str, Sequence[str]],
+    frozen_at_utc: str,
+    summary_hashes: Mapping[str, str],
+) -> dict[str, Any]:
+    if set(summary_hashes) != _FREEZE_SUMMARY_FIELDS:
+        raise ValueError("freeze summary hash set is incomplete")
+    summary = {
+        key: _digest(value, name=key) for key, value in sorted(summary_hashes.items())
+    }
+    provenance = hash_declared_files(repo_root, declared_paths)
+    manifest = {
+        "schema_version": "yher.llm_sim_v2.freeze_manifest.v1",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "status": "pre_observation_frozen",
+        "frozen_at_utc": _validate_timestamp(frozen_at_utc),
+        "observation_started_at": None,
+        **summary,
+        "artifact_set_sha256": provenance["file_set_sha256"],
+        "frozen_files": provenance["files"],
+    }
+    return _with_digest(manifest, "freeze_manifest_sha256")
+
+
+def verify_freeze_manifest(repo_root: str | Any, manifest: Mapping[str, Any]) -> dict[str, Any]:
+    if not isinstance(manifest, Mapping) or manifest.get("schema_version") != "yher.llm_sim_v2.freeze_manifest.v1":
+        raise ValueError("unsupported freeze manifest")
+    advertised = manifest.get("freeze_manifest_sha256")
+    payload = dict(manifest)
+    payload.pop("freeze_manifest_sha256", None)
+    if advertised != hashlib.sha256(_canonical(payload)).hexdigest():
+        raise ValueError("freeze manifest digest mismatch")
+    rows = manifest.get("frozen_files")
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("freeze manifest has no frozen files")
+    declared: dict[str, list[str]] = {}
+    for row in rows:
+        if not isinstance(row, Mapping) or not row.get("category"):
+            raise ValueError("freeze manifest rows require categories")
+        declared.setdefault(str(row["category"]), []).append(str(row.get("path") or ""))
+    current = hash_declared_files(repo_root, declared)
+    if current["files"] != rows or current["file_set_sha256"] != manifest.get("artifact_set_sha256"):
+        raise ValueError("freeze artifact bytes drifted from the manifest")
+    return {
+        "schema_version": "yher.llm_sim_v2.freeze_manifest_proof.v1",
+        "ok": True,
+        "run_id": RUN_ID,
+        "freeze_manifest_sha256": advertised,
+        "artifact_set_sha256": current["file_set_sha256"],
+    }
+
+
+def build_blind_panel(anchors: Sequence[Mapping[str, Any]], catalog: Any) -> dict[str, Any]:
+    """Build a globally family-distinct 4+up-to-21 item panel per anchor."""
+
+    normalized = sorted(
+        (dict(anchor) for anchor in anchors),
+        key=lambda anchor: (str(anchor.get("anchor_id") or ""), str(anchor.get("target_node") or "")),
+    )
+    if len(normalized) != 25:
+        raise ValueError("the frozen blind panel requires exactly 25 anchors")
+    anchor_ids = [str(anchor.get("anchor_id") or "") for anchor in normalized]
+    target_nodes = [str(anchor.get("target_node") or "") for anchor in normalized]
+    if not all(anchor_ids) or len(set(anchor_ids)) != 25:
+        raise ValueError("blind panel anchor IDs must be unique and non-empty")
+    if not all(target_nodes) or len(set(target_nodes)) != 25:
+        raise ValueError("blind panel target nodes must be unique and non-empty")
+
+    selected: dict[str, list[dict[str, Any]]] = {}
+    tails: dict[str, list[dict[str, Any]]] = {}
+    used_items: set[str] = set()
+    used_families: set[str] = set()
+    for anchor in normalized:
+        anchor_id = str(anchor["anchor_id"])
+        calibration = select_calibration_items(anchor, catalog)
+        full = select_blind_items(anchor, catalog)
+        for item in calibration:
+            if item["item_id"] in used_items or item["family_id"] in used_families:
+                raise ValueError("calibration support overlaps across blind anchors")
+            used_items.add(item["item_id"])
+            used_families.add(item["family_id"])
+        selected[anchor_id] = [dict(item) for item in calibration]
+        calibration_ids = {item["item_id"] for item in calibration}
+        tails[anchor_id] = [dict(item) for item in full if item["item_id"] not in calibration_ids]
+
+    progress = True
+    while progress:
+        progress = False
+        for anchor in normalized:
+            anchor_id = str(anchor["anchor_id"])
+            if len(selected[anchor_id]) >= 25:
+                continue
+            while tails[anchor_id]:
+                candidate = tails[anchor_id].pop(0)
+                if candidate["item_id"] in used_items or candidate["family_id"] in used_families:
+                    continue
+                selected[anchor_id].append(candidate)
+                used_items.add(candidate["item_id"])
+                used_families.add(candidate["family_id"])
+                progress = True
+                break
+
+    rows: list[dict[str, Any]] = []
+    counts: list[int] = []
+    for anchor in normalized:
+        anchor_id = str(anchor["anchor_id"])
+        items = []
+        for index, item in enumerate(selected[anchor_id]):
+            items.append(
+                {
+                    **item,
+                    "ordinal": index,
+                    "role": "calibration" if index < 4 else "diagnostic",
+                }
+            )
+        counts.append(len(items))
+        rows.append(
+            {
+                "anchor_id": anchor_id,
+                "target_node": str(anchor["target_node"]),
+                "calibration_item_ids": [item["item_id"] for item in items[:4]],
+                "items": items,
+            }
+        )
+    panel_hash = hashlib.sha256(_canonical(rows)).hexdigest()
+    return {
+        "schema_version": "yher.llm_sim_v2.blind_panel.v1",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "anchors": rows,
+        "counts": {
+            "anchors": len(rows),
+            "total_items": sum(counts),
+            "minimum_items_per_anchor": min(counts),
+            "maximum_items_per_anchor": max(counts),
+        },
+        "panel_sha256": panel_hash,
+    }
+
+
+def build_rendered_prompt_contract_hashes(
+    personas: Sequence[Any],
+    blind_panel: Mapping[str, Any],
+    leakage_lexicon: Mapping[str, Any],
+) -> dict[str, str]:
+    """Hash every frozen rendered prompt without persisting private prompt bodies."""
+
+    terms = leakage_lexicon.get("terms") if isinstance(leakage_lexicon, Mapping) else None
+    if not isinstance(terms, list) or not terms:
+        raise ValueError("rendered prompt contracts require the frozen leakage lexicon")
+    anchors = blind_panel.get("anchors") if isinstance(blind_panel, Mapping) else None
+    if not isinstance(anchors, list) or not anchors:
+        raise ValueError("rendered prompt contracts require a blind panel")
+    panel_index = {
+        str(anchor.get("anchor_id") or ""): anchor
+        for anchor in anchors
+        if isinstance(anchor, Mapping)
+    }
+    controlled_rows: list[dict[str, Any]] = []
+    blind_rows: list[dict[str, Any]] = []
+    judge_rows: list[dict[str, Any]] = []
+    for raw_persona in personas:
+        persona = _row(raw_persona)
+        row_id = str(persona.get("row_id") or persona.get("persona_id") or "")
+        anchor_id = str(persona.get("anchor_id") or "")
+        anchor = panel_index.get(anchor_id)
+        if not row_id or anchor is None:
+            raise ValueError("persona row does not bind to the frozen blind panel")
+        items = anchor.get("items")
+        if not isinstance(items, list) or len(items) < 4:
+            raise ValueError("blind panel anchor is structurally incomplete")
+        for item in items[:4]:
+            controlled_rows.append(
+                {
+                    "row_id": row_id,
+                    "item_id": item["item_id"],
+                    "messages": render_controlled_prompt(persona, item),
+                }
+            )
+        for item in items:
+            messages = render_blind_prompt(
+                persona,
+                item,
+                frozen_leakage_lexicon=terms,
+            )
+            blind_rows.append(
+                {"row_id": row_id, "item_id": item["item_id"], "messages": messages}
+            )
+            options = item.get("options") or {}
+            answer = sorted(str(option) for option in options)[0] if options else None
+            observed = {
+                "simulated": True,
+                "answer": answer,
+                "rationale": "synthetic contract fixture",
+                "abstain": answer is None,
+            }
+            judge_rows.append(
+                {
+                    "row_id": row_id,
+                    "item_id": item["item_id"],
+                    "messages": render_judge_export(
+                        blind_messages=messages,
+                        model_output=observed,
+                        persona=persona,
+                        item=item,
+                        frozen_leakage_lexicon=terms,
+                    ),
+                }
+            )
+    return {
+        "controlled": hashlib.sha256(_canonical(controlled_rows)).hexdigest(),
+        "blind": hashlib.sha256(_canonical(blind_rows)).hexdigest(),
+        "judge": hashlib.sha256(_canonical(judge_rows)).hexdigest(),
+    }
 
 
 def build_study_config(
@@ -352,6 +715,12 @@ __all__ = [
     "PROVIDERS",
     "SCHEMA_VERSION",
     "build_leakage_lexicon",
+    "build_blind_panel",
+    "build_freeze_manifest",
+    "build_population_manifest",
+    "build_prompt_revision_ledger",
+    "build_rendered_prompt_contract_hashes",
     "build_study_config",
     "validate_analysis_population",
+    "verify_freeze_manifest",
 ]

@@ -470,6 +470,178 @@ def test_leakage_lexicon_is_deterministic_and_excludes_allowed_curriculum_node_n
     assert "selects the dilution distractor" in first["terms"]
 
 
+def test_population_manifest_keeps_pilot_and_main_physically_separate_without_global_id_exclusion():
+    from experiments.llm_sim_v2.freeze import build_population_manifest
+
+    config = {
+        "run_id": "llm-personas-v2-dual",
+        "study_seed": 20260715,
+        "response_arms": ["deficit", "control"],
+        "pilot": {
+            "providers": ["deepseek", "doubao"],
+            "persona_ids": [f"persona-{index:02d}" for index in range(5)],
+            "excluded_from_main_analysis": True,
+            "physical_phase": "pilot",
+        },
+        "main": {
+            "providers": ["deepseek", "glm", "kimi", "minimax", "doubao", "tongyi"],
+            "persona_ids": [f"persona-{index:02d}" for index in range(50)],
+            "physical_phase": "main",
+        },
+    }
+
+    manifest = build_population_manifest(config)
+
+    assert manifest["pilot"]["root_relative"].endswith("/pilot")
+    assert manifest["main"]["root_relative"].endswith("/main")
+    assert manifest["pilot"]["include_in_main"] is False
+    assert manifest["main"]["include_in_main"] is True
+    assert set(manifest["pilot"]["persona_ids"]) <= set(manifest["main"]["persona_ids"])
+    assert manifest["ingestion_policy"]["pilot_records_never_join_main"] is True
+    assert manifest["ingestion_policy"]["same_cluster_recollection_allowed"] is True
+    assert manifest["population_manifest_sha256"]
+
+
+def test_prompt_revision_zero_ledger_binds_prompt_files_and_rendered_contracts(tmp_path: Path):
+    from experiments.llm_sim_v2.freeze import build_prompt_revision_ledger
+
+    (tmp_path / "blind.py").write_text("BLIND = 1\n", encoding="utf-8")
+    (tmp_path / "public.py").write_text("PUBLIC = 1\n", encoding="utf-8")
+    ledger = build_prompt_revision_ledger(
+        tmp_path,
+        prompt_paths=["blind.py", "public.py"],
+        rendered_contract_sha256={
+            "controlled": "1" * 64,
+            "blind": "2" * 64,
+            "judge": "3" * 64,
+        },
+        leakage_lexicon_sha256="4" * 64,
+        mapping_sha256="5" * 64,
+        grid_sha256="6" * 64,
+        panel_sha256="7" * 64,
+        frozen_at_utc="2026-07-15T05:30:00Z",
+    )
+
+    assert ledger["current_revision"] == 0
+    assert ledger["maximum_prompt_rewrites"] == 1
+    assert len(ledger["revisions"]) == 1
+    revision = ledger["revisions"][0]
+    assert revision["revision"] == 0
+    assert revision["parent_revision"] is None
+    assert revision["calibration_rewrite_required"] is False
+    assert revision["observed_row_count"] == 0
+    assert len(revision["prompt_files"]) == 2
+    assert revision["rendered_contract_sha256"]["blind"] == "2" * 64
+    assert ledger["prompt_ledger_sha256"]
+
+
+def test_freeze_manifest_recomputes_declared_bytes_and_rejects_drift(tmp_path: Path):
+    from experiments.llm_sim_v2.freeze import build_freeze_manifest, verify_freeze_manifest
+
+    (tmp_path / "plan.md").write_text("frozen plan\n", encoding="utf-8")
+    (tmp_path / "mapping.json").write_text("{}\n", encoding="utf-8")
+    manifest = build_freeze_manifest(
+        tmp_path,
+        declared_paths={"plan": ["plan.md"], "mapping": ["mapping.json"]},
+        frozen_at_utc="2026-07-15T05:30:00Z",
+        summary_hashes={
+            "analysis_plan_sha256": "1" * 64,
+            "source_set_sha256": "2" * 64,
+            "official_inputs_sha256": "3" * 64,
+            "grid_sha256": "4" * 64,
+            "mapping_sha256": "5" * 64,
+            "target_set_hash": "6" * 64,
+            "prompt_ledger_sha256": "7" * 64,
+            "population_manifest_sha256": "8" * 64,
+        },
+    )
+    assert verify_freeze_manifest(tmp_path, manifest)["ok"] is True
+
+    (tmp_path / "mapping.json").write_text('{"changed":true}\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="drift|hash|bytes|manifest"):
+        verify_freeze_manifest(tmp_path, manifest)
+
+
+def test_blind_panel_artifact_binds_calibration_prefix_and_global_unique_support():
+    from experiments.llm_sim_v2.freeze import build_blind_panel
+
+    catalog = FakeCatalog(targets=26)
+    for target_index in range(25):
+        node = f"Target-{target_index:02d}"
+        for item_index in range(5, 30):
+            item = _fake_item(item_index, node=node)
+            catalog.items[item["item_id"]] = item
+    anchors = [
+        {"anchor_id": f"anchor-{index:02d}", "target_node": f"Target-{index:02d}"}
+        for index in range(25)
+    ]
+
+    panel = build_blind_panel(anchors, catalog)
+
+    assert len(panel["anchors"]) == 25
+    assert panel["counts"]["minimum_items_per_anchor"] == 25
+    assert panel["counts"]["maximum_items_per_anchor"] == 25
+    all_items = []
+    for anchor in panel["anchors"]:
+        assert anchor["calibration_item_ids"] == [
+            item["item_id"] for item in anchor["items"][:4]
+        ]
+        assert all(item["role"] == "calibration" for item in anchor["items"][:4])
+        assert all(item["role"] == "diagnostic" for item in anchor["items"][4:])
+        all_items.extend(anchor["items"])
+    assert len({item["item_id"] for item in all_items}) == len(all_items)
+    assert len({item["family_id"] for item in all_items}) == len(all_items)
+    assert len(panel["panel_sha256"]) == 64
+
+
+def test_rendered_prompt_contract_hashes_cover_controlled_blind_and_judge():
+    from experiments.llm_sim_v2.freeze import build_rendered_prompt_contract_hashes
+
+    persona = {
+        "persona_id": "persona-00",
+        "pair_id": "pair-00",
+        "row_id": "persona-00:deficit",
+        "anchor_id": "anchor-00",
+        "target_node": "Target-00",
+        "curriculum_exposure": ["Target-00"],
+        "deficit_condition": "deficit",
+        "local_skill_vector": {"ability_band": "lower", "target_skill": 0.2},
+        "observable_error_policy": {"strategy": "apply_observed_failure_pattern"},
+        "noise_parameters": {"level": "low", "hesitation_rate": 0.1},
+        "modality_condition": "text_only",
+        "seed": 1,
+        "failure_id": "failure-00",
+        "failure_cause": "confuses two rules",
+        "failure_symptom": "selects a distractor",
+    }
+    items = []
+    for index in range(4):
+        item = _candidate("anchor-00")
+        item["item_id"] = f"item-{index}"
+        item["family_id"] = f"family-{index}"
+        item["role"] = "calibration"
+        items.append(item)
+    panel = {
+        "anchors": [
+            {
+                "anchor_id": "anchor-00",
+                "calibration_item_ids": [item["item_id"] for item in items],
+                "items": items,
+            }
+        ]
+    }
+    lexicon = {
+        "schema_version": "yher.llm_sim_v2.leakage_lexicon.v1",
+        "terms": ["confuses two rules", "selects a distractor"],
+    }
+
+    hashes = build_rendered_prompt_contract_hashes([persona], panel, lexicon)
+
+    assert set(hashes) == {"controlled", "blind", "judge"}
+    assert all(len(digest) == 64 for digest in hashes.values())
+    assert len(set(hashes.values())) == 3
+
+
 def test_h5v2_plan_contains_the_prefrozen_degradation_and_hard_analysis_gates():
     plan_path = REPO_ROOT / "experiments" / "h5v2_analysis_plan.md"
     assert plan_path.is_file()
