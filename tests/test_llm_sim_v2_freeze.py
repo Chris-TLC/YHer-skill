@@ -229,3 +229,266 @@ def test_consensus_mapping_never_converts_technical_failures_to_ambiguity(bad_st
 
     with pytest.raises(ValueError, match="technical|schema|timeout|crosscheck|status"):
         build_consensus_mapping([candidate], codex, crosscheck, items={item["item_id"]: item})
+
+
+def test_blind_panel_reuses_four_calibration_items_then_adds_at_most_twenty_one_families():
+    from experiments.llm_sim_v2.panel import select_blind_items, select_calibration_items
+
+    catalog = FakeCatalog(targets=1)
+    for index in range(5, 32):
+        item = _fake_item(index, node="Target-00")
+        catalog.items[item["item_id"]] = item
+    anchor = {"target_node": "Target-00"}
+
+    calibration = select_calibration_items(anchor, catalog)
+    blind = select_blind_items(anchor, catalog)
+
+    assert blind[:4] == calibration
+    assert len(blind) == 25
+    assert len({row["family_id"] for row in blind}) == 25
+    assert len({row["item_id"] for row in blind}) == 25
+
+
+def test_study_config_prefreezes_low_mapping_coverage_degradation_and_provider_matrix():
+    from experiments.llm_sim_v2.freeze import build_leakage_lexicon, build_study_config
+    from experiments.llm_sim_v2.grid import build_persona_grid
+    from experiments.llm_sim_v2.mapping import normalize_target_option_map
+
+    anchors = [
+        {
+            "anchor_id": f"anchor-{index:02d}",
+            "target_node": f"Target-{index:02d}",
+            "failure_id": f"Target-{index:02d}#failure-00",
+            "failure_cause": f"cause-{index}",
+            "failure_symptom": f"symptom-{index}",
+        }
+        for index in range(25)
+    ]
+    personas = build_persona_grid(anchors, seed=20260715)
+    items = {
+        f"item-{index:03d}": {
+            "item_id": f"item-{index:03d}",
+            "options": {"A": "correct", "B": "wrong", "C": "other"},
+            "answer_values": ["A"],
+        }
+        for index in range(100)
+    }
+    mapping_rows = []
+    for index in range(100):
+        mapped = index < 6
+        row = {
+            "item_id": f"item-{index:03d}",
+            "failure_id": f"failure-{index:03d}",
+            "status": "mapped" if mapped else "excluded_ambiguous",
+            "target_option": "B" if mapped else None,
+            "reviewer_provenance": {
+                "method": "independent_dual_model_consensus",
+                "drafted_by": "codex_gpt_5_6_sol_ultra",
+                "crosschecked_by": "deepseek_chat",
+            },
+        }
+        if not mapped:
+            row["ambiguity_reason"] = "independent_mapping_disagreement"
+        mapping_rows.append(row)
+    expected = [
+        (f"item-{index:03d}", f"failure-{index:03d}") for index in range(100)
+    ]
+    mapping = normalize_target_option_map(
+        mapping_rows,
+        items=items,
+        expected_rows=expected,
+    )
+    mapping["consensus"] = {
+        "mapped_rows": 6,
+        "excluded_ambiguous_rows": 94,
+        "draft_sha256": "c" * 64,
+        "crosscheck_sha256": "d" * 64,
+    }
+    blind_panel = {
+        "anchors": [
+            {
+                "anchor_id": anchor["anchor_id"],
+                "items": [
+                    {
+                        "item_id": f"{anchor['anchor_id']}-item-{item_index:02d}",
+                        "family_id": f"{anchor['anchor_id']}-family-{item_index:02d}",
+                    }
+                    for item_index in range(25)
+                ],
+                "calibration_item_ids": [
+                    f"{anchor['anchor_id']}-item-{item_index:02d}"
+                    for item_index in range(4)
+                ],
+            }
+            for anchor in anchors
+        ]
+    }
+    leakage_lexicon = build_leakage_lexicon(anchors)
+
+    config = build_study_config(
+        personas=personas,
+        mapping=mapping,
+        blind_panel=blind_panel,
+        leakage_lexicon=leakage_lexicon,
+        frozen_at_utc="2026-07-15T05:30:00Z",
+    )
+
+    assert config["run_id"] == "llm-personas-v2-dual"
+    assert config["cluster_unit"] == "persona_id"
+    assert config["cluster_count"] == 50
+    assert config["paired_response_rows"] == 100
+    assert config["repeated_measure_factors"] == ["provider", "response_arm"]
+    assert config["mapping_gate"] == {
+        "mapped_rows": 6,
+        "total_rows": 100,
+        "mapped_fraction": 0.06,
+        "minimum_fraction": 0.6,
+        "passed": False,
+        "confirmatory_target_misconception_hit_rate": False,
+        "sparse_descriptive_only": True,
+    }
+    assert config["controlled"]["items_per_row"] == 4
+    assert config["blind"]["maximum_items_per_row"] == 25
+    assert config["pilot"]["excluded_from_main_analysis"] is True
+    assert len(config["pilot"]["persona_ids"]) == 5
+    assert config["maximum_prompt_rewrites"] == 1
+    assert config["leakage_lexicon_sha256"] == leakage_lexicon["sha256"]
+    assert {
+        provider: (row["model"], row["concurrency"])
+        for provider, row in config["providers"].items()
+    } == {
+        "deepseek": ("deepseek-v4-pro", 4),
+        "glm": ("glm-4-plus", 4),
+        "kimi": ("moonshot-v1-128k", 4),
+        "minimax": ("abab6.5s-chat", 4),
+        "doubao": ("doubao-seed-2-0-mini-260428", 2),
+        "tongyi": ("qwen-max", 4),
+    }
+
+
+def test_study_config_rejects_mapping_hash_or_consensus_tampering():
+    from experiments.llm_sim_v2.freeze import build_study_config
+
+    personas = []
+    for index in range(50):
+        for condition in ("deficit", "control"):
+            personas.append(
+                {
+                    "persona_id": f"persona-{index:02d}",
+                    "deficit_condition": condition,
+                }
+            )
+    mapping = {
+        "schema_version": "yher.llm_sim_v2.target_option_map.v1",
+        "frozen": True,
+        "observation_started": False,
+        "rows": [],
+        "mapping_sha256": "0" * 64,
+        "target_set_hash": "0" * 64,
+        "consensus": {
+            "mapped_rows": 0,
+            "excluded_ambiguous_rows": 100,
+            "draft_sha256": "1" * 64,
+            "crosscheck_sha256": "2" * 64,
+        },
+    }
+    for index in range(100):
+        mapping["rows"].append(
+            {
+                "item_id": f"item-{index:03d}",
+                "failure_id": f"failure-{index:03d}",
+                "target_option": None,
+                "status": "excluded_ambiguous",
+                "reviewer_provenance": {
+                    "drafted_by": "codex_gpt_5_6_sol_ultra",
+                    "crosschecked_by": "deepseek_chat",
+                },
+                "ambiguity_reason": "independent_mapping_disagreement",
+            }
+        )
+    panel = {
+        "anchors": [
+            {
+                "anchor_id": f"anchor-{anchor:02d}",
+                "calibration_item_ids": [f"a{anchor}-i{item}" for item in range(4)],
+                "items": [
+                    {"item_id": f"a{anchor}-i{item}", "family_id": f"a{anchor}-f{item}"}
+                    for item in range(4)
+                ],
+            }
+            for anchor in range(25)
+        ]
+    }
+    lexicon = {"terms": ["failure phrase"], "sha256": "3" * 64}
+
+    with pytest.raises(ValueError, match="mapping.*sha|digest|consensus"):
+        build_study_config(
+            personas=personas,
+            mapping=mapping,
+            blind_panel=panel,
+            leakage_lexicon=lexicon,
+            frozen_at_utc="2026-07-15T05:30:00Z",
+        )
+
+
+def test_population_loader_rejects_pilot_records_from_main_analysis():
+    from experiments.llm_sim_v2.freeze import validate_analysis_population
+
+    main = {
+        "simulated": True,
+        "run_id": "llm-personas-v2-dual",
+        "phase": "main",
+        "analysis_population": "main",
+        "persona_id": "persona-00",
+    }
+    assert validate_analysis_population([main], phase="main") == [main]
+
+    pilot = {**main, "phase": "pilot", "analysis_population": "pilot"}
+    with pytest.raises(ValueError, match="pilot|population|phase"):
+        validate_analysis_population([main, pilot], phase="main")
+
+
+def test_leakage_lexicon_is_deterministic_and_excludes_allowed_curriculum_node_names():
+    from experiments.llm_sim_v2.freeze import build_leakage_lexicon
+
+    anchors = [
+        {
+            "target_node": "Acid-base equilibrium",
+            "failure_id": "acid-base#failure-00",
+            "failure_cause": "confuses buffer capacity with pH",
+            "failure_symptom": "selects the dilution distractor",
+            "diagnostic_question": "Which statement reveals that confusion?",
+        }
+    ]
+    first = build_leakage_lexicon(anchors)
+    second = build_leakage_lexicon(list(reversed(anchors)))
+
+    assert first == second
+    assert len(first["sha256"]) == 64
+    assert "Acid-base equilibrium" not in first["terms"]
+    assert "confuses buffer capacity with pH" in first["terms"]
+    assert "selects the dilution distractor" in first["terms"]
+
+
+def test_h5v2_plan_contains_the_prefrozen_degradation_and_hard_analysis_gates():
+    plan_path = REPO_ROOT / "experiments" / "h5v2_analysis_plan.md"
+    assert plan_path.is_file()
+    text = " ".join(plan_path.read_text(encoding="utf-8").lower().split())
+
+    required_phrases = (
+        "llm-personas-v2-dual",
+        "6 of 100",
+        "removed from confirmatory analysis",
+        "pilot data are physically isolated and excluded",
+        "exactly one prompt rewrite",
+        "persona_id (n=50)",
+        "provider and response arm are repeated measurements",
+        "10,000",
+        "unknown",
+        "insufficient_evidence",
+        "text_only",
+    )
+    for phrase in required_phrases:
+        assert phrase in text
+
+    assert "600 learners" not in text.lower()

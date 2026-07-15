@@ -9,6 +9,7 @@ from .public import public_question_payload
 
 
 CALIBRATION_ITEMS_PER_ANCHOR = 4
+BLIND_ITEMS_PER_ANCHOR_MAX = 25
 
 
 def _value(item: Any, key: str, default: Any = None) -> Any:
@@ -94,6 +95,34 @@ def select_calibration_items(
     return selected
 
 
+def select_blind_items(
+    anchor: Mapping[str, Any] | Any,
+    catalog: Any,
+    *,
+    maximum: int = BLIND_ITEMS_PER_ANCHOR_MAX,
+) -> list[dict[str, Any]]:
+    """Reuse the four calibration items and add up to 21 distinct families."""
+
+    if maximum != BLIND_ITEMS_PER_ANCHOR_MAX:
+        raise ValueError("the frozen v2 blind panel maximum is exactly 25 items")
+    calibration = select_calibration_items(anchor, catalog)
+    node = str(_value(anchor, "target_node", "") or "").strip()
+    candidates = [candidate for item in _items(catalog, node) if (candidate := _candidate(item))]
+    candidates.sort(key=lambda value: (value["family_id"], value["item_id"]))
+    selected = list(calibration)
+    families = {row["family_id"] for row in selected}
+    item_ids = {row["item_id"] for row in selected}
+    for candidate in candidates:
+        if candidate["family_id"] in families or candidate["item_id"] in item_ids:
+            continue
+        selected.append(candidate)
+        families.add(candidate["family_id"])
+        item_ids.add(candidate["item_id"])
+        if len(selected) == maximum:
+            break
+    return selected
+
+
 def build_review_payload(anchor: Mapping[str, Any] | Any, catalog: Any) -> dict[str, Any]:
     """Return a local review payload; this function never writes it."""
 
@@ -128,8 +157,10 @@ build_calibration_panel = select_calibration_items
 
 
 __all__ = [
+    "BLIND_ITEMS_PER_ANCHOR_MAX",
     "CALIBRATION_ITEMS_PER_ANCHOR",
     "is_calibration_candidate",
+    "select_blind_items",
     "select_calibration_items",
     "build_review_payload",
     "export_review_payload",
