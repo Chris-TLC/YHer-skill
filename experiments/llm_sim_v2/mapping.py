@@ -135,18 +135,28 @@ def _normalize_rows(rows: Any) -> list[dict[str, Any]]:
     return output
 
 
-def _contains_codex_reviewer(value: Any, *, _signer_context: bool = False) -> bool:
-    signer_keys = {
+def _is_signer_role(key: Any) -> bool:
+    normalized = canonical_key(key)
+    if normalized == "reviewer_provenance":
+        return False
+    role_tokens = {
         "reviewer",
-        "reviewer_name",
-        "manual_reviewer",
+        "reviewed",
         "signer",
-        "signed_by",
-        "reviewed_by",
+        "signed",
+        "crosscheck",
+        "crosschecked",
+        "crosschecker",
+        "approved",
+        "approver",
     }
+    return bool(role_tokens.intersection(normalized.split("_")))
+
+
+def _contains_codex_reviewer(value: Any, *, _signer_context: bool = False) -> bool:
     if isinstance(value, Mapping):
         for key, item in value.items():
-            child_signer_context = _signer_context or canonical_key(key) in signer_keys
+            child_signer_context = _signer_context or _is_signer_role(key)
             if _contains_codex_reviewer(item, _signer_context=child_signer_context):
                 return True
         return False
