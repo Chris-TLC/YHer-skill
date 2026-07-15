@@ -14,7 +14,7 @@ import time
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -24,12 +24,14 @@ from experiments.llm_sim.transport import (
     ProviderNetworkError,
     ProviderTruncatedResponseError,
     ProviderTransport,
-    provider_spec,
     transport_policy,
 )
 
-from .freeze import validate_analysis_population, verify_freeze_manifest
-from .grid import grid_sha256
+from .freeze import (
+    build_rendered_prompt_contract_hashes,
+    validate_analysis_population,
+    verify_freeze_manifest,
+)
 from .prompts import render_blind_prompt, render_controlled_prompt
 from .provenance import verify_frozen_git_commit
 from .public import public_question_payload
@@ -41,6 +43,8 @@ FROZEN_DIR_REL = Path("experiments/llm_sim_v2/frozen_v0")
 FROZEN_PLAN_REL = Path("experiments/h5v2_analysis_plan.md")
 RUNTIME_MANIFEST_REL = Path("experiments/llm_sim_v2/runtime_task_manifest.json")
 RUNTIME_PATHS = (
+    "experiments/config/llm_transport_v2.json",
+    "experiments/llm_sim/transport.py",
     "experiments/llm_sim_v2/collect.py",
     "experiments/llm_sim_v2/runner.py",
 )
@@ -65,6 +69,12 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _utc_from_epoch(value: float) -> str:
+    return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, Mapping):
@@ -79,6 +89,11 @@ class ProviderPolicy:
     timeout_seconds: float
     concurrency: int
     max_attempts: int
+    failure_threshold: int
+    base_backoff_seconds: float
+    max_backoff_seconds: float
+    cooldown_seconds: float
+    jitter_fraction: float
 
 
 @dataclass(frozen=True)
@@ -119,21 +134,39 @@ class RuntimeContract:
     lexicon: tuple[str, ...]
     population: Mapping[str, Any]
     prompt_ledger: Mapping[str, Any]
+    source_manifest: Mapping[str, Any]
     freeze_manifest: Mapping[str, Any]
     freeze_proof: Mapping[str, Any]
     runtime_manifest: Mapping[str, Any] | None = None
+    validated_prompt_revision: Mapping[str, Any] | None = None
+    validated_prompt_ledger_sha256: str | None = None
 
     def provider_policy(self, provider: str) -> ProviderPolicy:
         name = str(provider).strip().lower()
         raw = self.config["providers"].get(name)
         if not isinstance(raw, Mapping):
             raise ValueError(f"provider is not in the frozen v2 registry: {provider}")
+        runtime = transport_policy(name, version="v2")
+        frozen_values = {
+            "max_tokens": int(raw["max_tokens"]),
+            "retry_max_tokens": int(raw["retry_max_tokens"]),
+            "timeout_seconds": float(raw["timeout_seconds"]),
+            "concurrency": int(raw["concurrency"]),
+            "max_attempts": int(raw["max_attempts"]),
+        }
+        if any(getattr(runtime, key) != value for key, value in frozen_values.items()):
+            raise ValueError(f"transport policy drifted from frozen provider config: {name}")
         return ProviderPolicy(
-            max_tokens=int(raw["max_tokens"]),
-            retry_max_tokens=int(raw["retry_max_tokens"]),
-            timeout_seconds=float(raw["timeout_seconds"]),
-            concurrency=int(raw["concurrency"]),
-            max_attempts=int(raw["max_attempts"]),
+            max_tokens=runtime.max_tokens,
+            retry_max_tokens=runtime.retry_max_tokens,
+            timeout_seconds=runtime.timeout_seconds,
+            concurrency=runtime.concurrency,
+            max_attempts=runtime.max_attempts,
+            failure_threshold=runtime.failure_threshold,
+            base_backoff_seconds=runtime.base_backoff_seconds,
+            max_backoff_seconds=runtime.max_backoff_seconds,
+            cooldown_seconds=runtime.cooldown_seconds,
+            jitter_fraction=runtime.jitter_fraction,
         )
 
     def provider_model(self, provider: str) -> str:
@@ -312,10 +345,109 @@ def _persona_rows(contract: RuntimeContract, phase: str) -> list[Mapping[str, An
     return sorted(rows, key=lambda row: str(row.get("row_id")))
 
 
+def active_prompt_revision(contract: RuntimeContract) -> dict[str, Any]:
+    ledger = contract.prompt_ledger
+    if (
+        ledger.get("schema_version") != "yher.llm_sim_v2.prompt_revision_ledger.v1"
+        or ledger.get("simulated") is not True
+        or ledger.get("run_id") != RUN_ID
+        or ledger.get("maximum_prompt_rewrites") != 1
+    ):
+        raise ValueError("prompt revision ledger envelope is invalid")
+    advertised = ledger.get("prompt_ledger_sha256")
+    ledger_payload = dict(ledger)
+    ledger_payload.pop("prompt_ledger_sha256", None)
+    if advertised != _sha(ledger_payload):
+        raise ValueError("prompt revision ledger digest mismatch")
+    current = ledger.get("current_revision")
+    if not isinstance(current, int) or isinstance(current, bool) or current not in {0, 1}:
+        raise ValueError("prompt revision ledger current revision is invalid")
+    cached = contract.validated_prompt_revision
+    if (
+        isinstance(cached, Mapping)
+        and contract.validated_prompt_ledger_sha256 == advertised
+        and cached.get("revision") == current
+    ):
+        files_match = True
+        for row in cached.get("prompt_files", ()):
+            relative = Path(str(row.get("path") or ""))
+            data = (contract.repo_root / relative).read_bytes()
+            files_match = files_match and (
+                row.get("sha256") == hashlib.sha256(data).hexdigest()
+                and row.get("size") == len(data)
+            )
+        if files_match:
+            return dict(cached)
+    revisions = ledger.get("revisions")
+    if not isinstance(revisions, list) or len(revisions) != current + 1:
+        raise ValueError("prompt revision ledger is stale or incomplete")
+    revision_ids = [row.get("revision") if isinstance(row, Mapping) else None for row in revisions]
+    if revision_ids != list(range(current + 1)):
+        raise ValueError("prompt revision ledger transition sequence is invalid")
+    for index, raw_revision in enumerate(revisions):
+        if not isinstance(raw_revision, Mapping):
+            raise ValueError("prompt revision ledger row is invalid")
+        revision = dict(raw_revision)
+        contract_sha = revision.pop("prompt_contract_sha256", None)
+        if contract_sha != _sha(revision):
+            raise ValueError("prompt revision contract digest mismatch")
+        expected_parent = None if index == 0 else index - 1
+        if raw_revision.get("parent_revision") != expected_parent:
+            raise ValueError("prompt revision parent transition is invalid")
+    active = dict(revisions[current])
+    if active.get("status") != "pre_observation_frozen":
+        raise ValueError("active prompt revision is not frozen")
+    if current == 1:
+        if active.get("calibration_rewrite_required") is not True:
+            raise ValueError("prompt revision 1 lacks the frozen rewrite requirement")
+        reason = str(active.get("reason") or "").strip()
+        if not reason:
+            raise ValueError("prompt revision 1 lacks a committed reason")
+    _validate_runtime_timestamp(str(active.get("committed_at_utc") or ""))
+    prompt_files = active.get("prompt_files")
+    if not isinstance(prompt_files, list) or not prompt_files:
+        raise ValueError("active prompt revision has no prompt files")
+    seen_paths: set[str] = set()
+    for row in prompt_files:
+        if not isinstance(row, Mapping):
+            raise ValueError("active prompt revision file row is invalid")
+        relative = Path(str(row.get("path") or ""))
+        if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+            raise ValueError("active prompt revision path is invalid")
+        normalized = relative.as_posix()
+        if normalized in seen_paths:
+            raise ValueError("active prompt revision repeats a prompt file")
+        seen_paths.add(normalized)
+        data = (contract.repo_root / relative).read_bytes()
+        if (
+            row.get("sha256") != hashlib.sha256(data).hexdigest()
+            or row.get("size") != len(data)
+        ):
+            raise ValueError("active prompt file is not byte-identical")
+    rendered = build_rendered_prompt_contract_hashes(
+        contract.personas,
+        contract.panel,
+        {"terms": list(contract.lexicon)},
+    )
+    if active.get("rendered_contract_sha256") != rendered:
+        raise ValueError("active rendered prompt contract hash drifted")
+    expected_bindings = {
+        "mapping_sha256": contract.mapping.get("mapping_sha256"),
+        "grid_sha256": contract.freeze_manifest.get("grid_sha256"),
+        "panel_sha256": contract.panel.get("panel_sha256"),
+        "blind_lexicon_sha256": contract.config.get("leakage_lexicon_sha256"),
+    }
+    for field, expected in expected_bindings.items():
+        if active.get(field) != expected:
+            raise ValueError(f"active prompt revision {field} binding drifted")
+    return active
+
+
 def enumerate_tasks(contract: RuntimeContract, *, phase: str) -> list[Task]:
     phase_name = str(phase).strip().lower()
     if phase_name not in {"pilot", "main"}:
         raise ValueError("phase must be pilot or main")
+    prompt_revision = active_prompt_revision(contract)
     rows = _persona_rows(contract, phase_name)
     panels = {
         str(anchor["anchor_id"]): anchor for anchor in contract.panel["anchors"]
@@ -363,6 +495,7 @@ def enumerate_tasks(contract: RuntimeContract, *, phase: str) -> list[Task]:
                         condition,
                         item,
                         mapping_index,
+                        prompt_revision,
                         is_stability_repeat=False,
                         attempt_id="primary",
                     )
@@ -376,6 +509,7 @@ def enumerate_tasks(contract: RuntimeContract, *, phase: str) -> list[Task]:
                         condition,
                         items[-1],
                         mapping_index,
+                        prompt_revision,
                         is_stability_repeat=True,
                         attempt_id="stability",
                     )
@@ -391,6 +525,7 @@ def _make_task(
     condition: str,
     item: Mapping[str, Any],
     mapping_index: Mapping[tuple[str, str], Mapping[str, Any]],
+    prompt_revision: Mapping[str, Any],
     *,
     is_stability_repeat: bool,
     attempt_id: str,
@@ -424,7 +559,7 @@ def _make_task(
         "condition": condition,
         "item_id": item_id,
         "attempt_id": attempt_id,
-        "prompt_revision": 0,
+        "prompt_revision": int(prompt_revision["revision"]),
     }
     logical_key = json.dumps(logical_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     task_id = _task_hash(logical_payload)
@@ -445,10 +580,8 @@ def _make_task(
         target_option=target_option,
         messages=tuple(messages),
         wire_messages=wire,
-        prompt_revision=0,
-        prompt_contract_sha256=str(
-            contract.prompt_ledger["revisions"][0]["prompt_contract_sha256"]
-        ),
+        prompt_revision=int(prompt_revision["revision"]),
+        prompt_contract_sha256=str(prompt_revision["prompt_contract_sha256"]),
         is_stability_repeat=is_stability_repeat,
         attempt_id=attempt_id,
         task_id=task_id,
@@ -524,9 +657,16 @@ def load_runtime_contract(repo_root: str | Path) -> RuntimeContract:
         lexicon=tuple(str(term) for term in lexicon_artifact.get("terms") or ()),
         population=population,
         prompt_ledger=prompt_ledger,
+        source_manifest=source_manifest,
         freeze_manifest=manifest,
         freeze_proof=proof,
         runtime_manifest=runtime_manifest,
+    )
+    prompt_revision = active_prompt_revision(contract)
+    contract = replace(
+        contract,
+        validated_prompt_revision=prompt_revision,
+        validated_prompt_ledger_sha256=str(prompt_ledger["prompt_ledger_sha256"]),
     )
     if runtime_manifest is not None:
         verify_runtime_task_manifest(contract, runtime_manifest, verify_git=False)
@@ -593,7 +733,11 @@ def build_runtime_task_manifest(
         "freeze_manifest_sha256": contract.freeze_manifest["freeze_manifest_sha256"],
         "runtime_commit": commit,
         "frozen_at_utc": _validate_runtime_timestamp(frozen_at_utc),
-        "prompt_revision": 0,
+        "prompt_revision": int(active_prompt_revision(contract)["revision"]),
+        "prompt_contract_sha256": str(
+            active_prompt_revision(contract)["prompt_contract_sha256"]
+        ),
+        "prompt_ledger_sha256": contract.prompt_ledger["prompt_ledger_sha256"],
         "runtime_files": runtime_files,
         "runtime_file_set_sha256": _sha(runtime_files),
         "phases": phases,
@@ -647,6 +791,258 @@ def verify_runtime_task_manifest(
     }
 
 
+def _frozen_file_sha256(contract: RuntimeContract, relative: str) -> str:
+    matches = [
+        row
+        for row in contract.freeze_manifest.get("frozen_files", ())
+        if isinstance(row, Mapping) and row.get("path") == relative
+    ]
+    if len(matches) != 1 or not str(matches[0].get("sha256") or ""):
+        raise ValueError(f"freeze manifest does not bind {relative}")
+    return str(matches[0]["sha256"])
+
+
+def build_phase_provenance(
+    contract: RuntimeContract,
+    *,
+    runtime_manifest: Mapping[str, Any],
+    runtime_proof: Mapping[str, Any],
+    phase: str,
+    tasks: Sequence[Task],
+    collection_scope: Mapping[str, Any],
+    prior_documented_cost_yuan: float,
+    prior_cost_evidence: str,
+    first_observation_at_utc: str,
+) -> dict[str, Any]:
+    phase_name = str(phase).strip().lower()
+    if phase_name not in {"pilot", "main"}:
+        raise ValueError("phase must be pilot or main")
+    verify_runtime_task_manifest(contract, runtime_manifest, verify_git=False)
+    git_proof = runtime_proof.get("git_proof")
+    if (
+        runtime_proof.get("ok") is not True
+        or runtime_proof.get("runtime_task_manifest_sha256")
+        != runtime_manifest.get("runtime_task_manifest_sha256")
+        or runtime_proof.get("runtime_commit") != runtime_manifest.get("runtime_commit")
+        or not isinstance(git_proof, Mapping)
+        or git_proof.get("ok") is not True
+        or git_proof.get("byte_identical") is not True
+        or git_proof.get("commit") != runtime_manifest.get("runtime_commit")
+    ):
+        raise ValueError("phase provenance requires a byte-identical runtime git proof")
+    timestamp = _validate_runtime_timestamp(first_observation_at_utc)
+    selected_tasks = [task for task in tasks if task.phase == phase_name]
+    if len(selected_tasks) != len(tasks):
+        raise ValueError("phase provenance task roster crosses phase boundaries")
+    task_ids = [task.task_id for task in selected_tasks]
+    if len(task_ids) != len(set(task_ids)):
+        raise ValueError("phase provenance task roster contains duplicates")
+    runtime_phase = runtime_manifest.get("phases", {}).get(phase_name)
+    if not isinstance(runtime_phase, Mapping):
+        raise ValueError("runtime manifest lacks the requested phase")
+    required_scope = {
+        "collection_mode",
+        "development_only",
+        "partial",
+        "formal_analysis_eligible",
+        "frozen_providers",
+        "selected_providers",
+        "task_limit",
+    }
+    if not isinstance(collection_scope, Mapping) or set(collection_scope) != required_scope:
+        raise ValueError("phase collection scope is incomplete")
+    frozen_providers = list(contract.config[phase_name]["providers"])
+    if list(collection_scope["frozen_providers"]) != frozen_providers:
+        raise ValueError("phase collection scope frozen providers drifted")
+    formal = collection_scope.get("collection_mode") == "formal"
+    if formal and (
+        collection_scope.get("development_only") is not False
+        or collection_scope.get("partial") is not False
+        or collection_scope.get("formal_analysis_eligible") is not True
+        or list(collection_scope["selected_providers"]) != frozen_providers
+        or task_ids != list(runtime_phase.get("task_ids") or ())
+    ):
+        raise ValueError("formal phase scope does not match the frozen population")
+    if not formal and collection_scope.get("formal_analysis_eligible") is not False:
+        raise ValueError("partial phase scope cannot be formal-analysis eligible")
+    prior = float(prior_documented_cost_yuan)
+    evidence = str(prior_cost_evidence).strip()
+    if prior < 0 or not evidence:
+        raise ValueError("phase provenance requires prior documented cost evidence")
+    prompt = active_prompt_revision(contract)
+    roster_rows = [
+        {
+            "task_id": task.task_id,
+            "logical_key": task.logical_key,
+            "message_sha256": task.message_sha256,
+            "wire_message_sha256": task.wire_message_sha256,
+            "prompt_contract_sha256": task.prompt_contract_sha256,
+        }
+        for task in selected_tasks
+    ]
+    artifact: dict[str, Any] = {
+        "schema_version": "yher.llm_sim_v2.phase_provenance.v1",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "phase": phase_name,
+        "analysis_population": phase_name,
+        "collection_mode": collection_scope["collection_mode"],
+        "development_only": bool(collection_scope["development_only"]),
+        "partial": bool(collection_scope["partial"]),
+        "formal_analysis_eligible": bool(
+            collection_scope["formal_analysis_eligible"]
+        ),
+        "modality_condition": contract.config["modality_condition"],
+        "selected_providers": list(collection_scope["selected_providers"]),
+        "frozen_providers": frozen_providers,
+        "task_limit": collection_scope["task_limit"],
+        "first_observation_at_utc": timestamp,
+        "freeze": {
+            "freeze_commit": FROZEN_COMMIT,
+            "freeze_manifest_sha256": contract.freeze_manifest[
+                "freeze_manifest_sha256"
+            ],
+            "artifact_set_sha256": contract.freeze_manifest["artifact_set_sha256"],
+            "frozen_at_utc": contract.freeze_manifest["frozen_at_utc"],
+            "git_proof": dict(contract.freeze_proof),
+        },
+        "source": {
+            "source_set_sha256": contract.freeze_manifest["source_set_sha256"],
+            "source_manifest_file_sha256": _frozen_file_sha256(
+                contract,
+                "experiments/llm_sim_v2/frozen_v0/source_manifest.json",
+            ),
+            "files": list(contract.source_manifest["files"]),
+        },
+        "target": {
+            "target_set_hash": contract.config["target_set_hash"],
+            "mapping_sha256": contract.mapping["mapping_sha256"],
+        },
+        "grid_sha256": contract.freeze_manifest["grid_sha256"],
+        "population_manifest_sha256": contract.freeze_manifest[
+            "population_manifest_sha256"
+        ],
+        "official_inputs_sha256": contract.freeze_manifest[
+            "official_inputs_sha256"
+        ],
+        "prompt": {
+            "revision": prompt["revision"],
+            "prompt_contract_sha256": prompt["prompt_contract_sha256"],
+            "prompt_ledger_sha256": contract.prompt_ledger[
+                "prompt_ledger_sha256"
+            ],
+            "rendered_contract_sha256": dict(
+                prompt["rendered_contract_sha256"]
+            ),
+            "prompt_files": list(prompt["prompt_files"]),
+        },
+        "runtime": {
+            "runtime_task_manifest_sha256": runtime_manifest[
+                "runtime_task_manifest_sha256"
+            ],
+            "execution_commit": runtime_manifest["runtime_commit"],
+            "runtime_file_set_sha256": runtime_manifest[
+                "runtime_file_set_sha256"
+            ],
+            "execution_files": list(runtime_manifest["runtime_files"]),
+            "git_proof": dict(git_proof),
+        },
+        "task_roster": {
+            "expected_task_count": len(selected_tasks),
+            "expected_task_ids": task_ids,
+            "task_set_sha256": _sha(roster_rows),
+            "frozen_task_count": int(runtime_phase["task_count"]),
+            "frozen_task_set_sha256": runtime_phase["task_set_sha256"],
+        },
+        "budget": {
+            "prior_documented_cost_yuan": round(prior, 8),
+            "prior_cost_evidence": evidence,
+            "soft_warning_yuan": float(contract.config["budget_yuan"]["soft_warning"]),
+            "hard_fuse_yuan": float(contract.config["budget_yuan"]["hard_fuse"]),
+        },
+    }
+    artifact["phase_provenance_sha256"] = _sha(artifact)
+    return artifact
+
+
+def verify_phase_provenance(artifact: Mapping[str, Any]) -> dict[str, Any]:
+    if (
+        not isinstance(artifact, Mapping)
+        or artifact.get("schema_version") != "yher.llm_sim_v2.phase_provenance.v1"
+        or artifact.get("simulated") is not True
+        or artifact.get("run_id") != RUN_ID
+        or artifact.get("phase") not in {"pilot", "main"}
+        or artifact.get("analysis_population") != artifact.get("phase")
+    ):
+        raise ValueError("phase provenance envelope is invalid")
+    payload = dict(artifact)
+    advertised = payload.pop("phase_provenance_sha256", None)
+    if advertised != _sha(payload):
+        raise ValueError("phase provenance digest mismatch")
+    roster = artifact.get("task_roster")
+    if (
+        not isinstance(roster, Mapping)
+        or roster.get("expected_task_count")
+        != len(roster.get("expected_task_ids") or ())
+        or len(set(roster.get("expected_task_ids") or ()))
+        != roster.get("expected_task_count")
+    ):
+        raise ValueError("phase provenance task roster is invalid")
+    return {
+        "schema_version": "yher.llm_sim_v2.phase_provenance_proof.v1",
+        "ok": True,
+        "phase_provenance_sha256": advertised,
+        "formal_analysis_eligible": artifact.get("formal_analysis_eligible") is True,
+    }
+
+
+def validate_formal_phase_provenance(artifact: Mapping[str, Any]) -> dict[str, Any]:
+    proof = verify_phase_provenance(artifact)
+    if (
+        artifact.get("collection_mode") != "formal"
+        or artifact.get("development_only") is not False
+        or artifact.get("partial") is not False
+        or artifact.get("formal_analysis_eligible") is not True
+    ):
+        raise ValueError("partial or development-only phase is ineligible for formal analysis")
+    return proof
+
+
+def write_phase_provenance(
+    output_base: str | Path,
+    *,
+    phase: Mapping[str, Any],
+) -> Path:
+    verify_phase_provenance(phase)
+    store = V2Store(output_base, phase=str(phase["phase"]))
+    return store.write_json("phase_provenance.json", phase, immutable=True)
+
+
+def _phase_provenance_binding(artifact: Mapping[str, Any]) -> dict[str, Any]:
+    verify_phase_provenance(artifact)
+    return {
+        "collection_mode": artifact["collection_mode"],
+        "development_only": artifact["development_only"],
+        "partial": artifact["partial"],
+        "formal_analysis_eligible": artifact["formal_analysis_eligible"],
+        "phase_provenance_sha256": artifact["phase_provenance_sha256"],
+        "freeze_manifest_sha256": artifact["freeze"]["freeze_manifest_sha256"],
+        "source_set_sha256": artifact["source"]["source_set_sha256"],
+        "target_set_hash": artifact["target"]["target_set_hash"],
+        "grid_sha256": artifact["grid_sha256"],
+        "prompt_ledger_sha256": artifact["prompt"]["prompt_ledger_sha256"],
+        "prompt_revision": artifact["prompt"]["revision"],
+        "prompt_contract_sha256": artifact["prompt"]["prompt_contract_sha256"],
+        "runtime_task_manifest_sha256": artifact["runtime"][
+            "runtime_task_manifest_sha256"
+        ],
+        "execution_commit": artifact["runtime"]["execution_commit"],
+        "runtime_file_set_sha256": artifact["runtime"][
+            "runtime_file_set_sha256"
+        ],
+    }
+
+
 def _retryable(exc: Exception) -> bool:
     if isinstance(exc, (ProviderNetworkError, ProviderTruncatedResponseError)):
         return True
@@ -665,8 +1061,19 @@ def _error_category(exc: Exception) -> str:
     return "protocol_or_unexpected"
 
 
-def _backoff(policy: ProviderPolicy, retry_index: int) -> float:
-    return min(30.0, max(0.0, policy.timeout_seconds / 60.0) * (2**retry_index) / 10.0)
+def _backoff(
+    policy: ProviderPolicy,
+    retry_index: int,
+    *,
+    random_value: Callable[[], float],
+    retry_after_seconds: float | None = None,
+) -> float:
+    base = min(
+        policy.max_backoff_seconds,
+        policy.base_backoff_seconds * (2**retry_index),
+    )
+    jitter = 1.0 + policy.jitter_fraction * (2.0 * random_value() - 1.0)
+    return max(float(retry_after_seconds or 0.0), max(0.0, base * jitter))
 
 
 def execute_task(
@@ -677,10 +1084,11 @@ def execute_task(
     transport: ProviderTransport,
     policy: ProviderPolicy,
     budget: BudgetLedger,
+    provenance: Mapping[str, Any] | None = None,
     sleep: Callable[[float], None] = time.sleep,
     random_value: Callable[[], float] = lambda: 0.5,
 ) -> dict[str, Any]:
-    del random_value  # deterministic retries are part of the frozen contract
+    provenance_binding = dict(provenance or {})
     attempts: list[dict[str, Any]] = []
     request_max_tokens = policy.max_tokens
     parsed: dict[str, Any] | None = None
@@ -688,7 +1096,14 @@ def execute_task(
     final_status = "technical_failure"
     final_error: str | None = None
     for attempt_index in range(policy.max_attempts):
-        budget.assert_new_call_allowed()
+        try:
+            budget.assert_new_call_allowed()
+        except BudgetFuseOpen:
+            if not attempts:
+                raise
+            final_status = "technical_failure"
+            final_error = "budget_fuse_open_after_attempt"
+            break
         started = time.monotonic()
         try:
             response = transport.complete(
@@ -736,9 +1151,21 @@ def execute_task(
             except InvalidProviderOutput as exc:
                 final_status = "excluded_schema"
                 final_error = str(exc)
+                attempts[-1].update(
+                    {
+                        "status": "failed",
+                        "error_category": "invalid_schema",
+                    }
+                )
                 if attempt_index + 1 >= policy.max_attempts:
                     break
-                sleep(_backoff(policy, attempt_index))
+                sleep(
+                    _backoff(
+                        policy,
+                        attempt_index,
+                        random_value=random_value,
+                    )
+                )
                 continue
         except BudgetFuseOpen:
             raise
@@ -748,6 +1175,7 @@ def execute_task(
                 truncated_usage = exc.usage
                 truncated_cost = max(0.0, float(exc.cost_yuan))
                 budget.add_cost(truncated_cost)
+                returned_model = str(exc.returned_model or "").strip() or returned_model
                 attempt = {
                     "attempt": attempt_index + 1,
                     "status": "failed",
@@ -768,6 +1196,9 @@ def execute_task(
                     "status": "failed",
                     "error_category": final_error,
                     "latency_ms": round((time.monotonic() - started) * 1000, 3),
+                    "cost_yuan": None,
+                    "cost_known": False,
+                    "billing_ambiguity": isinstance(exc, ProviderNetworkError),
                 }
             attempts.append(
                 attempt
@@ -776,7 +1207,14 @@ def execute_task(
                 break
             if isinstance(exc, ProviderTruncatedResponseError):
                 request_max_tokens = policy.retry_max_tokens
-            sleep(_backoff(policy, attempt_index))
+            sleep(
+                _backoff(
+                    policy,
+                    attempt_index,
+                    random_value=random_value,
+                    retry_after_seconds=getattr(exc, "retry_after_seconds", None),
+                )
+            )
 
     outcomes = compute_outcomes(
         condition=task.condition,
@@ -796,8 +1234,16 @@ def execute_task(
         "run_id": RUN_ID,
         "phase": task.phase,
         "analysis_population": task.analysis_population,
+        "collection_mode": provenance_binding.get(
+            "collection_mode", "development_partial"
+        ),
+        "development_only": provenance_binding.get("development_only", True),
+        "partial": provenance_binding.get("partial", True),
+        "formal_analysis_eligible": provenance_binding.get(
+            "formal_analysis_eligible", False
+        ),
         "provider": provider,
-        "model_id": returned_model or model,
+        "model_id": returned_model,
         "requested_model": model,
         "prompt_revision": task.prompt_revision,
         "prompt_contract_sha256": task.prompt_contract_sha256,
@@ -823,6 +1269,10 @@ def execute_task(
         "attempts": attempts,
         "retry_count": max(0, len(attempts) - 1),
         "cost_yuan": round(sum(float(row.get("cost_yuan") or 0.0) for row in attempts), 8),
+        "has_unknown_cost_attempts": any(
+            row.get("cost_known") is False for row in attempts
+        ),
+        "provenance": provenance_binding,
     }
 
 
@@ -836,8 +1286,10 @@ class V2ProviderRunner:
         provider: str,
         transport: ProviderTransport,
         budget: BudgetLedger,
+        phase_provenance: Mapping[str, Any] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         random_value: Callable[[], float] = lambda: 0.5,
+        clock: Callable[[], float] = time.time,
     ) -> None:
         phase_name = str(phase).strip().lower()
         if phase_name not in {"pilot", "main"}:
@@ -851,7 +1303,16 @@ class V2ProviderRunner:
         self.budget = budget
         self.sleep = sleep
         self.random_value = random_value
+        self.clock = clock
         self.store = V2Store(output_base, phase=phase_name)
+        if phase_provenance is not None:
+            if phase_provenance.get("phase") != phase_name:
+                raise ValueError("phase provenance does not match provider runner phase")
+            self.provenance = _phase_provenance_binding(phase_provenance)
+            self.phase_provenance = dict(phase_provenance)
+        else:
+            self.provenance = {}
+            self.phase_provenance = None
         self._write_lock = threading.Lock()
 
     def _record_path(self, task: Task) -> Path:
@@ -873,6 +1334,10 @@ class V2ProviderRunner:
             or record.get("analysis_population") != self.phase
             or record.get("provider") != self.provider
             or record.get("requested_model") != self.model
+            or (
+                self.provenance
+                and record.get("provenance") != self.provenance
+            )
         ):
             raise ValueError("existing v2 record does not match the frozen task")
         return dict(record)
@@ -885,8 +1350,215 @@ class V2ProviderRunner:
                 immutable=True,
             )
 
+    def _execute_and_write(self, task: Task) -> dict[str, Any]:
+        record = execute_task(
+            task,
+            provider=self.provider,
+            model=self.model,
+            transport=self.transport,
+            policy=self.policy,
+            budget=self.budget,
+            provenance=self.provenance,
+            sleep=self.sleep,
+            random_value=self.random_value,
+        )
+        self._write_record(task, record)
+        return record
+
+    def _condition_lifecycle(
+        self,
+        selected: Sequence[Task],
+        records: Mapping[str, Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        minimum = int(
+            self.contract.config["provider_exclusion"][
+                "minimum_complete_clusters_per_condition"
+            ]
+        )
+        threshold = float(
+            self.contract.config["provider_exclusion"][
+                "blind_invalid_schema_fraction_strictly_above"
+            ]
+        )
+        output: dict[str, Any] = {}
+        for condition in ("controlled", "blind"):
+            condition_tasks = [task for task in selected if task.condition == condition]
+            condition_records = {
+                task.task_id: records[task.task_id]
+                for task in condition_tasks
+                if task.task_id in records
+            }
+            invalid = sum(
+                row.get("status") == "excluded_schema"
+                for row in condition_records.values()
+            )
+            expected_count = len(condition_tasks)
+            invalid_fraction = invalid / expected_count if expected_count else None
+            grouped: dict[str, list[Task]] = {}
+            for task in condition_tasks:
+                grouped.setdefault(task.persona_id, []).append(task)
+            complete_clusters = sum(
+                bool(tasks)
+                and all(
+                    task.task_id in records
+                    and records[task.task_id].get("status") == "complete"
+                    for task in tasks
+                )
+                for tasks in grouped.values()
+            )
+            output[condition] = {
+                "expected_count": expected_count,
+                "present_count": len(condition_records),
+                "missing_count": expected_count - len(condition_records),
+                "invalid_schema_count": invalid,
+                "invalid_schema_fraction": invalid_fraction,
+                "excluded_invalid_schema": bool(
+                    condition == "blind"
+                    and invalid_fraction is not None
+                    and invalid_fraction > threshold
+                ),
+                "complete_cluster_count": complete_clusters,
+                "minimum_complete_clusters": minimum,
+                "minimum_complete_clusters_met": complete_clusters >= minimum,
+            }
+        return output
+
+    def _write_manifest(
+        self,
+        *,
+        selected: Sequence[Task],
+        records: Mapping[str, Mapping[str, Any]],
+        resumed_count: int,
+        fuse_skipped: set[str],
+        breaker_skipped: set[str],
+        interrupted: bool,
+        interruption_type: str | None,
+        breaker_opened_at_epoch: float | None,
+        consecutive_failures: int,
+    ) -> dict[str, Any]:
+        expected_ids = [task.task_id for task in selected]
+        present_ids = [task_id for task_id in expected_ids if task_id in records]
+        missing_ids = [task_id for task_id in expected_ids if task_id not in records]
+        missing_set = set(missing_ids)
+        fuse_ids = [task_id for task_id in expected_ids if task_id in fuse_skipped]
+        breaker_ids = [task_id for task_id in expected_ids if task_id in breaker_skipped]
+        classified = set(fuse_ids) | set(breaker_ids)
+        interrupted_ids = (
+            [task_id for task_id in missing_ids if task_id not in classified]
+            if interrupted
+            else []
+        )
+        counts = Counter(str(record.get("status")) for record in records.values())
+        if interrupted:
+            provider_lifecycle = "interrupted"
+        elif fuse_ids:
+            provider_lifecycle = "fuse_open"
+        elif breaker_ids:
+            provider_lifecycle = "excluded_repeated_failure"
+        elif missing_ids:
+            provider_lifecycle = "partial_missing"
+        elif any(status != "complete" for status in counts):
+            provider_lifecycle = "complete_with_exclusions"
+        else:
+            provider_lifecycle = "complete"
+        resume_epoch = (
+            breaker_opened_at_epoch + self.policy.cooldown_seconds
+            if breaker_opened_at_epoch is not None
+            else None
+        )
+        scope = self.phase_provenance or {}
+        summary = {
+            "schema_version": "yher.llm_sim_v2.provider_manifest.v1",
+            "simulated": True,
+            "run_id": RUN_ID,
+            "phase": self.phase,
+            "analysis_population": self.phase,
+            "provider": self.provider,
+            "provider_lifecycle": provider_lifecycle,
+            "collection_mode": scope.get("collection_mode", "development_partial"),
+            "development_only": scope.get("development_only", True),
+            "partial": scope.get("partial", True),
+            "formal_analysis_eligible": scope.get("formal_analysis_eligible", False),
+            "requested_model": self.model,
+            "returned_models": sorted(
+                {
+                    str(record["model_id"])
+                    for record in records.values()
+                    if record.get("model_id")
+                }
+            ),
+            "freeze_commit": FROZEN_COMMIT,
+            "prompt_revision": active_prompt_revision(self.contract)["revision"],
+            "record_count": len(records),
+            "complete_records": counts.get("complete", 0),
+            "resumed_records": resumed_count,
+            "status_counts": dict(sorted(counts.items())),
+            "lifecycle": {
+                "expected_count": len(expected_ids),
+                "present_count": len(present_ids),
+                "missing_count": len(missing_ids),
+                "interrupted_count": len(interrupted_ids),
+                "fuse_skipped_count": len(fuse_ids),
+                "breaker_skipped_count": len(breaker_ids),
+                "expected_task_ids": expected_ids,
+                "present_task_ids": present_ids,
+                "missing_task_ids": missing_ids,
+                "interrupted_task_ids": interrupted_ids,
+                "fuse_skipped_task_ids": fuse_ids,
+                "breaker_skipped_task_ids": breaker_ids,
+                "unclassified_missing_task_ids": [
+                    task_id
+                    for task_id in missing_ids
+                    if task_id not in classified and task_id not in interrupted_ids
+                ],
+            },
+            "condition_lifecycle": self._condition_lifecycle(selected, records),
+            "interruption": {
+                "interrupted": interrupted,
+                "type": interruption_type,
+            },
+            "breaker": {
+                "status": "open" if breaker_ids else "closed",
+                "failure_threshold": self.policy.failure_threshold,
+                "consecutive_failures": consecutive_failures,
+                "cooldown_seconds": self.policy.cooldown_seconds,
+                "opened_at_epoch": breaker_opened_at_epoch,
+                "opened_at_utc": (
+                    _utc_from_epoch(breaker_opened_at_epoch)
+                    if breaker_opened_at_epoch is not None
+                    else None
+                ),
+                "resume_not_before_epoch": resume_epoch,
+                "resume_not_before_utc": (
+                    _utc_from_epoch(resume_epoch) if resume_epoch is not None else None
+                ),
+            },
+            "provenance": dict(self.provenance),
+            "budget": {
+                "total_cost_yuan": round(self.budget.total_cost_yuan, 8),
+                "soft_warning_triggered": self.budget.soft_warning_triggered,
+                "hard_fuse_triggered": self.budget.hard_fuse_triggered
+                or bool(fuse_ids),
+            },
+            "finished_at_utc": _utc_now(),
+        }
+        if set(present_ids) & missing_set:
+            raise AssertionError("provider lifecycle present/missing sets overlap")
+        self.store.write_json(
+            Path("provider_manifests") / f"{self.provider}.json",
+            summary,
+            immutable=False,
+        )
+        return summary
+
     def run_tasks(self, tasks: Sequence[Task]) -> dict[str, Any]:
         selected = [task for task in tasks if task.phase == self.phase]
+        if len({task.task_id for task in selected}) != len(selected):
+            raise ValueError("provider task roster contains duplicate task IDs")
+        if self.phase_provenance is not None and [task.task_id for task in selected] != list(
+            self.phase_provenance["task_roster"]["expected_task_ids"]
+        ):
+            raise ValueError("provider task roster differs from phase provenance")
         existing: dict[str, dict[str, Any]] = {}
         pending: list[Task] = []
         for task in selected:
@@ -896,59 +1568,109 @@ class V2ProviderRunner:
             else:
                 existing[task.task_id] = record
         records: dict[str, dict[str, Any]] = dict(existing)
-        fuse_open = False
-        with ThreadPoolExecutor(max_workers=self.policy.concurrency) as pool:
-            futures = {
-                pool.submit(
-                    execute_task,
-                    task,
-                    provider=self.provider,
-                    model=self.model,
-                    transport=self.transport,
-                    policy=self.policy,
-                    budget=self.budget,
-                    sleep=self.sleep,
-                    random_value=self.random_value,
-                ): task
-                for task in pending
-            }
-            for future in as_completed(futures):
-                task = futures[future]
-                try:
-                    record = future.result()
-                except BudgetFuseOpen:
-                    fuse_open = True
-                    continue
-                self._write_record(task, record)
-                records[task.task_id] = record
-        counts = Counter(str(record.get("status")) for record in records.values())
-        summary = {
-            "schema_version": "yher.llm_sim_v2.provider_manifest.v1",
-            "simulated": True,
-            "run_id": RUN_ID,
-            "phase": self.phase,
-            "analysis_population": self.phase,
-            "provider": self.provider,
-            "requested_model": self.model,
-            "returned_models": sorted({str(record.get("model_id")) for record in records.values()}),
-            "freeze_commit": FROZEN_COMMIT,
-            "prompt_revision": 0,
-            "record_count": len(records),
-            "complete_records": counts.get("complete", 0),
-            "resumed_records": len(existing),
-            "status_counts": dict(sorted(counts.items())),
-            "budget": {
-                "total_cost_yuan": round(self.budget.total_cost_yuan, 8),
-                "soft_warning_triggered": self.budget.soft_warning_triggered,
-                "hard_fuse_triggered": self.budget.hard_fuse_triggered or fuse_open,
-            },
-            "finished_at_utc": _utc_now(),
-        }
-        self.store.write_json(
-            Path("provider_manifests") / f"{self.provider}.json",
-            summary,
-            immutable=False,
+        fuse_skipped: set[str] = set()
+        breaker_skipped: set[str] = set()
+        interrupted = False
+        interruption_type: str | None = None
+        breaker_opened_at_epoch: float | None = None
+        consecutive_failures = 0
+        for task in selected:
+            record = existing.get(task.task_id)
+            if record is None:
+                break
+            if record.get("status") == "complete":
+                consecutive_failures = 0
+            else:
+                consecutive_failures += 1
+        previous = self.store.read_json(
+            Path("provider_manifests") / f"{self.provider}.json"
         )
+        previous_breaker = previous.get("breaker") if isinstance(previous, Mapping) else None
+        if isinstance(previous_breaker, Mapping):
+            resume_epoch = previous_breaker.get("resume_not_before_epoch")
+            if (
+                previous_breaker.get("status") == "open"
+                and isinstance(resume_epoch, (int, float))
+                and self.clock() < float(resume_epoch)
+            ):
+                breaker_opened_at_epoch = float(previous_breaker["opened_at_epoch"])
+                consecutive_failures = int(
+                    previous_breaker.get("consecutive_failures") or 0
+                )
+                breaker_skipped.update(task.task_id for task in pending)
+                pending.clear()
+            elif previous_breaker.get("status") == "open":
+                consecutive_failures = 0
+        if consecutive_failures >= self.policy.failure_threshold and pending:
+            breaker_opened_at_epoch = self.clock()
+            breaker_skipped.update(task.task_id for task in pending)
+            pending.clear()
+        summary: dict[str, Any] | None = None
+        try:
+            while pending:
+                if self.budget.hard_fuse_triggered:
+                    fuse_skipped.update(task.task_id for task in pending)
+                    pending.clear()
+                    break
+                batch = pending[: self.policy.concurrency]
+                del pending[: len(batch)]
+                batch_records: dict[str, dict[str, Any]] = {}
+                pool = ThreadPoolExecutor(max_workers=len(batch))
+                futures = {
+                    pool.submit(self._execute_and_write, task): task for task in batch
+                }
+                try:
+                    for future in as_completed(futures):
+                        task = futures[future]
+                        try:
+                            record = future.result()
+                        except BudgetFuseOpen:
+                            fuse_skipped.add(task.task_id)
+                            continue
+                        records[task.task_id] = record
+                        batch_records[task.task_id] = record
+                finally:
+                    pool.shutdown(wait=True, cancel_futures=True)
+                for task in batch:
+                    record = batch_records.get(task.task_id)
+                    if record is None:
+                        continue
+                    if record.get("status") == "complete":
+                        consecutive_failures = 0
+                    else:
+                        consecutive_failures += 1
+                        if consecutive_failures >= self.policy.failure_threshold:
+                            breaker_opened_at_epoch = self.clock()
+                            breaker_skipped.update(task.task_id for task in pending)
+                            pending.clear()
+                            break
+                if self.budget.hard_fuse_triggered and pending:
+                    fuse_skipped.update(task.task_id for task in pending)
+                    pending.clear()
+        except BaseException as exc:
+            interrupted = True
+            interruption_type = type(exc).__name__
+            raise
+        finally:
+            # Workers persist before returning, so a completed in-flight response
+            # remains resumable even when the coordinator is interrupted.
+            for task in selected:
+                if task.task_id not in records:
+                    record = self._read_existing(task)
+                    if record is not None:
+                        records[task.task_id] = record
+            summary = self._write_manifest(
+                selected=selected,
+                records=records,
+                resumed_count=len(existing),
+                fuse_skipped=fuse_skipped,
+                breaker_skipped=breaker_skipped,
+                interrupted=interrupted,
+                interruption_type=interruption_type,
+                breaker_opened_at_epoch=breaker_opened_at_epoch,
+                consecutive_failures=consecutive_failures,
+            )
+        assert summary is not None
         return summary
 
 
@@ -960,11 +1682,16 @@ __all__ = [
     "RuntimeContract",
     "Task",
     "V2ProviderRunner",
+    "active_prompt_revision",
+    "build_phase_provenance",
     "compute_outcomes",
     "build_runtime_task_manifest",
     "enumerate_tasks",
     "execute_task",
     "load_runtime_contract",
     "parse_provider_output",
+    "validate_formal_phase_provenance",
+    "verify_phase_provenance",
     "verify_runtime_task_manifest",
+    "write_phase_provenance",
 ]
