@@ -1,0 +1,18 @@
+{
+  "authority": "retrospective_post_computation_byte_anchor",
+  "claim_boundary": "supply_bound_algorithmic_illustration_not_learning_benefit_or_external_validation",
+  "historical_computation_order_status": "not_cryptographically_proven",
+  "illustrative": true,
+  "output_manifest": {
+    "bytes": 2187,
+    "schema_version": "yher.p2.output_manifest.v1",
+    "sha256": "c6b87f3b176708dd16fac931bfe10145e1189a289115745b43e47d3cde445773"
+  },
+  "schema_version": "yher.p2.output_anchor.v1",
+  "simulated": true,
+  "spec": {
+    "commit": "d506fad14259f134d5a051e029dd885bdb693796",
+    "relative_path": "experiments/p2_illustrative_analysis_plan.md",
+    "sha256": "259cb64e3211a9f4bb309cebe7c415b9d7296d112b42f32dc2bdd373c9a61b83"
+  }
+}

@@ -50,6 +50,30 @@ def test_renderer_cli_advertises_reproducible_inputs_and_gates() -> None:
         assert option in result.stdout
 
 
+def test_render_receipt_rejects_a_pseudo_pdf(tmp_path: Path) -> None:
+    manuscript = tmp_path / "manuscript.md"
+    manuscript.write_text("# Paper\n\nRendered evidence.\n", encoding="utf-8")
+    references = tmp_path / "references.json"
+    references.write_text(
+        json.dumps({"schema_version": "yher.verified-references.v1", "references": []}),
+        encoding="utf-8",
+    )
+    pseudo_pdf = tmp_path / "paper.pdf"
+    pseudo_pdf.write_bytes(b"%PDF-1.7\npseudo\n%%EOF\n")
+
+    with pytest.raises(paper_pdf.RenderError):
+        paper_pdf.write_render_receipt(
+            profile="main",
+            input_path=manuscript,
+            references_path=references,
+            output_path=pseudo_pdf,
+            pages=9,
+            pandoc="fixture-pandoc",
+            chrome="fixture-chrome",
+            receipt_path=tmp_path / "paper.pdf.render.json",
+        )
+
+
 def test_reference_conversion_produces_citeproc_csl_records() -> None:
     payload = {
         "schema_version": "yher.verified-references.v1",

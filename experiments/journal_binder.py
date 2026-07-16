@@ -30,6 +30,9 @@ P2_CLAIM_BOUNDARY = (
     "supply_bound_algorithmic_illustration_not_learning_benefit_or_external_validation"
 )
 P2_SPEC_PATH = Path(__file__).with_name("p2_illustrative_analysis_plan.md")
+P2_OUTPUT_ANCHOR_RELATIVE = Path(
+    "experiments/evidence_anchors/p2_illustrative_output_receipt.json"
+)
 P2_ARMS = ("oracle", "A", "B", "C")
 P2_BOOTSTRAP_METRICS = (
     "selected_seconds",
@@ -1345,14 +1348,28 @@ def _validate_persona_controlled(
         "Persona-v2 controlled results",
     )
     provider_list = list(providers)
-    eligible = [
+    lifecycle_eligible = [
         provider
         for provider in provider_list
         if lifecycle[provider].get("controlled_eligible") is True
     ]
-    excluded = [provider for provider in provider_list if provider not in eligible]
-    if value.get("eligible_providers") != eligible or value.get("excluded_providers") != excluded:
+    lifecycle_excluded = [
+        provider for provider in provider_list if provider not in lifecycle_eligible
+    ]
+    reported_eligible = value.get("eligible_providers")
+    reported_excluded = value.get("excluded_providers")
+    if (
+        not isinstance(reported_eligible, list)
+        or not isinstance(reported_excluded, list)
+        or any(not isinstance(provider, str) for provider in reported_eligible)
+        or any(not isinstance(provider, str) for provider in reported_excluded)
+        or len(reported_eligible) != len(set(reported_eligible))
+        or len(reported_excluded) != len(set(reported_excluded))
+        or set(reported_eligible) != set(lifecycle_eligible)
+        or set(reported_excluded) != set(lifecycle_excluded)
+    ):
         raise BinderError("Persona-v2 controlled eligibility differs from lifecycle")
+    eligible = list(reported_eligible)
 
     composition = value.get("composition")
     if not isinstance(composition, Mapping):
@@ -3315,7 +3332,153 @@ def _p2_library_boundary(
     return boundary, by_chunk_id, assignments
 
 
-def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
+def _p2_output_anchor_provenance(
+    *,
+    output_manifest_bytes: bytes,
+    output_manifest: Mapping[str, Any],
+    spec_commit: str,
+    spec_sha256: str,
+    producer_declared_precedes_outcome_computation: bool,
+    allow_fixture: bool,
+) -> dict[str, Any]:
+    output_sha256 = hashlib.sha256(output_manifest_bytes).hexdigest()
+    if allow_fixture:
+        return {
+            "authority": "synthetic_test_fixture",
+            "anchor_commit": None,
+            "anchor_relative_path": None,
+            "anchor_sha256": None,
+            "spec_commit": spec_commit,
+            "spec_sha256": spec_sha256,
+            "spec_is_ancestor_of_anchor": None,
+            "output_manifest_sha256": output_sha256,
+            "producer_declared_precedes_outcome_computation": (
+                producer_declared_precedes_outcome_computation
+            ),
+            "historical_computation_order_status": "not_cryptographically_proven",
+            "source_artifact": None,
+        }
+
+    repository = Path(__file__).resolve().parents[1]
+    anchor_path, anchor_bytes = _read_relative_regular_file(
+        repository,
+        P2_OUTPUT_ANCHOR_RELATIVE,
+        label="P2 retrospective output anchor",
+    )
+    anchor = _strict_json_bytes(anchor_bytes, label="P2 retrospective output anchor")
+    if not isinstance(anchor, Mapping):
+        raise BinderError("P2 retrospective output anchor root is invalid")
+    _assert_exact_keys(
+        anchor,
+        {
+            "schema_version",
+            "authority",
+            "claim_boundary",
+            "historical_computation_order_status",
+            "illustrative",
+            "output_manifest",
+            "simulated",
+            "spec",
+        },
+        "P2 retrospective output anchor",
+    )
+    anchored_output = anchor.get("output_manifest")
+    anchored_spec = anchor.get("spec")
+    if not isinstance(anchored_output, Mapping) or not isinstance(
+        anchored_spec, Mapping
+    ):
+        raise BinderError("P2 retrospective output anchor bindings are invalid")
+    _assert_exact_keys(
+        anchored_output,
+        {"bytes", "schema_version", "sha256"},
+        "P2 retrospective output anchor manifest",
+    )
+    _assert_exact_keys(
+        anchored_spec,
+        {"commit", "relative_path", "sha256"},
+        "P2 retrospective output anchor spec",
+    )
+    if (
+        anchor.get("schema_version") != "yher.p2.output_anchor.v1"
+        or anchor.get("authority")
+        != "retrospective_post_computation_byte_anchor"
+        or anchor.get("claim_boundary") != P2_CLAIM_BOUNDARY
+        or anchor.get("historical_computation_order_status")
+        != "not_cryptographically_proven"
+        or anchor.get("simulated") is not True
+        or anchor.get("illustrative") is not True
+        or anchored_output.get("sha256") != output_sha256
+        or anchored_output.get("bytes") != len(output_manifest_bytes)
+        or anchored_output.get("schema_version")
+        != output_manifest.get("schema_version")
+        or anchored_spec.get("relative_path")
+        != P2_SPEC_PATH.relative_to(repository).as_posix()
+        or anchored_spec.get("commit") != spec_commit
+        or anchored_spec.get("sha256") != spec_sha256
+    ):
+        raise BinderError("P2 retrospective output anchor differs from bound artifacts")
+
+    relative = P2_OUTPUT_ANCHOR_RELATIVE.as_posix()
+    try:
+        committed_at_head = subprocess.check_output(
+            ["git", "show", f"HEAD:{relative}"], cwd=repository
+        )
+        anchor_commit = subprocess.check_output(
+            ["git", "rev-list", "-1", "HEAD", "--", relative],
+            cwd=repository,
+            text=True,
+        ).strip()
+        if re.fullmatch(r"[0-9a-f]{40}", anchor_commit) is None:
+            raise BinderError("P2 retrospective output anchor has no commit")
+        committed_at_anchor = subprocess.check_output(
+            ["git", "show", f"{anchor_commit}:{relative}"], cwd=repository
+        )
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", spec_commit, anchor_commit],
+            cwd=repository,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", anchor_commit, "HEAD"],
+            cwd=repository,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise BinderError("P2 retrospective output anchor cannot be verified") from exc
+    if (
+        anchor_commit == spec_commit
+        or committed_at_head != anchor_bytes
+        or committed_at_anchor != anchor_bytes
+    ):
+        raise BinderError("P2 retrospective output anchor Git bytes or ancestry drifted")
+    return {
+        "authority": str(anchor["authority"]),
+        "anchor_commit": anchor_commit,
+        "anchor_relative_path": relative,
+        "anchor_sha256": hashlib.sha256(anchor_bytes).hexdigest(),
+        "spec_commit": spec_commit,
+        "spec_sha256": spec_sha256,
+        "spec_is_ancestor_of_anchor": True,
+        "output_manifest_sha256": output_sha256,
+        "producer_declared_precedes_outcome_computation": (
+            producer_declared_precedes_outcome_computation
+        ),
+        "historical_computation_order_status": str(
+            anchor["historical_computation_order_status"]
+        ),
+        "source_artifact": _source_artifact(
+            anchor_path, relative_path=P2_OUTPUT_ANCHOR_RELATIVE.as_posix()
+        ),
+    }
+
+
+def _bind_p2(
+    p2_dir: Path | None, *, allow_fixture: bool = False
+) -> dict[str, Any]:
     if p2_dir is None:
         return {
             "status": "not_requested",
@@ -3578,24 +3741,25 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        commit_epoch = int(
-            subprocess.check_output(
-                ["git", "show", "-s", "--format=%ct", spec_commit],
-                cwd=repository,
-                text=True,
-            ).strip()
-        )
-    except (OSError, subprocess.CalledProcessError, ValueError) as exc:
+    except (OSError, subprocess.CalledProcessError) as exc:
         raise BinderError("P2 spec commit cannot be verified") from exc
     if hashlib.sha256(committed_spec).hexdigest() != spec_sha:
         raise BinderError("P2 committed spec bytes differ from the bound spec")
-    if commit_epoch >= min(
-        summary_path.stat().st_mtime,
-        input_manifest_path.stat().st_mtime,
-        output_manifest_path.stat().st_mtime,
-    ):
-        raise BinderError("P2 spec commit does not precede outcome artifacts")
+    provenance = _p2_output_anchor_provenance(
+        output_manifest_bytes=output_manifest_bytes,
+        output_manifest=output_manifest,
+        spec_commit=spec_commit,
+        spec_sha256=spec_sha,
+        producer_declared_precedes_outcome_computation=(
+            spec.get("precedes_outcome_computation") is True
+        ),
+        allow_fixture=allow_fixture,
+    )
     source_hashes["p2_spec_sha256"] = spec_sha
+    if provenance["anchor_sha256"] is not None:
+        source_hashes["p2_output_anchor_sha256"] = str(
+            provenance["anchor_sha256"]
+        )
 
     candidate_rows = _p2_read_candidates(source_paths["trusted_candidate_jsonl"])
     runtime, _ = _load_json_object(
@@ -3902,6 +4066,7 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
         "unobtainable_supply_minutes": None,
         "unobtainable_reason": "no_frozen_role_compatible_dose",
         "claim_exclusions": sorted(P2_PROHIBITED_CLAIM_FIELDS),
+        "provenance": provenance,
         "publication_assets": {
             "main_table_source": artifact_index["summary.json"],
             "figure_data": artifact_index["figure_data.json"],
@@ -4051,7 +4216,9 @@ def build_binder(
             Path(persona_v2_dir), allow_fixture=allow_fixture
         )
     )
-    p2_bound = _bind_p2(None if p2_dir is None else Path(p2_dir))
+    p2_bound = _bind_p2(
+        None if p2_dir is None else Path(p2_dir), allow_fixture=allow_fixture
+    )
     if (
         p2_bound.get("status") == "bound"
         and p2_bound.get("source_hashes", {}).get("h1_h4_raw_manifest_sha256")
@@ -4478,10 +4645,14 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         boundary = p2.get("library_boundary")
         overlap = p2.get("exact_overlap_boundary")
         overall = p2.get("overall")
+        provenance = p2.get("provenance")
         if (
             not isinstance(boundary, Mapping)
             or not isinstance(overlap, Mapping)
             or not isinstance(overall, list)
+            or not isinstance(provenance, Mapping)
+            or provenance.get("historical_computation_order_status")
+            != "not_cryptographically_proven"
         ):
             raise BinderError("bound P2 slot is incomplete")
         p2_lines = [
@@ -4496,6 +4667,12 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
                 "sources under a 600-second analytic budget. This illustrative "
                 "analysis does not estimate "
                 "learning benefit or external remediation quality."
+            ),
+            "",
+            (
+                "The specification-bound legacy output is retrospectively "
+                "byte-anchored; its historical computation order is not "
+                "cryptographically proven."
             ),
             "",
             "P/U role-compatible dose minutes are unavailable and remain null because "

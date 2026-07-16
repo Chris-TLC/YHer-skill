@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -1995,6 +1996,31 @@ def test_persona_v2_formal_w3_bundle_has_a_verified_success_path(
     }
 
 
+def test_persona_v2_accepts_analyzer_sorted_controlled_eligibility(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    analyzer_order = sorted(PERSONA_PROVIDERS)
+
+    def reorder_controlled_eligibility(result: dict[str, object]) -> None:
+        controlled = result["controlled"]
+        assert isinstance(controlled, dict)
+        controlled["eligible_providers"] = analyzer_order
+        effects = controlled["paired_effects"]
+        assert isinstance(effects, list)
+        for effect in effects:
+            assert isinstance(effect, dict)
+            effect["eligible_providers"] = analyzer_order
+
+    _rewrite_persona_result_bundle(bundle, reorder_controlled_eligibility)
+
+    bound = journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+    assert bound["controlled"]["eligible_providers"] == analyzer_order
+
+
 def test_persona_v2_accepts_exact_gpt_only_claude_missing_profile(
     tmp_path: Path,
 ) -> None:
@@ -2784,6 +2810,7 @@ def test_p2_binding_is_hash_bound_and_preserves_claim_boundary(tmp_path: Path) -
         registry_path=registry,
         p2_dir=p2,
         require_complete=False,
+        allow_fixture=True,
     )
     p2_bound = bound["p2"]
     assert p2_bound["illustrative"] is True
@@ -2838,7 +2865,7 @@ def test_p2_requires_an_input_manifest(tmp_path: Path) -> None:
     (p2 / "input_manifest.json").unlink()
 
     with pytest.raises(journal_binder.BinderError, match="input manifest"):
-        journal_binder._bind_p2(p2)
+        journal_binder._bind_p2(p2, allow_fixture=True)
 
 
 def test_p2_recursively_rejects_nested_claim_fields(tmp_path: Path) -> None:
@@ -2861,7 +2888,7 @@ def test_p2_recursively_rejects_nested_claim_fields(tmp_path: Path) -> None:
     (p2 / "output_manifest.json").write_bytes(_canonical(output) + b"\n")
 
     with pytest.raises(journal_binder.BinderError, match="prohibited claim field"):
-        journal_binder._bind_p2(p2)
+        journal_binder._bind_p2(p2, allow_fixture=True)
 
 
 def test_p2_verifies_source_file_bytes_instead_of_trusting_hash_gate(
@@ -2882,7 +2909,7 @@ def test_p2_verifies_source_file_bytes_instead_of_trusting_hash_gate(
     candidate_path.write_bytes(candidate_path.read_bytes() + b"{}\n")
 
     with pytest.raises(journal_binder.BinderError, match="source file SHA-256"):
-        journal_binder._bind_p2(p2)
+        journal_binder._bind_p2(p2, allow_fixture=True)
 
 
 def test_p2_rejects_symlinked_output_artifact(tmp_path: Path) -> None:
@@ -2898,7 +2925,7 @@ def test_p2_rejects_symlinked_output_artifact(tmp_path: Path) -> None:
     artifact.symlink_to(outside)
 
     with pytest.raises(journal_binder.BinderError, match="symlink|unsafe|regular"):
-        journal_binder._bind_p2(p2)
+        journal_binder._bind_p2(p2, allow_fixture=True)
 
 
 @pytest.mark.parametrize(
@@ -2941,7 +2968,25 @@ def test_p2_spec_commit_must_bind_the_committed_spec_bytes(tmp_path: Path) -> No
     output_path.write_bytes(_canonical(output_manifest) + b"\n")
 
     with pytest.raises(journal_binder.BinderError, match="spec commit|committed spec"):
-        journal_binder._bind_p2(p2)
+        journal_binder._bind_p2(p2, allow_fixture=True)
+
+
+def test_p2_binding_does_not_trust_mutable_output_mtimes(tmp_path: Path) -> None:
+    from experiments import journal_binder
+
+    raw_root = tmp_path / "raw"
+    raw_root.mkdir()
+    raw = _write_raw_manifest(raw_root)
+    p2 = _write_p2(tmp_path / "p2", raw_manifest=raw)
+    for filename in ("summary.json", "input_manifest.json", "output_manifest.json"):
+        os.utime(p2 / filename, (1, 1))
+
+    bound = journal_binder._bind_p2(p2, allow_fixture=True)
+
+    assert bound["status"] == "bound"
+    assert bound["provenance"]["historical_computation_order_status"] == (
+        "not_cryptographically_proven"
+    )
 
 
 def _complete_binder(tmp_path: Path) -> dict[str, object]:
@@ -3070,6 +3115,8 @@ def test_bound_persona_and_p2_slots_are_compact_complete_and_claim_bounded(
         "supply scarcity",
         "illustrative",
         "does not estimate learning benefit",
+        "retrospectively byte-anchored",
+        "historical computation order is not cryptographically proven",
     ):
         assert text in p2
     assert p2.count("| oracle |") == 1
@@ -3311,6 +3358,10 @@ def test_journal_finalizer_binds_template_binder_slots_assets_and_final_bytes(
         "assets/persona_v2/blind_terminal_agreement.png",
         "assets/persona_v2/blind_output_stability.png",
         "assets/supplement/persona_v2/provider_lifecycle.csv",
+        "assets/supplement/persona_v2/figure_data/controlled_composition.csv",
+        "assets/supplement/persona_v2/figure_data/blind_agreement.csv",
+        "assets/supplement/persona_v2/figure_data/blind_stability.csv",
+        "assets/supplement/p2/figure_data.json",
         "assets/supplement/p2/p2_supply_bound_illustration.png",
         "assets/supplement/p2/p2_supply_bound_illustration.svg",
     ):
@@ -3548,6 +3599,36 @@ def test_journal_finalizer_rejects_stale_binder_source_and_post_finalize_drift(
         )
 
 
+def test_journal_finalizer_rejects_corrupt_existing_generation_on_reuse(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    arguments = {
+        "template_path": template,
+        "binder_generation": binder_root / "current",
+        "references_path": references,
+        "output_dir": tmp_path / "final",
+        "expected_template_sha256": hashlib.sha256(template.read_bytes()).hexdigest(),
+        "expected_binder_generation_id": binder_generation.name,
+    }
+
+    journal_manuscript.finalize_manuscript(**arguments)
+    generation = (tmp_path / "final/current").resolve()
+    asset = generation / "assets/persona_v2/controlled_composition.png"
+    asset.write_bytes(asset.read_bytes() + b"corrupt")
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="drift"):
+        journal_manuscript.finalize_manuscript(**arguments)
+
+
 def test_journal_finalizer_rechecks_primary_binder_sources(
     tmp_path: Path,
 ) -> None:
@@ -3715,13 +3796,23 @@ def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
     from experiments import journal_binder, journal_manuscript
     from scripts import render_paper_pdf
 
-    references = _write_reference_fixture(tmp_path / "references.json")
+    pandoc = Path(shutil.which("pandoc") or "/opt/homebrew/bin/pandoc")
+    chrome = Path(
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    )
+    pdfinfo = Path(shutil.which("pdfinfo") or "/opt/homebrew/bin/pdfinfo")
+    pdftotext = Path(shutil.which("pdftotext") or "/opt/homebrew/bin/pdftotext")
+    if not all(path.is_file() for path in (pandoc, chrome, pdfinfo, pdftotext)):
+        pytest.skip("journal render tools unavailable")
+
+    repository = Path(__file__).parents[1]
+    references = repository / "docs/paper/references.json"
     binder_root = tmp_path / "binder"
     journal_binder.write_binder(
         _complete_journal_binder(tmp_path / "inputs"), binder_root
     )
     binder_generation = (binder_root / "current").resolve()
-    template = _write_finalizer_template(tmp_path / "template.md")
+    template = repository / "docs/paper/journal_main.md"
     journal_manuscript.finalize_manuscript(
         template_path=template,
         binder_generation=binder_root / "current",
@@ -3732,16 +3823,16 @@ def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
     )
     final_generation = (tmp_path / "final/current").resolve()
     pdf = tmp_path / "journal_main.pdf"
-    pdf.write_bytes(b"%PDF-1.7\nsynthetic-test-pdf\n%%EOF\n")
     render_receipt_path = tmp_path / "journal_main.pdf.render.json"
-    render_paper_pdf.write_render_receipt(
+    render_paper_pdf.render_paper(
         profile="main",
         input_path=final_generation / "journal_main.md",
-        references_path=references,
         output_path=pdf,
-        pages=9,
-        pandoc="fixture-pandoc",
-        chrome="fixture-chrome",
+        references_path=references,
+        pandoc=str(pandoc),
+        chrome=str(chrome),
+        pdfinfo=str(pdfinfo),
+        pdftotext=str(pdftotext),
         receipt_path=render_receipt_path,
     )
     metadata_path = tmp_path / "journal_main.pdf.metadata.json"
@@ -3774,6 +3865,80 @@ def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
         )
 
 
+def test_journal_pdf_metadata_rejects_a_forged_pseudo_pdf_receipt(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+    from scripts import render_paper_pdf
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+    generation = (tmp_path / "final/current").resolve()
+    manuscript = generation / "journal_main.md"
+    pdf = (tmp_path / "journal_main.pdf").resolve()
+    pdf.write_bytes(b"%PDF-1.7\nforged-pseudo-pdf\n%%EOF\n")
+    receipt_payload = {
+        "schema_version": "yher.paper_pdf.render_receipt.v1",
+        "profile": "main",
+        "input": {
+            "source_path": str(manuscript),
+            "bytes": manuscript.stat().st_size,
+            "sha256": hashlib.sha256(manuscript.read_bytes()).hexdigest(),
+        },
+        "references": {
+            "source_path": str(references.resolve()),
+            "bytes": references.stat().st_size,
+            "sha256": hashlib.sha256(references.read_bytes()).hexdigest(),
+        },
+        "prepared_markdown_sha256": hashlib.sha256(
+            render_paper_pdf.prepare_markdown(
+                manuscript.read_text(encoding="utf-8"), profile="main"
+            ).encode("utf-8")
+        ).hexdigest(),
+        "css_sha256": hashlib.sha256(
+            render_paper_pdf.css_for_profile("main").encode("utf-8")
+        ).hexdigest(),
+        "renderer": {"pandoc": "forged", "chrome": "forged"},
+        "pdf": {
+            "source_path": str(pdf),
+            "bytes": pdf.stat().st_size,
+            "sha256": hashlib.sha256(pdf.read_bytes()).hexdigest(),
+            "pages": 9,
+        },
+    }
+    receipt_payload["render_receipt_sha256"] = hashlib.sha256(
+        _canonical(receipt_payload)
+    ).hexdigest()
+    receipt = tmp_path / "journal_main.pdf.render.json"
+    receipt.write_text(
+        json.dumps(receipt_payload, ensure_ascii=False, sort_keys=True, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="PDF|pdfinfo"):
+        journal_manuscript.write_pdf_metadata(
+            pdf_path=pdf,
+            finalized_generation=generation,
+            references_path=references,
+            render_receipt_path=receipt,
+            output_path=tmp_path / "metadata.json",
+        )
+
+
 def test_journal_pdf_metadata_rejects_receipt_for_another_manuscript(
     tmp_path: Path,
 ) -> None:
@@ -3801,15 +3966,42 @@ def test_journal_pdf_metadata_rejects_receipt_for_another_manuscript(
     pdf = tmp_path / "journal_main.pdf"
     pdf.write_bytes(b"%PDF-1.7\nunrelated-render\n%%EOF\n")
     receipt = tmp_path / "journal_main.pdf.render.json"
-    render_paper_pdf.write_render_receipt(
-        profile="main",
-        input_path=other_manuscript,
-        references_path=references,
-        output_path=pdf,
-        pages=9,
-        pandoc="fixture-pandoc",
-        chrome="fixture-chrome",
-        receipt_path=receipt,
+    receipt_payload = {
+        "schema_version": "yher.paper_pdf.render_receipt.v1",
+        "profile": "main",
+        "input": {
+            "source_path": str(other_manuscript.resolve()),
+            "bytes": other_manuscript.stat().st_size,
+            "sha256": hashlib.sha256(other_manuscript.read_bytes()).hexdigest(),
+        },
+        "references": {
+            "source_path": str(references.resolve()),
+            "bytes": references.stat().st_size,
+            "sha256": hashlib.sha256(references.read_bytes()).hexdigest(),
+        },
+        "prepared_markdown_sha256": hashlib.sha256(
+            render_paper_pdf.prepare_markdown(
+                other_manuscript.read_text(encoding="utf-8"), profile="main"
+            ).encode("utf-8")
+        ).hexdigest(),
+        "css_sha256": hashlib.sha256(
+            render_paper_pdf.css_for_profile("main").encode("utf-8")
+        ).hexdigest(),
+        "renderer": {"pandoc": "forged", "chrome": "forged"},
+        "pdf": {
+            "source_path": str(pdf.resolve()),
+            "bytes": pdf.stat().st_size,
+            "sha256": hashlib.sha256(pdf.read_bytes()).hexdigest(),
+            "pages": 9,
+        },
+    }
+    receipt_payload["render_receipt_sha256"] = hashlib.sha256(
+        _canonical(receipt_payload)
+    ).hexdigest()
+    receipt.write_text(
+        json.dumps(receipt_payload, ensure_ascii=False, sort_keys=True, indent=2)
+        + "\n",
+        encoding="utf-8",
     )
 
     with pytest.raises(

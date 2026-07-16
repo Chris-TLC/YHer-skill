@@ -73,9 +73,24 @@ def write_render_receipt(
     pandoc: str,
     chrome: str,
     receipt_path: Path,
+    pdfinfo: str = "pdfinfo",
+    pdftotext: str = "pdftotext",
 ) -> dict[str, Any]:
     if profile not in {"main", "yau"} or pages < 1:
         raise RenderError("render receipt profile or page count is invalid")
+    verified_pages = _page_count(output_path, pdfinfo=pdfinfo)
+    rendered_text = _pdf_text(output_path, pdftotext=pdftotext)
+    validate_rendered_text(
+        rendered_text,
+        pages=verified_pages,
+        expected_pages=4 if profile == "yau" else None,
+    )
+    if profile == "main" and not 8 <= verified_pages <= 12:
+        raise RenderError(
+            f"rendered page count is {verified_pages}; main profile requires 8-12 pages"
+        )
+    if pages != verified_pages:
+        raise RenderError("render receipt page count differs from verified PDF")
     input_binding = _file_binding(input_path)
     reference_binding = _file_binding(references_path)
     pdf_binding = _file_binding(output_path)
@@ -727,6 +742,8 @@ def render_paper(
             pandoc=pandoc,
             chrome=chrome,
             receipt_path=rendered_receipt,
+            pdfinfo=pdfinfo,
+            pdftotext=pdftotext,
         )
     return RenderResult(
         output_path=output_path,

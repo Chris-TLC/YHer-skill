@@ -358,6 +358,11 @@ def _copy_plan(binder: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
         plan[f"assets/supplement/persona_v2/{Path(relative).name}"] = descriptor
     for relative, descriptor in supplement.items():
         plan[f"assets/supplement/persona_v2/{Path(relative).name}"] = descriptor
+    for relative, descriptor in persona_assets["figure_data"].items():
+        plan[
+            f"assets/supplement/persona_v2/figure_data/{Path(relative).name}"
+        ] = descriptor
+    plan["assets/supplement/p2/figure_data.json"] = p2_assets["figure_data"]
     plan["assets/supplement/p2/p2_supply_bound_illustration.png"] = p2_assets[
         "supplement_figure_png"
     ]
@@ -521,6 +526,12 @@ def finalize_manuscript(
         _write_file(staging / "finalization_manifest.json", _pretty(manifest))
         _fsync_directory(staging)
         if final_dir.exists():
+            verify_finalized_generation(
+                final_dir,
+                references_path=references,
+                expected_template_sha256=expected_template_sha256,
+                expected_binder_generation_id=expected_binder_generation_id,
+            )
             existing = final_dir / "finalization_manifest.json"
             if not existing.is_file() or existing.read_bytes() != _pretty(manifest):
                 raise FinalizationError("existing journal finalization generation drifted")
@@ -667,10 +678,29 @@ def _validate_render_receipt(
         or pdf_binding.get("bytes") != len(pdf_bytes)
         or pdf_binding.get("sha256") != _sha(pdf_bytes)
         or not isinstance(pdf_binding.get("pages"), int)
-        or not 8 <= int(pdf_binding["pages"]) <= 12
     ):
         raise FinalizationError("render receipt PDF binding drifted")
     from scripts import render_paper_pdf
+
+    try:
+        verified_pages = render_paper_pdf._page_count(
+            pdf, pdfinfo=shutil.which("pdfinfo") or "pdfinfo"
+        )
+        rendered_text = render_paper_pdf._pdf_text(
+            pdf, pdftotext=shutil.which("pdftotext") or "pdftotext"
+        )
+        render_paper_pdf.validate_rendered_text(
+            rendered_text,
+            pages=verified_pages,
+            expected_pages=None,
+        )
+    except render_paper_pdf.RenderError as exc:
+        raise FinalizationError("journal PDF independent validation failed") from exc
+    if (
+        not 8 <= verified_pages <= 12
+        or pdf_binding.get("pages") != verified_pages
+    ):
+        raise FinalizationError("render receipt PDF page validation drifted")
 
     source_text = manuscript_bytes.decode("utf-8")
     expected_prepared = _sha(
