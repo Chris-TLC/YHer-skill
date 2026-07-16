@@ -20,7 +20,12 @@ class FinalizationError(ValueError):
 
 
 SLOT_FIELDS = {
+    "PROGRAMMATIC_ABSTRACT_RESULTS": "programmatic_abstract_results_markdown",
     "BOUND_ABSTRACT_RESULTS": "bound_abstract_results_markdown",
+    "EXECUTION_INTEGRITY": "execution_integrity_markdown",
+    "HYPOTHESIS_DECISIONS": "hypothesis_decisions_markdown",
+    "PRIMARY_H1_H4_RESULTS": "primary_h1_h4_results_markdown",
+    "SAME_SUPPORT_CONVERGENCE": "same_support_convergence_markdown",
     "PERSONA_V2_DUAL": "persona_v2_markdown",
     "P2_ILLUSTRATIVE": "p2_markdown",
 }
@@ -57,6 +62,7 @@ BLACKLIST_PATTERNS = (
     r"\b600 (?:learners|students)\b",
     r"\breal student distribution\b",
     r"\bteacher gold\b",
+    r"\bhuman gold\b",
     r"\bhuman[- ]validated\b",
     r"\bexpert[- ]validated\b",
     r"\blearning trajector(?:y|ies)\b",
@@ -172,6 +178,18 @@ def _load_binder_generation(
     artifacts = _artifact_index(manifest, root=generation, label="binder generation")
     if set(artifacts) != {"journal_binder.json", "manuscript_slots.json"}:
         raise FinalizationError("binder generation artifact set is incomplete")
+    if manifest.get("generation_set_sha256") != _sha(_canonical(manifest["artifacts"])):
+        raise FinalizationError("binder generation artifact-set hash drifted")
+    expected_generation_id = _sha(
+        _canonical(
+            {
+                "journal_binder.json": artifacts["journal_binder.json"]["sha256"],
+                "manuscript_slots.json": artifacts["manuscript_slots.json"]["sha256"],
+            }
+        )
+    )[:24]
+    if generation.name != expected_generation_id:
+        raise FinalizationError("binder generation ID does not match its content")
     binder, binder_bytes = _load_json(
         generation / "journal_binder.json", label="journal binder"
     )
@@ -319,14 +337,25 @@ def _enforce_structured_abstract_word_limit(text: str) -> int:
 
 
 def _copy_plan(binder: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    programmatic_assets = binder.get("programmatic_publication_assets")
+    if not isinstance(programmatic_assets, Mapping) or set(
+        programmatic_assets
+    ) != set(journal_binder.PROGRAMMATIC_PUBLICATION_ASSETS):
+        raise FinalizationError("programmatic publication figure roster is incomplete")
     persona_assets = binder["persona_v2"]["publication_assets"]
     p2_assets = binder["p2"]["publication_assets"]
     main = persona_assets["main_persona_composite_sources"]
     supplement = persona_assets["supplement_figures"]
     plan: dict[str, Mapping[str, Any]] = {
+        str(relative): descriptor
+        for relative, descriptor in programmatic_assets.items()
+    }
+    plan.update({
         f"assets/persona_v2/{name}.png": descriptor
         for name, descriptor in main.items()
-    }
+    })
+    for relative, descriptor in persona_assets["tables"].items():
+        plan[f"assets/supplement/persona_v2/{Path(relative).name}"] = descriptor
     for relative, descriptor in supplement.items():
         plan[f"assets/supplement/persona_v2/{Path(relative).name}"] = descriptor
     plan["assets/supplement/p2/p2_supply_bound_illustration.png"] = p2_assets[
@@ -336,6 +365,18 @@ def _copy_plan(binder: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
         "supplement_figure_svg"
     ]
     return plan
+
+
+def _local_asset_references(text: str) -> set[str]:
+    references = set(
+        re.findall(r"!\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)", text)
+    )
+    references.update(re.findall(r'<img\s+[^>]*src="([^"]+)"', text))
+    return {
+        value
+        for value in references
+        if not re.match(r"^(?:https?:|data:|#)", value, flags=re.IGNORECASE)
+    }
 
 
 def _write_file(path: Path, data: bytes) -> None:
@@ -400,6 +441,12 @@ def finalize_manuscript(
         if descriptor.get("sha256") != _sha(data) or descriptor.get("bytes") != len(data):
             raise FinalizationError(f"stale binder source bytes drifted: {source}")
         asset_bytes[relative] = data
+    missing_assets = _local_asset_references(final_text) - set(asset_bytes)
+    if missing_assets:
+        raise FinalizationError(
+            "final manuscript references an unbound local asset: "
+            + ", ".join(sorted(missing_assets))
+        )
     artifacts = [
         {
             "filename": "journal_main.md",
@@ -422,6 +469,7 @@ def finalize_manuscript(
         "journal_binder_sha256": _sha(binder_bytes),
         "manuscript_slots_sha256": _sha(slots_bytes),
         "slot_content_sha256": slots["content_sha256"],
+        "references_sha256": references_sha,
         "final_manuscript_sha256": _sha(manuscript_bytes),
         "structured_abstract_word_count": abstract_word_count,
         "artifact_set_sha256": _sha(_canonical(artifacts)),
@@ -497,6 +545,8 @@ def verify_finalized_generation(
     generation_path: Path | str,
     *,
     references_path: Path | str,
+    expected_template_sha256: str | None = None,
+    expected_binder_generation_id: str | None = None,
 ) -> dict[str, Any]:
     try:
         generation = Path(generation_path).expanduser().resolve(strict=True)
@@ -511,6 +561,9 @@ def verify_finalized_generation(
     ):
         raise FinalizationError("finalization manifest envelope drifted")
     artifacts = _artifact_index(manifest, root=generation, label="final manuscript")
+    artifact_set_sha256 = _sha(_canonical(manifest.get("artifacts")))
+    if manifest.get("artifact_set_sha256") != artifact_set_sha256:
+        raise FinalizationError("final manuscript artifact-set hash drifted")
     final = manifest.get("final_manuscript")
     if not isinstance(final, Mapping) or artifacts.get("journal_main.md") != final:
         raise FinalizationError("final manuscript binding is incomplete")
@@ -531,7 +584,109 @@ def verify_finalized_generation(
     _, current_reference_sha = _load_reference_ids(Path(references_path))
     if not isinstance(reference_binding, Mapping) or reference_binding.get("sha256") != current_reference_sha:
         raise FinalizationError("verified reference registry drifted after finalization")
+    template_binding = manifest.get("template")
+    binder_binding = manifest.get("binder")
+    slot_binding = manifest.get("slots")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (template_binding, binder_binding, slot_binding)
+    ):
+        raise FinalizationError("final manuscript generation binding is incomplete")
+    if (
+        expected_template_sha256 is not None
+        and template_binding.get("sha256") != expected_template_sha256
+    ):
+        raise FinalizationError("final manuscript template differs from expected SHA-256")
+    if (
+        expected_binder_generation_id is not None
+        and binder_binding.get("generation_id") != expected_binder_generation_id
+    ):
+        raise FinalizationError("final manuscript binder generation differs from expectation")
+    binding = {
+        "template_sha256": template_binding.get("sha256"),
+        "binder_generation_id": binder_binding.get("generation_id"),
+        "binder_manifest_sha256": binder_binding.get("artifact_manifest_sha256"),
+        "journal_binder_sha256": binder_binding.get("journal_binder_sha256"),
+        "manuscript_slots_sha256": slot_binding.get("manuscript_slots_sha256"),
+        "slot_content_sha256": slot_binding.get("content_sha256"),
+        "references_sha256": reference_binding.get("sha256"),
+        "final_manuscript_sha256": final.get("sha256"),
+        "structured_abstract_word_count": abstract_word_count,
+        "artifact_set_sha256": artifact_set_sha256,
+    }
+    if generation.name != _sha(_canonical(binding))[:24]:
+        raise FinalizationError("final manuscript generation ID does not match its content")
     return manifest
+
+
+def _validate_render_receipt(
+    receipt_path: Path,
+    *,
+    generation: Path,
+    references: Path,
+    pdf: Path,
+) -> tuple[dict[str, Any], bytes]:
+    receipt, raw = _load_json(receipt_path, label="journal PDF render receipt")
+    advertised = receipt.get("render_receipt_sha256")
+    payload = dict(receipt)
+    payload.pop("render_receipt_sha256", None)
+    if (
+        receipt.get("schema_version") != "yher.paper_pdf.render_receipt.v1"
+        or advertised != _sha(_canonical(payload))
+    ):
+        raise FinalizationError("journal PDF render receipt self-hash drifted")
+    if receipt.get("profile") != "main":
+        raise FinalizationError("journal PDF render receipt profile is not main")
+    input_binding = receipt.get("input")
+    reference_binding = receipt.get("references")
+    pdf_binding = receipt.get("pdf")
+    renderer = receipt.get("renderer")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (input_binding, reference_binding, pdf_binding, renderer)
+    ):
+        raise FinalizationError("journal PDF render receipt bindings are incomplete")
+    manuscript = generation / "journal_main.md"
+    manuscript_bytes = manuscript.read_bytes()
+    if (
+        input_binding.get("source_path") != str(manuscript)
+        or input_binding.get("bytes") != len(manuscript_bytes)
+        or input_binding.get("sha256") != _sha(manuscript_bytes)
+    ):
+        raise FinalizationError("render receipt manuscript binding drifted")
+    reference_bytes = references.read_bytes()
+    if (
+        reference_binding.get("source_path") != str(references)
+        or reference_binding.get("bytes") != len(reference_bytes)
+        or reference_binding.get("sha256") != _sha(reference_bytes)
+    ):
+        raise FinalizationError("render receipt reference binding drifted")
+    pdf_bytes = pdf.read_bytes()
+    if (
+        pdf_binding.get("source_path") != str(pdf)
+        or pdf_binding.get("bytes") != len(pdf_bytes)
+        or pdf_binding.get("sha256") != _sha(pdf_bytes)
+        or not isinstance(pdf_binding.get("pages"), int)
+        or not 8 <= int(pdf_binding["pages"]) <= 12
+    ):
+        raise FinalizationError("render receipt PDF binding drifted")
+    from scripts import render_paper_pdf
+
+    source_text = manuscript_bytes.decode("utf-8")
+    expected_prepared = _sha(
+        render_paper_pdf.prepare_markdown(source_text, profile="main").encode("utf-8")
+    )
+    expected_css = _sha(render_paper_pdf.css_for_profile("main").encode("utf-8"))
+    if (
+        receipt.get("prepared_markdown_sha256") != expected_prepared
+        or receipt.get("css_sha256") != expected_css
+        or not isinstance(renderer.get("pandoc"), str)
+        or not renderer.get("pandoc")
+        or not isinstance(renderer.get("chrome"), str)
+        or not renderer.get("chrome")
+    ):
+        raise FinalizationError("journal PDF render receipt transformation drifted")
+    return receipt, raw
 
 
 def write_pdf_metadata(
@@ -539,6 +694,7 @@ def write_pdf_metadata(
     pdf_path: Path | str,
     finalized_generation: Path | str,
     references_path: Path | str,
+    render_receipt_path: Path | str,
     output_path: Path | str,
 ) -> dict[str, Any]:
     generation = Path(finalized_generation).expanduser().resolve(strict=True)
@@ -553,6 +709,13 @@ def write_pdf_metadata(
     manuscript_path = generation / "journal_main.md"
     references = Path(references_path).expanduser().resolve(strict=True)
     _, references_sha = _load_reference_ids(references)
+    receipt_path = Path(render_receipt_path).expanduser().resolve(strict=True)
+    receipt, receipt_bytes = _validate_render_receipt(
+        receipt_path,
+        generation=generation,
+        references=references,
+        pdf=pdf,
+    )
     metadata: dict[str, Any] = {
         "schema_version": "yher.journal_pdf.metadata.v1",
         "pdf": {
@@ -572,6 +735,12 @@ def write_pdf_metadata(
         },
         "binder_generation_id": finalization["binder"]["generation_id"],
         "references": {"source_path": str(references), "sha256": references_sha},
+        "render_receipt": {
+            "source_path": str(receipt_path),
+            "bytes": len(receipt_bytes),
+            "sha256": _sha(receipt_bytes),
+            "render_receipt_sha256": receipt["render_receipt_sha256"],
+        },
     }
     metadata["metadata_sha256"] = _sha(_canonical(metadata))
     output = Path(output_path)
@@ -643,6 +812,26 @@ def verify_pdf_metadata(
     _, reference_sha = _load_reference_ids(Path(references_path))
     if not isinstance(references, Mapping) or references.get("sha256") != reference_sha:
         raise FinalizationError("journal PDF reference binding drifted")
+    render_binding = metadata.get("render_receipt")
+    if not isinstance(render_binding, Mapping):
+        raise FinalizationError("journal PDF render receipt binding is missing")
+    receipt_path = Path(str(render_binding.get("source_path") or ""))
+    if not receipt_path.is_file():
+        raise FinalizationError("journal PDF render receipt is missing")
+    receipt_bytes = receipt_path.read_bytes()
+    receipt, _ = _validate_render_receipt(
+        receipt_path,
+        generation=generation.resolve(strict=True),
+        references=Path(references_path).expanduser().resolve(strict=True),
+        pdf=pdf_path.resolve(strict=True),
+    )
+    if (
+        render_binding.get("bytes") != len(receipt_bytes)
+        or render_binding.get("sha256") != _sha(receipt_bytes)
+        or render_binding.get("render_receipt_sha256")
+        != receipt.get("render_receipt_sha256")
+    ):
+        raise FinalizationError("journal PDF render receipt bytes drifted")
     return metadata
 
 
@@ -659,10 +848,13 @@ def _parser() -> argparse.ArgumentParser:
     verify = subparsers.add_parser("verify")
     verify.add_argument("--generation", type=Path, required=True)
     verify.add_argument("--references", type=Path, required=True)
+    verify.add_argument("--expected-template-sha256")
+    verify.add_argument("--expected-binder-generation-id")
     pdf_metadata = subparsers.add_parser("pdf-metadata")
     pdf_metadata.add_argument("--pdf", type=Path, required=True)
     pdf_metadata.add_argument("--generation", type=Path, required=True)
     pdf_metadata.add_argument("--references", type=Path, required=True)
+    pdf_metadata.add_argument("--render-receipt", type=Path, required=True)
     pdf_metadata.add_argument("--output", type=Path, required=True)
     verify_pdf = subparsers.add_parser("verify-pdf-metadata")
     verify_pdf.add_argument("--metadata", type=Path, required=True)
@@ -683,13 +875,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     elif args.command == "verify":
         manifest = verify_finalized_generation(
-            args.generation, references_path=args.references
+            args.generation,
+            references_path=args.references,
+            expected_template_sha256=args.expected_template_sha256,
+            expected_binder_generation_id=args.expected_binder_generation_id,
         )
     elif args.command == "pdf-metadata":
         manifest = write_pdf_metadata(
             pdf_path=args.pdf,
             finalized_generation=args.generation,
             references_path=args.references,
+            render_receipt_path=args.render_receipt,
             output_path=args.output,
         )
     else:

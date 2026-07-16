@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
 import json
 from pathlib import Path
@@ -9,12 +10,23 @@ import re
 ROOT = Path(__file__).parents[1]
 REFERENCES_PATH = ROOT / "docs/paper/references.json"
 AUDIT_PATH = ROOT / "experiments/config/paper_reference_audit_v1.json"
+JOURNAL_PATH = ROOT / "docs/paper/journal_main.md"
 
 
 def _json(path: Path) -> dict[str, object]:
     value = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(value, dict)
     return value
+
+
+def _journal_citation_loci() -> list[tuple[str, int]]:
+    text = JOURNAL_PATH.read_text(encoding="utf-8")
+    loci: list[tuple[str, int]] = []
+    for group in re.finditer(r"\[([^\[\]]*?@[^\[\]]*?)\]", text, flags=re.DOTALL):
+        for key in re.finditer(r"@([A-Za-z0-9_-]+)", group.group(1)):
+            offset = group.start(1) + key.start()
+            loci.append((key.group(1), text.count("\n", 0, offset) + 1))
+    return loci
 
 
 def test_reference_registry_is_bound_to_complete_existence_audit() -> None:
@@ -70,6 +82,43 @@ def test_reference_registry_is_bound_to_complete_existence_audit() -> None:
     )
     cited = set(re.findall(r"@([A-Za-z0-9_-]+)", manuscript_text))
     assert cited == {row["id"] for row in reference_rows}
+
+
+def test_journal_citation_audit_covers_every_actual_key_locus() -> None:
+    audit = _json(AUDIT_PATH)
+    rows = audit["records"]
+    assert isinstance(rows, list)
+
+    actual_loci = Counter(_journal_citation_loci())
+    journal_uses = [
+        (row["id"], use)
+        for row in rows
+        for use in row["citation_use"]
+        if use["file"] == "journal_main.md"
+    ]
+    audited_loci = Counter(
+        (reference_id, use.get("line"))
+        for reference_id, use in journal_uses
+        if use["status"] == "supported"
+    )
+
+    assert actual_loci == audited_loci
+    assert len(actual_loci) == len(journal_uses) == 20
+    assert len({reference_id for reference_id, _ in actual_loci}) == 19
+
+    statuses = Counter(use["status"] for _, use in journal_uses)
+    assert statuses == Counter({"supported": 20})
+    counts = audit["counts"]
+    assert isinstance(counts, dict)
+    assert counts["unique_citation_keys"] == len(
+        {reference_id for reference_id, _ in actual_loci}
+    )
+    assert counts["citation_key_loci"] == len(journal_uses)
+    assert counts["claim_supported_loci"] == statuses["supported"]
+    assert counts["context_only_or_misplaced_loci"] == statuses[
+        "context_only_misplaced"
+    ]
+    assert counts["contradicted_claim_loci"] == statuses["contradicted"]
 
 
 def test_reference_registry_uses_audited_exact_metadata_corrections() -> None:

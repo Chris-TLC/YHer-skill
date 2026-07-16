@@ -24,14 +24,11 @@ bootstraps quantified Monte Carlo uncertainty conditional on this fixed catalog,
 population uncertainty. Secondary analyses used 50 persona clusters and a two-target
 prescription model.
 
-**Results:** At 15 items on 23 targets, adaptive prerequisite-gap convergence was
-12.9% (148/1,150), versus 0.8% (9/1,150) for the local ladder; the difference was 12.1
-points (95% CI 10.3 to 13.8). H1 was partial because 12.9% missed the frozen 50%
-criterion. At nine items, fixed insertion raised reasoning-chain misdiagnosis over
-adaptive by 5.7 points (95% CI 2.3 to 9.0), but adaptive exceeded local by 9.7 points
-(95% CI 7.2 to 12.3), violating no-harm; H2 was unsupported. H3 and the direction-only
-H4 check were supported. On identical 27- and 23-target supports, terminal accuracy
-versus confident convergence was 83.8% versus 12.4% and 90.7% versus 12.9%.
+**Results:**
+
+<!-- BEGIN RESULT SLOT: PROGRAMMATIC_ABSTRACT_RESULTS -->
+BOUND PROGRAMMATIC ABSTRACT RESULTS
+<!-- END RESULT SLOT: PROGRAMMATIC_ABSTRACT_RESULTS -->
 
 <!-- BEGIN RESULT SLOT: BOUND_ABSTRACT_RESULTS -->
 BOUND EXTENDED-STUDY ABSTRACT RESULTS
@@ -386,8 +383,8 @@ realism or authenticity score is formed.
 
 ### 3.7 Illustrative prescription analysis
 
-The parent validated library contains 13 nodes and 68 trusted segments, represented
-as exact chunks. Its exact overlap with the H1-H4 target catalog is much smaller: two
+The parent validated library contains 68 trusted node-chunk assignments spanning 59
+unique chunks across 13 nodes. Its exact overlap with the H1-H4 target catalog is much smaller: two
 fixed target strata, eight eligible chunks, and three distinct physical video sources.
 This overlap, not the parent-library count, defines the P2 analytic support.
 
@@ -439,12 +436,9 @@ machine-local location is part of the manuscript evidence surface.
 
 ### 4.1 Execution integrity and analysis populations
 
-The programmatic grid contained 32,400 intended journeys. Of these, 30,800 were valid
-for at least one declared analysis view. The remaining 1,600 were Arm-C structural
-failures concentrated in four targets whose prerequisite pools could not satisfy the
-fixed-quota schedule. The 27-target full set was used for H3 and descriptive views;
-the mechanically eligible 23-target set was used for the H1/H2 empirical stress
-estimands.
+<!-- BEGIN RESULT SLOT: EXECUTION_INTEGRITY -->
+BOUND EXECUTION INTEGRITY
+<!-- END RESULT SLOT: EXECUTION_INTEGRITY -->
 
 All results below are simulated finite-budget estimates. Matched and misspecified
 conditions remain separate. H1-H4 decisions are reproduced from the frozen decision
@@ -453,57 +447,13 @@ Their intervals describe Monte Carlo uncertainty conditional on the fixed 27-tar
 catalog or stated subset; they do not support target-population or learner-population
 inference.
 
-### 4.2 Prerequisite-gap rescue and reasoning-chain harm
+<!-- BEGIN RESULT SLOT: HYPOTHESIS_DECISIONS -->
+BOUND HYPOTHESIS DECISIONS
+<!-- END RESULT SLOT: HYPOTHESIS_DECISIONS -->
 
-At budget 15 on the 23-target eligible stress support, Arm A achieved P-state correct
-confident convergence in 148 of 1,150 paired cases (12.9%, 95% CI 11.2% to 14.5%).
-Arm B achieved 9 of 1,150 (0.8%, 95% CI 0.3% to 1.3%). The paired A-minus-B contrast
-was 139 of 1,150, or 12.1 percentage points (95% CI 10.3 to 13.8). The direction and
-interval favored adaptive probing, but the absolute Arm-A rate did not reach the
-frozen 50% threshold. H1 was partially supported.
-
-The no-repeat common-support sensitivity was much weaker. Across four targets and
-200 paired cases at budget 15, Arm A converged correctly once (0.5%, 95% CI 0.0% to
-1.5%) and Arm B never did; the paired contrast was 0.5 points (95% CI 0.0 to 1.5).
-The effect was therefore not stable to the jointly changed no-repeat and common-support
-estimand. Because that sensitivity also restricts the target set, its difference from
-the broad estimate cannot be attributed to repetition alone.
-
-At budget 9 on the 23-target support, C-state misdiagnosis was 37.4% for Arm A
-(430/1,150), 27.7% for Arm B (318/1,150), and 43.0% for Arm C (495/1,150). The fixed
-quota increased misdiagnosis relative to A by 5.7 points (65/1,150; 95% CI 2.3 to
-9.0). However, A exceeded B by 9.7 points (112/1,150; 95% CI 7.2 to 12.3), and the
-upper interval bound was well above the +5-point no-harm margin. H2 was not supported.
-
-On the nine-target, no-repeat common support, the corresponding rates were 41.8% for
-A (188/450), 28.4% for B (128/450), and 43.8% for C (197/450). C minus A was 2.0
-points (95% CI -3.3 to 7.6), whereas A minus B was 13.3 points (95% CI 9.1 to 17.6).
-Thus, the sensitivity analysis weakened the fixed-quota contrast but retained the
-adaptive arm's disadvantage relative to the local ladder.
-
-![Figure 1. P-state correct convergence across item budgets. The figure is reused from the verified programmatic artifact and does not include Persona-v2 evidence.](generated/fig-p-rescue-png-c36a76849139.png)
-
-![Figure 2. C-state misdiagnosis across item budgets. Arm labels refer only to the programmatic study.](generated/fig-c-probe-harm-png-e5e22d30fb2c.png)
-
-### 4.3 Adaptive sanity check and misspecification
-
-On the full 27-target matched set at budget 15, Arm A exceeded Arm B in terminal
-accuracy by 10.0 percentage points (542/5,400 paired contrast; 95% CI 8.9 to 11.2).
-Median time to confidence was eight items for A (95% CI 8 to 8) and 11 items for B
-(95% CI 10 to 11). Under the frozen branch, H3 was supported. This result is a sanity
-check for the implementation, not evidence that adaptive testing is novel.
-
-Under the misspecified generator on the 23-target eligible stress support, the P-state
-A-minus-B rescue remained 12.1 points (139/1,150; 95% CI 10.2 to 14.0). The C-state
-C-minus-A harm contrast was 7.0 points (80/1,150; 95% CI 3.7 to 10.3), and A minus B
-was 8.1 points (93/1,150; 95% CI 5.5 to 10.7). The matched-minus-misspecified
-degradation was 0.0 points for H1 (95% CI -2.6 to 2.5), -1.3 points for the fixed-quota
-harm contrast (95% CI -6.0 to 3.5), and 1.7 points for A minus B (95% CI -2.1 to 5.3).
-Both predicted directions therefore persisted under this perturbation. Under the
-pre-specified direction-only decision rule, H4 was supported; the intervals do not
-show robustness to untested generator families.
-
-![Figure 3. Matched and misspecified contrast estimates. The perturbation is one declared synthetic sensitivity condition.](generated/fig-matched-vs-misspecified-png-39c4270e4169.png)
+<!-- BEGIN RESULT SLOT: PRIMARY_H1_H4_RESULTS -->
+BOUND PRIMARY H1-H4 RESULTS
+<!-- END RESULT SLOT: PRIMARY_H1_H4_RESULTS -->
 
 ### 4.4 Same-support terminal and convergence estimates
 
@@ -512,25 +462,13 @@ questions. The former asked whether the correct state had the largest posterior 
 the end of the budget. The latter additionally required the production confidence
 and posterior-gap thresholds. Table 1 preserves support identity for both views.
 
-**Table 1. Same-support terminal and confident-convergence estimates.**
+<!-- BEGIN RESULT SLOT: SAME_SUPPORT_CONVERGENCE -->
+BOUND SAME-SUPPORT CONVERGENCE RESULTS
+<!-- END RESULT SLOT: SAME_SUPPORT_CONVERGENCE -->
 
-| Support and view | Correct terminal P decision | Correct confident P convergence | Difference |
-|---|---:|---:|---:|
-| Full 27-target support, Arm A, budget 15 | 1,131/1,350 (83.8%) | 168/1,350 (12.4%) | 963/1,350 (71.3 points; arithmetic only) |
-| Eligible 23-target support, Arm A, budget 15 | 1,043/1,150 (90.7%) | 148/1,150 (12.9%) | 895/1,150 (77.8 points; 95% CI 75.7 to 79.8) |
-
-The full-set difference has no dedicated bootstrap interval in the retained registry
-and is therefore reported as arithmetic only. The eligible-set difference has a
-machine-bound paired interval. The invalid cross-support pairing of 83.8% with 12.9%
-is not used.
-
-The eligible-set selector composition provides a post-hoc mechanism clue. Arm A
-administered a mean of 1.43 direct items and 11.95 prerequisite items by budget 15;
-the mean prerequisite share was 83.8% (95% CI 82.6% to 84.9%). EIG was therefore
-selecting heavily from the prerequisite channel. Yet a correct terminal ordering
-usually did not cross the stopping rule's confidence and gap requirements. We refer
-to this pattern as a **selector-stopping mismatch**. It is an exploratory
-interpretation, not a randomized mechanism test, and it does not revise H1.
+The selector composition is interpreted only as a post-hoc mechanism clue. We refer
+to the observed pattern as a **selector-stopping mismatch**. It is exploratory, not a
+randomized mechanism test, and it does not revise H1.
 
 ### 4.5 Persona-v2 result slot
 
@@ -550,8 +488,9 @@ are response-channel stress estimates, not evidence of human behavioral validity
 No outcome estimate is reported in this slot. Insert only machine-bound illustrative estimates with supply limits and structural failures preserved.
 <!-- END RESULT SLOT: P2_ILLUSTRATIVE -->
 
-The parent boundary is 13 nodes and 68 trusted exact chunks, but the analytic support
-is fixed at two target strata, eight eligible chunks, and three physical sources. The
+The parent boundary is 13 nodes, 68 trusted node-chunk assignments, and 59 unique
+chunks, but the analytic support is fixed at two target strata, eight eligible chunks,
+and three physical sources. The
 bound report must preserve the 160,000 weighted product-form integration rows as
 non-independent analytic terms, retain Arm C's one structurally failed target out of
 two, and leave `unobtainable_supply_minutes` null. These fields do not measure learning
@@ -563,8 +502,9 @@ benefit, harm, or learner-population effects.
 
 The primary experiment produced a mixed but informative result. Belief-triggered
 probing improved correct P convergence relative to a local-only ladder on the broad
-eligible stress support, yet the absolute convergence rate remained only 12.9% at 15
-items and fell to 0.5% on the small no-repeat common support. This is not a successful
+eligible stress support, yet the absolute convergence rate remained far below the
+frozen criterion and weakened further on the small no-repeat common support. This is
+not a successful
 identification result masked by a strict criterion. It is evidence that the tested
 response channels and stopping thresholds did not reliably turn a directional
 advantage into an operationally confident diagnosis.
@@ -638,8 +578,9 @@ currency: mechanically mismatched selected minutes and missed available-supply
 minutes. This translation is model-defined. It does not show that watching a selected
 chunk changes knowledge or that unmodeled P/U demand equals zero.
 
-The parent library spans 13 nodes and 68 trusted chunks, but the exact analytic overlap
-contains only two target strata, eight chunks, and three physical sources. Arm C's
+The parent library spans 13 nodes, 68 trusted node-chunk assignments, and 59 unique
+chunks, but the exact analytic overlap contains only two target strata, eight chunks,
+and three physical sources. Arm C's
 inability to open one of those two nodes is a structural failure, not a zero-cost
 outcome. The illustration therefore retains structural failure, missed available
 supply, unused budget, and the null unobtainable-dose field separately. Its weighted
@@ -712,8 +653,9 @@ budget-limited confident-convergence failure.
    limiting temporal reproducibility despite recorded model identities.
 
 10. **Constrained prescription supply.** The illustrative remediation analysis is
-    drawn from a 13-node, 68-chunk parent library, but its exact support is only two
-    target strata, eight chunks, and three physical sources. Product-form integration
+    drawn from a 13-node library with 68 trusted node-chunk assignments spanning 59
+    unique chunks, but its exact support is only two target strata, eight chunks, and
+    three physical sources. Product-form integration
     terms are not learners, and mechanically mismatched selected or missed
     available-supply minutes describe only this fixed utility model.
 

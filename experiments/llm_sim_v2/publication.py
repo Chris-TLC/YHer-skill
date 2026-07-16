@@ -698,10 +698,26 @@ def _bundle_judge_roster(
         analysis.get("available_judges"),
         analysis.get("missing_judges"),
     )
-    rosters = {
-        ("complete", ("claude", "gpt"), ()): ("claude", "gpt"),
-        ("partial_missing_judge", ("gpt",), ("claude",)): ("gpt",),
-        ("not_applicable_zero_cases", (), ()): (),
+    profiles = {
+        ("complete", ("claude", "gpt"), ()): (
+            ("claude", "gpt"),
+            {"claude": "complete", "gpt": "complete"},
+        ),
+        ("partial_missing_judge", ("gpt",), ("claude",)): (
+            ("gpt",),
+            {"claude": "unavailable", "gpt": "complete"},
+        ),
+        ("missing_all_judges", (), ("claude", "gpt")): (
+            (),
+            {"claude": "unavailable", "gpt": "failed"},
+        ),
+        ("not_applicable_zero_cases", (), ()): (
+            (),
+            {
+                "claude": "not_applicable_zero_cases",
+                "gpt": "not_applicable_zero_cases",
+            },
+        ),
     }
     try:
         normalized_profile = (
@@ -709,7 +725,7 @@ def _bundle_judge_roster(
             tuple(profile[1]) if isinstance(profile[1], list) else None,
             tuple(profile[2]) if isinstance(profile[2], list) else None,
         )
-        judges = rosters[normalized_profile]
+        judges, expected_slot_statuses = profiles[normalized_profile]
     except (KeyError, TypeError) as exc:
         raise PublicationAdapterError(
             "Persona-v2 judge availability profile is unsupported"
@@ -735,14 +751,6 @@ def _bundle_judge_roster(
         snapshot_bytes, label="judge run execution snapshot manifest"
     )
     family_slots = snapshot.get("family_slots")
-    expected_slot_statuses = {
-        ("claude", "gpt"): {"claude": "complete", "gpt": "complete"},
-        ("gpt",): {"claude": "unavailable", "gpt": "complete"},
-        (): {
-            "claude": "not_applicable_zero_cases",
-            "gpt": "not_applicable_zero_cases",
-        },
-    }[judges]
     if (
         snapshot.get("schema_version")
         != "yher.llm_sim_v2.judge_run_execution_snapshot_manifest.v1"

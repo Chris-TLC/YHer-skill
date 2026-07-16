@@ -1,9 +1,9 @@
 {
   "schema_version": "yher.verified-references.v1",
   "verified_at": "2026-07-16",
-  "verification_note": "All 19 sources cited by the journal manuscript were independently verified for existence against DOI registries, resolving publisher or anthology pages, and official software documentation. The original 17-source audit was completed on 2026-07-14; the CAT stopping and budgeted-coverage additions were verified on 2026-07-16. Exact metadata corrections are applied here.",
+  "verification_note": "All 19 sources and all 20 citation key-loci in the journal manuscript were independently verified for existence and claim support against DOI registries, resolving publisher or anthology pages, and official software documentation. The original 17-source audit was completed on 2026-07-14; the CAT stopping and budgeted-coverage additions were verified on 2026-07-16. Exact metadata corrections are applied here.",
   "audit_artifact": "experiments/config/paper_reference_audit_v1.json",
-  "audit_sha256": "05c924247dc2723716f1d2a1d1a8ff4c1d8e2c3056e90e2ba825234834da37f8",
+  "audit_sha256": "71c6abc5b15ea838aa937c9df0424c9183a468ea15b2eaf717919450e1160e38",
   "references": [
     {
       "id": "lord1971",

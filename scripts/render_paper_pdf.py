@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -30,6 +31,7 @@ class RenderResult:
 
     output_path: Path
     pages: int
+    receipt_path: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -39,6 +41,69 @@ class PdfInfo:
     pages: int
     width_points: float
     height_points: float
+
+
+def _canonical_json(value: Any) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def _file_binding(path: Path) -> dict[str, Any]:
+    resolved = path.expanduser().resolve(strict=True)
+    data = resolved.read_bytes()
+    return {
+        "source_path": str(resolved),
+        "bytes": len(data),
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }
+
+
+def write_render_receipt(
+    *,
+    profile: str,
+    input_path: Path,
+    references_path: Path,
+    output_path: Path,
+    pages: int,
+    pandoc: str,
+    chrome: str,
+    receipt_path: Path,
+) -> dict[str, Any]:
+    if profile not in {"main", "yau"} or pages < 1:
+        raise RenderError("render receipt profile or page count is invalid")
+    input_binding = _file_binding(input_path)
+    reference_binding = _file_binding(references_path)
+    pdf_binding = _file_binding(output_path)
+    source_text = Path(input_binding["source_path"]).read_text(encoding="utf-8")
+    payload: dict[str, Any] = {
+        "schema_version": "yher.paper_pdf.render_receipt.v1",
+        "profile": profile,
+        "input": input_binding,
+        "references": reference_binding,
+        "prepared_markdown_sha256": hashlib.sha256(
+            prepare_markdown(source_text, profile=profile).encode("utf-8")
+        ).hexdigest(),
+        "css_sha256": hashlib.sha256(css_for_profile(profile).encode("utf-8")).hexdigest(),
+        "renderer": {"pandoc": pandoc, "chrome": chrome},
+        "pdf": {**pdf_binding, "pages": pages},
+    }
+    payload["render_receipt_sha256"] = hashlib.sha256(
+        _canonical_json(payload)
+    ).hexdigest()
+    destination = receipt_path.expanduser().resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.{os.getpid()}.tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    os.replace(temporary, destination)
+    return payload
 
 
 def to_csl_references(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -556,6 +621,7 @@ def render_paper(
     pdfinfo: str = "pdfinfo",
     pdftotext: str = "pdftotext",
     expected_pages: int | None = None,
+    receipt_path: Path | None = None,
 ) -> RenderResult:
     """Build HTML, print it with isolated Chrome, verify, then promote the PDF."""
     css = css_for_profile(profile)
@@ -649,7 +715,24 @@ def render_paper(
 
         candidate_path.replace(output_path)
 
-    return RenderResult(output_path=output_path, pages=pages)
+    rendered_receipt = None
+    if receipt_path is not None:
+        rendered_receipt = Path(receipt_path).expanduser().resolve()
+        write_render_receipt(
+            profile=profile,
+            input_path=input_path,
+            references_path=references_path,
+            output_path=output_path,
+            pages=pages,
+            pandoc=pandoc,
+            chrome=chrome,
+            receipt_path=rendered_receipt,
+        )
+    return RenderResult(
+        output_path=output_path,
+        pages=pages,
+        receipt_path=rendered_receipt,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -666,6 +749,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pdfinfo", default="pdfinfo")
     parser.add_argument("--pdftotext", default="pdftotext")
     parser.add_argument("--expected-pages", type=int)
+    parser.add_argument("--receipt", type=Path)
     return parser
 
 
@@ -682,6 +766,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             pdfinfo=args.pdfinfo,
             pdftotext=args.pdftotext,
             expected_pages=args.expected_pages,
+            receipt_path=args.receipt,
         )
     except RenderError as exc:
         print(f"error: {exc}", file=sys.stderr)

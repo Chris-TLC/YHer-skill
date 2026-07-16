@@ -133,6 +133,7 @@
         {"url": "https://doi.org/10.1177/001316447103100101", "http": 302, "evidence": "redirects to SAGE landing page; automated final GET returned 200"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 151, "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "Robbins-Monro formulations helped establish the basic logic of tailored adaptive item selection.", "evidence": "The registered article develops a Robbins-Monro procedure for selecting tailored-test items at an examinee's estimated ability level."},
         {"file": "main.md", "lines": "121-126", "status": "supported", "claim": "tailored/CAT item selection is established prior art", "evidence": "The paper is the registered Robbins-Monro tailored-testing formulation."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "computerized adaptive testing is established", "evidence": "The source is foundational tailored-testing work."}
       ],
@@ -160,6 +161,7 @@
         {"url": "https://doi.org/10.1177/014662168200600408", "http": 302, "evidence": "redirects to SAGE; automated final GET returned 200"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 151, "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "Early adaptive-testing work established the measurement-efficiency logic of selecting items from current evidence.", "evidence": "The article directly examines how adaptive testing can improve measurement quality and efficiency."},
         {"file": "main.md", "lines": "121-126", "status": "supported", "claim": "adaptive selection can improve measurement efficiency", "evidence": "This is the source's explicit title and topic."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "CAT is established prior art", "evidence": "The source is an adaptive-testing measurement-efficiency article."}
       ],
@@ -187,6 +189,7 @@
         {"url": "https://doi.org/10.1111/j.1745-3984.1984.tb01040.x", "http": 302, "evidence": "redirects to Wiley; publisher returned anti-bot 403"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 151, "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "Educational applications helped establish the basic logic of computerized adaptive testing.", "evidence": "The article directly addresses applications of computerized adaptive testing to educational problems."},
         {"file": "main.md", "lines": "121-126", "status": "supported", "claim": "CAT has established educational applications", "evidence": "The source directly addresses educational CAT applications."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "CAT is established prior art", "evidence": "Directly supported by title and venue record."}
       ],
@@ -215,6 +218,7 @@
         {"url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=10.3352%2Fjeehp.2018.15.20%5Bdoi%5D&retmode=json", "http": 200, "evidence": "PubMed count=1, PMID 30114899"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 153, "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "Simulation is useful for examining computerized-adaptive-testing designs and item-selection behavior under controlled conditions.", "evidence": "The instructional article describes CAT simulation, including examinee generation and item-selection criteria, as a method for evaluating CAT designs."},
         {"file": "main.md", "lines": "125-126", "status": "supported", "claim": "simulation is standard for examining CAT designs/item selection", "evidence": "Publisher abstract explicitly describes CAT simulation and item-selection criteria."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "adaptive item selection is established", "evidence": "The tutorial covers CAT item-selection simulation."}
       ],
@@ -243,6 +247,7 @@
         {"url": "https://doi.org/10.1177/0146621610370152", "http": 302, "evidence": "redirects to SAGE; automated final GET returned 200"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 153, "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "Simulation can compare item-selection rules while the latent condition and response process are controlled.", "evidence": "The article reports a simulation-based comparison of six computerized-adaptive-testing item-selection rules."},
         {"file": "main.md", "lines": "125-126", "status": "supported", "claim": "simulation examines CAT item-selection rules", "evidence": "Crossref abstract explicitly reports a simulation comparison of six selection rules."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "adaptive item-selection rules are established", "evidence": "Directly supported by source title and abstract."}
       ],
@@ -272,6 +277,7 @@
         {"url": "https://api.openalex.org/works/https://doi.org/10.1007/BF01099821", "http": 200, "evidence": "same identity; publication_year=1995"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 169, "section": "2.2 Learner models, confidence, and longitudinal scope", "status": "supported", "claim": "Bayesian knowledge tracing estimates changing procedural knowledge from observed practice.", "evidence": "The foundational article models acquisition of procedural knowledge from student performance over opportunities."},
         {"file": "main.md", "lines": "131-138", "status": "supported", "claim": "BKT models acquisition of procedural knowledge over time", "evidence": "This is the source's exact title and subject."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "Bayesian knowledge tracing is established", "evidence": "The paper is the foundational knowledge-tracing source."}
       ],
@@ -300,6 +306,7 @@
         {"url": "https://api.crossref.org/works/10.1007/s11257-017-9193-2", "http": 200, "evidence": "author is Radek Pelánek; issue 3-5"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 169, "section": "2.2 Learner models, confidence, and longitudinal scope", "status": "supported", "claim": "Related learner models estimate changing knowledge from observed practice.", "evidence": "The overview compares Bayesian knowledge tracing, logistic models, and other learner-modeling techniques for observed learning data."},
         {"file": "main.md", "lines": "133-138", "status": "supported", "claim": "later work compares BKT with logistic and related learner models", "evidence": "The registered title and overview scope directly support the claim."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "Bayesian knowledge tracing is established", "evidence": "The source is an overview of BKT and related learner models."}
       ],
@@ -329,6 +336,7 @@
         {"url": "https://doi.org/10.1073/pnas.1815156116", "http": 302, "evidence": "redirects to PNAS; publisher returned anti-bot 403"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 177, "section": "2.2 Learner models, confidence, and longitudinal scope", "status": "supported", "claim": "Spaced-practice scheduling concerns review timing and memory dynamics over a different decision horizon from a single diagnostic session.", "evidence": "The article formulates memory dynamics and optimizes review scheduling over time."},
         {"file": "main.md", "lines": "141-148", "status": "supported", "claim": "spaced-repetition research studies scheduling and memory dynamics", "evidence": "Abstract defines memory models and optimal review scheduling."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "spaced-repetition scheduling is established", "evidence": "Directly supported by title and abstract."}
       ],
@@ -357,6 +365,7 @@
         {"url": "https://doi.org/10.1145/3534678.3539081", "http": 302, "evidence": "redirects to ACM; publisher returned anti-bot 403"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 177, "section": "2.2 Learner models, confidence, and longitudinal scope", "status": "supported", "claim": "Spaced-practice scheduling is an optimization problem over a different decision horizon from a single diagnostic session.", "evidence": "The paper explicitly studies a stochastic shortest-path algorithm for optimizing spaced-repetition schedules."},
         {"file": "main.md", "lines": "141-148", "status": "supported", "claim": "spaced-repetition research studies scheduling", "evidence": "Scheduling optimization is the paper's explicit topic."},
         {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "spaced-repetition scheduling is established", "evidence": "Directly supported by title and proceedings record."}
       ],
@@ -385,6 +394,7 @@
         {"url": "https://api.github.com/repos/open-spaced-repetition/free-spaced-repetition-scheduler/contents/README.md", "http": 200, "evidence": "README exact heading and DSR description"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 178, "section": "2.2 Learner models, confidence, and longitudinal scope", "status": "supported", "claim": "The product's FSRS-inspired projection draws on documented FSRS software.", "evidence": "The official repository documents and implements the FSRS scheduling algorithm; the manuscript does not treat it as validation of diagnostic likelihoods or thresholds."},
         {"file": "main.md", "lines": "143-148", "status": "supported", "claim": "FSRS software informed an FSRS-inspired projection but does not validate YHer's formula", "evidence": "The official repository documents the FSRS algorithm; the manuscript expressly avoids a validation claim."},
         {"file": "yau_award_4page.md", "lines": "115-118", "status": "supported", "claim": "FSRS is treated as software rather than peer-reviewed validation", "evidence": "The source is correctly typed as a software repository."}
       ],
@@ -411,6 +421,7 @@
         {"url": "https://docs.ankiweb.net/deck-options.html#fsrs", "http": 200, "evidence": "official manual; title Deck Options - Anki Manual; h2 id=fsrs; describes Free Spaced Repetition Scheduler"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 178, "section": "2.2 Learner models, confidence, and longitudinal scope", "status": "supported", "claim": "The product's FSRS-inspired projection draws on official software documentation.", "evidence": "The Anki manual documents FSRS operation and settings; the manuscript expressly does not use that documentation to validate diagnostic likelihoods or stopping thresholds."},
         {"file": "main.md", "lines": "143-148", "status": "supported", "claim": "official Anki documentation operationally informs FSRS usage without validating YHer's formula", "evidence": "The official section explains FSRS and its settings; manuscript makes no research-validation claim."},
         {"file": "yau_award_4page.md", "lines": "115-118", "status": "supported", "claim": "FSRS is represented by software documentation", "evidence": "The source is official software documentation."}
       ],
@@ -440,6 +451,7 @@
         {"url": "https://doi.org/10.1145/3657604.3662031", "http": 302, "evidence": "redirects to ACM; publisher returned anti-bot 403"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 184, "section": "2.3 Language-model response simulation", "status": "supported", "claim": "Recent work uses language-model-simulated learner profiles to review question items.", "evidence": "The paper reports profile-conditioned simulated responses used to support multiple-choice question-item evaluation."},
         {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM-simulated students have been used to evaluate questions across learner profiles", "evidence": "Abstract explicitly reports profile-conditioned simulated responses for MCQ evaluation."},
         {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source motivates simulated-student validation but cannot establish YHer's internal role/gate."}
       ],
@@ -468,6 +480,7 @@
         {"url": "https://doi.org/10.18653/v1/2024.emnlp-main.37", "http": 302, "evidence": "redirects to ACL Anthology"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 184, "section": "2.3 Language-model response simulation", "status": "supported", "claim": "Recent work uses language models to instantiate diverse response profiles for tutoring systems.", "evidence": "The ACL paper describes cognitive and noncognitive student profiles, diverse simulated responses, and their use in conversational tutoring systems."},
         {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM-simulated students model behavior across profiles for tutoring systems", "evidence": "ACL abstract describes cognitive/noncognitive profiles, diverse responses, and adaptive tutoring scaffolds."},
         {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The paper supports the field context, not YHer's internal role/gate."}
       ],
@@ -497,6 +510,7 @@
         {"url": "https://doi.org/10.1145/3706598.3714054", "http": 302, "evidence": "redirects to ACM; publisher returned anti-bot 403"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 184, "section": "2.3 Language-model response simulation", "status": "supported", "claim": "Recent work uses simulated students to test pedagogical agents across diverse profiles.", "evidence": "The paper evaluates pedagogical agents against diverse simulated student profiles, matching the cited related-work claim."},
         {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "simulated students are used to review tutoring/pedagogical agents across profiles", "evidence": "This is the source's exact registered title and scope."},
         {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source supports related-work context, not YHer's internal role/gate."}
       ],
@@ -526,6 +540,7 @@
         {"url": "https://doi.org/10.18653/v1/2025.acl-long.488", "http": 302, "evidence": "redirects to ACL Anthology"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 184, "section": "2.3 Language-model response simulation", "status": "supported", "claim": "Recent work uses language models to instantiate response profiles with diverse cognitive levels.", "evidence": "The ACL paper describes cognitive prototypes, realistic mistakes, and simulated students with diverse cognitive abilities."},
         {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM agents simulate behavior across diverse cognitive levels", "evidence": "ACL abstract explicitly describes cognitive prototypes, realistic mistakes, and diverse cognitive abilities."},
         {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source supports related-work context, not YHer's internal role/gate."}
       ],
@@ -556,6 +571,7 @@
         {"url": "https://doi.org/10.18653/v1/2025.emnlp-main.1274", "http": 302, "evidence": "redirects to ACL Anthology"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 185, "section": "2.3 Language-model response simulation", "status": "supported", "claim": "Recent work uses IRT-aligned simulated students to review or predict question-item difficulty across ability profiles.", "evidence": "The ACL paper uses IRT-aligned simulated students to predict open-ended item difficulty."},
         {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM-simulated students support question evaluation/difficulty prediction across ability profiles", "evidence": "ACL abstract describes IRT-aligned simulated students used to predict open-ended item difficulty."},
         {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source motivates ability-alignment checks but does not establish YHer's internal role/gate."}
       ],
@@ -585,6 +601,7 @@
         {"url": "https://doi.org/10.18653/v1/2026.acl-long.1960", "http": 302, "evidence": "redirects to ACL Anthology"}
       ],
       "citation_use": [
+        {"file": "journal_main.md", "line": 189, "section": "2.3 Language-model response simulation", "status": "supported", "claim": "Direct tests of simulated tutoring dialogue distinguish apparent student-like language from substantive behavioral validity.", "evidence": "The ACL study evaluates simulated tutoring behavior on linguistic, behavioral, and cognitive metrics, finding common prompting strategies perform poorly and tuned methods remain limited."},
         {"file": "main.md", "lines": "156-161", "status": "supported", "claim": "simulated tutoring behavior needs validation beyond surface plausibility", "evidence": "ACL abstract reports prompting strategies perform poorly on linguistic, behavioral, and cognitive metrics; tuned methods remain limited."},
         {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source strongly motivates validation gates but cannot establish YHer's internal role/gate."}
       ],
@@ -612,7 +629,7 @@
         {"url": "https://doi.org/10.1177/0013164410387338", "http": 200, "evidence": "resolved to the publisher platform"}
       ],
       "citation_use": [
-        {"file": "journal_main.md", "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "selection and stopping are distinct CAT design choices with test-length and precision tradeoffs", "evidence": "The paper proposes and evaluates a CAT stopping rule against established alternatives."}
+        {"file": "journal_main.md", "line": 155, "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "Selection and stopping are distinct computerized-adaptive-testing design choices with test-length and precision tradeoffs.", "evidence": "The paper proposes and evaluates a CAT stopping rule against established alternatives, reporting effects on test length and measurement precision."}
       ],
       "record_verdict": "verified_metadata_and_supported_journal_use"
     },
@@ -638,7 +655,8 @@
         {"url": "https://doi.org/10.1016/s0020-0190(99)00031-9", "http": 200, "evidence": "resolved to the publisher platform"}
       ],
       "citation_use": [
-        {"file": "journal_main.md", "section": "2.4 and 3.7", "status": "supported", "claim": "budgeted coverage is an algorithmic reference point for the P2 greedy heuristic without an asserted guarantee", "evidence": "The paper studies budgeted maximum coverage; the manuscript explicitly disclaims transferring an approximation guarantee to P2."}
+        {"file": "journal_main.md", "line": 206, "section": "2.4 From diagnostic output to remediation", "status": "supported", "claim": "Budgeted coverage supplies an algorithmic reference point for mapping posterior-conditioned demand to a fixed resource library.", "evidence": "The paper defines and studies the budgeted maximum coverage problem; the manuscript uses it only as a reference point and explicitly makes no approximation claim."},
+        {"file": "journal_main.md", "line": 403, "section": "3.7 Illustrative prescription analysis", "status": "supported", "claim": "The P2 problem-specific greedy selector is related to budgeted coverage without inheriting an approximation guarantee or optimality claim.", "evidence": "The paper analyzes budgeted maximum coverage and a greedy strategy; the manuscript explicitly disclaims transferring its guarantee to P2 or claiming optimality."}
       ],
       "record_verdict": "verified_metadata_and_supported_journal_use"
     }

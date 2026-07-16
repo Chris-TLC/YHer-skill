@@ -14,6 +14,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import tempfile
 from pathlib import Path
 from types import MappingProxyType
@@ -100,6 +101,15 @@ PERSONA_PUBLICATION_ARTIFACTS = {
         "figures/blind_terminal_agreement.svg",
         "figures/blind_output_stability.png",
         "figures/blind_output_stability.svg",
+    ),
+}
+PROGRAMMATIC_PUBLICATION_ASSETS = {
+    "generated/fig-p-rescue-png-c36a76849139.png": "figures/p_rescue.png",
+    "generated/fig-c-probe-harm-png-e5e22d30fb2c.png": (
+        "figures/c_misdiagnosis.png"
+    ),
+    "generated/fig-matched-vs-misspecified-png-39c4270e4169.png": (
+        "figures/matched_vs_misspecified.png"
     ),
 }
 P2_PUBLICATION_ARTIFACTS = (
@@ -852,7 +862,7 @@ def _validate_complete_h1_h4_evidence(
     source_hashes: Mapping[str, str],
     registry_rows: Mapping[str, Mapping[str, Any]],
     results: Mapping[str, Any],
-) -> tuple[dict[str, str], dict[str, Any]]:
+) -> tuple[dict[str, str], dict[str, Any], dict[str, dict[str, Any]]]:
     if not paper_artifact_manifest_path.is_file():
         raise BinderError(
             "paper artifact manifest is required for a complete binding"
@@ -994,7 +1004,32 @@ def _validate_complete_h1_h4_evidence(
         "manifest_shard_count": shard_count,
         "raw_hash": raw_hash,
     }
-    return source_updates, execution_integrity
+    publication_assets: dict[str, dict[str, Any]] = {}
+    for destination, relative_value in PROGRAMMATIC_PUBLICATION_ASSETS.items():
+        relative = Path(relative_value)
+        expected_hash = files.get(relative.as_posix())
+        if not isinstance(expected_hash, str) or re.fullmatch(
+            r"[0-9a-f]{64}", expected_hash
+        ) is None:
+            raise BinderError(
+                f"programmatic publication figure is not manifest-bound: {relative}"
+            )
+        source, data = _read_relative_regular_file(
+            paper_artifact_manifest_path.parent,
+            relative,
+            label=f"programmatic publication figure {relative}",
+        )
+        if hashlib.sha256(data).hexdigest() != expected_hash:
+            raise BinderError(f"programmatic publication figure drifted: {relative}")
+        if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise BinderError(f"programmatic publication figure is not PNG: {relative}")
+        publication_assets[destination] = {
+            "relative_path": relative.as_posix(),
+            "source_path": str(source.resolve()),
+            "sha256": expected_hash,
+            "bytes": len(data),
+        }
+    return source_updates, execution_integrity, publication_assets
 
 
 def _validate_metric(
@@ -1873,6 +1908,9 @@ def _validate_persona_judge(
     elif status == "partial_missing_judge":
         expected_available = ["gpt"]
         expected_missing = ["claude"]
+    elif status == "missing_all_judges":
+        expected_available = []
+        expected_missing = ["claude", "gpt"]
     elif status == "not_applicable_zero_cases":
         expected_available = []
         expected_missing = []
@@ -1890,7 +1928,11 @@ def _validate_persona_judge(
                 raise BinderError("Persona-v2 judge result manifest profile is incomplete")
         elif embedded is not None:
             raise BinderError("Persona-v2 judge result manifest profile has a stray result")
-    if status in {"complete", "partial_missing_judge"} and selected_count == 0:
+    if status in {
+        "complete",
+        "partial_missing_judge",
+        "missing_all_judges",
+    } and selected_count == 0:
         raise BinderError("Persona-v2 applicable judge profile has no selected cases")
     if status == "not_applicable_zero_cases":
         empty_map_fields = (
@@ -1916,6 +1958,32 @@ def _validate_persona_judge(
             or result_manifests != {"claude": None, "gpt": None}
         ):
             raise BinderError("Persona-v2 zero-case judge profile drifted")
+        return {
+            "case_manifest": dict(case_manifest),
+            "analysis": dict(analysis),
+            "run_evidence_binding": dict(run_evidence_binding),
+            "result_manifests": dict(result_manifests),
+        }
+    if status == "missing_all_judges":
+        empty_map_fields = (
+            "result_manifest_sha256",
+            "execution_receipt_sha256",
+            "execution_ids",
+            "judge_families",
+            "judge_models",
+            "judge_transports",
+            "judge_accounting",
+            "category_counts",
+        )
+        if (
+            any(analysis.get(field) != {} for field in empty_map_fields)
+            or analysis.get("pairwise_label_agreement") is not None
+            or analysis.get("pairwise_error_category_agreement") is not None
+            or analysis.get("label_disagreement_examples") != []
+            or analysis.get("error_category_disagreement_examples") != []
+            or result_manifests != {"claude": None, "gpt": None}
+        ):
+            raise BinderError("Persona-v2 missing-all-judges profile drifted")
         return {
             "case_manifest": dict(case_manifest),
             "analysis": dict(analysis),
@@ -2248,6 +2316,7 @@ def _validate_persona_judge_run_snapshot(
     expected_statuses = {
         "complete": {"claude": "complete", "gpt": "complete"},
         "partial_missing_judge": {"claude": "unavailable", "gpt": "complete"},
+        "missing_all_judges": {"claude": "unavailable", "gpt": "failed"},
         "not_applicable_zero_cases": {
             "claude": "not_applicable_zero_cases",
             "gpt": "not_applicable_zero_cases",
@@ -3125,26 +3194,54 @@ def _p2_source_path(source: Mapping[str, Any], *, role: str) -> Path:
     ) is None:
         raise BinderError(f"P2 source SHA-256 is invalid: {role}")
     path = Path(path_value)
-    if not path.is_file() or sha256_file(path) != expected_hash:
+    resolved, data = _read_absolute_regular_file(path, label=f"P2 source {role}")
+    if hashlib.sha256(data).hexdigest() != expected_hash:
         raise BinderError(f"P2 source file SHA-256 drift: {role}")
-    return path
+    return resolved
+
+
+def _read_absolute_regular_file(path: Path, *, label: str) -> tuple[Path, bytes]:
+    if path.is_symlink():
+        raise BinderError(f"{label} is unsafe or contains a symlink")
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise BinderError(f"{label} is missing, unsafe, or contains a symlink") from exc
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise BinderError(f"{label} is not a regular file")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+    finally:
+        os.close(descriptor)
+    return path.resolve(strict=True), b"".join(chunks)
 
 
 def _p2_read_candidates(path: Path) -> list[Mapping[str, Any]]:
+    _, data = _read_absolute_regular_file(path, label="P2 trusted candidate source")
     rows: list[Mapping[str, Any]] = []
-    with path.open(encoding="utf-8") as handle:
-        for line_number, line in enumerate(handle, start=1):
-            if not line.strip():
-                continue
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError as exc:
-                raise BinderError(
-                    f"P2 trusted candidate source has invalid JSON at line {line_number}"
-                ) from exc
-            if not isinstance(row, Mapping):
-                raise BinderError("P2 trusted candidate row is not an object")
-            rows.append(row)
+    for line_number, line in enumerate(data.splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            row = _strict_json_bytes(
+                line,
+                label=f"P2 trusted candidate source line {line_number}",
+            )
+        except BinderError as exc:
+            raise BinderError(
+                f"P2 trusted candidate source has invalid JSON at line {line_number}: {exc}"
+            ) from exc
+        if not isinstance(row, Mapping):
+            raise BinderError("P2 trusted candidate row is not an object")
+        rows.append(row)
     if not rows:
         raise BinderError("P2 trusted candidate source is empty")
     return rows
@@ -3228,17 +3325,25 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
     summary_path = p2_dir / "summary.json"
     input_manifest_path = p2_dir / "input_manifest.json"
     output_manifest_path = p2_dir / "output_manifest.json"
-    if not summary_path.is_file() or not output_manifest_path.is_file():
-        raise BinderError("P2 summary or output manifest is missing")
-    if not input_manifest_path.is_file():
-        raise BinderError("P2 input manifest is required")
-    summary, summary_bytes = _load_json_object(summary_path, label="P2 summary")
-    input_manifest, input_bytes = _load_json_object(
-        input_manifest_path, label="P2 input manifest"
+    _, summary_bytes = _read_relative_regular_file(
+        p2_dir, Path("summary.json"), label="P2 summary"
     )
-    output_manifest, output_manifest_bytes = _load_json_object(
-        output_manifest_path, label="P2 output manifest"
+    _, input_bytes = _read_relative_regular_file(
+        p2_dir, Path("input_manifest.json"), label="P2 input manifest"
     )
+    _, output_manifest_bytes = _read_relative_regular_file(
+        p2_dir, Path("output_manifest.json"), label="P2 output manifest"
+    )
+    summary = _strict_json_bytes(summary_bytes, label="P2 summary")
+    input_manifest = _strict_json_bytes(input_bytes, label="P2 input manifest")
+    output_manifest = _strict_json_bytes(
+        output_manifest_bytes, label="P2 output manifest"
+    )
+    if not all(
+        isinstance(value, Mapping)
+        for value in (summary, input_manifest, output_manifest)
+    ):
+        raise BinderError("P2 summary or manifest root is not an object")
     _reject_prohibited_claim_fields(summary)
 
     _assert_exact_keys(
@@ -3329,10 +3434,9 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
         relative = Path(filename)
         if relative.is_absolute() or ".." in relative.parts:
             raise BinderError("P2 output artifact path escapes its root")
-        artifact_path = p2_dir / relative
-        if not artifact_path.is_file():
-            raise BinderError(f"P2 output artifact is missing: {filename}")
-        artifact_bytes = artifact_path.read_bytes()
+        artifact_path, artifact_bytes = _read_relative_regular_file(
+            p2_dir, relative, label=f"P2 output artifact {filename}"
+        )
         if (
             row.get("sha256") != hashlib.sha256(artifact_bytes).hexdigest()
             or row.get("bytes") != len(artifact_bytes)
@@ -3454,6 +3558,43 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
         or summary.get("spec_hash") != spec_sha
     ):
         raise BinderError("P2 frozen spec bytes are not cross-bound")
+    spec_commit = spec.get("commit")
+    if not isinstance(spec_commit, str) or re.fullmatch(r"[0-9a-f]{40}", spec_commit) is None:
+        raise BinderError("P2 spec commit is invalid")
+    repository = Path(__file__).resolve().parents[1]
+    try:
+        committed_spec = subprocess.check_output(
+            [
+                "git",
+                "show",
+                f"{spec_commit}:experiments/p2_illustrative_analysis_plan.md",
+            ],
+            cwd=repository,
+        )
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", spec_commit, "HEAD"],
+            cwd=repository,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        commit_epoch = int(
+            subprocess.check_output(
+                ["git", "show", "-s", "--format=%ct", spec_commit],
+                cwd=repository,
+                text=True,
+            ).strip()
+        )
+    except (OSError, subprocess.CalledProcessError, ValueError) as exc:
+        raise BinderError("P2 spec commit cannot be verified") from exc
+    if hashlib.sha256(committed_spec).hexdigest() != spec_sha:
+        raise BinderError("P2 committed spec bytes differ from the bound spec")
+    if commit_epoch >= min(
+        summary_path.stat().st_mtime,
+        input_manifest_path.stat().st_mtime,
+        output_manifest_path.stat().st_mtime,
+    ):
+        raise BinderError("P2 spec commit does not precede outcome artifacts")
     source_hashes["p2_spec_sha256"] = spec_sha
 
     candidate_rows = _p2_read_candidates(source_paths["trusted_candidate_jsonl"])
@@ -3861,6 +4002,7 @@ def build_binder(
     source_hashes["raw_aggregate_hash"] = raw_aggregate_hash
 
     execution_integrity: dict[str, Any] | None = None
+    programmatic_publication_assets: dict[str, dict[str, Any]] = {}
     paper_artifact_file: Path | None = None
     if require_complete:
         if results is None or results_file is None:
@@ -3871,7 +4013,11 @@ def build_binder(
             else results_file.parent / "artifact_manifest.json"
         )
         paper_artifact_file = artifact_path
-        source_updates, execution_integrity = _validate_complete_h1_h4_evidence(
+        (
+            source_updates,
+            execution_integrity,
+            programmatic_publication_assets,
+        ) = _validate_complete_h1_h4_evidence(
             raw_manifest_path=raw_path,
             registry_path=registry,
             results_path=results_file,
@@ -3970,6 +4116,7 @@ def build_binder(
             },
         },
         "execution_integrity": execution_integrity,
+        "programmatic_publication_assets": programmatic_publication_assets,
         "same_support_pairs": pairs,
         "persona_v2": persona_v2,
         "p2": p2_bound,
@@ -3988,7 +4135,7 @@ def build_binder(
 
 def _display_number(value: Any) -> str:
     number = float(value)
-    return str(int(number)) if number.is_integer() else f"{number:.6g}"
+    return f"{int(number):,}" if number.is_integer() else f"{number:.6g}"
 
 
 def _metric_display(metric: Mapping[str, Any]) -> str:
@@ -4009,6 +4156,39 @@ def _ci_display(value: Any) -> str:
     return f"{_percent_display(value[0])} to {_percent_display(value[1])}"
 
 
+def _bound_metric(binder: Mapping[str, Any], metric_id: str) -> Mapping[str, Any]:
+    metrics = binder.get("metrics")
+    metric = metrics.get(metric_id) if isinstance(metrics, Mapping) else None
+    if not isinstance(metric, Mapping):
+        raise BinderError(f"bound manuscript metric is missing: {metric_id}")
+    return metric
+
+
+def _metric_ci_text(metric: Mapping[str, Any], *, percent: bool = True) -> str:
+    low = metric.get("ci_low")
+    high = metric.get("ci_high")
+    if low is None or high is None:
+        return "95% CI unavailable"
+    if percent:
+        return f"95% CI {_percent_display(low)} to {_percent_display(high)}"
+    return f"95% CI {_display_number(low)} to {_display_number(high)}"
+
+
+def _contrast_text(metric: Mapping[str, Any]) -> str:
+    return (
+        f"{_display_number(metric['numerator'])}/"
+        f"{_display_number(metric['denominator'])} paired contrast; "
+        f"{100.0 * float(metric['value']):.1f} percentage points; "
+        f"{_metric_ci_text(metric)}"
+    )
+
+
+def _decision_text(value: Any) -> str:
+    if not isinstance(value, str) or not value:
+        raise BinderError("bound hypothesis decision is invalid")
+    return value.replace("_", " ")
+
+
 def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
     if binder.get("schema_version") != "yher.journal_support_binder.v1":
         raise BinderError("manuscript slots require a journal support binder")
@@ -4024,7 +4204,9 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         row = hypotheses.get(hypothesis)
         if not isinstance(row, Mapping) or not isinstance(row.get("decision"), str):
             raise BinderError("binder hypothesis decision surface is incomplete")
-        decision_lines.append(f"| {hypothesis} | {row['decision']} |")
+        decision_lines.append(
+            f"| {hypothesis} | {_decision_text(row['decision'])} |"
+        )
 
     convergence_lines = [
         "| Pair ID | Support | Terminal accuracy | Correct convergence | Difference |",
@@ -4054,11 +4236,15 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
 
     execution = binder.get("execution_integrity")
     if isinstance(execution, Mapping):
+        full_support = binder["supports"]["full"]
+        eligible_support = binder["supports"]["eligible"]
         execution_markdown = (
             f"{execution['intended_journey_count']} intended journeys; "
             f"{execution['valid_journey_count']} valid; "
             f"{execution['structural_failure_count']} structural failures; "
-            f"{execution['schema_invalid_count']} schema-invalid."
+            f"{execution['schema_invalid_count']} schema-invalid. The full analysis "
+            f"support contains {full_support['n_target']} targets; the mechanically "
+            f"eligible H1/H2 support contains {eligible_support['n_target']} targets."
         )
     else:
         execution_markdown = "Execution-integrity counts are not bound in this draft."
@@ -4090,6 +4276,44 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         conditional_effect = effect_index.get("conditional_answer_accuracy")
         if not isinstance(conditional_effect, Mapping):
             raise BinderError("bound Persona-v2 conditional-accuracy effect is missing")
+        lifecycle = persona.get("provider_lifecycle")
+        if not isinstance(lifecycle, list) or len(lifecycle) != len(PERSONA_PROVIDERS):
+            raise BinderError("bound Persona-v2 provider lifecycle is incomplete")
+        lifecycle_lines = [
+            "| Provider lifecycle | Records | Controlled status | Blind status | Exclusion reasons |",
+            "|---|---:|---|---|---|",
+        ]
+        for lifecycle_row in lifecycle:
+            if not isinstance(lifecycle_row, Mapping):
+                raise BinderError("bound Persona-v2 provider lifecycle row is invalid")
+            provider_name = str(lifecycle_row.get("provider") or "")
+            expected = _persona_integer(
+                lifecycle_row.get("expected_count"),
+                label=f"{provider_name} expected lifecycle records",
+            )
+            missing_count = _persona_integer(
+                lifecycle_row.get("missing_count"),
+                label=f"{provider_name} missing lifecycle records",
+                maximum=expected,
+            )
+            controlled_eligible = lifecycle_row.get("controlled_eligible") is True
+            blind_eligible = lifecycle_row.get("blind_eligible") is True
+            reasons = sorted(
+                {
+                    str(reason)
+                    for field in (
+                        "controlled_exclusion_reasons",
+                        "blind_exclusion_reasons",
+                    )
+                    for reason in (lifecycle_row.get(field) or [])
+                }
+            )
+            lifecycle_lines.append(
+                f"| {provider_name} | {expected - missing_count:,}/{expected:,} | "
+                f"{'controlled eligible' if controlled_eligible else 'controlled excluded'} | "
+                f"{'blind eligible' if blind_eligible else 'blind excluded'} | "
+                f"{', '.join(reasons) if reasons else 'none'} |"
+            )
         persona_lines = [
             (
                 "Formal Persona-v2 main results use 50 persona_id clusters, provider "
@@ -4098,6 +4322,8 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
                 "measure instruction following and robustness, not human behavioral "
                 "validity."
             ),
+            "",
+            *lifecycle_lines,
             "",
             "| Controlled paired outcome | Oriented effect | 95% cluster CI | Denominator |",
             "|---|---:|---:|---|",
@@ -4161,6 +4387,18 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
             judge_summary = (
                 "GPT-only coding; Claude unavailable; pairwise agreement not estimable"
             )
+        elif judge_status == "missing_all_judges":
+            if judge_label is not None:
+                raise BinderError("bound missing-all-judges profile reports agreement")
+            unavailable = (
+                "Automated error coding was unavailable: GPT judge failed and Claude "
+                "judge was unavailable; pairwise judge agreement was not estimable"
+            )
+            judge_row = (
+                "| Automated error coding (exploratory) | Unavailable | "
+                f"{unavailable} |"
+            )
+            judge_summary = unavailable
         elif judge_status == "not_applicable_zero_cases":
             if judge_label is not None:
                 raise BinderError("bound zero-case profile reports pairwise agreement")
@@ -4250,7 +4488,9 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
             (
                 f"Illustrative P2 is supply-bound to {boundary['node_count']} nodes "
                 f"and {boundary['trusted_exact_segment_assignments']} trusted exact "
-                f"segment assignments. The fixed analytic overlap contains "
+                "node-chunk assignments spanning "
+                f"{boundary['unique_chunk_count']} unique chunks. The fixed analytic "
+                "overlap contains "
                 f"{overlap['target_count']} targets, {overlap['candidate_row_count']} "
                 f"candidate rows, and {overlap['physical_source_count']} physical "
                 "sources under a 600-second analytic budget. This illustrative "
@@ -4306,11 +4546,182 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
     else:
         raise BinderError("P2 slot status is invalid")
 
+    h1_a = _bound_metric(binder, "p_rescue.full.matched.b15.arm_A")
+    h1_b = _bound_metric(binder, "p_rescue.full.matched.b15.arm_B")
+    h1_difference = _bound_metric(
+        binder, "h1.primary.matched.b15.rescue_A_minus_B"
+    )
+    h1_nr_a = _bound_metric(binder, "h1.no_repeat.matched.b15.arm_A")
+    h1_nr_b = _bound_metric(binder, "h1.no_repeat.matched.b15.arm_B")
+    h1_nr_difference = _bound_metric(
+        binder, "h1.no_repeat.matched.b15.rescue_A_minus_B"
+    )
+    h2_a = _bound_metric(binder, "c_misdiagnosis.full.matched.b9.arm_A")
+    h2_b = _bound_metric(binder, "c_misdiagnosis.full.matched.b9.arm_B")
+    h2_c = _bound_metric(binder, "c_misdiagnosis.full.matched.b9.arm_C")
+    h2_harm = _bound_metric(binder, "h2.primary.matched.b9.harm_C_minus_A")
+    h2_no_harm = _bound_metric(
+        binder, "h2.primary.matched.b9.no_harm_A_minus_B"
+    )
+    h2_nr_a = _bound_metric(binder, "h2.no_repeat.matched.b9.arm_A")
+    h2_nr_b = _bound_metric(binder, "h2.no_repeat.matched.b9.arm_B")
+    h2_nr_c = _bound_metric(binder, "h2.no_repeat.matched.b9.arm_C")
+    h2_nr_harm = _bound_metric(binder, "h2.no_repeat.matched.b9.harm_C_minus_A")
+    h2_nr_no_harm = _bound_metric(
+        binder, "h2.no_repeat.matched.b9.no_harm_A_minus_B"
+    )
+    h3_accuracy = _bound_metric(
+        binder, "h3.matched.b15.terminal_accuracy_A_minus_B"
+    )
+    h3_time_a = _bound_metric(binder, "h3.matched.b15.time_to_confidence.arm_A")
+    h3_time_b = _bound_metric(binder, "h3.matched.b15.time_to_confidence.arm_B")
+    h4_rescue = _bound_metric(binder, "h4.misspecified.b15.rescue_A_minus_B")
+    h4_harm = _bound_metric(binder, "h4.misspecified.b9.harm_C_minus_A")
+    h4_no_harm = _bound_metric(binder, "h4.misspecified.b9.no_harm_A_minus_B")
+    h4_rescue_degradation = _bound_metric(
+        binder, "h4.degradation.h1_rescue.matched_minus_misspecified"
+    )
+    h4_harm_degradation = _bound_metric(
+        binder, "h4.degradation.h2_harm.matched_minus_misspecified"
+    )
+    h4_no_harm_degradation = _bound_metric(
+        binder, "h4.degradation.h2_no_harm.matched_minus_misspecified"
+    )
+    direct_count = _bound_metric(
+        binder,
+        "exploratory_posthoc.prerequisite.truth_P.matched.b15.arm_A.direct_count",
+    )
+    prerequisite_count = _bound_metric(
+        binder,
+        "exploratory_posthoc.prerequisite.truth_P.matched.b15.arm_A.prerequisite_count",
+    )
+    prerequisite_share = _bound_metric(
+        binder,
+        "exploratory_posthoc.prerequisite.truth_P.matched.b15.arm_A.prerequisite_share",
+    )
+
+    programmatic_abstract = (
+        f"At 15 items, adaptive P-state correct convergence was "
+        f"{_metric_display(h1_a)} versus {_metric_display(h1_b)} for the local ladder; "
+        f"the paired difference was {100.0 * float(h1_difference['value']):.1f} points "
+        f"({_metric_ci_text(h1_difference)}). H1 was partially supported because the "
+        "adaptive rate missed the frozen 50% criterion. At nine items, fixed insertion "
+        f"minus adaptive C-state misdiagnosis was {100.0 * float(h2_harm['value']):.1f} "
+        f"points, while adaptive minus local was {100.0 * float(h2_no_harm['value']):.1f} "
+        "points; H2 was not supported. H3 and the direction-only H4 check were supported."
+    )
+    primary_results = "\n\n".join(
+        [
+            "### 4.2 Prerequisite-gap rescue and reasoning-chain harm",
+            (
+                f"At budget 15 on the {h1_a['n_target']}-target eligible stress support, "
+                f"Arm A P-state correct confident convergence was {_metric_display(h1_a)} "
+                f"({_metric_ci_text(h1_a)}), versus {_metric_display(h1_b)} "
+                f"({_metric_ci_text(h1_b)}) for Arm B. The paired A-minus-B contrast was "
+                f"{_contrast_text(h1_difference)}. The direction favored adaptive probing, "
+                "but the Arm-A rate did not reach the frozen 50% threshold. H1 was "
+                "partially supported."
+            ),
+            (
+                f"On the no-repeat common support ({h1_nr_a['n_target']} targets; "
+                f"{_display_number(h1_nr_a['denominator'])} paired cases), Arm A was "
+                f"{_metric_display(h1_nr_a)} and Arm B was {_metric_display(h1_nr_b)}; "
+                f"the contrast was {_contrast_text(h1_nr_difference)}. This jointly "
+                "changed support-and-repeat estimand was much weaker, so its difference "
+                "from the broad estimate cannot be attributed to repetition alone."
+            ),
+            (
+                f"At budget 9 on the {h2_a['n_target']}-target support, C-state "
+                f"misdiagnosis was {_metric_display(h2_a)} for Arm A, "
+                f"{_metric_display(h2_b)} for Arm B, and {_metric_display(h2_c)} for Arm C. "
+                f"C minus A was {_contrast_text(h2_harm)}. A minus B was "
+                f"{_contrast_text(h2_no_harm)}, exceeding the frozen +5-point no-harm "
+                "margin. H2 was not supported."
+            ),
+            (
+                f"On the {h2_nr_a['n_target']}-target no-repeat common support, the "
+                f"corresponding rates were {_metric_display(h2_nr_a)} for A, "
+                f"{_metric_display(h2_nr_b)} for B, and {_metric_display(h2_nr_c)} for C. "
+                f"C minus A was {_contrast_text(h2_nr_harm)}, whereas A minus B was "
+                f"{_contrast_text(h2_nr_no_harm)}."
+            ),
+            (
+                "![Figure 1. P-state correct convergence across item budgets. The figure "
+                "is reused from the verified programmatic artifact and does not include "
+                "Persona-v2 evidence.](generated/fig-p-rescue-png-c36a76849139.png)"
+            ),
+            (
+                "![Figure 2. C-state misdiagnosis across item budgets. Arm labels refer "
+                "only to the programmatic study.]"
+                "(generated/fig-c-probe-harm-png-e5e22d30fb2c.png)"
+            ),
+            "### 4.3 Adaptive sanity check and misspecification",
+            (
+                f"On the full {h3_accuracy['n_target']}-target matched set at budget 15, "
+                f"Arm A exceeded Arm B in terminal accuracy by "
+                f"{_contrast_text(h3_accuracy)}. Median time to confidence was "
+                f"{_display_number(h3_time_a['value'])} items for A "
+                f"({_metric_ci_text(h3_time_a, percent=False)}) and "
+                f"{_display_number(h3_time_b['value'])} items for B "
+                f"({_metric_ci_text(h3_time_b, percent=False)}). H3 was supported; this "
+                "is an implementation sanity check, not an algorithmic novelty claim."
+            ),
+            (
+                f"Under the misspecified generator, P-state A minus B was "
+                f"{_contrast_text(h4_rescue)}; C-state C minus A was "
+                f"{_contrast_text(h4_harm)}; and C-state A minus B was "
+                f"{_contrast_text(h4_no_harm)}. Matched minus misspecified degradation "
+                f"was {100.0 * float(h4_rescue_degradation['value']):.1f} points for H1 "
+                f"({_metric_ci_text(h4_rescue_degradation)}), "
+                f"{100.0 * float(h4_harm_degradation['value']):.1f} points for fixed-quota "
+                f"harm ({_metric_ci_text(h4_harm_degradation)}), and "
+                f"{100.0 * float(h4_no_harm_degradation['value']):.1f} points for adaptive "
+                f"minus local ({_metric_ci_text(h4_no_harm_degradation)}). H4 was "
+                "supported under its direction-only rule; this does not establish "
+                "robustness to untested generator families."
+            ),
+            (
+                "![Figure 3. Matched and misspecified contrast estimates. The perturbation "
+                "is one declared synthetic sensitivity condition.]"
+                "(generated/fig-matched-vs-misspecified-png-39c4270e4169.png)"
+            ),
+        ]
+    )
+
+    convergence_lines.extend(
+        [
+            "",
+            (
+                "Rows are not cross-compared: target-set hashes are "
+                + "; ".join(
+                    f"{pair_id}={pairs[pair_id]['target_set_hash']}"
+                    for pair_id in PAIR_SPECS
+                )
+                + "."
+            ),
+            (
+                "The full-support difference is arithmetic only because no dedicated "
+                "bootstrap interval is bound. The eligible-support difference retains "
+                "its paired interval."
+            ),
+            (
+                f"Post-hoc selector composition on the eligible support averaged "
+                f"{float(direct_count['value']):.2f} direct and "
+                f"{float(prerequisite_count['value']):.2f} prerequisite items by budget "
+                f"15; prerequisite share was {_percent_display(prerequisite_share['value'])} "
+                f"({_metric_ci_text(prerequisite_share)}). This selector-stopping mismatch "
+                "is exploratory and does not revise H1."
+            ),
+        ]
+    )
+
     slots: dict[str, Any] = {
         "schema_version": "yher.journal_binder.manuscript_slots.v1",
+        "programmatic_abstract_results_markdown": programmatic_abstract,
         "hypothesis_decisions_markdown": "\n".join(decision_lines),
         "same_support_convergence_markdown": "\n".join(convergence_lines),
         "execution_integrity_markdown": execution_markdown,
+        "primary_h1_h4_results_markdown": primary_results,
         "bound_abstract_results_markdown": f"{persona_abstract} {p2_abstract}",
         "persona_v2_markdown": persona_markdown,
         "p2_markdown": p2_markdown,

@@ -284,7 +284,12 @@ def _publication_sources(
     judge_profile: str = "both_complete",
 ) -> tuple[Path, Path, Path]:
     tmp_path.mkdir(parents=True, exist_ok=True)
-    if judge_profile not in {"both_complete", "gpt_only", "zero_cases"}:
+    if judge_profile not in {
+        "both_complete",
+        "gpt_only",
+        "all_missing",
+        "zero_cases",
+    }:
         raise ValueError("unsupported publication fixture profile")
     fixture = _binder_fixture_writer()(
         tmp_path / "binder-fixture", judge_profile=judge_profile
@@ -566,6 +571,43 @@ def test_persona_bundle_derives_exact_gpt_only_binding_roles(tmp_path: Path) -> 
     assert bound["judge_adjudication"]["analysis"]["status"] == (
         "partial_missing_judge"
     )
+
+
+def test_persona_bundle_preserves_failed_gpt_and_unavailable_claude(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+    from experiments.llm_sim_v2 import publication
+
+    result_dir, main_root, repo = _publication_sources(
+        tmp_path,
+        judge_profile="all_missing",
+    )
+    output = tmp_path / "persona-bundle"
+
+    manifest = publication.build_persona_v2_bundle(
+        result_dir=result_dir,
+        main_phase_root=main_root,
+        repo_root=repo,
+        output_dir=output,
+        allow_fixture=True,
+    )
+
+    assert set(manifest["files"]) == BASE_PERSONA_BUNDLE_ROLES | {
+        JUDGE_RUN_SNAPSHOT_ROLE
+    }
+    assert not any(role.endswith("_judge_result_manifest") for role in manifest["files"])
+    failed_receipts = list(
+        output.glob(
+            "judge-snapshots/run/executions/gpt/*/failed_execution_receipt.json"
+        )
+    )
+    assert len(failed_receipts) == 1
+    bound = journal_binder.bind_persona_v2_artifacts(output, allow_fixture=True)
+    analysis = bound["judge_adjudication"]["analysis"]
+    assert analysis["status"] == "missing_all_judges"
+    assert analysis["available_judges"] == []
+    assert analysis["missing_judges"] == ["claude", "gpt"]
 
 
 @pytest.mark.parametrize(

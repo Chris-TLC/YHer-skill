@@ -21,6 +21,7 @@ PAPER_JOURNAL_FINAL_DIR ?= /tmp/yher_h5v2/journal_manuscript
 PAPER_JOURNAL_FINAL_MANUSCRIPT ?= $(PAPER_JOURNAL_FINAL_DIR)/current/journal_main.md
 PAPER_JOURNAL_FINALIZATION_MANIFEST ?= $(PAPER_JOURNAL_FINAL_DIR)/current/finalization_manifest.json
 PAPER_JOURNAL_PDF ?= $(PAPER_PDF_DIR)/journal_main.pdf
+PAPER_JOURNAL_RENDER_RECEIPT ?= $(PAPER_JOURNAL_PDF).render.json
 PAPER_JOURNAL_PDF_METADATA ?= $(PAPER_JOURNAL_PDF).metadata.json
 PAPER_PANDOC ?= /opt/homebrew/bin/pandoc
 PAPER_CHROME ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
@@ -79,14 +80,15 @@ paper-journal-finalize:
 	test -n "$(PAPER_JOURNAL_BINDER_GENERATION_ID)" || { echo "PAPER_JOURNAL_BINDER_GENERATION_ID is required" >&2; exit 2; }
 	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript finalize --template "$(PAPER_JOURNAL_TEMPLATE)" --binder-generation "$(PAPER_JOURNAL_BINDER_GENERATION)" --references "$(PAPER_REFERENCES)" --output "$(PAPER_JOURNAL_FINAL_DIR)" --expected-template-sha256 "$(PAPER_JOURNAL_TEMPLATE_SHA256)" --expected-binder-generation-id "$(PAPER_JOURNAL_BINDER_GENERATION_ID)"
 
-paper-journal-check:
+paper-journal-check: paper-journal-finalize
 	test -f "$(PAPER_JOURNAL_FINAL_MANUSCRIPT)"
 	test -f "$(PAPER_JOURNAL_FINALIZATION_MANIFEST)"
-	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript verify --generation "$(PAPER_JOURNAL_FINAL_DIR)/current" --references "$(PAPER_REFERENCES)"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript verify --generation "$(PAPER_JOURNAL_FINAL_DIR)/current" --references "$(PAPER_REFERENCES)" --expected-template-sha256 "$(PAPER_JOURNAL_TEMPLATE_SHA256)" --expected-binder-generation-id "$(PAPER_JOURNAL_BINDER_GENERATION_ID)"
 
 paper-pdf-journal: paper-journal-check
-	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile main --input "$(PAPER_JOURNAL_FINAL_MANUSCRIPT)" --output "$(PAPER_JOURNAL_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)"
-	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript pdf-metadata --pdf "$(PAPER_JOURNAL_PDF)" --generation "$(PAPER_JOURNAL_FINAL_DIR)/current" --references "$(PAPER_REFERENCES)" --output "$(PAPER_JOURNAL_PDF_METADATA)"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile main --input "$(PAPER_JOURNAL_FINAL_MANUSCRIPT)" --output "$(PAPER_JOURNAL_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --receipt "$(PAPER_JOURNAL_RENDER_RECEIPT)"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript pdf-metadata --pdf "$(PAPER_JOURNAL_PDF)" --generation "$(PAPER_JOURNAL_FINAL_DIR)/current" --references "$(PAPER_REFERENCES)" --render-receipt "$(PAPER_JOURNAL_RENDER_RECEIPT)" --output "$(PAPER_JOURNAL_PDF_METADATA)"
+	test -f "$(PAPER_JOURNAL_RENDER_RECEIPT)"
 	test -f "$(PAPER_JOURNAL_PDF_METADATA)"
 
-paper-journal-final: paper-journal-finalize paper-journal-check paper-pdf-journal
+paper-journal-final: paper-pdf-journal
