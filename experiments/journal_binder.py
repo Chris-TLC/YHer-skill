@@ -16,9 +16,11 @@ import shutil
 import stat
 import subprocess
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping, Sequence
+from xml.etree import ElementTree as ET
 
 
 DEFAULT_REGISTRY = Path("/tmp/yher_sprint2/paper_results_768785c/metric_registry.json")
@@ -1220,6 +1222,18 @@ def _persona_integer(
         raise BinderError(f"Persona-v2 {label} is not an integer")
     if value < minimum or (maximum is not None and value > maximum):
         raise BinderError(f"Persona-v2 {label} is outside its valid range")
+    return value
+
+
+def _persona_utc_timestamp(value: Any, *, label: str) -> str:
+    if not isinstance(value, str) or re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z", value
+    ) is None:
+        raise BinderError(f"Persona-v2 {label} is not an explicit UTC timestamp")
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise BinderError(f"Persona-v2 {label} is not a valid UTC timestamp") from exc
     return value
 
 
@@ -2820,6 +2834,9 @@ def bind_persona_v2_artifacts(
                 "provider",
                 "provider_lifecycle",
                 "recomputed_provider_lifecycle",
+                "requested_model",
+                "returned_models",
+                "observed_model_ids_match_request",
                 "expected_count",
                 "present_count",
                 "missing_count",
@@ -2840,6 +2857,13 @@ def bind_persona_v2_artifacts(
         provider = row.get("provider")
         status_counts = row.get("status_counts")
         missing_ids = row.get("missing_task_ids")
+        requested_model = row.get("requested_model")
+        returned_models = row.get("returned_models")
+        expected_model_match = (
+            all(model == requested_model for model in returned_models)
+            if isinstance(returned_models, list) and returned_models
+            else None
+        )
         if (
             provider not in providers
             or provider in lifecycle_index
@@ -2852,6 +2876,13 @@ def bind_persona_v2_artifacts(
             or row.get("missing_count") != len(missing_ids)
             or row.get("present_count") + row.get("missing_count") != main_task_count
             or not isinstance(status_counts, Mapping)
+            or not isinstance(requested_model, str)
+            or not requested_model
+            or not isinstance(returned_models, list)
+            or any(not isinstance(model, str) or not model for model in returned_models)
+            or returned_models != sorted(set(returned_models))
+            or row.get("observed_model_ids_match_request")
+            is not expected_model_match
             or any(
                 not isinstance(value, int) or isinstance(value, bool) or value < 0
                 for value in status_counts.values()
@@ -2889,6 +2920,220 @@ def bind_persona_v2_artifacts(
         lifecycle_index[str(provider)] = dict(row)
     if set(lifecycle_index) != set(providers):
         raise BinderError("Persona-v2 provider lifecycle roster drifted")
+
+    collection_value = result.get("collection_provenance")
+    if not isinstance(collection_value, Mapping):
+        raise BinderError("Persona-v2 collection provenance is missing")
+    _assert_exact_keys(
+        collection_value,
+        {
+            "schema_version",
+            "temperature",
+            "top_p",
+            "seed",
+            "time_semantics",
+            "first_observation_at_utc",
+            "provider_evidence_event_window_utc",
+            "active_analysis_contract_proof_sha256",
+            "providers",
+        },
+        "Persona-v2 collection provenance",
+    )
+    first_observation = _persona_utc_timestamp(
+        collection_value.get("first_observation_at_utc"),
+        label="first observation",
+    )
+    event_window = collection_value.get("provider_evidence_event_window_utc")
+    if not isinstance(event_window, Mapping):
+        raise BinderError("Persona-v2 provider evidence-event window is missing")
+    _assert_exact_keys(
+        event_window,
+        {"started_at_utc", "finished_at_utc"},
+        "Persona-v2 provider evidence-event window",
+    )
+    event_started = _persona_utc_timestamp(
+        event_window.get("started_at_utc"),
+        label="provider evidence-event start",
+    )
+    event_finished = _persona_utc_timestamp(
+        event_window.get("finished_at_utc"),
+        label="provider evidence-event finish",
+    )
+    active_proof_sha = collection_value.get(
+        "active_analysis_contract_proof_sha256"
+    )
+    if (
+        collection_value.get("schema_version")
+        != "yher.llm_sim_v2.collection_provenance.v1"
+        or collection_value.get("temperature") != 0.0
+        or collection_value.get("top_p") is not None
+        or collection_value.get("seed") is not None
+        or collection_value.get("time_semantics")
+        != "immutable_provider_evidence_recorded_at_utc"
+        or not isinstance(active_proof_sha, str)
+        or re.fullmatch(r"[0-9a-f]{64}", active_proof_sha) is None
+        or active_proof_sha
+        != input_proof.get("active_analysis_contract_proof_sha256")
+        or datetime.fromisoformat(first_observation.replace("Z", "+00:00"))
+        > datetime.fromisoformat(event_started.replace("Z", "+00:00"))
+        or datetime.fromisoformat(event_started.replace("Z", "+00:00"))
+        > datetime.fromisoformat(event_finished.replace("Z", "+00:00"))
+    ):
+        raise BinderError("Persona-v2 collection provenance envelope drifted")
+    provider_protocols = collection_value.get("providers")
+    if not isinstance(provider_protocols, list) or len(provider_protocols) != len(
+        providers
+    ):
+        raise BinderError("Persona-v2 collection provider protocol is incomplete")
+    protocol_index: dict[str, dict[str, Any]] = {}
+    provider_starts: list[str] = []
+    provider_finishes: list[str] = []
+    for row in provider_protocols:
+        if not isinstance(row, Mapping):
+            raise BinderError("Persona-v2 collection provider row is not an object")
+        _assert_exact_keys(
+            row,
+            {
+                "provider",
+                "requested_model",
+                "returned_models",
+                "observed_model_ids_match_request",
+                "evidence_event_window_utc",
+                "observed_request_max_tokens",
+                "max_tokens",
+                "retry_max_tokens",
+                "timeout_seconds",
+                "concurrency",
+                "max_attempts",
+                "failure_threshold",
+                "base_backoff_seconds",
+                "max_backoff_seconds",
+                "cooldown_seconds",
+                "jitter_fraction",
+            },
+            "Persona-v2 collection provider row",
+        )
+        provider = row.get("provider")
+        if provider not in providers or provider in protocol_index:
+            raise BinderError("Persona-v2 collection provider roster drifted")
+        lifecycle_row = lifecycle_index[str(provider)]
+        requested_model = row.get("requested_model")
+        returned_models = row.get("returned_models")
+        expected_model_match = (
+            all(model == requested_model for model in returned_models)
+            if isinstance(returned_models, list) and returned_models
+            else None
+        )
+        observed_tokens = row.get("observed_request_max_tokens")
+        max_tokens = _persona_integer(
+            row.get("max_tokens"), label=f"{provider} max tokens", minimum=1
+        )
+        retry_max_tokens = _persona_integer(
+            row.get("retry_max_tokens"),
+            label=f"{provider} retry max tokens",
+            minimum=max_tokens,
+        )
+        if (
+            requested_model != lifecycle_row["requested_model"]
+            or returned_models != lifecycle_row["returned_models"]
+            or row.get("observed_model_ids_match_request")
+            is not expected_model_match
+            or expected_model_match
+            is not lifecycle_row["observed_model_ids_match_request"]
+            or not isinstance(observed_tokens, list)
+            or any(
+                not isinstance(value, int)
+                or isinstance(value, bool)
+                or value not in {max_tokens, retry_max_tokens}
+                for value in observed_tokens
+            )
+            or observed_tokens != sorted(set(observed_tokens))
+        ):
+            raise BinderError("Persona-v2 collection model/token identity drifted")
+        provider_window = row.get("evidence_event_window_utc")
+        if not isinstance(provider_window, Mapping):
+            raise BinderError("Persona-v2 provider evidence-event window is missing")
+        _assert_exact_keys(
+            provider_window,
+            {"started_at_utc", "finished_at_utc"},
+            f"Persona-v2 {provider} evidence-event window",
+        )
+        provider_start = _persona_utc_timestamp(
+            provider_window.get("started_at_utc"),
+            label=f"{provider} evidence-event start",
+        )
+        provider_finish = _persona_utc_timestamp(
+            provider_window.get("finished_at_utc"),
+            label=f"{provider} evidence-event finish",
+        )
+        start_dt = datetime.fromisoformat(provider_start.replace("Z", "+00:00"))
+        finish_dt = datetime.fromisoformat(provider_finish.replace("Z", "+00:00"))
+        if (
+            start_dt > finish_dt
+            or start_dt
+            < datetime.fromisoformat(event_started.replace("Z", "+00:00"))
+            or finish_dt
+            > datetime.fromisoformat(event_finished.replace("Z", "+00:00"))
+        ):
+            raise BinderError("Persona-v2 provider evidence-event window drifted")
+        timeout = _persona_number(
+            row.get("timeout_seconds"),
+            label=f"{provider} timeout",
+            minimum=0.000001,
+        )
+        concurrency = _persona_integer(
+            row.get("concurrency"), label=f"{provider} concurrency", minimum=1
+        )
+        max_attempts = _persona_integer(
+            row.get("max_attempts"), label=f"{provider} max attempts", minimum=1
+        )
+        failure_threshold = _persona_integer(
+            row.get("failure_threshold"),
+            label=f"{provider} breaker threshold",
+            minimum=1,
+        )
+        base_backoff = _persona_number(
+            row.get("base_backoff_seconds"),
+            label=f"{provider} base backoff",
+            minimum=0.0,
+        )
+        max_backoff = _persona_number(
+            row.get("max_backoff_seconds"),
+            label=f"{provider} max backoff",
+            minimum=base_backoff,
+        )
+        cooldown = _persona_number(
+            row.get("cooldown_seconds"),
+            label=f"{provider} cooldown",
+            minimum=0.000001,
+        )
+        jitter = _persona_number(
+            row.get("jitter_fraction"),
+            label=f"{provider} jitter",
+            minimum=0.0,
+            maximum=1.0,
+        )
+        protocol_index[str(provider)] = {
+            **dict(row),
+            "timeout_seconds": timeout,
+            "concurrency": concurrency,
+            "max_attempts": max_attempts,
+            "failure_threshold": failure_threshold,
+            "base_backoff_seconds": base_backoff,
+            "max_backoff_seconds": max_backoff,
+            "cooldown_seconds": cooldown,
+            "jitter_fraction": jitter,
+        }
+        provider_starts.append(provider_start)
+        provider_finishes.append(provider_finish)
+    if [row["provider"] for row in provider_protocols] != providers:
+        raise BinderError("Persona-v2 collection provider order drifted")
+    if min(provider_starts) != event_started or max(provider_finishes) != event_finished:
+        raise BinderError("Persona-v2 aggregate evidence-event window drifted")
+    collection_provenance = {
+        **dict(collection_value),
+        "providers": [protocol_index[provider] for provider in providers],
+    }
 
     sparse = result.get("sparse_mapping_descriptive")
     if not isinstance(sparse, Mapping) or (
@@ -3149,6 +3394,7 @@ def bind_persona_v2_artifacts(
         "bootstrap_contract": dict(bootstrap),
         "expected_denominator": dict(expected_denominator),
         "provider_lifecycle": [lifecycle_index[value] for value in providers],
+        "collection_provenance": collection_provenance,
         "mapping": {
             "status": sparse["status"],
             "confirmatory": False,
@@ -4323,6 +4569,183 @@ def _ci_display(value: Any) -> str:
     return f"{_percent_display(value[0])} to {_percent_display(value[1])}"
 
 
+def _persona_summary_svg(
+    *,
+    effect_index: Mapping[str, Mapping[str, Any]],
+    agreement_rows: Sequence[Mapping[str, Any]],
+    answer_stability: Mapping[str, Any],
+    canonical_stability: Mapping[str, Any],
+    eligible_count: int,
+    provider_count: int,
+) -> str:
+    """Render a compact vector summary with a publication-size 7pt font floor."""
+
+    namespace = "http://www.w3.org/2000/svg"
+    ET.register_namespace("", namespace)
+    svg = ET.Element(
+        f"{{{namespace}}}svg",
+        {
+            "class": "persona-v2-summary",
+            "viewBox": "0 0 1000 320",
+            "role": "img",
+            "aria-label": (
+                "Persona-v2 controlled paired shifts, blind terminal agreement, "
+                "and repeat stability"
+            ),
+        },
+    )
+
+    def element(tag: str, attributes: Mapping[str, Any]) -> ET.Element:
+        return ET.SubElement(
+            svg,
+            f"{{{namespace}}}{tag}",
+            {key: str(value) for key, value in attributes.items()},
+        )
+
+    def text(x: float, y: float, value: str, *, size: int = 16, **extra: Any) -> None:
+        attributes: dict[str, Any] = {
+            "x": x,
+            "y": y,
+            "font-family": "Arial, Helvetica, sans-serif",
+            "font-size": size,
+            "fill": "#17212b",
+        }
+        attributes.update(extra)
+        node = element("text", attributes)
+        node.text = value
+
+    def panel(x: int, y: int, width: int, height: int) -> None:
+        element(
+            "rect",
+            {
+                "x": x,
+                "y": y,
+                "width": width,
+                "height": height,
+                "rx": 6,
+                "fill": "#ffffff",
+                "stroke": "#aab4be",
+                "stroke-width": 1,
+            },
+        )
+
+    element("rect", {"width": 1000, "height": 320, "fill": "#ffffff"})
+    panel(8, 8, 526, 304)
+    panel(546, 8, 446, 146)
+    panel(546, 166, 446, 146)
+
+    text(26, 36, "A  Controlled paired shifts", size=20, **{"font-weight": 700})
+    text(26, 58, "Oriented effect (95% CI); n=50 clusters", size=16, fill="#52616f")
+    effect_labels = (
+        ("conditional_answer_accuracy", "Conditional accuracy"),
+        ("correct_response_yield", "Correct yield"),
+        ("incorrect_response_yield", "Incorrect yield"),
+        ("abstention_yield", "Abstention yield"),
+        ("technical_or_schema_failure_yield", "Tech/schema failure"),
+    )
+    plot_left = 208.0
+    plot_width = 300.0
+    effect_rows = [effect_index[metric] for metric, _ in effect_labels]
+    effect_bounds = [
+        float(bound)
+        for row in effect_rows
+        for bound in (
+            row["estimate"],
+            *(row["ci95"] if isinstance(row.get("ci95"), list) else ()),
+        )
+    ]
+    if len(effect_bounds) != len(effect_rows) * 3:
+        raise BinderError("Persona-v2 summary effect interval is incomplete")
+    data_min = min(effect_bounds)
+    data_max = max(effect_bounds)
+    nice_bounds = (0.05, 0.1, 0.2, 0.25, 0.5, 1.0)
+    if data_min < 0.0:
+        magnitude = max(abs(data_min), abs(data_max), 0.05)
+        axis_extent = next((bound for bound in nice_bounds if magnitude <= bound), 1.0)
+        axis_min, axis_max = -axis_extent, axis_extent
+    else:
+        axis_min = 0.0
+        axis_max = next((bound for bound in nice_bounds if data_max <= bound), 1.0)
+    axis_span = axis_max - axis_min
+    ticks = (axis_min, (axis_min + axis_max) / 2.0, axis_max)
+    for tick in ticks:
+        x = plot_left + ((tick - axis_min) / axis_span) * plot_width
+        element(
+            "line",
+            {
+                "x1": x,
+                "y1": 72,
+                "x2": x,
+                "y2": 276,
+                "stroke": "#d8dee5",
+                "stroke-width": 1,
+            },
+        )
+        text(x, 296, f"{100 * tick:.0f}%", size=16, **{"text-anchor": "middle", "fill": "#52616f"})
+    for index, (metric, label) in enumerate(effect_labels):
+        row = effect_index[metric]
+        estimate = float(row["estimate"])
+        ci = row["ci95"]
+        if not isinstance(ci, list) or len(ci) != 2:
+            raise BinderError(f"Persona-v2 summary CI is invalid: {metric}")
+        low = float(ci[0])
+        high = float(ci[1])
+        y = 92 + index * 42
+        text(26, y + 5, label, size=16)
+        if not axis_min <= low <= estimate <= high <= axis_max:
+            raise BinderError(f"Persona-v2 summary effect lies outside its axis: {metric}")
+        x_low = plot_left + ((low - axis_min) / axis_span) * plot_width
+        x_high = plot_left + ((high - axis_min) / axis_span) * plot_width
+        x_point = plot_left + ((estimate - axis_min) / axis_span) * plot_width
+        element(
+            "line",
+            {
+                "x1": x_low,
+                "y1": y,
+                "x2": x_high,
+                "y2": y,
+                "stroke": "#26727a",
+                "stroke-width": 4,
+                "stroke-linecap": "round",
+            },
+        )
+        element("circle", {"cx": x_point, "cy": y, "r": 6, "fill": "#173f5f"})
+        text(516, y + 5, _percent_display(estimate), size=16, **{"text-anchor": "end", "font-weight": 700})
+
+    text(562, 36, "B  Blind terminal agreement", size=20, **{"font-weight": 700})
+    text(
+        562,
+        57,
+        f"{eligible_count}/{provider_count} eligible providers; n=100/pair",
+        size=16,
+        fill="#52616f",
+    )
+    for index, row in enumerate(agreement_rows):
+        value = float(row["exact_agreement"])
+        label = f"{str(row['provider_left']).title()} / {str(row['provider_right']).title()}"
+        y = 82 + index * 25
+        text(562, y + 4, label, size=16)
+        element("rect", {"x": 718, "y": y - 9, "width": 215, "height": 13, "fill": "#edf1f4"})
+        element("rect", {"x": 718, "y": y - 9, "width": 215 * value, "height": 13, "fill": "#2a9d8f"})
+        text(974, y + 4, _percent_display(value), size=16, **{"text-anchor": "end", "font-weight": 700})
+
+    text(562, 194, "C  Repeat stability", size=20, **{"font-weight": 700})
+    text(562, 215, "Provider-equal; 20 repeat pairs/provider", size=16, fill="#52616f")
+    stability_rows = (
+        ("Answer category", answer_stability, "#3274a1"),
+        ("Canonical complete output", canonical_stability, "#c8553d"),
+    )
+    for index, (label, row, color) in enumerate(stability_rows):
+        value = float(row["point_estimate"])
+        y = 241 + index * 37
+        text(562, y + 4, label, size=16)
+        element("rect", {"x": 754, "y": y - 10, "width": 179, "height": 15, "fill": "#edf1f4"})
+        element("rect", {"x": 754, "y": y - 10, "width": 179 * value, "height": 15, "fill": color})
+        text(974, y + 4, _percent_display(value), size=16, **{"text-anchor": "end", "font-weight": 700})
+
+    return ET.tostring(svg, encoding="unicode", short_empty_elements=True)
+
+
 def _bound_metric(binder: Mapping[str, Any], metric_id: str) -> Mapping[str, Any]:
     metrics = binder.get("metrics")
     metric = metrics.get(metric_id) if isinstance(metrics, Mapping) else None
@@ -4356,6 +4779,14 @@ def _decision_text(value: Any) -> str:
     return value.replace("_", " ")
 
 
+def _visible_decision_text(hypothesis: str, value: Any) -> str:
+    """Keep the direction-only H4 check from reading like full support."""
+    decision = _decision_text(value)
+    if hypothesis == "H4" and decision == "supported":
+        return "direction-only check passed"
+    return decision
+
+
 def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
     if binder.get("schema_version") != "yher.journal_support_binder.v1":
         raise BinderError("manuscript slots require a journal support binder")
@@ -4372,7 +4803,7 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         if not isinstance(row, Mapping) or not isinstance(row.get("decision"), str):
             raise BinderError("binder hypothesis decision surface is incomplete")
         decision_lines.append(
-            f"| {hypothesis} | {_decision_text(row['decision'])} |"
+            f"| {hypothesis} | {_visible_decision_text(hypothesis, row['decision'])} |"
         )
 
     convergence_lines = [
@@ -4444,12 +4875,114 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         if not isinstance(conditional_effect, Mapping):
             raise BinderError("bound Persona-v2 conditional-accuracy effect is missing")
         lifecycle = persona.get("provider_lifecycle")
+        collection = persona.get("collection_provenance")
         if not isinstance(lifecycle, list) or len(lifecycle) != len(PERSONA_PROVIDERS):
             raise BinderError("bound Persona-v2 provider lifecycle is incomplete")
+        if not isinstance(collection, Mapping):
+            raise BinderError("bound Persona-v2 collection provenance is incomplete")
+        collection_rows = collection.get("providers")
+        collection_window = collection.get("provider_evidence_event_window_utc")
+        if not isinstance(collection_rows, list) or not isinstance(
+            collection_window, Mapping
+        ):
+            raise BinderError("bound Persona-v2 collection provenance is incomplete")
+        identity_entries: list[str] = []
+        all_observed_models_match = True
+        policy_groups: dict[tuple[Any, ...], list[str]] = {}
+        for protocol_row in collection_rows:
+            if not isinstance(protocol_row, Mapping):
+                raise BinderError("bound Persona-v2 collection provider row is invalid")
+            returned = protocol_row.get("returned_models")
+            observed_tokens = protocol_row.get("observed_request_max_tokens")
+            if not isinstance(returned, list) or not isinstance(observed_tokens, list):
+                raise BinderError("bound Persona-v2 collection model/token row is invalid")
+            observed_text = "+".join(f"{int(value):,}" for value in observed_tokens) or "none"
+            model_ids_match = protocol_row.get("observed_model_ids_match_request")
+            all_observed_models_match = all_observed_models_match and model_ids_match is not False
+            if model_ids_match is True:
+                identity_entries.append(
+                    f"{protocol_row['provider']}={protocol_row['requested_model']}"
+                )
+            else:
+                returned_text = ",".join(str(value) for value in returned) or "none"
+                identity_entries.append(
+                    f"{protocol_row['provider']}={protocol_row['requested_model']} "
+                    f"[returned {returned_text}]"
+                )
+            signature = (
+                int(protocol_row["max_tokens"]),
+                int(protocol_row["retry_max_tokens"]),
+                observed_text,
+                _display_number(protocol_row["timeout_seconds"]),
+                int(protocol_row["concurrency"]),
+                int(protocol_row["max_attempts"]),
+                int(protocol_row["failure_threshold"]),
+                _display_number(protocol_row["base_backoff_seconds"]),
+                _display_number(protocol_row["max_backoff_seconds"]),
+                _display_number(protocol_row["cooldown_seconds"]),
+                f"{100 * float(protocol_row['jitter_fraction']):.0f}",
+            )
+            policy_groups.setdefault(signature, []).append(str(protocol_row["provider"]))
+        policy_entries = []
+        ordered_policy_groups = sorted(
+            policy_groups.items(),
+            key=lambda item: (
+                len(item[1]) != 1,
+                PERSONA_PROVIDERS.index(item[1][0]),
+            ),
+        )
+        for signature, grouped_providers in ordered_policy_groups:
+            (
+                max_tokens,
+                retry_max_tokens,
+                observed_text,
+                timeout,
+                workers,
+                attempts,
+                breaker,
+                base_backoff,
+                max_backoff,
+                cooldown,
+                jitter,
+            ) = signature
+            policy_entries.append(
+                f"{'/'.join(grouped_providers)}={max_tokens:,}/{retry_max_tokens:,} "
+                f"[{observed_text}]; {timeout}/{workers}/{attempts}; {breaker}; "
+                f"{base_backoff}-{max_backoff}/{cooldown}; {jitter}"
+            )
+        protocol_lines = [
+            (
+                "**Formal collection provenance.** Phase first observation: "
+                f"{collection['first_observation_at_utc']} UTC; provider-event "
+                "ledgers span "
+                f"{collection_window['started_at_utc']} to "
+                f"{collection_window['finished_at_utc']} UTC (execution-evidence, "
+                "not per-response, timestamps). All requests set temperature=0; "
+                "no explicit top_p or seed."
+            ),
+            (
+                "Requested models "
+                + (
+                    "(returned IDs matched where supplied): "
+                    if all_observed_models_match
+                    else "and observed returned IDs: "
+                )
+                + "; ".join(identity_entries)
+                + "."
+            ),
+            (
+                "Runtime groups (tokens initial/retry [observed]; timeout s/worker "
+                "cap/attempts; breaker; backoff s/cooldown s; jitter %): "
+                + ". ".join(policy_entries)
+                + "."
+            ),
+        ]
         lifecycle_lines = [
             "| Provider lifecycle | Records | Controlled status | Blind status | Exclusion reasons |",
             "|---|---:|---|---|---|",
         ]
+        controlled_eligible_providers: list[str] = []
+        blind_eligible_providers: list[str] = []
         for lifecycle_row in lifecycle:
             if not isinstance(lifecycle_row, Mapping):
                 raise BinderError("bound Persona-v2 provider lifecycle row is invalid")
@@ -4465,6 +4998,10 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
             )
             controlled_eligible = lifecycle_row.get("controlled_eligible") is True
             blind_eligible = lifecycle_row.get("blind_eligible") is True
+            if controlled_eligible:
+                controlled_eligible_providers.append(provider_name)
+            if blind_eligible:
+                blind_eligible_providers.append(provider_name)
             reasons = sorted(
                 {
                     str(reason)
@@ -4481,14 +5018,35 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
                 f"{'blind eligible' if blind_eligible else 'blind excluded'} | "
                 f"{', '.join(reasons) if reasons else 'none'} |"
             )
+        provider_total = len(PERSONA_PROVIDERS)
+        if set(controlled_eligible_providers) == set(blind_eligible_providers):
+            eligibility_sentence = (
+                f"{len(blind_eligible_providers)}/{provider_total} providers were "
+                "eligible for both controlled and blind aggregates."
+            )
+            eligibility_abstract = (
+                f"{len(blind_eligible_providers)}/{provider_total} providers eligible"
+            )
+        else:
+            eligibility_sentence = (
+                f"Controlled aggregates retained {len(controlled_eligible_providers)}/"
+                f"{provider_total} providers; blind aggregates retained "
+                f"{len(blind_eligible_providers)}/{provider_total}."
+            )
+            eligibility_abstract = (
+                f"controlled/blind providers={len(controlled_eligible_providers)}/"
+                f"{provider_total},{len(blind_eligible_providers)}/{provider_total}"
+            )
         persona_lines = [
             (
                 "Formal Persona-v2 main results use 50 persona_id clusters, provider "
                 "as a repeated measurement, text-only modality, and disjoint "
                 "pilot/main task rosters. These simulated response-channel estimates "
                 "measure instruction following and robustness, not human behavioral "
-                "validity."
+                f"validity. {eligibility_sentence}"
             ),
+            "",
+            *protocol_lines,
             "",
             *lifecycle_lines,
             "",
@@ -4525,8 +5083,11 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
             raise BinderError("bound Persona-v2 blind agreement is not estimable")
         agreement_values = [float(row["exact_agreement"]) for row in agreement_rows]
         answer_stability = stability.get("answer")
+        canonical_stability = stability.get("canonical_complete_pair")
         judge_label = judge_analysis.get("pairwise_label_agreement")
-        if not isinstance(answer_stability, Mapping):
+        if not isinstance(answer_stability, Mapping) or not isinstance(
+            canonical_stability, Mapping
+        ):
             raise BinderError("bound Persona-v2 stability is missing")
         judge_status = judge_analysis.get("status")
         if judge_status == "complete":
@@ -4580,6 +5141,14 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
             judge_summary = not_applicable
         else:
             raise BinderError("bound Persona-v2 judge status is invalid")
+        persona_summary_svg = _persona_summary_svg(
+            effect_index=effect_index,
+            agreement_rows=agreement_rows,
+            answer_stability=answer_stability,
+            canonical_stability=canonical_stability,
+            eligible_count=len(blind_eligible_providers),
+            provider_count=provider_total,
+        )
         persona_lines.extend(
             [
                 "",
@@ -4597,25 +5166,23 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
                     f"{len(agreement_values)} provider pairs; 100 paired terminal subjects each |"
                 ),
                 (
-                    "| Repeat answer stability | "
+                    "| Repeat answer-category stability | "
                     f"{_percent_display(answer_stability.get('point_estimate'))} | "
                     f"{_ci_display(answer_stability.get('ci95'))} |"
+                ),
+                (
+                    "| Repeat canonical complete-output stability | "
+                    f"{_percent_display(canonical_stability.get('point_estimate'))} | "
+                    f"{_ci_display(canonical_stability.get('ci95'))} |"
                 ),
                 judge_row,
                 "",
                 '<figure class="persona-v2-composite">',
-                (
-                    '<div class="persona-v2-panels" style="display:grid;'
-                    'grid-template-columns:repeat(3,minmax(0,1fr));gap:3mm;'
-                    'break-inside:avoid-page">'
-                ),
-                '<img src="assets/persona_v2/controlled_composition.png" alt="Controlled response composition by provider and response arm">',
-                '<img src="assets/persona_v2/blind_terminal_agreement.png" alt="Blind terminal agreement across eligible providers">',
-                '<img src="assets/persona_v2/blind_output_stability.png" alt="Frozen repeat-output stability by provider">',
-                "</div>",
+                persona_summary_svg,
                 (
                     "<figcaption>Figure. Compact Persona-v2 composite: controlled "
-                    "composition, blind terminal agreement, and repeat stability. "
+                    "paired shifts, blind terminal agreement, and answer-category "
+                    "versus canonical complete-output repeat stability. "
                     "Detailed provider panels remain in the supplement.</figcaption>"
                 ),
                 "</figure>",
@@ -4623,13 +5190,15 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         )
         persona_markdown = "\n".join(persona_lines)
         persona_abstract = (
-            "Persona v2: conditional-accuracy shift="
+            f"Persona v2 (50 clusters; {eligibility_abstract}): conditional-accuracy shift="
             f"{_percent_display(conditional_effect.get('estimate'))} "
             f"(95% CI {_ci_display(conditional_effect.get('ci95'))}); "
             "blind agreement="
             f"{_percent_display(min(agreement_values))}-"
-            f"{_percent_display(max(agreement_values))}, stability="
-            f"{_percent_display(answer_stability.get('point_estimate'))}, failure="
+            f"{_percent_display(max(agreement_values))}, "
+            "answer-category/canonical-complete-output stability="
+            f"{_percent_display(answer_stability.get('point_estimate'))}/"
+            f"{_percent_display(canonical_stability.get('point_estimate'))}, failure="
             f"{_percent_display(failure.get('estimate'))}; {judge_summary}."
         )
     elif persona.get("status") == "pending_formal_w3_artifacts":
@@ -4707,7 +5276,8 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         if set(overall_index) != set(P2_ARMS):
             raise BinderError("bound P2 abstract arm roster drifted")
         p2_abstract = (
-            f"P2 (illustrative; {overlap['target_count']} targets/"
+            "P2 (retrospectively byte-anchored illustration; historical order "
+            f"unproven; {overlap['target_count']} targets/"
             f"{overlap['candidate_row_count']} rows/"
             f"{overlap['physical_source_count']} sources): mismatched minutes "
             "A/B/C="
@@ -4785,7 +5355,7 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         "adaptive rate missed the frozen 50% criterion. At nine items, fixed insertion "
         f"minus adaptive C-state misdiagnosis was {100.0 * float(h2_harm['value']):.1f} "
         f"points, while adaptive minus local was {100.0 * float(h2_no_harm['value']):.1f} "
-        "points; H2 was not supported. H3 and the direction-only H4 check were supported."
+        "points; H2 was not supported. H3 was supported, and the direction-only H4 check passed."
     )
     primary_results = "\n\n".join(
         [
@@ -4929,6 +5499,34 @@ def _fsync_directory(path: Path) -> None:
         os.close(descriptor)
 
 
+def _verify_existing_generation(
+    root: Path,
+    expected_files: Mapping[str, bytes],
+) -> None:
+    if root.is_symlink() or not root.is_dir():
+        raise BinderError("existing binder generation content drifted")
+    actual_files: dict[str, Path] = {}
+    try:
+        for path in root.rglob("*"):
+            if path.is_symlink():
+                raise BinderError("existing binder generation content drifted")
+            if path.is_file():
+                actual_files[path.relative_to(root).as_posix()] = path
+            elif not path.is_dir():
+                raise BinderError("existing binder generation content drifted")
+    except OSError as exc:
+        raise BinderError("existing binder generation content drifted") from exc
+    if set(actual_files) != set(expected_files):
+        raise BinderError("existing binder generation content drifted")
+    for relative, expected in expected_files.items():
+        try:
+            current = actual_files[relative].read_bytes()
+        except OSError as exc:
+            raise BinderError("existing binder generation content drifted") from exc
+        if current != expected:
+            raise BinderError("existing binder generation content drifted")
+
+
 def write_binder(binder: Mapping[str, Any], output_dir: Path | str) -> dict[str, Any]:
     root = Path(output_dir)
     generations = root / "generations"
@@ -4964,6 +5562,11 @@ def write_binder(binder: Mapping[str, Any], output_dir: Path | str) -> dict[str,
         "artifacts": artifacts,
     }
     manifest_bytes = _pretty_json_bytes(artifact_manifest)
+    generation_files = {
+        "journal_binder.json": binder_bytes,
+        "manuscript_slots.json": slots_bytes,
+        "artifact_manifest.json": manifest_bytes,
+    }
     final_dir = generations / generation_id
     staging = Path(tempfile.mkdtemp(prefix=f".{generation_id}.", dir=generations))
     link_temp = root / f".current.{generation_id}.{os.getpid()}.tmp"
@@ -4973,9 +5576,7 @@ def write_binder(binder: Mapping[str, Any], output_dir: Path | str) -> dict[str,
         _write_synced(staging / "artifact_manifest.json", manifest_bytes)
         _fsync_directory(staging)
         if final_dir.exists():
-            existing = final_dir / "artifact_manifest.json"
-            if not existing.is_file() or existing.read_bytes() != manifest_bytes:
-                raise BinderError("existing binder generation content drifted")
+            _verify_existing_generation(final_dir, generation_files)
             shutil.rmtree(staging)
         else:
             os.replace(staging, final_dir)

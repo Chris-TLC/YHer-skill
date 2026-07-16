@@ -17,7 +17,7 @@ PAPER_JOURNAL_TEMPLATE ?= docs/paper/journal_main.md
 PAPER_JOURNAL_BINDER_GENERATION ?= /tmp/yher_h5v2/journal_binder/current
 PAPER_JOURNAL_BINDER_GENERATION_ID ?=
 PAPER_JOURNAL_TEMPLATE_SHA256 ?=
-PAPER_JOURNAL_FINAL_DIR ?= /tmp/yher_h5v2/journal_manuscript
+PAPER_JOURNAL_FINAL_DIR ?= $(PAPER_PDF_DIR)/journal_main.bundle
 PAPER_JOURNAL_FINAL_MANUSCRIPT ?= $(PAPER_JOURNAL_FINAL_DIR)/current/journal_main.md
 PAPER_JOURNAL_FINALIZATION_MANIFEST ?= $(PAPER_JOURNAL_FINAL_DIR)/current/finalization_manifest.json
 PAPER_JOURNAL_PDF ?= $(PAPER_PDF_DIR)/journal_main.pdf
@@ -25,6 +25,9 @@ PAPER_JOURNAL_RENDER_RECEIPT ?= $(PAPER_JOURNAL_PDF).render.json
 PAPER_JOURNAL_PDF_METADATA ?= $(PAPER_JOURNAL_PDF).metadata.json
 PAPER_PANDOC ?= /opt/homebrew/bin/pandoc
 PAPER_CHROME ?= /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+PAPER_PDFINFO ?= /opt/homebrew/bin/pdfinfo
+PAPER_PDFTOTEXT ?= /opt/homebrew/bin/pdftotext
+PAPER_PDFTOPPM ?= /opt/homebrew/bin/pdftoppm
 
 .PHONY: paper-results figures paper-h5-lock paper-h5-finalize paper-h5-analyze paper-h5-merge paper-h5-merge-existing paper-bind paper-check paper-all paper-final paper-pdf paper-pdf-main paper-pdf-yau paper-journal-finalize paper-journal-check paper-pdf-journal paper-journal-final
 
@@ -70,10 +73,10 @@ paper-final:
 paper-pdf: paper-pdf-main paper-pdf-yau
 
 paper-pdf-main:
-	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile main --input "$(PAPER_MAIN)" --output "$(PAPER_MAIN_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile main --input "$(PAPER_MAIN)" --output "$(PAPER_MAIN_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --pdfinfo "$(PAPER_PDFINFO)" --pdftotext "$(PAPER_PDFTOTEXT)" --pdftoppm "$(PAPER_PDFTOPPM)"
 
 paper-pdf-yau:
-	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile yau --input "$(PAPER_YAU)" --output "$(PAPER_YAU_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --expected-pages 4
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile yau --input "$(PAPER_YAU)" --output "$(PAPER_YAU_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --pdfinfo "$(PAPER_PDFINFO)" --pdftotext "$(PAPER_PDFTOTEXT)" --pdftoppm "$(PAPER_PDFTOPPM)" --expected-pages 4
 
 paper-journal-finalize:
 	test -n "$(PAPER_JOURNAL_TEMPLATE_SHA256)" || { echo "PAPER_JOURNAL_TEMPLATE_SHA256 is required" >&2; exit 2; }
@@ -86,8 +89,8 @@ paper-journal-check: paper-journal-finalize
 	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript verify --generation "$(PAPER_JOURNAL_FINAL_DIR)/current" --references "$(PAPER_REFERENCES)" --expected-template-sha256 "$(PAPER_JOURNAL_TEMPLATE_SHA256)" --expected-binder-generation-id "$(PAPER_JOURNAL_BINDER_GENERATION_ID)"
 
 paper-pdf-journal: paper-journal-check
-	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile main --input "$(PAPER_JOURNAL_FINAL_MANUSCRIPT)" --output "$(PAPER_JOURNAL_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --receipt "$(PAPER_JOURNAL_RENDER_RECEIPT)"
-	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript pdf-metadata --pdf "$(PAPER_JOURNAL_PDF)" --generation "$(PAPER_JOURNAL_FINAL_DIR)/current" --references "$(PAPER_REFERENCES)" --render-receipt "$(PAPER_JOURNAL_RENDER_RECEIPT)" --output "$(PAPER_JOURNAL_PDF_METADATA)"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) scripts/render_paper_pdf.py --profile main --input "$(PAPER_JOURNAL_FINAL_MANUSCRIPT)" --output "$(PAPER_JOURNAL_PDF)" --references "$(PAPER_REFERENCES)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --pdfinfo "$(PAPER_PDFINFO)" --pdftotext "$(PAPER_PDFTOTEXT)" --pdftoppm "$(PAPER_PDFTOPPM)" --receipt "$(PAPER_JOURNAL_RENDER_RECEIPT)"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONHASHSEED=0 PYTHONPATH=. $(PYTHON) -m experiments.journal_manuscript pdf-metadata --pdf "$(PAPER_JOURNAL_PDF)" --generation "$(PAPER_JOURNAL_FINAL_DIR)/current" --references "$(PAPER_REFERENCES)" --render-receipt "$(PAPER_JOURNAL_RENDER_RECEIPT)" --pandoc "$(PAPER_PANDOC)" --chrome "$(PAPER_CHROME)" --pdfinfo "$(PAPER_PDFINFO)" --pdftotext "$(PAPER_PDFTOTEXT)" --pdftoppm "$(PAPER_PDFTOPPM)" --output "$(PAPER_JOURNAL_PDF_METADATA)"
 	test -f "$(PAPER_JOURNAL_RENDER_RECEIPT)"
 	test -f "$(PAPER_JOURNAL_PDF_METADATA)"
 

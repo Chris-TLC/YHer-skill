@@ -17,6 +17,7 @@ import subprocess
 import tempfile
 import unicodedata
 from collections import Counter
+from datetime import datetime, timezone
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -48,6 +49,19 @@ _PROVIDER_IDENTITY_ALIASES = {
     "tongyi": ("tongyi", "qwen", "dashscope", "alibaba"),
 }
 _UNICODE_ESCAPE_PATTERN = re.compile(r"\\u([0-9a-fA-F]{4})")
+_PROVIDER_POLICY_FIELDS = {
+    "max_attempts",
+    "allowed_request_max_tokens",
+    "max_tokens",
+    "retry_max_tokens",
+    "timeout_seconds",
+    "concurrency",
+    "failure_threshold",
+    "base_backoff_seconds",
+    "max_backoff_seconds",
+    "cooldown_seconds",
+    "jitter_fraction",
+}
 _CARRIED_COST_LEDGER_REL = Path(
     "experiments/llm_sim_v2/evidence_anchors/legacy_pilot_carried_forward_cost.json"
 )
@@ -128,6 +142,17 @@ def _mapping(value: Any, label: str) -> Mapping[str, Any]:
     return value
 
 
+def _utc_timestamp(value: Any, label: str) -> str:
+    text = str(value or "")
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise AnalysisContractError(f"{label} is not an ISO-8601 timestamp") from exc
+    if not text.endswith("Z") or parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(None):
+        raise AnalysisContractError(f"{label} must be an explicit UTC timestamp")
+    return text
+
+
 _FORMAL_LOADER_BUNDLE_FIELDS = (
     "expected_tasks",
     "runtime_manifest",
@@ -190,6 +215,7 @@ def validate_inputs(
         or active.get("ok") is not True
         or active.get("runtime_git_verified") is not True
         or active.get("contract_revalidated") is not True
+        or active.get("request_temperature") != 0.0
         or active.get("runtime_task_manifest_sha256")
         != runtime.get("runtime_task_manifest_sha256")
         or active.get("phase_provenance_sha256")
@@ -217,12 +243,20 @@ def validate_inputs(
         )
         allowed_tokens = policy.get("allowed_request_max_tokens")
         try:
+            max_tokens = int(policy.get("max_tokens"))
+            retry_max_tokens = int(policy.get("retry_max_tokens"))
+            timeout_seconds = float(policy.get("timeout_seconds"))
+            base_backoff_seconds = float(policy.get("base_backoff_seconds"))
+            max_backoff_seconds = float(policy.get("max_backoff_seconds"))
             cooldown_seconds = float(policy.get("cooldown_seconds"))
+            jitter_fraction = float(policy.get("jitter_fraction"))
         except (TypeError, ValueError) as exc:
             raise AnalysisContractError(
                 f"{provider} active attempt policy is invalid"
             ) from exc
         if (
+            set(policy) != _PROVIDER_POLICY_FIELDS
+            or
             not isinstance(policy.get("max_attempts"), int)
             or isinstance(policy.get("max_attempts"), bool)
             or int(policy["max_attempts"]) < 1
@@ -241,8 +275,19 @@ def validate_inputs(
             or not isinstance(policy.get("failure_threshold"), int)
             or isinstance(policy.get("failure_threshold"), bool)
             or int(policy["failure_threshold"]) < 1
+            or not math.isfinite(timeout_seconds)
+            or timeout_seconds <= 0.0
+            or max_tokens < 1
+            or retry_max_tokens < max_tokens
+            or allowed_tokens != sorted({max_tokens, retry_max_tokens})
+            or not math.isfinite(base_backoff_seconds)
+            or base_backoff_seconds < 0.0
+            or not math.isfinite(max_backoff_seconds)
+            or max_backoff_seconds < base_backoff_seconds
             or not math.isfinite(cooldown_seconds)
             or cooldown_seconds <= 0.0
+            or not math.isfinite(jitter_fraction)
+            or not 0.0 <= jitter_fraction <= 1.0
         ):
             raise AnalysisContractError(
                 f"{provider} active attempt policy is invalid"
@@ -2304,6 +2349,16 @@ def _validate_provider_inputs(
                 "provider": provider,
                 "provider_lifecycle": provider_lifecycle,
                 "recomputed_provider_lifecycle": provider_lifecycle,
+                "requested_model": str(manifest["requested_model"]),
+                "returned_models": returned_models,
+                "observed_model_ids_match_request": (
+                    all(
+                        model == str(manifest["requested_model"])
+                        for model in returned_models
+                    )
+                    if returned_models
+                    else None
+                ),
                 "expected_count": len(expected_ids),
                 "present_count": len(present_ids),
                 "missing_count": len(missing_ids),
@@ -3197,6 +3252,107 @@ def _prepare_cost_accounting(
     return cost_result
 
 
+def _collection_provenance(
+    *,
+    records_by_provider: Mapping[str, Mapping[str, Mapping[str, Any]]],
+    provider_manifests: Mapping[str, Mapping[str, Any]],
+    active_contract_proof: Mapping[str, Any],
+    phase_provenance: Mapping[str, Any],
+    phase_evidence: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    policies = _mapping(
+        active_contract_proof.get("provider_attempt_policies"),
+        "active provider attempt policies",
+    )
+    formal_window: dict[str, Any] | None = None
+    provider_windows: Mapping[str, Any] = {}
+    time_semantics = "immutable_provider_evidence_recorded_at_utc"
+    if phase_evidence is not None:
+        formal_window = dict(
+            _mapping(
+                phase_evidence.get("provider_evidence_event_window_utc"),
+                "formal provider evidence window",
+            )
+        )
+        provider_windows = _mapping(
+            phase_evidence.get("provider_event_windows"),
+            "formal provider event windows",
+        )
+        if phase_evidence.get("time_semantics") != time_semantics:
+            raise AnalysisContractError("formal provider evidence time semantics drifted")
+    rows: list[dict[str, Any]] = []
+    for provider in FROZEN_PROVIDERS:
+        manifest = _mapping(
+            provider_manifests[provider], f"{provider} provider manifest"
+        )
+        policy = _mapping(policies[provider], f"{provider} active attempt policy")
+        requested_model = str(manifest["requested_model"])
+        returned_models = [str(value) for value in manifest["returned_models"]]
+        observed_tokens = sorted(
+            {
+                int(attempt["request_max_tokens"])
+                for record in records_by_provider[provider].values()
+                for attempt in record.get("attempts", ())
+                if isinstance(attempt, Mapping)
+                and isinstance(attempt.get("request_max_tokens"), int)
+                and not isinstance(attempt.get("request_max_tokens"), bool)
+            }
+        )
+        rows.append(
+            {
+                "provider": provider,
+                "requested_model": requested_model,
+                "returned_models": returned_models,
+                "observed_model_ids_match_request": (
+                    all(model == requested_model for model in returned_models)
+                    if returned_models
+                    else None
+                ),
+                "evidence_event_window_utc": (
+                    dict(
+                        _mapping(
+                            provider_windows[provider],
+                            f"{provider} evidence window",
+                        )
+                    )
+                    if phase_evidence is not None
+                    else None
+                ),
+                "observed_request_max_tokens": observed_tokens,
+                "max_tokens": int(policy["max_tokens"]),
+                "retry_max_tokens": int(policy["retry_max_tokens"]),
+                "timeout_seconds": float(policy["timeout_seconds"]),
+                "concurrency": int(policy["concurrency"]),
+                "max_attempts": int(policy["max_attempts"]),
+                "failure_threshold": int(policy["failure_threshold"]),
+                "base_backoff_seconds": float(policy["base_backoff_seconds"]),
+                "max_backoff_seconds": float(policy["max_backoff_seconds"]),
+                "cooldown_seconds": float(policy["cooldown_seconds"]),
+                "jitter_fraction": float(policy["jitter_fraction"]),
+            }
+        )
+    return {
+        "schema_version": "yher.llm_sim_v2.collection_provenance.v1",
+        "temperature": float(active_contract_proof["request_temperature"]),
+        "top_p": None,
+        "seed": None,
+        "time_semantics": time_semantics,
+        "first_observation_at_utc": (
+            _utc_timestamp(
+                phase_provenance.get("first_observation_at_utc"),
+                "phase first_observation_at_utc",
+            )
+            if phase_provenance.get("first_observation_at_utc") is not None
+            else None
+        ),
+        "provider_evidence_event_window_utc": formal_window,
+        "active_analysis_contract_proof_sha256": active_contract_proof[
+            "active_analysis_contract_proof_sha256"
+        ],
+        "providers": rows,
+    }
+
+
 def analyze_dataset(
     *,
     expected_tasks: Sequence[Mapping[str, Any]],
@@ -3279,6 +3435,13 @@ def analyze_dataset(
         provider_manifests=provider_manifests,
         active_contract_proof=active_contract_proof,
         formal_mode=formal_mode,
+    )
+    collection_provenance = _collection_provenance(
+        records_by_provider=records_by_provider,
+        provider_manifests=provider_manifests,
+        active_contract_proof=active_contract_proof,
+        phase_provenance=phase_provenance,
+        phase_evidence=phase_evidence,
     )
     cost_result = _prepare_cost_accounting(
         records_by_provider=records_by_provider,
@@ -3449,6 +3612,7 @@ def analyze_dataset(
             else None
         ),
         "provider_lifecycle": lifecycle,
+        "collection_provenance": collection_provenance,
         "controlled": controlled,
         "blind": blind,
         "sparse_mapping_descriptive": sparse,
@@ -4713,6 +4877,9 @@ def write_analysis_outputs(
             (
                 "provider",
                 "provider_lifecycle",
+                "requested_model",
+                "returned_models",
+                "observed_model_ids_match_request",
                 "expected_count",
                 "present_count",
                 "missing_count",
@@ -5542,6 +5709,7 @@ def _validate_active_contract_inputs(
         "ok": True,
         "runtime_git_verified": True,
         "contract_revalidated": True,
+        "request_temperature": 0.0,
         "runtime_task_manifest_sha256": runtime_manifest[
             "runtime_task_manifest_sha256"
         ],
@@ -5573,9 +5741,19 @@ def _validate_active_contract_inputs(
                         contract.provider_policy(provider).retry_max_tokens,
                     }
                 ),
+                "max_tokens": contract.provider_policy(provider).max_tokens,
+                "retry_max_tokens": contract.provider_policy(provider).retry_max_tokens,
+                "timeout_seconds": contract.provider_policy(provider).timeout_seconds,
                 "concurrency": contract.provider_policy(provider).concurrency,
                 "failure_threshold": contract.provider_policy(provider).failure_threshold,
+                "base_backoff_seconds": contract.provider_policy(
+                    provider
+                ).base_backoff_seconds,
+                "max_backoff_seconds": contract.provider_policy(
+                    provider
+                ).max_backoff_seconds,
                 "cooldown_seconds": contract.provider_policy(provider).cooldown_seconds,
+                "jitter_fraction": contract.provider_policy(provider).jitter_fraction,
             }
             for provider in FROZEN_PROVIDERS
         },
@@ -5738,6 +5916,9 @@ def _validate_phase_evidence(
         )
     event_root = main_root / "evidence" / "provider_events"
     event_paths: list[tuple[str, Path]] = []
+    event_times: dict[str, list[tuple[datetime, str]]] = {
+        provider: [] for provider in FROZEN_PROVIDERS
+    }
     for provider in FROZEN_PROVIDERS:
         provider_root = event_root / provider
         if not provider_root.is_dir():
@@ -5752,11 +5933,39 @@ def _validate_phase_evidence(
             raise AnalysisContractError(
                 f"{provider} provider evidence event bytes are incomplete"
             )
-        event_paths.extend((provider, path) for path in paths)
+        for path in paths:
+            event = _strict_json(path, f"{provider} provider evidence event")
+            if event.get("provider") != provider:
+                raise AnalysisContractError(
+                    f"{provider} provider evidence event identity drifted"
+                )
+            recorded_at = _utc_timestamp(
+                event.get("recorded_at_utc"),
+                f"{provider} provider evidence recorded_at_utc",
+            )
+            parsed = datetime.fromisoformat(recorded_at.replace("Z", "+00:00"))
+            event_times[provider].append((parsed, recorded_at))
+            event_paths.append((provider, path))
+    provider_event_windows = {
+        provider: {
+            "started_at_utc": min(event_times[provider])[1],
+            "finished_at_utc": max(event_times[provider])[1],
+        }
+        for provider in FROZEN_PROVIDERS
+    }
+    all_event_times = [
+        value for provider_times in event_times.values() for value in provider_times
+    ]
     phase_evidence = {
         "schema_version": "yher.llm_sim_v2.formal_phase_evidence_binding.v1",
         "receipt": rebuilt,
         "committed_anchor": git_proof,
+        "time_semantics": "immutable_provider_evidence_recorded_at_utc",
+        "provider_evidence_event_window_utc": {
+            "started_at_utc": min(all_event_times)[1],
+            "finished_at_utc": max(all_event_times)[1],
+        },
+        "provider_event_windows": provider_event_windows,
     }
     return phase_evidence, anchor_path, internal_path, event_paths
 

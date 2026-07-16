@@ -656,7 +656,7 @@
       ],
       "citation_use": [
         {"file": "journal_main.md", "line": 206, "section": "2.4 From diagnostic output to remediation", "status": "supported", "claim": "Budgeted coverage supplies an algorithmic reference point for mapping posterior-conditioned demand to a fixed resource library.", "evidence": "The paper defines and studies the budgeted maximum coverage problem; the manuscript uses it only as a reference point and explicitly makes no approximation claim."},
-        {"file": "journal_main.md", "line": 403, "section": "3.7 Illustrative prescription analysis", "status": "supported", "claim": "The P2 problem-specific greedy selector is related to budgeted coverage without inheriting an approximation guarantee or optimality claim.", "evidence": "The paper analyzes budgeted maximum coverage and a greedy strategy; the manuscript explicitly disclaims transferring its guarantee to P2 or claiming optimality."}
+        {"file": "journal_main.md", "line": 409, "section": "3.7 Illustrative prescription analysis", "status": "supported", "claim": "The P2 problem-specific greedy selector is related to budgeted coverage without inheriting an approximation guarantee or optimality claim.", "evidence": "The paper analyzes budgeted maximum coverage and a greedy strategy; the manuscript explicitly disclaims transferring its guarantee to P2 or claiming optimality."}
       ],
       "record_verdict": "verified_metadata_and_supported_journal_use"
     }

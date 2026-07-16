@@ -1,0 +1,17 @@
+{
+  "artifacts": [
+    {
+      "bytes": 1456522,
+      "filename": "journal_binder.json",
+      "sha256": "392894816f96dd6efb392fe547b13c0bb53d901618516487f86e06d20812ef54"
+    },
+    {
+      "bytes": 17195,
+      "filename": "manuscript_slots.json",
+      "sha256": "a8006b6c29e401dd923c435eed2a5dd98dcb5dc6b839363729bd518adc8b7214"
+    }
+  ],
+  "generation_id": "4a00de55e7477a45dd235313",
+  "generation_set_sha256": "1bf5d74f3a9a2cf4af91c182422ac662637b1956450e6568637e5631732daa11",
+  "schema_version": "yher.journal_support_binder.output.v2"
+}

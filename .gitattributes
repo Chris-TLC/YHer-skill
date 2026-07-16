@@ -1,0 +1,2 @@
+# Versioned publication SVGs are immutable generator outputs bound by SHA-256.
+output/pdf/journal_main.bundle/generations/*/assets/**/*.svg binary

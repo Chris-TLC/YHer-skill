@@ -5,9 +5,9 @@ The target, editor, author details, article type, and journal-specific policy la
 must be completed only after the author selects a venue and verifies its current
 instructions.
 
-**Target journal:** [TARGET JOURNAL TO BE SELECTED]  
-**Proposed article type:** [ARTICLE TYPE TO BE VERIFIED]  
-**Date:** [DATE]  
+**Target journal:** [TARGET JOURNAL TO BE SELECTED]<br>
+**Proposed article type:** [ARTICLE TYPE TO BE VERIFIED]<br>
+**Date:** [DATE]<br>
 
 Dear Editor,
 
@@ -63,6 +63,6 @@ represent a completed editorial action.
 
 Sincerely,
 
-[CORRESPONDING AUTHOR NAME]  
-[AFFILIATION]  
+[CORRESPONDING AUTHOR NAME]<br>
+[AFFILIATION]<br>
 [CONTACT DETAILS]

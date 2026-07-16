@@ -1358,6 +1358,9 @@ def _write_persona_v2_bundle(
             "provider": provider,
             "provider_lifecycle": "complete",
             "recomputed_provider_lifecycle": "complete",
+            "requested_model": f"{provider}-model",
+            "returned_models": [f"{provider}-model"],
+            "observed_model_ids_match_request": True,
             "expected_count": len(main_ids),
             "present_count": len(main_ids),
             "missing_count": 0,
@@ -1410,6 +1413,7 @@ def _write_persona_v2_bundle(
                 "runtime_task_manifest_sha256"
             ],
             "phase_provenance_sha256": phase["phase_provenance_sha256"],
+            "active_analysis_contract_proof_sha256": "a" * 64,
         },
         "expected_denominator": {
             "source": "committed_runtime_task_manifest",
@@ -1437,6 +1441,43 @@ def _write_persona_v2_bundle(
             "undefined_resamples_retained": True,
         },
         "provider_lifecycle": lifecycle,
+        "collection_provenance": {
+            "schema_version": "yher.llm_sim_v2.collection_provenance.v1",
+            "temperature": 0.0,
+            "top_p": None,
+            "seed": None,
+            "time_semantics": "immutable_provider_evidence_recorded_at_utc",
+            "first_observation_at_utc": "2026-07-15T20:27:09.136311Z",
+            "provider_evidence_event_window_utc": {
+                "started_at_utc": "2026-07-15T20:27:10.561439Z",
+                "finished_at_utc": "2026-07-15T23:20:17.307143Z",
+            },
+            "active_analysis_contract_proof_sha256": "a" * 64,
+            "providers": [
+                {
+                    "provider": provider,
+                    "requested_model": f"{provider}-model",
+                    "returned_models": [f"{provider}-model"],
+                    "observed_model_ids_match_request": True,
+                    "evidence_event_window_utc": {
+                        "started_at_utc": "2026-07-15T20:27:10.561439Z",
+                        "finished_at_utc": "2026-07-15T23:20:17.307143Z",
+                    },
+                    "observed_request_max_tokens": [512],
+                    "max_tokens": 512,
+                    "retry_max_tokens": 1024,
+                    "timeout_seconds": 60.0,
+                    "concurrency": 4,
+                    "max_attempts": 3,
+                    "failure_threshold": 3,
+                    "base_backoff_seconds": 1.0,
+                    "max_backoff_seconds": 30.0,
+                    "cooldown_seconds": 120.0,
+                    "jitter_fraction": 0.25,
+                }
+                for provider in providers
+            ],
+        },
         "sparse_mapping_descriptive": {
             "status": "sparse_descriptive_only",
             "confirmatory": False,
@@ -1973,6 +2014,16 @@ def test_persona_v2_formal_w3_bundle_has_a_verified_success_path(
     assert bound["pilot_exclusion"]["pilot_task_count"] == 1
     assert bound["pilot_exclusion"]["main_task_count"] == 220
     assert len(bound["provider_lifecycle"]) == 6
+    provenance = bound["collection_provenance"]
+    assert provenance["temperature"] == 0.0
+    assert provenance["first_observation_at_utc"] == "2026-07-15T20:27:09.136311Z"
+    assert provenance["provider_evidence_event_window_utc"] == {
+        "started_at_utc": "2026-07-15T20:27:10.561439Z",
+        "finished_at_utc": "2026-07-15T23:20:17.307143Z",
+    }
+    assert {row["requested_model"] for row in provenance["providers"]} == {
+        f"{provider}-model" for provider in PERSONA_PROVIDERS
+    }
     assert bound["mapping"]["mapped_mapping_rows"] == 6
     assert bound["mapping"]["total_mapping_rows"] == 100
     assert len(bound["source_hashes"]["analysis_results_sha256"]) == 64
@@ -3040,6 +3091,8 @@ def test_manuscript_slots_are_deterministically_rendered_from_bound_values(
     assert first == second
     assert first["schema_version"] == "yher.journal_binder.manuscript_slots.v1"
     assert "H1 | partially supported" in first["hypothesis_decisions_markdown"]
+    assert "H4 | direction-only check passed" in first["hypothesis_decisions_markdown"]
+    assert "H4 | supported" not in first["hypothesis_decisions_markdown"]
     assert "3 intended" in first["execution_integrity_markdown"]
     assert "pending" in first["persona_v2_markdown"].lower()
     assert "full_27_terminal_vs_correct_convergence" in first[
@@ -3079,8 +3132,11 @@ def test_bound_persona_and_p2_slots_are_compact_complete_and_claim_bounded(
         "2.0%",
         "Blind terminal exact agreement",
         "80.0%",
-        "Repeat answer stability",
+        "Repeat answer-category stability",
         "90.0%",
+        "Repeat canonical complete-output stability",
+        "80.0%",
+        "6/6 providers were eligible for both controlled and blind aggregates",
         "Provider lifecycle",
         "deepseek",
         "glm",
@@ -3088,6 +3144,16 @@ def test_bound_persona_and_p2_slots_are_compact_complete_and_claim_bounded(
         "minimax",
         "doubao",
         "tongyi",
+        "Formal collection provenance",
+        "Requested models (returned IDs matched where supplied):",
+        "Phase first observation: 2026-07-15T20:27:09.136311Z UTC",
+        "provider-event ledgers span 2026-07-15T20:27:10.561439Z to 2026-07-15T23:20:17.307143Z UTC",
+        "All requests set temperature=0",
+        "no explicit top_p or seed",
+        "deepseek-model",
+        "Runtime groups (tokens initial/retry [observed]; timeout s/worker cap/attempts; breaker; backoff s/cooldown s; jitter %):",
+        "512/1,024 [512]",
+        "60/4/3; 3; 1-30/120; 25",
         "controlled eligible",
         "blind eligible",
         "Cross-model judge label agreement",
@@ -3096,12 +3162,25 @@ def test_bound_persona_and_p2_slots_are_compact_complete_and_claim_bounded(
         "not human behavioral validity",
     ):
         assert text in persona
+    assert "| Provider | Requested / observed model IDs |" not in persona
+    provenance = persona.split("**Formal collection provenance.**", 1)[1].split(
+        "| Provider lifecycle |", 1
+    )[0]
+    assert len(provenance.split()) <= 75
+    assert " / deepseek-model" not in provenance
     assert persona.count("<figure") == 1
-    assert persona.count("<img ") == 3
-    assert "grid-template-columns:repeat(3,minmax(0,1fr))" in persona
-    assert "assets/persona_v2/controlled_composition.png" in persona
-    assert "assets/persona_v2/blind_terminal_agreement.png" in persona
-    assert "assets/persona_v2/blind_output_stability.png" in persona
+    assert persona.count("<svg") == 1
+    assert 'class="persona-v2-summary"' in persona
+    for panel_title in (
+        "Controlled paired shifts",
+        "Blind terminal agreement",
+        "Repeat stability",
+    ):
+        assert panel_title in persona
+    assert "font-size=\"16\"" in persona
+    assert "font-size=\"14\"" not in persona
+    assert "6/6 eligible providers" in persona
+    assert "assets/persona_v2/controlled_composition.png" not in persona
 
     for text in (
         "2 targets",
@@ -3145,7 +3224,7 @@ def test_gpt_only_slots_disclose_missing_claude_without_pairwise_claim(
     for text in (persona, abstract):
         assert "Cross-model judge label agreement" not in text
         assert "110/120" not in text
-    assert "P2 (illustrative;" in abstract
+    assert "P2 (retrospectively byte-anchored illustration;" in abstract
 
 
 def test_missing_all_judges_slots_disclose_failure_without_coding_claim(
@@ -3178,17 +3257,19 @@ def test_bound_abstract_result_slot_is_compact_but_keeps_core_limits(
     )
     abstract = slots["bound_abstract_results_markdown"]
 
-    assert len(journal_manuscript.ABSTRACT_WORD_PATTERN.findall(abstract)) <= 45
+    assert len(journal_manuscript.ABSTRACT_WORD_PATTERN.findall(abstract)) <= 75
     for text in (
         "95% CI",
         "blind agreement",
-        "stability",
+        "6/6 providers eligible",
+        "answer-category/canonical-complete-output stability",
         "failure",
         "GPT-only",
         "Claude unavailable",
         "pairwise agreement not estimable",
         "P2",
-        "illustrative",
+        "retrospectively byte-anchored illustration",
+        "historical order unproven",
         "Arm-C structural-failure",
     ):
         assert text in abstract
@@ -3345,9 +3426,17 @@ def test_journal_finalizer_binds_template_binder_slots_assets_and_final_bytes(
     assert len(manifest["final_manuscript"]["sha256"]) == 64
     assert manifest["structured_abstract"]["maximum_words"] == 300
     assert 0 < manifest["structured_abstract"]["word_count"] <= 300
+    assert "source_path" not in json.dumps(manifest, ensure_ascii=False)
+    assert manifest["template"]["filename"] == "provenance/template.md"
+    assert manifest["references"]["filename"] == "provenance/references.json"
+    assert manifest["binder"]["filenames"] == {
+        "artifact_manifest": "provenance/binder/artifact_manifest.json",
+        "journal_binder": "provenance/binder/journal_binder.json",
+        "manuscript_slots": "provenance/binder/manuscript_slots.json",
+    }
     assert "BEGIN RESULT SLOT" not in final_text
-    assert "Persona v2: conditional-accuracy shift=" in final_text
-    assert "P2 (illustrative;" in final_text
+    assert "Persona v2 (50 clusters;" in final_text
+    assert "P2 (retrospectively byte-anchored illustration;" in final_text
     assert "Formal Persona-v2 main results" in final_text
     assert "Illustrative P2 is supply-bound" in final_text
     for relative in (
@@ -3364,12 +3453,58 @@ def test_journal_finalizer_binds_template_binder_slots_assets_and_final_bytes(
         "assets/supplement/p2/figure_data.json",
         "assets/supplement/p2/p2_supply_bound_illustration.png",
         "assets/supplement/p2/p2_supply_bound_illustration.svg",
+        "provenance/template.md",
+        "provenance/references.json",
+        "provenance/binder/artifact_manifest.json",
+        "provenance/binder/journal_binder.json",
+        "provenance/binder/manuscript_slots.json",
     ):
         assert (final_generation / relative).is_file()
     verified = journal_manuscript.verify_finalized_generation(
         final_generation, references_path=references
     )
     assert verified == manifest
+
+
+def test_journal_finalizer_rejects_input_replacement_during_build(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    references = _write_reference_fixture(tmp_path / "references.json")
+    original_verify = journal_manuscript._verify_binder_sources
+
+    def replace_inputs(*args: object, **kwargs: object) -> None:
+        original_verify(*args, **kwargs)
+        template.write_text(
+            template.read_text(encoding="utf-8").replace("TEMPLATE ONLY", "TEMPLATE DRFT", 1),
+            encoding="utf-8",
+        )
+        payload = json.loads(references.read_text(encoding="utf-8"))
+        payload["verification_note"] = "replaced during finalization"
+        references.write_bytes(_canonical(payload) + b"\n")
+
+    monkeypatch.setattr(journal_manuscript, "_verify_binder_sources", replace_inputs)
+
+    with pytest.raises(
+        journal_manuscript.FinalizationError,
+        match="input.*changed|changed.*input|template.*changed|references.*changed",
+    ):
+        journal_manuscript.finalize_manuscript(
+            template_path=template,
+            binder_generation=binder_generation,
+            references_path=references,
+            output_dir=tmp_path / "final",
+            expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+            expected_binder_generation_id=binder_generation.name,
+        )
 
 
 def test_journal_finalizer_preserves_honest_gpt_only_judge_disclosure(
@@ -3448,8 +3583,8 @@ def test_repository_journal_template_finalizes_without_stale_result_prose(
         "no Persona-v2 figure",
     ):
         assert stale.lower() not in final_text.lower()
-    assert "Persona v2: conditional-accuracy shift=" in final_text
-    assert "P2 (illustrative;" in final_text
+    assert "Persona v2 (50 clusters;" in final_text
+    assert "P2 (retrospectively byte-anchored illustration;" in final_text
     for relative in (
         "generated/fig-p-rescue-png-c36a76849139.png",
         "generated/fig-c-probe-harm-png-e5e22d30fb2c.png",
@@ -3629,6 +3764,249 @@ def test_journal_finalizer_rejects_corrupt_existing_generation_on_reuse(
         journal_manuscript.finalize_manuscript(**arguments)
 
 
+@pytest.mark.parametrize("attack", ("generation_entry", "generations_directory"))
+def test_journal_finalizer_rejects_external_symlinked_generation_archive(
+    tmp_path: Path,
+    attack: str,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    arguments = {
+        "template_path": template,
+        "binder_generation": binder_root / "current",
+        "references_path": references,
+        "expected_template_sha256": hashlib.sha256(template.read_bytes()).hexdigest(),
+        "expected_binder_generation_id": binder_generation.name,
+    }
+    valid_root = tmp_path / "valid-final"
+    manifest = journal_manuscript.finalize_manuscript(
+        **arguments, output_dir=valid_root
+    )
+    valid_generation = valid_root / "generations" / manifest["generation_id"]
+
+    attacked_root = tmp_path / "attacked-final"
+    attacked_root.mkdir()
+    if attack == "generation_entry":
+        attacked_generations = attacked_root / "generations"
+        attacked_generations.mkdir()
+        (attacked_generations / manifest["generation_id"]).symlink_to(
+            valid_generation, target_is_directory=True
+        )
+    else:
+        (attacked_root / "generations").symlink_to(
+            valid_root / "generations", target_is_directory=True
+        )
+
+    with pytest.raises(
+        journal_manuscript.FinalizationError,
+        match="symlink|unsafe|containment",
+    ):
+        journal_manuscript.finalize_manuscript(
+            **arguments, output_dir=attacked_root
+        )
+    assert not (attacked_root / "current").exists()
+
+
+def test_journal_finalizer_rejects_unlisted_regular_file_in_binder_generation(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    (binder_generation / "private-notes.txt").write_text(
+        "not listed in artifact_manifest.json\n", encoding="utf-8"
+    )
+    template = _write_finalizer_template(tmp_path / "template.md")
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="file roster"):
+        journal_manuscript.finalize_manuscript(
+            template_path=template,
+            binder_generation=binder_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "final",
+            expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+            expected_binder_generation_id=binder_generation.name,
+        )
+
+
+def test_final_generation_verification_rejects_unlisted_regular_file(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+    final_generation = (tmp_path / "final/current").resolve()
+    (final_generation / "private-notes.txt").write_text(
+        "not listed in finalization_manifest.json\n", encoding="utf-8"
+    )
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="file roster"):
+        journal_manuscript.verify_finalized_generation(
+            final_generation,
+            references_path=references,
+        )
+
+
+def test_journal_finalizer_rejects_unknown_binder_manifest_field(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    manifest_path = binder_generation / "artifact_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["private_notes"] = "not part of the generation identity"
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    template = _write_finalizer_template(tmp_path / "template.md")
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="manifest schema"):
+        journal_manuscript.finalize_manuscript(
+            template_path=template,
+            binder_generation=binder_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "final",
+            expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+            expected_binder_generation_id=binder_generation.name,
+        )
+
+
+@pytest.mark.parametrize("section", [None, "binder", "slots"])
+def test_final_generation_verification_rejects_unknown_manifest_fields(
+    tmp_path: Path,
+    section: str | None,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+    final_generation = (tmp_path / "final/current").resolve()
+    manifest_path = final_generation / "finalization_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    target = manifest if section is None else manifest[section]
+    target["private_notes"] = "not part of the generation identity"
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="manifest schema"):
+        journal_manuscript.verify_finalized_generation(
+            final_generation,
+            references_path=references,
+        )
+
+
+def test_final_generation_verification_rejects_noncanonical_manifest_bytes(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+    final_generation = (tmp_path / "final/current").resolve()
+    manifest_path = final_generation / "finalization_manifest.json"
+    manifest_path.write_bytes(manifest_path.read_bytes() + b"\n")
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="canonical"):
+        journal_manuscript.verify_finalized_generation(
+            final_generation,
+            references_path=references,
+        )
+
+
+def test_binder_writer_rejects_corrupt_listed_artifact_on_reuse(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    binder = _complete_journal_binder(tmp_path / "inputs")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(binder, binder_root)
+    generation = (binder_root / "current").resolve()
+    binder_path = generation / "journal_binder.json"
+    binder_path.write_bytes(binder_path.read_bytes() + b"\n")
+
+    with pytest.raises(journal_binder.BinderError, match="content drifted"):
+        journal_binder.write_binder(binder, binder_root)
+
+
+def test_binder_writer_rejects_unlisted_regular_file_on_reuse(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    binder = _complete_journal_binder(tmp_path / "inputs")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(binder, binder_root)
+    generation = (binder_root / "current").resolve()
+    (generation / "private-notes.txt").write_text(
+        "not listed in artifact_manifest.json\n", encoding="utf-8"
+    )
+
+    with pytest.raises(journal_binder.BinderError, match="content drifted"):
+        journal_binder.write_binder(binder, binder_root)
+
+
 def test_journal_finalizer_rechecks_primary_binder_sources(
     tmp_path: Path,
 ) -> None:
@@ -3792,6 +4170,7 @@ def test_reference_bytes_participate_in_final_generation_identity(
 
 def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from experiments import journal_binder, journal_manuscript
     from scripts import render_paper_pdf
@@ -3802,14 +4181,20 @@ def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
     )
     pdfinfo = Path(shutil.which("pdfinfo") or "/opt/homebrew/bin/pdfinfo")
     pdftotext = Path(shutil.which("pdftotext") or "/opt/homebrew/bin/pdftotext")
-    if not all(path.is_file() for path in (pandoc, chrome, pdfinfo, pdftotext)):
+    pdftoppm = Path(shutil.which("pdftoppm") or "/opt/homebrew/bin/pdftoppm")
+    if not all(
+        path.is_file() for path in (pandoc, chrome, pdfinfo, pdftotext, pdftoppm)
+    ):
         pytest.skip("journal render tools unavailable")
 
     repository = Path(__file__).parents[1]
-    references = repository / "docs/paper/references.json"
-    binder_root = tmp_path / "binder"
+    original = tmp_path / "original"
+    references = original / "docs/paper/references.json"
+    references.parent.mkdir(parents=True)
+    shutil.copy2(repository / "docs/paper/references.json", references)
+    binder_root = original / "binder"
     journal_binder.write_binder(
-        _complete_journal_binder(tmp_path / "inputs"), binder_root
+        _complete_journal_binder(original / "inputs"), binder_root
     )
     binder_generation = (binder_root / "current").resolve()
     template = repository / "docs/paper/journal_main.md"
@@ -3817,13 +4202,15 @@ def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
         template_path=template,
         binder_generation=binder_root / "current",
         references_path=references,
-        output_dir=tmp_path / "final",
+        output_dir=original / "output/pdf/journal_main.bundle",
         expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
         expected_binder_generation_id=binder_generation.name,
     )
-    final_generation = (tmp_path / "final/current").resolve()
-    pdf = tmp_path / "journal_main.pdf"
-    render_receipt_path = tmp_path / "journal_main.pdf.render.json"
+    final_generation = (
+        original / "output/pdf/journal_main.bundle/current"
+    ).resolve()
+    pdf = original / "output/pdf/journal_main.pdf"
+    render_receipt_path = original / "output/pdf/journal_main.pdf.render.json"
     render_paper_pdf.render_paper(
         profile="main",
         input_path=final_generation / "journal_main.md",
@@ -3833,19 +4220,81 @@ def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
         chrome=str(chrome),
         pdfinfo=str(pdfinfo),
         pdftotext=str(pdftotext),
+        pdftoppm=str(pdftoppm),
         receipt_path=render_receipt_path,
     )
-    metadata_path = tmp_path / "journal_main.pdf.metadata.json"
+    metadata_path = original / "output/pdf/journal_main.pdf.metadata.json"
+
+    original_pdf = pdf.read_bytes()
+    receipt_payload = json.loads(render_receipt_path.read_text(encoding="utf-8"))
+    real_verify_source_bound_pdf = render_paper_pdf.verify_source_bound_pdf
+
+    def replace_pdf_during_validation(**_: object) -> dict[str, object]:
+        mutated = bytearray(original_pdf)
+        mutated[len(mutated) // 2] ^= 1
+        pdf.write_bytes(bytes(mutated))
+        return receipt_payload["source_equivalence"]
+
+    monkeypatch.setattr(
+        render_paper_pdf,
+        "verify_source_bound_pdf",
+        replace_pdf_during_validation,
+    )
+    try:
+        with pytest.raises(
+            journal_manuscript.FinalizationError,
+            match="PDF.*changed|changed.*PDF",
+        ):
+            journal_manuscript.write_pdf_metadata(
+                pdf_path=pdf,
+                finalized_generation=final_generation,
+                references_path=references,
+                render_receipt_path=render_receipt_path,
+                pandoc=str(pandoc),
+                chrome=str(chrome),
+                pdfinfo=str(pdfinfo),
+                pdftotext=str(pdftotext),
+                pdftoppm=str(pdftoppm),
+                output_path=metadata_path,
+            )
+    finally:
+        pdf.write_bytes(original_pdf)
+        monkeypatch.setattr(
+            render_paper_pdf,
+            "verify_source_bound_pdf",
+            real_verify_source_bound_pdf,
+        )
 
     metadata = journal_manuscript.write_pdf_metadata(
         pdf_path=pdf,
         finalized_generation=final_generation,
         references_path=references,
         render_receipt_path=render_receipt_path,
+        pandoc=str(pandoc),
+        chrome=str(chrome),
+        pdfinfo=str(pdfinfo),
+        pdftotext=str(pdftotext),
+        pdftoppm=str(pdftoppm),
         output_path=metadata_path,
     )
 
-    assert metadata["schema_version"] == "yher.journal_pdf.metadata.v1"
+    assert metadata["schema_version"] == "yher.journal_pdf.metadata.v2"
+    for binding_name in (
+        "pdf",
+        "finalized_generation",
+        "finalized_manuscript",
+        "references",
+        "render_receipt",
+    ):
+        assert "relative_path" in metadata[binding_name]
+        assert "source_path" not in metadata[binding_name]
+    receipt_payload = json.loads(render_receipt_path.read_text(encoding="utf-8"))
+    for binding_name in ("input", "references", "pdf"):
+        assert "relative_path" in receipt_payload[binding_name]
+        assert "source_path" not in receipt_payload[binding_name]
+    assert "source_path" not in json.dumps(receipt_payload["renderer"])
+    assert "/tmp/" not in json.dumps(receipt_payload, ensure_ascii=False)
+    assert "/Users/" not in json.dumps(receipt_payload, ensure_ascii=False)
     assert metadata["pdf"]["sha256"] == hashlib.sha256(pdf.read_bytes()).hexdigest()
     assert metadata["finalized_manuscript"]["sha256"] == hashlib.sha256(
         (final_generation / "journal_main.md").read_bytes()
@@ -3858,10 +4307,163 @@ def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
         metadata_path, references_path=references
     ) == metadata
 
+    moved = tmp_path / "moved"
+    shutil.copytree(original, moved, symlinks=True)
+    assert journal_manuscript.verify_pdf_metadata(
+        moved / "output/pdf/journal_main.pdf.metadata.json",
+        references_path=moved / "docs/paper/references.json",
+    ) == metadata
+
     pdf.write_bytes(pdf.read_bytes() + b"drift")
     with pytest.raises(journal_manuscript.FinalizationError, match="PDF bytes drifted"):
         journal_manuscript.verify_pdf_metadata(
             metadata_path, references_path=references
+    )
+
+
+def test_journal_pdf_metadata_independently_rejects_a_valid_foreign_pdf(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+    from scripts import render_paper_pdf
+
+    pandoc = Path(shutil.which("pandoc") or "/opt/homebrew/bin/pandoc")
+    chrome = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+    pdfinfo = Path(shutil.which("pdfinfo") or "/opt/homebrew/bin/pdfinfo")
+    pdftotext = Path(shutil.which("pdftotext") or "/opt/homebrew/bin/pdftotext")
+    pdftoppm = Path(shutil.which("pdftoppm") or "/opt/homebrew/bin/pdftoppm")
+    if not all(
+        path.is_file() for path in (pandoc, chrome, pdfinfo, pdftotext, pdftoppm)
+    ):
+        pytest.skip("journal render tools unavailable")
+
+    repository = Path(__file__).parents[1]
+    references = (repository / "docs/paper/references.json").resolve()
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = repository / "docs/paper/journal_main.md"
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_generation,
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+    generation = (tmp_path / "final/current").resolve()
+    manuscript = generation / "journal_main.md"
+    source = manuscript.read_text(encoding="utf-8")
+    foreign_source = tmp_path / "foreign.md"
+    foreign_text = source.replace("diagnostic", "fabricated", 1)
+    assert foreign_text != source
+    foreign_source.write_text(foreign_text, encoding="utf-8")
+    foreign_pdf = (tmp_path / "foreign.pdf").resolve()
+    rendered = render_paper_pdf.render_paper(
+        profile="main",
+        input_path=foreign_source,
+        output_path=foreign_pdf,
+        references_path=references,
+        pandoc=str(pandoc),
+        chrome=str(chrome),
+        pdfinfo=str(pdfinfo),
+        pdftotext=str(pdftotext),
+        pdftoppm=str(pdftoppm),
+    )
+    snapshot = render_paper_pdf._pdf_equivalence_snapshot(
+        foreign_pdf,
+        pages=rendered.pages,
+        pdfinfo=str(pdfinfo),
+        pdftotext=str(pdftotext),
+        pdftoppm=str(pdftoppm),
+    )
+    receipt = tmp_path / "foreign.pdf.render.json"
+    receipt_payload = {
+        "schema_version": "yher.paper_pdf.render_receipt.v2",
+        "profile": "main",
+        "input": render_paper_pdf._portable_file_binding(
+            manuscript, anchor=receipt.parent
+        ),
+        "references": render_paper_pdf._portable_file_binding(
+            references, anchor=receipt.parent
+        ),
+        "prepared_markdown_sha256": hashlib.sha256(
+            render_paper_pdf.prepare_markdown(source, profile="main").encode("utf-8")
+        ).hexdigest(),
+        "css_sha256": hashlib.sha256(
+            render_paper_pdf.css_for_profile("main").encode("utf-8")
+        ).hexdigest(),
+        "renderer": {
+            "wrapper": render_paper_pdf._portable_wrapper_binding(
+                Path(render_paper_pdf.__file__),
+                Path(render_paper_pdf.__file__).read_bytes(),
+            ),
+            "tools": render_paper_pdf._portable_tool_descriptors(
+                {
+                    "pandoc": render_paper_pdf._tool_descriptor(
+                        str(pandoc), version_flag="--version"
+                    ),
+                    "chrome": render_paper_pdf._tool_descriptor(
+                        str(chrome), version_flag="--version"
+                    ),
+                    "pdfinfo": render_paper_pdf._tool_descriptor(
+                        str(pdfinfo), version_flag="-v"
+                    ),
+                    "pdftotext": render_paper_pdf._tool_descriptor(
+                        str(pdftotext), version_flag="-v"
+                    ),
+                    "pdftoppm": render_paper_pdf._tool_descriptor(
+                        str(pdftoppm), version_flag="-v"
+                    ),
+                }
+            ),
+        },
+        "source_resources": render_paper_pdf._portable_tree_manifest_from_root(
+            generation
+        ),
+        "source_equivalence": {
+            "schema_version": "yher.paper_pdf.source_equivalence.v1",
+            "method": "independent-source-rerender",
+            "comparison": {
+                "page_geometry": "exact",
+                "layout_text_bytes": "exact",
+                "raster_bytes": "exact",
+            },
+            "snapshot": snapshot,
+        },
+        "pdf": {
+            **render_paper_pdf._portable_file_binding(
+                foreign_pdf, anchor=receipt.parent
+            ),
+            "pages": rendered.pages,
+        },
+    }
+    receipt_payload["render_receipt_sha256"] = hashlib.sha256(
+        _canonical(receipt_payload)
+    ).hexdigest()
+    receipt.write_text(
+        json.dumps(receipt_payload, ensure_ascii=False, sort_keys=True, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        journal_manuscript.FinalizationError,
+        match="independent source rerender",
+    ):
+        journal_manuscript.write_pdf_metadata(
+            pdf_path=foreign_pdf,
+            finalized_generation=generation,
+            references_path=references,
+            render_receipt_path=receipt,
+            pandoc=str(pandoc),
+            chrome=str(chrome),
+            pdfinfo=str(pdfinfo),
+            pdftotext=str(pdftotext),
+            pdftoppm=str(pdftoppm),
+            output_path=tmp_path / "metadata.json",
         )
 
 
@@ -4006,7 +4608,7 @@ def test_journal_pdf_metadata_rejects_receipt_for_another_manuscript(
 
     with pytest.raises(
         journal_manuscript.FinalizationError,
-        match="render receipt.*manuscript|manuscript.*render receipt",
+        match="render receipt.*(?:self-hash|manuscript)|manuscript.*render receipt",
     ):
         journal_manuscript.write_pdf_metadata(
             pdf_path=pdf,

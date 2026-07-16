@@ -277,6 +277,7 @@ def _active_contract_proof(
         "ok": True,
         "runtime_git_verified": True,
         "contract_revalidated": True,
+        "request_temperature": 0.0,
         "runtime_task_manifest_sha256": runtime[
             "runtime_task_manifest_sha256"
         ],
@@ -296,9 +297,15 @@ def _active_contract_proof(
             provider: {
                 "max_attempts": 4,
                 "allowed_request_max_tokens": [512, 1024],
+                "max_tokens": 512,
+                "retry_max_tokens": 1024,
+                "timeout_seconds": 60.0,
                 "concurrency": 4,
                 "failure_threshold": 3,
+                "base_backoff_seconds": 1.0,
+                "max_backoff_seconds": 30.0,
                 "cooldown_seconds": 120.0,
+                "jitter_fraction": 0.25,
             }
             for provider in PROVIDERS
         },
@@ -509,9 +516,13 @@ def test_active_contract_revalidation_passes_carried_forward_ledger(
         max_attempts=4,
         max_tokens=512,
         retry_max_tokens=1024,
+        timeout_seconds=60.0,
         concurrency=4,
         failure_threshold=3,
+        base_backoff_seconds=1.0,
+        max_backoff_seconds=30.0,
         cooldown_seconds=120.0,
+        jitter_fraction=0.25,
     )
     contract = SimpleNamespace(
         runtime_manifest=runtime,
@@ -963,10 +974,42 @@ def test_synthetic_main_computes_denominators_effects_blind_and_stability() -> N
     assert result["independent_cluster_count"] == 50
     assert result["expected_denominator"]["tasks_per_provider"] == len(tasks)
     assert result["expected_denominator"]["provider_task_cells"] == len(tasks) * 6
+    provenance = result["collection_provenance"]
+    assert provenance["schema_version"] == (
+        "yher.llm_sim_v2.collection_provenance.v1"
+    )
+    assert provenance["temperature"] == 0.0
+    assert provenance["top_p"] is None
+    assert provenance["seed"] is None
+    assert provenance["first_observation_at_utc"] is None
+    assert provenance["provider_evidence_event_window_utc"] is None
+    protocol = {row["provider"]: row for row in provenance["providers"]}
+    assert set(protocol) == set(PROVIDERS)
+    assert protocol["deepseek"] == {
+        "provider": "deepseek",
+        "requested_model": "deepseek-model",
+        "returned_models": ["deepseek-model"],
+        "observed_model_ids_match_request": True,
+        "evidence_event_window_utc": None,
+        "observed_request_max_tokens": [512],
+        "max_tokens": 512,
+        "retry_max_tokens": 1024,
+        "timeout_seconds": 60.0,
+        "concurrency": 4,
+        "max_attempts": 4,
+        "failure_threshold": 3,
+        "base_backoff_seconds": 1.0,
+        "max_backoff_seconds": 30.0,
+        "cooldown_seconds": 120.0,
+        "jitter_fraction": 0.25,
+    }
     deepseek = next(
         row for row in result["provider_lifecycle"] if row["provider"] == "deepseek"
     )
     assert deepseek["missing_count"] == 2
+    assert deepseek["requested_model"] == "deepseek-model"
+    assert deepseek["returned_models"] == ["deepseek-model"]
+    assert deepseek["observed_model_ids_match_request"] is True
 
     composition = result["controlled"]["composition"]
     for provider_row in composition["by_provider"]:

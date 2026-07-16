@@ -1,0 +1,1099 @@
+{
+  "caption_boundary": "Intervals reflect programmatic simulator Monte Carlo variability; product-form terms are analytic integration points, not independent observations.",
+  "claim_boundary": "supply_bound_algorithmic_illustration_not_learning_benefit_or_external_validation",
+  "external_validity": false,
+  "figure_title": "Supply-bound prescription illustration under a 600-second budget",
+  "illustrative": true,
+  "overall_minute_panel": [
+    {
+      "arm": "oracle",
+      "ci95_high": 2.575,
+      "ci95_low": 2.575,
+      "metric": "selected_minutes",
+      "point": 2.575
+    },
+    {
+      "arm": "oracle",
+      "ci95_high": 0.0,
+      "ci95_low": 0.0,
+      "metric": "mismatched_selected_minutes",
+      "point": 0.0
+    },
+    {
+      "arm": "oracle",
+      "ci95_high": 0.0,
+      "ci95_low": 0.0,
+      "metric": "missed_available_supply_minutes",
+      "point": 0.0
+    },
+    {
+      "arm": "oracle",
+      "ci95_high": 7.425,
+      "ci95_low": 7.425,
+      "metric": "unused_budget_minutes",
+      "point": 7.425
+    },
+    {
+      "arm": "A",
+      "ci95_high": 5.254693333333333,
+      "ci95_low": 4.853861645833334,
+      "metric": "selected_minutes",
+      "point": 5.049673333333333
+    },
+    {
+      "arm": "A",
+      "ci95_high": 3.4611880416666665,
+      "ci95_low": 3.143270958333333,
+      "metric": "mismatched_selected_minutes",
+      "point": 3.298457500000001
+    },
+    {
+      "arm": "A",
+      "ci95_high": 0.8994651875,
+      "ci95_low": 0.7480266666666666,
+      "metric": "missed_available_supply_minutes",
+      "point": 0.8237841666666667
+    },
+    {
+      "arm": "A",
+      "ci95_high": 5.146138354166666,
+      "ci95_low": 4.745306666666667,
+      "metric": "unused_budget_minutes",
+      "point": 4.950326666666667
+    },
+    {
+      "arm": "B",
+      "ci95_high": 6.050494208333333,
+      "ci95_low": 5.645969145833333,
+      "metric": "selected_minutes",
+      "point": 5.848983333333334
+    },
+    {
+      "arm": "B",
+      "ci95_high": 4.1720925625,
+      "ci95_low": 3.883339854166666,
+      "metric": "mismatched_selected_minutes",
+      "point": 4.030259166666667
+    },
+    {
+      "arm": "B",
+      "ci95_high": 0.8315787291666666,
+      "ci95_low": 0.6832699375000001,
+      "metric": "missed_available_supply_minutes",
+      "point": 0.7562758333333334
+    },
+    {
+      "arm": "B",
+      "ci95_high": 4.354030854166667,
+      "ci95_low": 3.949505791666667,
+      "metric": "unused_budget_minutes",
+      "point": 4.151016666666666
+    },
+    {
+      "arm": "C",
+      "ci95_high": 2.033333333333333,
+      "ci95_low": 2.033333333333333,
+      "metric": "selected_minutes",
+      "point": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "ci95_high": 1.525,
+      "ci95_low": 1.525,
+      "metric": "mismatched_selected_minutes",
+      "point": 1.525
+    },
+    {
+      "arm": "C",
+      "ci95_high": 2.066666666666667,
+      "ci95_low": 2.066666666666667,
+      "metric": "missed_available_supply_minutes",
+      "point": 2.066666666666667
+    },
+    {
+      "arm": "C",
+      "ci95_high": 7.966666666666667,
+      "ci95_low": 7.966666666666667,
+      "metric": "unused_budget_minutes",
+      "point": 7.966666666666667
+    }
+  ],
+  "schema_version": "yher.p2.figure_data.v1",
+  "simulated": true,
+  "structural_failure_panel": [
+    {
+      "arm": "oracle",
+      "failed_node_fraction": 0.0
+    },
+    {
+      "arm": "A",
+      "failed_node_fraction": 0.0
+    },
+    {
+      "arm": "B",
+      "failed_node_fraction": 0.0
+    },
+    {
+      "arm": "C",
+      "failed_node_fraction": 0.5
+    }
+  ],
+  "supply_panel": [
+    {
+      "charged_seconds": 110,
+      "chunk_id": "BV18t4y1a7eD#P001#c000",
+      "physical_key": "BV18t4y1a7eD#P001",
+      "role": "review",
+      "target": "烷烃"
+    },
+    {
+      "charged_seconds": 99,
+      "chunk_id": "BV18t4y1a7eD#P001#c003",
+      "physical_key": "BV18t4y1a7eD#P001",
+      "role": "review",
+      "target": "烷烃"
+    },
+    {
+      "charged_seconds": 94,
+      "chunk_id": "BV18t4y1a7eD#P001#c004",
+      "physical_key": "BV18t4y1a7eD#P001",
+      "role": "review",
+      "target": "烷烃"
+    },
+    {
+      "charged_seconds": 28,
+      "chunk_id": "BV1JT421C7WS#P001#c004_b",
+      "physical_key": "BV1JT421C7WS#P001",
+      "role": "drill",
+      "target": "烷烃"
+    },
+    {
+      "charged_seconds": 134,
+      "chunk_id": "BV1JT421C7WS#P001#c011",
+      "physical_key": "BV1JT421C7WS#P001",
+      "role": "drill",
+      "target": "烷烃"
+    },
+    {
+      "charged_seconds": 68,
+      "chunk_id": "BV1JT421C7WS#P001#c014_b",
+      "physical_key": "BV1JT421C7WS#P001",
+      "role": "drill",
+      "target": "烷烃"
+    },
+    {
+      "charged_seconds": 121,
+      "chunk_id": "BV1JT421C7WS#P001#c016",
+      "physical_key": "BV1JT421C7WS#P001",
+      "role": "drill",
+      "target": "烷烃"
+    },
+    {
+      "charged_seconds": 496,
+      "chunk_id": "BV1aComYMEms#P102#c000",
+      "physical_key": "BV1aComYMEms#P102",
+      "role": "drill",
+      "target": "基本操作"
+    }
+  ],
+  "truth_cell_minute_panels": [
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "oracle",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.6782933333333333
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.040106666666666665
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 8.733333333333333
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 4.1501866666666665
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 7.741733333333333
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.6154666666666666
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.0282
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 7.961493333333333
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 2.7646266666666666
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 4.949173333333333
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 0.4666666666666667
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 7.937026666666667
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 0.4666666666666667
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 0.8146666666666668
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 4.298666666666667
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 0.63148
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 0.8696533333333334
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.50304
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.006893333333333334
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 7.511253333333333
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 1.8159066666666668
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "A",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 2.9713333333333334
+    },
+    {
+      "arm": "A",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.6882133333333333
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.041986666666666665
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 8.127653333333333
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 4.849666666666667
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 8.618093333333332
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.5989333333333333
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.025066666666666668
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 7.8221333333333325
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 3.6945866666666665
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 8.612733333333333
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 0.4666666666666667
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 7.9450666666666665
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 0.5631733333333333
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 0.5092266666666666
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 0.6636399999999999
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 3.50176
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 0.48108
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 0.07605333333333333
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.47328
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.0012533333333333333
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 7.457653333333334
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 2.8316266666666667
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "B",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 8.535013333333334
+    },
+    {
+      "arm": "B",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.4666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 1.5666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "M",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.4666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 1.5666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "P",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 0.4666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "C",
+      "value": 8.266666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "C",
+      "value": 8.266666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 1.5666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "C",
+      "value": 8.266666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "C",
+      "value": 8.266666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.4666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "M",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "P",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 1.5666666666666667
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "C",
+      "truth_basic": "U",
+      "value": 0.0
+    },
+    {
+      "arm": "C",
+      "metric": "mismatched_selected_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 2.033333333333333
+    },
+    {
+      "arm": "C",
+      "metric": "missed_available_minutes",
+      "truth_alkane": "U",
+      "truth_basic": "U",
+      "value": 0.0
+    }
+  ],
+  "unobtainable_reason": "no_frozen_role_compatible_dose",
+  "unobtainable_supply_minutes": null
+}

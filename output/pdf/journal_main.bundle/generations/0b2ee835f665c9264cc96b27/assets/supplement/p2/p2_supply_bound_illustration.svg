@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="figure-title figure-desc">
+<title id="figure-title">Supply-bound illustrative prescription outputs</title>
+<desc id="figure-desc">A/B/C mechanically mismatched selected minutes and missed available-supply minutes under the frozen 600-second model; Arm C has structural-failure node fraction 0.5.</desc>
+<rect width="1600" height="1000" fill="#FAFBFC"/>
+<text x="90" y="92" font-family="Arial, sans-serif" font-size="46" font-weight="700" fill="#1F2933">Supply-bound illustrative prescription outputs</text>
+<text x="90" y="140" font-family="Arial, sans-serif" font-size="24" fill="#5E6C76">Mechanical duration fields under the frozen available-supply model</text>
+<rect x="90" y="188" width="28" height="20" fill="#246B72"/>
+<text x="132" y="207" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">Mechanically mismatched selected minutes</text>
+<rect x="650" y="188" width="28" height="20" fill="#C65A3A"/>
+<text x="692" y="207" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">Missed available-supply minutes</text>
+<line x1="330.00" y1="285" x2="330.00" y2="820" stroke="#D8DEE3" stroke-width="1"/>
+<text x="330.00" y="855" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#5E6C76">0</text>
+<line x1="578.89" y1="285" x2="578.89" y2="820" stroke="#D8DEE3" stroke-width="1"/>
+<text x="578.89" y="855" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#5E6C76">1</text>
+<line x1="827.78" y1="285" x2="827.78" y2="820" stroke="#D8DEE3" stroke-width="1"/>
+<text x="827.78" y="855" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#5E6C76">2</text>
+<line x1="1076.67" y1="285" x2="1076.67" y2="820" stroke="#D8DEE3" stroke-width="1"/>
+<text x="1076.67" y="855" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#5E6C76">3</text>
+<line x1="1325.56" y1="285" x2="1325.56" y2="820" stroke="#D8DEE3" stroke-width="1"/>
+<text x="1325.56" y="855" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#5E6C76">4</text>
+<line x1="1450.00" y1="285" x2="1450.00" y2="820" stroke="#D8DEE3" stroke-width="1"/>
+<text x="1450.00" y="855" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#5E6C76">4.5</text>
+<text x="890.00" y="895" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">Charged minutes</text>
+<text x="90" y="358" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1F2933">Arm A</text>
+<rect x="330" y="330" width="820.95" height="38" fill="#246B72"/>
+<text x="1162.95" y="358" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">3.2985</text>
+<rect x="330" y="386" width="205.03" height="38" fill="#C65A3A"/>
+<text x="547.03" y="414" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">0.8238</text>
+<text x="90" y="548" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1F2933">Arm B</text>
+<rect x="330" y="520" width="1003.09" height="38" fill="#246B72"/>
+<text x="1345.09" y="548" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">4.0303</text>
+<rect x="330" y="576" width="188.23" height="38" fill="#C65A3A"/>
+<text x="530.23" y="604" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">0.7563</text>
+<text x="90" y="738" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1F2933">Arm C</text>
+<rect x="330" y="710" width="379.56" height="38" fill="#246B72"/>
+<text x="721.56" y="738" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">1.5250</text>
+<rect x="330" y="766" width="514.37" height="38" fill="#C65A3A"/>
+<text x="856.37" y="794" font-family="Arial, sans-serif" font-size="22" fill="#1F2933">2.0667</text>
+<line x1="90" y1="915" x2="1510" y2="915" stroke="#D8DEE3"/>
+<text x="90" y="955" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#C65A3A">Arm C structural-failure node fraction: 0.5</text>
+<text x="770" y="955" font-family="Arial, sans-serif" font-size="19" fill="#5E6C76">Simulated fixed-design illustration; no external validity.</text>
+</svg>

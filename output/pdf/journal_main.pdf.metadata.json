@@ -1,0 +1,31 @@
+{
+  "binder_generation_id": "4a00de55e7477a45dd235313",
+  "finalized_generation": {
+    "finalization_manifest_sha256": "97dbea348834713162343fc36cfffaa49fabe13452c18beeb179fd8a7a048d2d",
+    "generation_id": "cd137572060cec291433ed48",
+    "relative_path": "journal_main.bundle/generations/cd137572060cec291433ed48"
+  },
+  "finalized_manuscript": {
+    "bytes": 59229,
+    "relative_path": "journal_main.bundle/generations/cd137572060cec291433ed48/journal_main.md",
+    "sha256": "786bb30dcc34fa45150a31cf25acc62cca16ef546d76749a873aec7e1e77b76d"
+  },
+  "metadata_sha256": "544511e3bda47904fc300b3a924a76aa8dbdd09f81b8472245e4d91251886739",
+  "pdf": {
+    "bytes": 824119,
+    "relative_path": "journal_main.pdf",
+    "sha256": "bfd8409162a181d0377a86d1c701d9ed4593cc80b3995137e49b7ad06846cb70"
+  },
+  "references": {
+    "bytes": 10295,
+    "relative_path": "../../docs/paper/references.json",
+    "sha256": "e34cccfb52c5fa56044d1edf6f7a5f004fbd9362ddf4a0588c9f79f14aa4a36b"
+  },
+  "render_receipt": {
+    "bytes": 13107,
+    "relative_path": "journal_main.pdf.render.json",
+    "render_receipt_sha256": "4ae8c5dacff2e66eec791df6cb5ac5e9aeb7034654621c67447c67409976b3bb",
+    "sha256": "f4257922aad827ba51bce28ccf2a62e15521c6887f7df3394884f646a53b8f6b"
+  },
+  "schema_version": "yher.journal_pdf.metadata.v2"
+}

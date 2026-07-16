@@ -50,6 +50,32 @@ def _slot(text: str, name: str) -> str:
     return matches[0]
 
 
+def test_pdf_metadata_rejects_output_pdf_alias_before_validation(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_manuscript
+
+    generation = tmp_path / "generation"
+    generation.mkdir()
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(b"ORIGINAL-PDF")
+    references = tmp_path / "references.json"
+    references.write_text("{}", encoding="utf-8")
+    receipt = tmp_path / "paper.pdf.render.json"
+    receipt.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="distinct|alias"):
+        journal_manuscript.write_pdf_metadata(
+            pdf_path=pdf,
+            finalized_generation=generation,
+            references_path=references,
+            render_receipt_path=receipt,
+            output_path=pdf,
+        )
+
+    assert pdf.read_bytes() == b"ORIGINAL-PDF"
+
+
 def test_journal_manuscript_has_three_titles_structured_abstract_and_imrad() -> None:
     text = _text(MANUSCRIPT)
 
@@ -78,6 +104,17 @@ def test_journal_manuscript_has_three_titles_structured_abstract_and_imrad() -> 
     offsets = [text.index(section) for section in required_sections]
     assert offsets == sorted(offsets)
     assert len(re.findall(r"\b[\w'-]+\b", text)) >= 4_500
+
+
+def test_journal_methods_declare_provider_reproducibility_fields() -> None:
+    text = _text(MANUSCRIPT)
+    methods = text.split("## 3. Methods", 1)[1].split("## 4. Results", 1)[0]
+
+    assert (
+        "Exact temporal, model, request, and runtime provenance appears in Results."
+        in methods
+    )
+    assert "For temporal and model reproducibility" not in methods
 
 
 def test_journal_results_use_bound_h1_h4_evidence_and_same_support_pairs() -> None:
@@ -154,6 +191,10 @@ def test_all_result_surfaces_are_finalizer_owned_machine_slots() -> None:
 
 def test_makefile_has_hash_bound_journal_finalize_check_and_pdf_targets() -> None:
     makefile = _text(MAKEFILE)
+    assert (
+        "PAPER_JOURNAL_FINAL_DIR ?= $(PAPER_PDF_DIR)/journal_main.bundle"
+        in makefile
+    )
 
     for variable in (
         "PAPER_JOURNAL_TEMPLATE",
@@ -166,6 +207,9 @@ def test_makefile_has_hash_bound_journal_finalize_check_and_pdf_targets() -> Non
         "PAPER_JOURNAL_PDF",
         "PAPER_JOURNAL_RENDER_RECEIPT",
         "PAPER_JOURNAL_PDF_METADATA",
+        "PAPER_PDFINFO",
+        "PAPER_PDFTOTEXT",
+        "PAPER_PDFTOPPM",
     ):
         assert re.search(rf"^{variable} \?=", makefile, re.MULTILINE), variable
     for target in (
@@ -181,6 +225,9 @@ def test_makefile_has_hash_bound_journal_finalize_check_and_pdf_targets() -> Non
     assert "--expected-template-sha256" in makefile
     assert "--expected-binder-generation-id" in makefile
     assert "--receipt \"$(PAPER_JOURNAL_RENDER_RECEIPT)\"" in makefile
+    assert "--pdfinfo \"$(PAPER_PDFINFO)\"" in makefile
+    assert "--pdftotext \"$(PAPER_PDFTOTEXT)\"" in makefile
+    assert "--pdftoppm \"$(PAPER_PDFTOPPM)\"" in makefile
     assert "--render-receipt \"$(PAPER_JOURNAL_RENDER_RECEIPT)\"" in makefile
     assert "$(PAPER_JOURNAL_FINAL_MANUSCRIPT)" in makefile
     assert "$(PAPER_JOURNAL_FINALIZATION_MANIFEST)" in makefile
@@ -246,6 +293,11 @@ def test_claim_boundaries_limit_the_study_to_model_defined_simulation() -> None:
     ):
         assert statement in flat
 
+    assert "answer-category agreement" in flat
+    assert "canonical complete-output equality" in flat
+    assert "### 4.5 Persona-v2 result slot" not in text
+    assert "### 4.6 Illustrative prescription result slot" not in text
+
 
 @pytest.mark.parametrize(
     "stale_sentence",
@@ -304,6 +356,7 @@ def test_final_manuscript_audit_rejects_human_gold_wording(tmp_path: Path) -> No
 
 def test_manuscript_has_exactly_ten_limitations_and_ai_disclosures() -> None:
     text = _text(MANUSCRIPT)
+    flat = " ".join(text.split())
     limitations = text.split("## 6. Limitations", 1)[1].split("## 7. Conclusion", 1)[0]
 
     assert len(re.findall(r"^\d+\. \*\*", limitations, re.MULTILINE)) == 10
@@ -318,9 +371,11 @@ def test_manuscript_has_exactly_ten_limitations_and_ai_disclosures() -> None:
         "simulation execution",
         "figure generation",
         "adversarial manuscript review",
+        "OpenAI Codex (GPT-5.6 Sol)",
+        "Anthropic Claude Code (Claude Opus 4.8)",
         "AI systems were not treated as authors",
     ):
-        assert role in text
+        assert role in flat
 
 
 def test_journal_citations_resolve_to_verified_registry() -> None:
