@@ -1,9 +1,9 @@
 {
   "schema_version": "yher.verified-references.v1",
-  "verified_at": "2026-07-14",
-  "verification_note": "All 17 cited sources were independently verified for existence on 2026-07-14 against DOI registries, publisher or anthology pages, and official software documentation. Exact metadata corrections from that audit are applied here.",
+  "verified_at": "2026-07-16",
+  "verification_note": "All 19 sources cited by the journal manuscript were independently verified for existence against DOI registries, resolving publisher or anthology pages, and official software documentation. The original 17-source audit was completed on 2026-07-14; the CAT stopping and budgeted-coverage additions were verified on 2026-07-16. Exact metadata corrections are applied here.",
   "audit_artifact": "experiments/config/paper_reference_audit_v1.json",
-  "audit_sha256": "e53eedd0131fa0a2f1647107f2e72f4dc09baa1da6af614d4f47be79b95b461a",
+  "audit_sha256": "05c924247dc2723716f1d2a1d1a8ff4c1d8e2c3056e90e2ba825234834da37f8",
   "references": [
     {
       "id": "lord1971",
@@ -45,6 +45,20 @@
       "url": "https://doi.org/10.1111/j.1745-3984.1984.tb01040.x"
     },
     {
+      "id": "choi-grady-dodd2011",
+      "type": "journal-article",
+      "authors": ["Seung W. Choi", "Matthew W. Grady", "Barbara G. Dodd"],
+      "title": "A New Stopping Rule for Computerized Adaptive Testing",
+      "year": 2011,
+      "container_title": "Educational and Psychological Measurement",
+      "volume": "71",
+      "issue": "1",
+      "pages": "37-53",
+      "doi": "10.1177/0013164410387338",
+      "url": "https://doi.org/10.1177/0013164410387338",
+      "metadata_note": "Published online 2010-11-22; the cited year follows the 2011 print volume and issue."
+    },
+    {
       "id": "han2018",
       "type": "journal-article",
       "authors": ["Kyung (Chris) Tyek Han"],
@@ -68,6 +82,19 @@
       "pages": "438-452",
       "doi": "10.1177/0146621610370152",
       "url": "https://doi.org/10.1177/0146621610370152"
+    },
+    {
+      "id": "khuller-moss-naor1999",
+      "type": "journal-article",
+      "authors": ["Samir Khuller", "Anna Moss", "Joseph (Seffi) Naor"],
+      "title": "The budgeted maximum coverage problem",
+      "year": 1999,
+      "container_title": "Information Processing Letters",
+      "volume": "70",
+      "issue": "1",
+      "pages": "39-45",
+      "doi": "10.1016/s0020-0190(99)00031-9",
+      "url": "https://doi.org/10.1016/s0020-0190(99)00031-9"
     },
     {
       "id": "corbett-anderson1994",

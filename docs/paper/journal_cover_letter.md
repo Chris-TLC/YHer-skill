@@ -11,11 +11,11 @@ instructions.
 
 Dear Editor,
 
-Please consider the manuscript, "When Accurate Terminal Decisions Do Not Converge: A
-Budget-Constrained Audit of Probe Selection in Chemistry Diagnosis," for a future
-editorial assessment after the journal-specific fields above have been verified.
+Please consider the manuscript, "Terminal Accuracy Without Confident Convergence: A
+Finite-Budget Simulation Audit of Model-Defined Chemistry Diagnosis," for publication
+as [ARTICLE TYPE] in [TARGET JOURNAL].
 
-The manuscript reports a production-bound programmatic simulation audit of a
+The manuscript reports a simulation audit bound to the local implementation of a
 high-school chemistry diagnostic system. Its central question is whether an adaptive
 item selector, a confidence-based stopping rule, and a state-conditioned remediation
 interface remain aligned under short item budgets. The design compares a
@@ -36,9 +36,10 @@ selection and stopping.
 The evidence is explicitly simulation-only. No human participants were enrolled.
 Language-model response experiments are treated as a separately clustered
 response-channel stress test, not as an expansion of the programmatic sample or as
-evidence about people. Persona-v2 and prescription outcomes are not claimed in this
-draft; the manuscript contains explicit machine-replaceable slots that remain empty
-until their analysis and provenance gates pass.
+evidence about people. The secondary Persona-v2 analysis is limited to paired
+answer-state shifts and blind response robustness. The prescription analysis is a
+two-target, supply-bound mechanical illustration and does not estimate learning
+benefit or remediation efficacy.
 
 The work may fit journals interested in artificial intelligence in education,
 learning analytics, adaptive assessment, and transparent evaluation of educational
@@ -47,18 +48,21 @@ gated subset of one Shanghai high-school chemistry project, and the manuscript d
 not generalize to a full curriculum.
 
 Generative AI and AI-assisted technologies supported software implementation,
-simulation, analysis, figures, prose drafting, and adversarial review. The manuscript
-includes both a Methods description and a declaration of that role. AI systems are
-not listed as authors or human reference raters. The final disclosure must be aligned
-line by line with the selected journal's current author instructions.
+simulation, analysis, figures, and adversarial review and generated the initial full
+manuscript prose and revision proposals. The manuscript includes both a Methods
+description and a declaration of that role. AI systems are not listed as authors or
+human reference standards. Before submission, the human author must critically review
+and revise the complete text, and the final disclosure must name the systems and model
+versions in the selected journal's required form.
 
-The author will verify the target journal's originality, exclusivity, data-availability,
-copyright, and AI-disclosure requirements in the journal system before any external
-action. No claim in this letter should be read as a completed editorial action.
+Before submission, the author must replace every placeholder and add truthful,
+journal-specific statements on originality, exclusive consideration, the approved
+repository or access procedure, copyright and source rights, and AI disclosure. This
+draft makes none of those submission assertions on the author's behalf and does not
+represent a completed editorial action.
 
 Sincerely,
 
 [CORRESPONDING AUTHOR NAME]  
 [AFFILIATION]  
 [CONTACT DETAILS]
-

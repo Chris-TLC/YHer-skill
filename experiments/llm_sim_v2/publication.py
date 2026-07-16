@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import sys
@@ -45,7 +46,7 @@ def _canonical_sha256(value: Any) -> str:
     return hashlib.sha256(_canonical_bytes(value)).hexdigest()
 
 
-def _strict_json_bytes(data: bytes, *, label: str) -> dict[str, Any]:
+def _strict_json_value_bytes(data: bytes, *, label: str) -> Any:
     def pairs(rows: list[tuple[str, Any]]) -> dict[str, Any]:
         value: dict[str, Any] = {}
         for key, child in rows:
@@ -72,6 +73,11 @@ def _strict_json_bytes(data: bytes, *, label: str) -> dict[str, Any]:
         raise
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise PublicationAdapterError(f"{label} is not strict UTF-8 JSON") from exc
+    return value
+
+
+def _strict_json_bytes(data: bytes, *, label: str) -> dict[str, Any]:
+    value = _strict_json_value_bytes(data, label=label)
     if not isinstance(value, dict):
         raise PublicationAdapterError(f"{label} must be a JSON object")
     return value
@@ -263,13 +269,31 @@ def _verify_self_hash(
 
 def _judge_case_ids(case_manifest: Mapping[str, Any]) -> list[str]:
     from .analyze import judge_input_bytes
+    from .judge_protocol import JUDGE_PUBLIC_SCHEMA_KEYS, judge_protocol
 
+    protocol = judge_protocol()
+    amendment_bytes = Path(__file__).with_name(
+        "judge_amendment_20260716.md"
+    ).read_bytes()
+    amendment_binding = {
+        "path": "experiments/llm_sim_v2/judge_amendment_20260716.md",
+        "sha256": hashlib.sha256(amendment_bytes).hexdigest(),
+        "size": len(amendment_bytes),
+    }
     if (
         case_manifest.get("schema_version")
-        != "yher.llm_sim_v2.judge_case_manifest.v1"
+        != "yher.llm_sim_v2.judge_case_manifest.v2"
         or case_manifest.get("simulated") is not True
         or case_manifest.get("run_id") != RUN_ID
         or case_manifest.get("analysis_population") != "main"
+        or case_manifest.get("judge_protocol") != protocol
+        or case_manifest.get("judge_protocol_sha256")
+        != _canonical_sha256(protocol)
+        or case_manifest.get("judge_amendment") != amendment_binding
+        or case_manifest.get("question_field_whitelist")
+        != sorted(JUDGE_PUBLIC_SCHEMA_KEYS)
+        or case_manifest.get("target_metadata_exported") is not False
+        or case_manifest.get("target_labels_exported") is not False
     ):
         raise PublicationAdapterError("judge case manifest envelope is invalid")
     case_hash = _verify_self_hash(
@@ -317,32 +341,83 @@ def _strict_jsonl(data: bytes, *, label: str) -> list[dict[str, Any]]:
 def build_judge_result_manifest(
     *,
     case_manifest_path: str | Path,
-    raw_jsonl_path: str | Path,
-    judge: str,
+    execution_receipt_path: str | Path,
     output_path: str | Path,
 ) -> dict[str, Any]:
-    """Validate one frozen judge pass and atomically write its result manifest."""
+    """Replay one isolated judge execution and publish its bound result."""
 
-    if judge not in _JUDGES:
-        raise PublicationAdapterError("judge must be exactly claude or gpt")
     destination = _new_destination(output_path, label="judge manifest output")
     case_manifest = _strict_json_bytes(
         _read_path(case_manifest_path, label="judge case manifest"),
         label="judge case manifest",
     )
     case_ids = _judge_case_ids(case_manifest)
+    receipt_path = Path(execution_receipt_path).expanduser()
+    receipt = _strict_json_bytes(
+        _read_path(receipt_path, label="judge execution receipt"),
+        label="judge execution receipt",
+    )
+    identity = receipt.get("identity")
+    if not isinstance(identity, Mapping):
+        raise PublicationAdapterError("judge execution identity is invalid")
+    judge = identity.get("judge_family")
+    transport = identity.get("transport")
+    expected_transport = {"claude": "claude_cli", "gpt": "codex_cli"}
+    if judge not in _JUDGES or transport != expected_transport[judge]:
+        raise PublicationAdapterError(
+            "judge execution family or production transport is invalid"
+        )
+    from .judge_execution import JudgeExecutionError, validate_execution_receipt
+
+    try:
+        receipt = validate_execution_receipt(
+            receipt_path,
+            case_manifest,
+            str(judge),
+        )
+    except JudgeExecutionError as exc:
+        raise PublicationAdapterError(
+            "judge execution receipt or artifact replay failed"
+        ) from exc
+    receipt_identity = receipt.get("identity")
+    if not isinstance(receipt_identity, Mapping):
+        raise PublicationAdapterError("judge execution identity is invalid")
+    execution_id = str(receipt_identity["execution_id"])
+    expected_receipt_path = (
+        destination.parent
+        / "executions"
+        / str(judge)
+        / execution_id
+        / "execution_receipt.json"
+    )
+    try:
+        actual_receipt_path = receipt_path.resolve(strict=True)
+    except OSError as exc:
+        raise PublicationAdapterError("judge execution receipt cannot resolve") from exc
+    if actual_receipt_path != expected_receipt_path.resolve(strict=False):
+        raise PublicationAdapterError(
+            "judge execution receipt must use executions/<judge>/<execution_id>/execution_receipt.json beside the result manifest"
+        )
+    normalized = receipt.get("normalized_results")
+    if not isinstance(normalized, Mapping):
+        raise PublicationAdapterError("judge normalized result binding is invalid")
+    normalized_relative = _validated_relative(
+        str(normalized.get("path") or ""),
+        label="judge normalized result",
+    )
+    normalized_path = receipt_path.resolve().parent / normalized_relative
     raw_rows = _strict_jsonl(
-        _read_path(raw_jsonl_path, label=f"{judge} raw judge JSONL"),
-        label=f"{judge} raw judge JSONL",
+        _read_path(normalized_path, label=f"{judge} normalized judge JSONL"),
+        label=f"{judge} normalized judge JSONL",
     )
     raw_ids: list[str] = []
     results: list[dict[str, Any]] = []
-    from .prompts import validate_judge_output
+    from .judge_protocol import validate_judge_output
 
     for index, row in enumerate(raw_rows, start=1):
         if set(row) != {"case_id", "output"}:
             raise PublicationAdapterError(
-                f"{judge} raw judge row {index} must contain exact case_id and output"
+                f"{judge} normalized judge row {index} must contain exact case_id and output"
             )
         case_id = row.get("case_id")
         output = row.get("output")
@@ -361,11 +436,18 @@ def build_judge_result_manifest(
             f"{judge} judge case coverage or order differs from case manifest"
         )
     manifest: dict[str, Any] = {
-        "schema_version": "yher.llm_sim_v2.judge_result_manifest.v1",
+        "schema_version": "yher.llm_sim_v2.judge_result_manifest.v2",
         "simulated": True,
         "run_id": RUN_ID,
         "judge": judge,
         "case_manifest_sha256": case_manifest["case_manifest_sha256"],
+        "execution_receipt_path": (
+            Path("executions")
+            / str(judge)
+            / execution_id
+            / "execution_receipt.json"
+        ).as_posix(),
+        "execution_receipt": receipt,
         "results": results,
     }
     manifest["judge_result_manifest_sha256"] = _canonical_sha256(manifest)
@@ -375,7 +457,11 @@ def build_judge_result_manifest(
     slots: dict[str, Mapping[str, Any] | None] = {"claude": None, "gpt": None}
     slots[judge] = manifest
     try:
-        ingest_judge_results(case_manifest, slots)
+        ingest_judge_results(
+            case_manifest,
+            slots,
+            judge_artifact_roots={str(judge): str(receipt_path.resolve().parent)},
+        )
     except AnalysisContractError as exc:
         raise PublicationAdapterError(
             "judge result manifest is incompatible with analyzer ingestion"
@@ -535,6 +621,196 @@ def _verify_bundle_identities(
         )
 
 
+def _reject_noncanonical_judge_payloads(
+    artifacts: Mapping[str, bytes],
+    *,
+    canonical_snapshot_artifacts: set[str],
+) -> None:
+    allowed_judge_objects = {
+        "judge/case_manifest.json": "yher.llm_sim_v2.judge_case_manifest.v2",
+        "judge/judge_analysis.json": "yher.llm_sim_v2.judge_analysis.v2",
+    }
+    snapshot_hashes: dict[str, set[str]] = {}
+    for name in canonical_snapshot_artifacts:
+        data = artifacts.get(name)
+        if data is None:
+            continue
+        snapshot_hashes.setdefault(hashlib.sha256(data).hexdigest(), set()).add(name)
+
+    def contains_judge_payload(value: Any) -> bool:
+        if isinstance(value, Mapping):
+            schema = value.get("schema_version")
+            if isinstance(schema, str) and schema.startswith(
+                "yher.llm_sim_v2.judge_"
+            ):
+                return True
+            return any(contains_judge_payload(child) for child in value.values())
+        if isinstance(value, list):
+            return any(contains_judge_payload(child) for child in value)
+        return False
+
+    for name, data in artifacts.items():
+        if name in canonical_snapshot_artifacts:
+            continue
+        matching_snapshot_paths = snapshot_hashes.get(
+            hashlib.sha256(data).hexdigest(), set()
+        )
+        intentional_case_mirror = (
+            name == "judge/case_manifest.json"
+            and matching_snapshot_paths
+            == {"judge-snapshots/run/case_manifest.json"}
+        )
+        if matching_snapshot_paths and not intentional_case_mirror:
+            raise PublicationAdapterError(
+                f"judge artifact must use its canonical snapshot path: {name}"
+            )
+        try:
+            payload = _strict_json_value_bytes(
+                data, label=f"analysis artifact {name}"
+            )
+        except PublicationAdapterError:
+            if Path(name).suffix.lower() == ".json":
+                raise
+            continue
+        if name == "analysis_results.json":
+            continue
+        schema = payload.get("schema_version") if isinstance(payload, Mapping) else None
+        if name in allowed_judge_objects and allowed_judge_objects[name] == schema:
+            continue
+        if contains_judge_payload(payload):
+            raise PublicationAdapterError(
+                f"judge payload must use its canonical snapshot path: {name}"
+            )
+
+
+def _bundle_judge_roster(
+    results: Mapping[str, Any], artifacts: Mapping[str, bytes]
+) -> tuple[str, ...]:
+    adjudication = results.get("judge_adjudication")
+    analysis = adjudication.get("analysis") if isinstance(adjudication, Mapping) else None
+    if not isinstance(analysis, Mapping) or analysis.get("expected_judges") != [
+        "claude",
+        "gpt",
+    ]:
+        raise PublicationAdapterError("Persona-v2 judge availability profile is invalid")
+    profile = (
+        analysis.get("status"),
+        analysis.get("available_judges"),
+        analysis.get("missing_judges"),
+    )
+    rosters = {
+        ("complete", ("claude", "gpt"), ()): ("claude", "gpt"),
+        ("partial_missing_judge", ("gpt",), ("claude",)): ("gpt",),
+        ("not_applicable_zero_cases", (), ()): (),
+    }
+    try:
+        normalized_profile = (
+            profile[0],
+            tuple(profile[1]) if isinstance(profile[1], list) else None,
+            tuple(profile[2]) if isinstance(profile[2], list) else None,
+        )
+        judges = rosters[normalized_profile]
+    except (KeyError, TypeError) as exc:
+        raise PublicationAdapterError(
+            "Persona-v2 judge availability profile is unsupported"
+        ) from exc
+
+    legacy_results = {
+        name for name in artifacts if name.startswith("judge-results/")
+    }
+    if legacy_results:
+        name = sorted(legacy_results)[0]
+        family = Path(name).stem
+        raise PublicationAdapterError(
+            f"stray {family.title()} judge result artifact contradicts availability"
+        )
+
+    snapshot_manifest_name = "judge-snapshots/snapshot_manifest.json"
+    snapshot_bytes = artifacts.get(snapshot_manifest_name)
+    if snapshot_bytes is None:
+        raise PublicationAdapterError(
+            "canonical judge run snapshot manifest is missing"
+        )
+    snapshot = _strict_json_bytes(
+        snapshot_bytes, label="judge run execution snapshot manifest"
+    )
+    family_slots = snapshot.get("family_slots")
+    expected_slot_statuses = {
+        ("claude", "gpt"): {"claude": "complete", "gpt": "complete"},
+        ("gpt",): {"claude": "unavailable", "gpt": "complete"},
+        (): {
+            "claude": "not_applicable_zero_cases",
+            "gpt": "not_applicable_zero_cases",
+        },
+    }[judges]
+    if (
+        snapshot.get("schema_version")
+        != "yher.llm_sim_v2.judge_run_execution_snapshot_manifest.v1"
+        or not isinstance(family_slots, Mapping)
+        or set(family_slots) != set(_JUDGES)
+        or {
+            family: slot.get("status") if isinstance(slot, Mapping) else None
+            for family, slot in family_slots.items()
+        }
+        != expected_slot_statuses
+    ):
+        raise PublicationAdapterError(
+            "judge run snapshot family slots differ from the declared availability profile"
+        )
+    snapshot_files = snapshot.get("files")
+    if not isinstance(snapshot_files, list):
+        raise PublicationAdapterError("judge run snapshot file roster is invalid")
+    expected_snapshot_artifacts = {snapshot_manifest_name}
+    for row in snapshot_files:
+        relative = row.get("path") if isinstance(row, Mapping) else None
+        if not isinstance(relative, str) or not relative.startswith("run/"):
+            raise PublicationAdapterError("judge run snapshot file roster is invalid")
+        expected_snapshot_artifacts.add(f"judge-snapshots/{relative}")
+    actual_snapshot_artifacts = {
+        name for name in artifacts if name.startswith("judge-snapshots/")
+    }
+    if actual_snapshot_artifacts != expected_snapshot_artifacts:
+        raise PublicationAdapterError(
+            "judge run snapshot contains an unbound or missing artifact"
+        )
+    expected_results = {
+        f"judge-snapshots/run/{judge}.json" for judge in judges
+    }
+    actual_results = {
+        name
+        for name in actual_snapshot_artifacts
+        if name in {
+            "judge-snapshots/run/claude.json",
+            "judge-snapshots/run/gpt.json",
+        }
+    }
+    if actual_results != expected_results:
+        raise PublicationAdapterError(
+            "judge result artifacts differ from the declared availability profile"
+        )
+
+    approved_family_artifacts = {
+        f"judge/{family}_input.jsonl" for family in _JUDGES
+    } | expected_results | expected_snapshot_artifacts
+    for family in set(_JUDGES) - set(judges):
+        family_pattern = re.compile(
+            rf"(?:^|[/_.-]){re.escape(family)}(?:$|[/_.-])",
+            flags=re.IGNORECASE,
+        )
+        for name in artifacts:
+            if name in approved_family_artifacts:
+                continue
+            if family_pattern.search(name):
+                raise PublicationAdapterError(
+                    f"stray {family.title()} judge artifact contradicts availability"
+                )
+    _reject_noncanonical_judge_payloads(
+        artifacts,
+        canonical_snapshot_artifacts=expected_snapshot_artifacts,
+    )
+    return judges
+
+
 def _write_staged_file(root: Path, relative: Path, data: bytes) -> Path:
     destination = root / relative
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -611,6 +887,7 @@ def build_persona_v2_bundle(
     main_phase_root: str | Path,
     repo_root: str | Path,
     output_dir: str | Path,
+    allow_fixture: bool = False,
 ) -> dict[str, Any]:
     """Atomically snapshot formal W3 artifacts into a journal-binder bundle."""
 
@@ -631,6 +908,17 @@ def build_persona_v2_bundle(
     results, artifact_manifest, artifact_manifest_bytes, artifacts = (
         _result_tree_snapshot(result_root)
     )
+    judges = _bundle_judge_roster(results, artifacts)
+    required_analysis_artifacts = {
+        "analysis_results.json",
+        "input_artifact_manifest.json",
+        "judge-snapshots/snapshot_manifest.json",
+        *(f"judge-snapshots/run/{judge}.json" for judge in judges),
+    }
+    if not required_analysis_artifacts.issubset(artifacts):
+        raise PublicationAdapterError(
+            "formal W3 artifacts do not bind the input manifest and declared judge profile"
+        )
     phase_bytes = _read_relative(
         main_root, Path("phase_provenance.json"), label="main phase provenance"
     )
@@ -659,6 +947,8 @@ def build_persona_v2_bundle(
     try:
         for name, data in artifacts.items():
             _write_staged_file(staging, Path("analysis") / name, data)
+            if name.startswith("judge-snapshots/"):
+                _write_staged_file(staging, Path(name), data)
         analysis_manifest_path = _write_staged_file(
             staging,
             Path("analysis/artifact_manifest.json"),
@@ -676,9 +966,23 @@ def build_persona_v2_bundle(
         role_paths = {
             "analysis_results": staging / "analysis/analysis_results.json",
             "analysis_artifact_manifest": analysis_manifest_path,
+            "analysis_input_artifact_manifest": (
+                staging / "analysis/input_artifact_manifest.json"
+            ),
             "phase_provenance": phase_path,
             "runtime_task_manifest": runtime_path,
             "mapping_manifest": mapping_path,
+            **{
+                f"{judge}_judge_result_manifest": (
+                    staging / f"judge-snapshots/run/{judge}.json"
+                )
+                for judge in judges
+            },
+            **{
+                "judge_run_execution_snapshot_manifest": (
+                    staging / "judge-snapshots/snapshot_manifest.json"
+                )
+            },
         }
         binding_manifest = {
             "schema_version": "yher.journal_binder.persona_v2_bundle.v1",
@@ -702,7 +1006,9 @@ def build_persona_v2_bundle(
         from experiments import journal_binder
 
         try:
-            journal_binder.bind_persona_v2_artifacts(staging)
+            journal_binder.bind_persona_v2_artifacts(
+                staging, allow_fixture=allow_fixture
+            )
         except journal_binder.BinderError as exc:
             raise PublicationAdapterError(
                 f"Persona-v2 bundle failed journal binder validation: {exc}"
@@ -754,11 +1060,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command", required=True)
     judge = commands.add_parser(
-        "judge-manifest", help="Bind one raw frozen-judge JSONL response file."
+        "judge-manifest", help="Bind one fully replayed frozen-judge execution."
     )
     judge.add_argument("--case-manifest", required=True, type=Path)
-    judge.add_argument("--raw-jsonl", required=True, type=Path)
-    judge.add_argument("--judge", required=True, choices=_JUDGES)
+    judge.add_argument("--execution-receipt", required=True, type=Path)
     judge.add_argument("--output", required=True, type=Path)
     persona = commands.add_parser(
         "persona-bundle", help="Build one formal W3 journal-binder bundle."
@@ -777,13 +1082,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "judge-manifest":
             manifest = build_judge_result_manifest(
                 case_manifest_path=args.case_manifest,
-                raw_jsonl_path=args.raw_jsonl,
-                judge=args.judge,
+                execution_receipt_path=args.execution_receipt,
                 output_path=args.output,
             )
             summary = {
                 "command": args.command,
-                "judge": args.judge,
+                "judge": manifest["judge"],
                 "result_count": len(manifest["results"]),
                 "output": str(args.output),
             }

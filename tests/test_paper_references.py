@@ -31,9 +31,9 @@ def test_reference_registry_is_bound_to_complete_existence_audit() -> None:
 
     counts = audit["counts"]
     assert isinstance(counts, dict)
-    assert counts["reference_records"] == 17
-    assert counts["existence_verified"] == 17
-    assert counts["doi_records"] == counts["doi_registered"] == 15
+    assert counts["reference_records"] == 19
+    assert counts["existence_verified"] == 19
+    assert counts["doi_records"] == counts["doi_registered"] == 17
     assert counts["fabricated"] == counts["conflated"] == 0
     assert counts["uncited_bibliography_items"] == 0
     assert counts["unresolved_citation_keys"] == 0
@@ -53,7 +53,7 @@ def test_reference_registry_is_bound_to_complete_existence_audit() -> None:
             assert reference["url"] == identifier["url"]
     assert all(row["existence"] == "verified" for row in audit_rows)
     doi_rows = [row for row in audit_rows if row["identifier"].get("doi")]
-    assert len(doi_rows) == 15
+    assert len(doi_rows) == 17
     assert all(row["identifier"]["registered"] is True for row in doi_rows)
     assert all(
         str(row["identifier"]["resolution"]).startswith("resolved")
@@ -62,7 +62,11 @@ def test_reference_registry_is_bound_to_complete_existence_audit() -> None:
 
     manuscript_text = "\n".join(
         (ROOT / path).read_text(encoding="utf-8")
-        for path in ("docs/paper/main.md", "docs/paper/yau_award_4page.md")
+        for path in (
+            "docs/paper/main.md",
+            "docs/paper/yau_award_4page.md",
+            "docs/paper/journal_main.md",
+        )
     )
     cited = set(re.findall(r"@([A-Za-z0-9_-]+)", manuscript_text))
     assert cited == {row["id"] for row in reference_rows}

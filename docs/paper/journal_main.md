@@ -1,59 +1,46 @@
 <!-- JOURNAL TITLE OPTIONS
-TITLE_CANDIDATE_1: When Accurate Terminal Decisions Do Not Converge: A Budget-Constrained Audit of Probe Selection in Chemistry Diagnosis
+TITLE_CANDIDATE_1: Terminal Accuracy Without Confident Convergence: A Finite-Budget Simulation Audit of Model-Defined Chemistry Diagnosis
 TITLE_CANDIDATE_2: From Diagnostic Evidence to Model-Defined Remediation: Auditing Probe Selection and Stopping Under Item Budgets
 TITLE_CANDIDATE_3: Budget-Limited Confident Convergence in a Chemistry Diagnostic System: Programmatic Evidence and Response-Channel Stress Tests
-SELECTED_TITLE: When Accurate Terminal Decisions Do Not Converge: A Budget-Constrained Audit of Probe Selection in Chemistry Diagnosis
+SELECTED_TITLE: Terminal Accuracy Without Confident Convergence: A Finite-Budget Simulation Audit of Model-Defined Chemistry Diagnosis
 -->
 
-# When Accurate Terminal Decisions Do Not Converge: A Budget-Constrained Audit of Probe Selection in Chemistry Diagnosis
+# Terminal Accuracy Without Confident Convergence: A Finite-Budget Simulation Audit of Model-Defined Chemistry Diagnosis
 
 ## Structured Abstract
 
-**Background:** Adaptive diagnostic systems must do more than predict whether an
-answer will be correct. They must distinguish among model-defined explanations that
-lead to different remedial actions, while operating under short item budgets. A
-system can rank the correct diagnostic state first without satisfying its own
-confidence-based stopping rule, leaving terminal decisions and operational
-convergence misaligned.
+**Background:** Short diagnostic budgets can yield a correct model-defined terminal
+ranking without satisfying the system's confidence-based stopping rule.
 
-**Objective:** We audited whether prerequisite probes improve identification of a
-model-defined prerequisite-gap state, whether fixed probe insertion creates a
-different failure profile for a reasoning-chain state, and whether these effects
-persist under a declared response-model perturbation. We also examined, post-hoc,
-why terminal accuracy and confident convergence diverged.
+**Objective:** We audited prerequisite-probe selection, fixed insertion, one
+pre-specified generator perturbation, and the terminal-versus-convergence gap.
+Secondary analyses examined Persona-v2 answer-state shifts and robustness and
+supply-constrained prescription mapping.
 
-**Methods:** The primary evidence was a simulation-only, production-bound experiment
-covering 27 chemistry targets, four fixed diagnostic states, three item-selection
-arms, 50 paired replicates, and matched and misspecified response generators. The
-intention-to-simulate grid contained 32,400 journeys. Arms shared response-noise and
-held-out-outcome streams. Confirmatory intervals used 10,000 target-stratified paired
-bootstrap resamples. A separately frozen Persona-v2 protocol is defined as an
-independent response-channel stress test with 50 persona clusters, two prompt
-conditions, and provider as a repeated measure; no Persona-v2 outcome enters this
-version. A resource-constrained prescription illustration is likewise reserved for
-machine-bound insertion.
+**Methods:** The implementation-bound simulation crossed 27 chemistry targets, four
+states, three arms, 50 paired replicates, and two generators (32,400 intended
+journeys). Arms shared noise streams. Ten thousand target-stratified paired
+bootstraps quantified Monte Carlo uncertainty conditional on this fixed catalog, not
+population uncertainty. Secondary analyses used 50 persona clusters and a two-target
+prescription model.
 
-**Results:** At 15 items on the 23-target eligible support, the adaptive arm's
-prerequisite-gap confident-convergence rate was 12.9% (148/1,150), compared with 0.8%
-(9/1,150) for the local-only ladder; the paired difference was 12.1 percentage points
-(95% CI 10.3 to 13.8). Because the adaptive rate remained below the frozen 50%
-criterion, H1 was partially supported. At nine items, fixed probe insertion raised
-reasoning-chain misdiagnosis relative to the adaptive arm by 5.7 points (95% CI 2.3
-to 9.0), but the adaptive arm itself exceeded the local-only arm by 9.7 points (95%
-CI 7.2 to 12.3), violating the frozen no-harm margin; H2 was not supported. The
-adaptive sanity check and the declared misspecification direction check were
-supported. On identical 27-target support, terminal prerequisite-state accuracy was
-83.8% while correct confident convergence was 12.4%. On identical 23-target support,
-the corresponding values were 90.7% and 12.9%. The selector-stopping mismatch is a
-post-hoc interpretation and does not revise the frozen decisions.
+**Results:** At 15 items on 23 targets, adaptive prerequisite-gap convergence was
+12.9% (148/1,150), versus 0.8% (9/1,150) for the local ladder; the difference was 12.1
+points (95% CI 10.3 to 13.8). H1 was partial because 12.9% missed the frozen 50%
+criterion. At nine items, fixed insertion raised reasoning-chain misdiagnosis over
+adaptive by 5.7 points (95% CI 2.3 to 9.0), but adaptive exceeded local by 9.7 points
+(95% CI 7.2 to 12.3), violating no-harm; H2 was unsupported. H3 and the direction-only
+H4 check were supported. On identical 27- and 23-target supports, terminal accuracy
+versus confident convergence was 83.8% versus 12.4% and 90.7% versus 12.9%.
 
-**Conclusions:** Prerequisite probes improved one narrow convergence contrast but did
-not make the model-defined state reliably identifiable at the frozen budget, and the
-adaptive policy did not meet its no-harm requirement for the reasoning-chain state.
-Terminal argmax accuracy substantially overstated operational convergence. The study
-supports auditing selection and stopping as separate components before diagnostic
-beliefs are routed to remediation. It does not estimate learning gains, does not
-establish educational efficacy, and does not establish human behavioral validity.
+<!-- BEGIN RESULT SLOT: BOUND_ABSTRACT_RESULTS -->
+BOUND EXTENDED-STUDY ABSTRACT RESULTS
+<!-- END RESULT SLOT: BOUND_ABSTRACT_RESULTS -->
+
+**Conclusions:** Prerequisite probes improved one contrast without reliable confident
+convergence, and adaptive selection failed no-harm. In this implementation, terminal
+accuracy overstated operational convergence. The study does not estimate learning
+gains, efficacy, or human behavioral validity.
 
 ## Keywords
 
@@ -72,15 +59,15 @@ a worked reasoning bridge, or a direct introduction to the target concept. If th
 diagnostic distinction is weak, a confident-looking posterior can spend a limited
 learning budget on the wrong type of resource.
 
-This paper studies that measurement problem inside a working Shanghai high-school
-chemistry diagnostic and recommendation system. The system represents a target
+This paper studies that measurement problem inside a local Shanghai high-school
+chemistry diagnostic and recommendation implementation. The system represents a target
 concept using four model-defined diagnostic states: mastered (M), prerequisite gap
 (P), reasoning-chain instability (C), and unlearned target knowledge (U). The labels
 are operational hypotheses in an engineered model. They are not clinical categories,
 psychometric traits established in people, or observations of human participants.
 Their value depends on whether the response channel can distinguish them within the
 item budget used by the product and whether a state-conditioned downstream action is
-less wasteful than a state-agnostic one.
+better aligned with the model-defined resource role than a state-agnostic one.
 
 The motivating tension is straightforward. For local target questions, the
 production likelihoods assigned to P and U differ by only 0.10. With arbitrarily many
@@ -111,13 +98,14 @@ tests whether the predicted H1 and H2 directions persist under one frozen family
 generator misspecification. The decisions, supports, exclusions, seeds, and interval
 procedures were fixed before the confirmatory run.
 
-Two later components are separated from that primary evidence. Persona v2 tests
-whether multiple language-model providers follow controlled response policies and
-whether blind responses are stable across providers. It is an independent
-response-channel stress test, not an enlargement of the programmatic sample. The P2
-component will illustrate how a diagnostic posterior can be converted into
-model-defined mismatched or uncovered minutes within a small trusted resource library.
-Neither component is allowed to alter H1-H4.
+Two later components are separated from that primary evidence. Persona v2 estimates
+paired deficit-control shifts in answer-state composition under controlled prompts and
+tests blind response robustness across language-model providers. Target-policy
+compliance is available only as a sparse six-row descriptive check. Persona v2 is an
+independent response-channel stress test, not an enlargement of the programmatic
+sample. P2 illustrates how diagnostic posteriors map to model-defined mechanically
+mismatched selected minutes and missed available-supply minutes within a small trusted
+resource library. Neither component is allowed to alter H1-H4.
 
 The research questions are:
 
@@ -132,17 +120,24 @@ The research questions are:
 4. On the same target support, how large is the gap between a correct terminal argmax
    and a correct confidence-based stop, and what selector behavior is associated with
    that gap?
+5. Secondarily and exploratorily, how do paired deficit-control answer states shift
+   under controlled prompts, and how robust are blind terminal responses across
+   providers and repeats?
+6. Secondarily and illustratively, how do fixed diagnostic posteriors map to
+   mechanically mismatched selected minutes, missed available-supply minutes, and
+   structural failure under constrained trusted-video supply?
 
-The contributions are correspondingly bounded. First, we provide a production-bound,
-pre-data comparison of a belief-triggered selector, a local-only ladder, and a fixed
-prerequisite quota. Second, we preserve paired random streams and co-report
-with-replacement stress and no-repeat common-support estimates rather than choosing
+The contributions are correspondingly bounded. First, we provide a repository-frozen,
+pre-observation comparison of a belief-triggered selector, a local-only ladder, and a
+fixed prerequisite quota using the local product implementation. Second, we preserve
+paired random streams and co-report with-replacement stress and no-repeat
+common-support estimates rather than choosing
 the more favorable view. Third, we separate terminal classification from confident
 convergence and show that they can lead to very different assessments of readiness.
 Fourth, we expose the dependence of the findings on one declared response generator
-and on a narrow chemistry catalog. Finally, we define empty, machine-replaceable
-result slots for the dual-condition Persona-v2 study and the illustrative prescription
-analysis so that later evidence cannot be silently narrated into the manuscript.
+and on a narrow chemistry catalog. Finally, we pre-specify bounded secondary analyses
+of answer-state robustness and supply-constrained prescription mapping without
+allowing either to revise the primary decisions.
 
 The claim boundary is central: this is a simulation-only audit of model-defined
 diagnostic states. It does not estimate learning gains, does not establish educational
@@ -156,12 +151,13 @@ tested target set represents an entire chemistry curriculum.
 Computerized adaptive testing has a long history of using current evidence to select
 more informative items. Robbins-Monro formulations, early work on measurement
 efficiency, and educational applications established the basic logic well before the
-present system [@lord1971; @weiss1982; @weiss-kingsbury1984]. Methodological work also
-shows why simulations are useful for comparing item-selection rules when the latent
-condition and response process are controlled [@barrada2010; @han2018]. The present
-study does not offer EIG as a new adaptive-testing algorithm. It uses an existing
-selector as an object of audit and asks whether the selector's probe choices align
-with a separately implemented confidence-based stopping rule.
+present system [@lord1971; @weiss1982; @weiss-kingsbury1984]. Methodological work shows
+why simulations are useful for comparing item-selection rules when the latent
+condition and response process are controlled [@barrada2010; @han2018]. Selection and
+termination are distinct design choices, and stopping rules can change test-length
+and precision tradeoffs [@choi-grady-dodd2011]. The present study does not offer EIG
+as a new algorithm. It audits whether an existing selector aligns with a separately
+implemented confidence-based stopping rule.
 
 Simulation can make failure modes observable because the generating state is known.
 It can also create circular evidence when the same likelihood family drives both the
@@ -180,12 +176,10 @@ knowledge acquisition, forgetting, transfer, or retention. The distinction matte
 a model may update a posterior coherently without its state labels corresponding to
 stable constructs outside the simulator.
 
-The product also contains an FSRS-inspired scheduling projection. Research on spaced
-practice and scheduling optimization addresses a different decision horizon
-[@tabibian2019; @ye2022], while the operational implementation draws on openly
-documented scheduling software [@fsrs-repository; @anki-fsrs-manual]. None of those
-sources validates the diagnostic likelihoods or stopping thresholds audited here.
-Memory scheduling is therefore outside the primary estimands.
+Spaced-practice scheduling concerns a different decision horizon
+[@tabibian2019; @ye2022]. The product's FSRS-inspired projection draws on documented
+software [@fsrs-repository; @anki-fsrs-manual], but neither scheduling research nor
+software documentation validates the likelihoods or stopping thresholds audited here.
 
 ### 2.3 Language-model response simulation
 
@@ -197,25 +191,25 @@ compliance do not show that a response process matches human behavior. Direct te
 of simulated tutoring dialogue have reinforced the distinction between apparent
 student-like language and substantive behavioral validity [@scarlatos2026].
 
-Persona v2 therefore has two conditions with different purposes. Controlled
-manipulation asks whether a provider can follow a stated error policy. Blind response
-robustness removes target labels and tests cross-provider consistency, technical
-failure, abstention, and repeat stability. Neither condition assigns independent
-sample status to provider calls, and neither produces an authenticity score. Any
-cross-model LLM adjudication is an automated descriptive coding procedure, not a
-human reference standard.
+Persona v2 therefore has two conditions with different purposes. Controlled prompts
+estimate paired deficit-control shifts in answer-state composition; the collapsed
+target map prevents general target-policy compliance from being a confirmatory
+outcome. Blind response robustness removes target labels and tests cross-provider
+consistency, technical failure, abstention, and repeat stability. Neither condition
+assigns independent sample status to provider calls or produces an authenticity
+score. Cross-model adjudication is automated descriptive coding, not a human reference
+standard.
 
 ### 2.4 From diagnostic output to remediation
 
 A diagnostic posterior becomes educationally consequential only when it changes an
 action. In the current system, P, C, and U would route to different resource roles.
-This makes terminal state accuracy an incomplete endpoint: two policies with similar
-argmax accuracy may differ in whether they stop, abstain, or allocate limited minutes
-to a mismatched resource. The P2 illustration is designed to expose that translation
-without claiming treatment effects. It maps posterior-conditioned demand onto a
-fixed trusted segment library and reports model-defined mismatched and uncovered
-minutes. Because the library is small and uneven, the illustration is a resource
-audit rather than an optimizer benchmark or an efficacy experiment.
+This makes terminal state accuracy incomplete: policies may differ in stopping,
+abstention, or allocation of limited minutes. Budgeted coverage supplies a relevant
+algorithmic reference point [@khuller-moss-naor1999], but P2 makes no approximation
+claim. It maps posterior-conditioned demand onto a fixed trusted library and reports
+model-defined mechanically mismatched selected and missed available-supply minutes.
+The illustration is a resource audit, not an optimizer benchmark or efficacy study.
 
 ## 3. Methods
 
@@ -336,6 +330,11 @@ within each target, while all arm observations for a sampled replicate remained
 paired. Contrasts were computed inside each resample. Reported quantities include the
 numerator, denominator, target count, weighting rule, and 95% interval.
 
+The target catalog was fixed and was not resampled. These intervals therefore
+describe Monte Carlo uncertainty across simulator replicate streams conditional on
+the audited catalog. They are not uncertainty intervals for a population of chemistry
+targets, learners, schools, or diagnostic systems.
+
 Support identity was checked before interpreting any pair. The 27-target full-set
 terminal and convergence rates are compared only with each other. The 23-target
 eligible-set rates are likewise paired only with the same eligible support. The
@@ -352,30 +351,34 @@ selector-stopping mismatch, but they cannot change the H1-H4 decisions.
 
 Persona v2 is frozen separately from the programmatic study. Its independent cluster
 is `persona_id`, represented in prose as 50 persona clusters. Each cluster contains a
-paired deficit row and control row. Provider and response condition are repeated
-observations; the analysis treats provider as a repeated measure. Calls, retries,
-individual item answers, and model outputs are not independent sample units.
+paired deficit row and control row. Provider, prompt condition, deficit-control arm,
+and item are repeated observations within the cluster; the analysis therefore treats
+provider as a repeated measure alongside the other within-cluster factors. Calls,
+retries, individual item answers, and model outputs are not independent sample units.
 
 The grid crosses 25 failure anchors with low and high response-noise settings. The
 controlled manipulation condition exposes a general observable error policy and uses
-four calibration items. It estimates paired deficit-control differences in
-correctness, error rate, valid-response rate, and abstention. The blind response
-robustness condition removes target misconception labels and target options, reuses
-the calibration items, and adds up to 21 family-distinct diagnostic items. It reports
-terminal-answer agreement, technical and schema failure, abstention, and repeat
-stability. Every response uses a text-only modality.
+four calibration items, but its primary outcomes are the four-state answer composition
+(correct, incorrect, abstention, and technical/schema failure), conditional accuracy
+among complete non-abstaining answers, and paired deficit-control shifts. The blind
+condition removes target misconception labels and target options, reuses the
+calibration items, and adds up to 21 family-distinct diagnostic items. It reports
+terminal-answer agreement, technical/schema failure, abstention, and repeat stability.
+Every response uses a text-only modality.
 
 Before provider observation, exact item/failure/option consensus was achieved for
 only 6 of 100 calibration rows. Because that coverage was below the frozen minimum,
 target-misconception hit rate was removed from the confirmatory Persona-v2 analysis.
-The six mapped rows may appear only as a sparse descriptive check with an explicit
-denominator and support hash. This degradation is an input fact, not a provider
-outcome.
+General target-policy compliance is therefore not a confirmatory outcome. The six
+mapped rows may appear only as a sparse descriptive target-option check with an
+explicit denominator and support hash. This degradation is an input fact, not a
+provider outcome.
 
 The smoke pilot uses two providers and five clusters, is stored separately, and is
 excluded from every main estimate. Main collection attempts six frozen providers.
 Intervals use a 10,000-resample persona-cluster bootstrap that preserves all repeated
-provider and condition observations for a sampled cluster. Cross-model LLM
+provider, prompt-condition, deficit-control, and item observations for a sampled
+cluster. Cross-model LLM
 adjudication receives blind public prompts and candidate outputs without target
 labels, correct options, or mapping status. Allowed labels include unknown and
 insufficient evidence. Agreement and disagreement examples are descriptive; no
@@ -383,34 +386,54 @@ realism or authenticity score is formed.
 
 ### 3.7 Illustrative prescription analysis
 
-The prescription component is deliberately narrow. The audited default resource
-library contains 13 nodes and 68 trusted segments, and each exposed node has only one
-or two distinct physical video parts. This supply is a hard constraint, not a promise
-of broad remediation coverage.
+The parent validated library contains 13 nodes and 68 trusted segments, represented
+as exact chunks. Its exact overlap with the H1-H4 target catalog is much smaller: two
+fixed target strata, eight eligible chunks, and three distinct physical video sources.
+This overlap, not the parent-library count, defines the P2 analytic support.
 
-P2 will compare a truth-state oracle prescription with prescriptions opened from
-diagnostic posteriors under a single budget setting. A greedy heuristic will select
-from the fixed library. Planned outcomes are model-defined mismatched minutes and
-uncovered minutes, reported separately. The exercise is illustrative: it does not
-estimate a treatment effect, claim that a segment teaches the intended concept, or
-benchmark exact optimization. Structural inability to construct a requested arm will
-be reported rather than filled with invented values.
+P2 used matched-generator, budget-15 posteriors for Arms A, B, and C and one-hot truth
+vectors for the oracle. Within each arm, 16 equally weighted truth pairs crossed the
+50 replicate margins from each target, giving 40,000 product-form integration terms
+per arm and 160,000 fixed profile rows overall. Each truth cell has weight 1/16 and
+each within-cell cross-product term has weight 1/2,500. These terms are not independent
+observations, joint learners, or an empirical prevalence distribution.
+
+Under one 600-second budget, the greedy selector maximized posterior-weighted binary
+coverage of target-state role slots, with physical-source deduplication and saturation
+after the first compatible chunk. It ranked feasible choices by marginal utility per
+second, then marginal utility, shorter duration, and lexicographic chunk identifier.
+This is a problem-specific heuristic related to budgeted coverage
+[@khuller-moss-naor1999]; no approximation guarantee, optimality claim, or exact-solver
+comparison is made.
+
+Reported fields separate mechanically mismatched selected minutes, missed
+available-supply minutes, unused budget, and diagnostic structural failure. For Arm C,
+one of the two target nodes is structurally invalid at budget 15; it is masked without
+reading or imputing its stored belief, and the bound report must retain the exact
+failed-node numerator and denominator (1/2). `unobtainable_supply_minutes` remains
+null, not zero, because the frozen model defines no role-compatible P/U dose. The
+finite-design means are illustrative; the 160,000 integration terms receive no learner
+sample size or population-inferential confidence interval. Any separately bound
+bootstrap interval describes simulator Monte Carlo variability only.
 
 ### 3.8 AI-assisted research workflow
 
-Generative AI systems supported study design critique, software implementation and
-testing, simulation execution, data analysis, figure generation, drafting and
-revising prose, and adversarial manuscript review. AI-generated suggestions did not
-enter the confirmatory result surface by prose alone. H1-H4 claims were checked
-against frozen analysis rules, immutable hashes, machine-generated metric records,
-and targeted regression tests. Provider outputs in Persona v2 are research objects
-and are distinct from AI assistance used to conduct the work.
+Generative AI systems supported study-design critique, software implementation and
+testing, simulation execution, data analysis, figure generation, and adversarial
+manuscript review, and generated the initial full manuscript prose and subsequent
+revision proposals. AI-generated suggestions did not enter the confirmatory result
+surface by prose alone. H1-H4 claims were checked against frozen analysis rules,
+immutable hashes, machine-generated metric records, and targeted regression tests.
+Provider outputs in Persona v2 are research objects and are distinct from AI
+assistance used to conduct the work.
 
 The human author set project direction and claim boundaries and retains responsibility
-for source review, result interpretation, journal-policy compliance, and the final
-text. AI systems were not treated as authors, participants, or independent reference
-raters. No credential, private prompt, or machine-local location is part of the
-manuscript evidence surface.
+for source review, result interpretation, journal-policy compliance, and final text.
+AI systems were not treated as authors, participants, or external reference standards.
+Before submission, the human author must critically review and revise the complete
+manuscript and the disclosure must name the systems, model versions, and uses in the
+formula required by the selected journal. No credential, private prompt, or
+machine-local location is part of the manuscript evidence surface.
 
 ## 4. Results
 
@@ -426,6 +449,9 @@ estimands.
 All results below are simulated finite-budget estimates. Matched and misspecified
 conditions remain separate. H1-H4 decisions are reproduced from the frozen decision
 rules rather than reassigned from the apparent favorability of a point estimate.
+Their intervals describe Monte Carlo uncertainty conditional on the fixed 27-target
+catalog or stated subset; they do not support target-population or learner-population
+inference.
 
 ### 4.2 Prerequisite-gap rescue and reasoning-chain harm
 
@@ -473,8 +499,9 @@ C-minus-A harm contrast was 7.0 points (80/1,150; 95% CI 3.7 to 10.3), and A min
 was 8.1 points (93/1,150; 95% CI 5.5 to 10.7). The matched-minus-misspecified
 degradation was 0.0 points for H1 (95% CI -2.6 to 2.5), -1.3 points for the fixed-quota
 harm contrast (95% CI -6.0 to 3.5), and 1.7 points for A minus B (95% CI -2.1 to 5.3).
-Both predicted directions therefore persisted under this perturbation, and H4 was
-supported. The intervals do not show robustness to untested generator families.
+Both predicted directions therefore persisted under this perturbation. Under the
+pre-specified direction-only decision rule, H4 was supported; the intervals do not
+show robustness to untested generator families.
 
 ![Figure 3. Matched and misspecified contrast estimates. The perturbation is one declared synthetic sensitivity condition.](generated/fig-matched-vs-misspecified-png-39c4270e4169.png)
 
@@ -511,10 +538,11 @@ interpretation, not a randomized mechanism test, and it does not revise H1.
 No outcome estimate is reported in this slot. Insert only machine-bound main-analysis estimates after lifecycle, clustering, leakage, and pilot-exclusion checks pass.
 <!-- END RESULT SLOT: PERSONA_V2_DUAL -->
 
-The methods above define how controlled compliance, blind agreement, technical
-failure, abstention, and repeat stability will be reported. Until a bound analysis
-artifact is inserted, the manuscript makes no provider comparison and displays no
-Persona-v2 figure.
+The table and compact figure report paired controlled answer-state composition and
+shifts, blind agreement, technical/schema failure, abstention, and repeat stability
+only for lifecycle-eligible provider cells. General target-policy compliance is not a
+confirmatory outcome; the six mapped rows remain sparse descriptive evidence. These
+are response-channel stress estimates, not evidence of human behavioral validity.
 
 ### 4.6 Illustrative prescription result slot
 
@@ -522,9 +550,12 @@ Persona-v2 figure.
 No outcome estimate is reported in this slot. Insert only machine-bound illustrative estimates with supply limits and structural failures preserved.
 <!-- END RESULT SLOT: P2_ILLUSTRATIVE -->
 
-The absence of an estimate is not a null finding. It prevents the known 13-node,
-68-segment resource constraint from being converted into an unsupported statement
-about mismatched or uncovered minutes.
+The parent boundary is 13 nodes and 68 trusted exact chunks, but the analytic support
+is fixed at two target strata, eight eligible chunks, and three physical sources. The
+bound report must preserve the 160,000 weighted product-form integration rows as
+non-independent analytic terms, retain Arm C's one structurally failed target out of
+two, and leave `unobtainable_supply_minutes` null. These fields do not measure learning
+benefit, harm, or learner-population effects.
 
 ## 5. Discussion
 
@@ -548,9 +579,10 @@ not imply that the adaptive policy was harmless.
 H3 confirmed that the adaptive path improved aggregate terminal accuracy and reached
 confidence sooner than the local ladder across the full state grid. That advantage
 coexisted with poor P correct convergence. Aggregate adaptive efficiency can therefore
-hide a state-specific failure that matters for remediation routing. H4 further showed
-that the predicted rescue and fixed-quota harm directions survived one generator
-perturbation, but the design provides no warrant to generalize beyond that family.
+hide a state-specific failure that matters for remediation routing. The direction-only
+H4 check found that the predicted rescue and fixed-quota harm directions survived one
+generator perturbation, but the design provides no warrant to generalize beyond that
+family.
 
 ### 5.2 Why terminal accuracy is insufficient
 
@@ -581,17 +613,16 @@ under the model.
 Programmatic simulation supplies known generating states and exact pairing, which
 makes it the strongest evidence in this paper for internal behavior. It cannot answer
 whether language models or people produce the assumed response patterns. Persona v2
-addresses only the narrower question of response-channel robustness: can different
-providers follow a controlled behavior constraint, and do blind outputs remain stable
-when target labels are hidden?
+addresses only the narrower question of response-channel robustness: do controlled
+prompts produce paired deficit-control shifts in answer-state composition, and do
+blind outputs remain stable when target labels are hidden?
 
-The two-condition separation prevents prompt compliance from being mistaken for
-construct validity. Strong controlled differences may show that an instruction was
-followed; they would not show that the induced errors resemble those of students.
-Blind cross-provider agreement may reveal a robust model response pattern; it would
-not establish that the pattern is educationally correct. Clustering by persona rather
-than by call prevents retries and repeated provider observations from inflating the
-sample size.
+The two-condition separation prevents prompted answer-state shifts from being
+mistaken for construct validity. Even strong shifts would not show that the induced
+errors resemble those of students. Blind cross-provider agreement may reveal a stable
+model response pattern; it would not establish that the pattern is educationally
+correct. Clustering by persona rather than by call prevents retries and repeated
+provider observations from inflating the sample size.
 
 The pre-observation mapping degradation also changes what can be claimed. With exact
 consensus for only six calibration rows, a target-specific misconception hit rate
@@ -602,19 +633,17 @@ repeat stability as defensible response-channel outcomes.
 
 ### 5.4 From posterior error to prescription constraints
 
-The downstream prescription illustration is intended to express diagnostic error in
-the same currency as a limited learning session: minutes assigned to a role that does
-not match the generating state and minutes of required coverage left unserved. This
-translation is model-defined. It does not show that watching a selected segment
-changes knowledge.
+The downstream prescription illustration expresses diagnostic error in a finite time
+currency: mechanically mismatched selected minutes and missed available-supply
+minutes. This translation is model-defined. It does not show that watching a selected
+chunk changes knowledge or that unmodeled P/U demand equals zero.
 
-The resource supply sharply limits the exercise. Only 13 nodes and 68 trusted segments
-are available in the audited default library, with one or two physical parts per
-exposed node. A method that cannot open an Arm-C prescription for a target has a
-structural failure, not a zero-regret outcome. Reporting that failure is scientifically
-more useful than filling the requested budget with weakly matched content. The
-illustrative P2 result slot remains empty until those rules and denominators are
-machine bound.
+The parent library spans 13 nodes and 68 trusted chunks, but the exact analytic overlap
+contains only two target strata, eight chunks, and three physical sources. Arm C's
+inability to open one of those two nodes is a structural failure, not a zero-cost
+outcome. The illustration therefore retains structural failure, missed available
+supply, unused budget, and the null unobtainable-dose field separately. Its weighted
+product-form terms are integration points, not learners or prevalence observations.
 
 ### 5.5 Claim boundaries and use
 
@@ -627,9 +656,10 @@ pedagogically appropriate, or that the system improved achievement.
 The intended use of the evidence is engineering triage. It identifies where richer
 response channels, better item-family coverage, altered stopping logic, or explicit
 abstention deserve evaluation before a larger intervention study. It also supplies a
-reproducible negative result: under the tested finite budgets, the P state remained
-poorly converged despite an adaptive rescue contrast. This is the precise sense in
-which the study documents budget-limited confident-convergence failure.
+locally machine-reproducible negative result conditional on the fixed catalog: under
+the tested finite budgets, the P state remained poorly converged despite an adaptive
+rescue contrast. This is the precise sense in which the study documents
+budget-limited confident-convergence failure.
 
 ## 6. Limitations
 
@@ -654,7 +684,9 @@ which the study documents budget-limited confident-convergence failure.
 5. **Narrow curricular coverage.** Only 27 of 135 graph nodes enter the full
    programmatic grid, and only 23 satisfy the prerequisite-family gate for H1/H2.
    Important chemistry domains and difficult integrated problems remain outside the
-   evidence base.
+   evidence base. Targets were fixed rather than sampled, so bootstrap intervals
+   quantify simulator Monte Carlo uncertainty conditional on this catalog; they are
+   not target-population, learner-population, or school-population intervals.
 
 6. **Sparse pools and structural failures.** Family replenishment permits repeats in
    the broad stress estimand, while no-repeat common supports are small. Arm C also
@@ -666,20 +698,24 @@ which the study documents budget-limited confident-convergence failure.
    rules may behave differently, and the post-hoc explanation has not been tested by
    a frozen stopping-rule intervention.
 
-8. **No human reference labels for response coding.** Planned Persona-v2 coding uses
-   blind cross-model LLM adjudication with unknown and insufficient-evidence options.
-   Agreement between automated judges is descriptive and cannot establish semantic
-   correctness or behavioral realism.
+8. **No human reference labels for response coding.** Persona-v2 coding used blind
+   automated adjudication with unknown and insufficient-evidence options. Any
+   unavailable judge is disclosed and no pairwise statistic is formed without two
+   distinct model families; automated coding cannot establish semantic correctness
+   or behavioral realism.
 
 9. **Independent item responses.** Persona-v2 elicits each response through a frozen
    response-channel protocol rather than modeling persistent memory or learning
-   across a session. The independent unit is 50 persona clusters, with providers and
-   conditions repeated within cluster; provider calls are not additional units.
+   across a session. The independent unit is 50 persona clusters, with provider,
+   prompt condition, deficit-control arm, and item repeated within cluster; provider
+   calls are not additional units. Provider models and APIs can also drift over time,
+   limiting temporal reproducibility despite recorded model identities.
 
 10. **Constrained prescription supply.** The illustrative remediation analysis is
-    limited to 13 nodes and 68 trusted segments, with uneven role coverage and few
-    distinct physical parts. Mismatched and uncovered minutes will describe this
-    library and utility definition, not general remediation quality.
+    drawn from a 13-node, 68-chunk parent library, but its exact support is only two
+    target strata, eight chunks, and three physical sources. Product-form integration
+    terms are not learners, and mechanically mismatched selected or missed
+    available-supply minutes describe only this fixed utility model.
 
 ## 7. Conclusion
 
@@ -689,19 +725,20 @@ a positive P-state rescue contrast relative to a local-only ladder, but it did n
 reach the frozen absolute convergence criterion. Fixed prerequisite insertion harmed
 C relative to the adaptive arm, while the adaptive arm also failed its no-harm test
 against the local ladder. Aggregate adaptive accuracy and speed improved, and the two
-predicted directions persisted under one declared misspecification family.
+directions required by the pre-specified direction-only H4 check persisted under one
+declared misspecification family.
 
 Most importantly, correct terminal state ranking and correct confident convergence
 were far apart on both legitimate supports. That gap, together with the post-hoc
 selector composition, motivates treating item selection and stopping as separate
-objects of evaluation. A system should not convert a terminal argmax into a precise
-remediation label without disclosing whether its own confidence rule passed.
+objects of evaluation. In the audited implementation, the terminal argmax should not
+be converted into a precise remediation label without also reporting whether the
+separate confidence rule passed.
 
-Persona-v2 response-channel results and the P2 prescription illustration are absent
-by design until machine-bound artifacts satisfy their respective gates. Their later
-insertion can extend the robustness and downstream-cost story, but it cannot revise
-the frozen H1-H4 evidence or turn this internal simulation audit into a study of human
-learning.
+Persona-v2 response-channel estimates and the P2 prescription illustration extend the
+audit with secondary robustness and supply-bound downstream-cost evidence. They do not
+revise the frozen H1-H4 decisions, establish human behavioral validity, or turn this
+internal simulation audit into a study of human learning.
 
 ## Declarations
 
@@ -714,11 +751,13 @@ human raters requires a separate ethics, consent, and data-governance determinat
 
 ### Data and code availability
 
-The reproducibility package is designed around frozen plans, versioned source,
+The local reproducibility package contains frozen analysis plans, versioned source,
 hash-bound input manifests, deterministic seeds, raw simulated response envelopes,
-metric registries, figure artifacts, and regression tests. Release contents and
-licensing must be checked against question and video-source rights before any public
-distribution. Credentials and private provider payloads are excluded.
+metric registries, figure artifacts, and regression tests. Public release remains
+gated on a repository destination and a rights review covering question text, video
+metadata, and derived artifacts. Any submission statement must name the approved
+repository or access procedure. Credentials, private provider payloads, and material
+without distribution rights are excluded.
 
 ### Funding
 
@@ -734,12 +773,15 @@ pre-observation freezing, negative-result retention, and machine-bound reporting
 
 Generative AI and AI-assisted technologies were used for study-design critique,
 software implementation and testing, simulation execution, data analysis, figure
-generation, drafting and revising prose, and adversarial manuscript review. Their
-outputs were checked against frozen contracts, source artifacts, automated tests, and
-the stated claim boundaries. AI systems were not treated as authors, human
-participants, or independent reference raters. The human author retains responsibility
-for the accuracy, integrity, interpretation, policy compliance, and final wording of
-the work. Tool-specific disclosure will be conformed to the selected journal's current
-author instructions without implying that one publisher policy applies universally.
+generation, drafting and revising prose, and adversarial manuscript review. They
+generated the initial full manuscript prose and subsequent revision proposals. Outputs
+were checked against frozen contracts, source artifacts, automated tests, and stated
+claim boundaries. AI systems were not treated as authors, human participants, or
+external reference standards. Before
+submission, the human author must critically review and revise the complete manuscript
+and assume responsibility for its accuracy, integrity, interpretation, policy
+compliance, and final wording. The final disclosure must name the systems and model
+versions and follow the selected journal's current formula without implying that one
+publisher policy applies universally.
 
 ## References

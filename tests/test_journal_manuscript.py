@@ -16,6 +16,8 @@ MANUSCRIPT = ROOT / "docs/paper/journal_main.md"
 COVER_LETTER = ROOT / "docs/paper/journal_cover_letter.md"
 REVIEW_MATRIX = ROOT / "docs/paper/reviewer_objections_matrix.md"
 REFERENCES = ROOT / "docs/paper/references.json"
+MAKEFILE = ROOT / "Makefile"
+FINALIZER = ROOT / "experiments/journal_manuscript.py"
 RENDER_SCRIPT = ROOT / "scripts/render_paper_pdf.py"
 PANDOC = Path(shutil.which("pandoc") or "/opt/homebrew/bin/pandoc")
 CHROME = Path(
@@ -101,16 +103,23 @@ def test_journal_results_use_bound_h1_h4_evidence_and_same_support_pairs() -> No
     assert "1043/1150" not in text
 
 
-def test_persona_v2_and_p2_are_explicit_empty_machine_slots() -> None:
+def test_persona_v2_and_p2_are_finalizer_owned_machine_slots() -> None:
+    from experiments import journal_manuscript
+
     text = _text(MANUSCRIPT)
     flat = " ".join(text.split())
 
     persona_slot = _slot(text, "PERSONA_V2_DUAL")
     p2_slot = _slot(text, "P2_ILLUSTRATIVE")
-    for slot in (persona_slot, p2_slot):
-        assert "No outcome estimate is reported in this slot." in slot
-        assert "%" not in slot
-        assert re.search(r"\d", slot) is None
+    abstract_slot = _slot(text, "BOUND_ABSTRACT_RESULTS")
+    for slot in (abstract_slot, persona_slot, p2_slot):
+        assert journal_manuscript.MANUAL_RESULT_NUMBER.search(slot) is None
+    assert journal_manuscript.SLOT_FIELDS == {
+        "BOUND_ABSTRACT_RESULTS": "bound_abstract_results_markdown",
+        "PERSONA_V2_DUAL": "persona_v2_markdown",
+        "P2_ILLUSTRATIVE": "p2_markdown",
+    }
+    assert FINALIZER.is_file()
 
     for statement in (
         "independent response-channel stress test",
@@ -124,6 +133,38 @@ def test_persona_v2_and_p2_are_explicit_empty_machine_slots() -> None:
         "illustrative",
     ):
         assert statement in flat
+
+
+def test_makefile_has_hash_bound_journal_finalize_check_and_pdf_targets() -> None:
+    makefile = _text(MAKEFILE)
+
+    for variable in (
+        "PAPER_JOURNAL_TEMPLATE",
+        "PAPER_JOURNAL_BINDER_GENERATION",
+        "PAPER_JOURNAL_BINDER_GENERATION_ID",
+        "PAPER_JOURNAL_TEMPLATE_SHA256",
+        "PAPER_JOURNAL_FINAL_DIR",
+        "PAPER_JOURNAL_FINAL_MANUSCRIPT",
+        "PAPER_JOURNAL_FINALIZATION_MANIFEST",
+        "PAPER_JOURNAL_PDF",
+        "PAPER_JOURNAL_PDF_METADATA",
+    ):
+        assert re.search(rf"^{variable} \?=", makefile, re.MULTILINE), variable
+    for target in (
+        "paper-journal-finalize:",
+        "paper-journal-check:",
+        "paper-pdf-journal:",
+        "paper-journal-final:",
+    ):
+        assert target in makefile
+    assert "experiments.journal_manuscript finalize" in makefile
+    assert "experiments.journal_manuscript verify" in makefile
+    assert "experiments.journal_manuscript pdf-metadata" in makefile
+    assert "--expected-template-sha256" in makefile
+    assert "--expected-binder-generation-id" in makefile
+    assert "$(PAPER_JOURNAL_FINAL_MANUSCRIPT)" in makefile
+    assert "$(PAPER_JOURNAL_FINALIZATION_MANIFEST)" in makefile
+    assert "$(PAPER_JOURNAL_PDF_METADATA)" in makefile
 
 
 def test_submission_surface_excludes_blacklist_internal_state_and_stale_h5() -> None:
@@ -168,6 +209,40 @@ def test_claim_boundaries_limit_the_study_to_model_defined_simulation() -> None:
         "budget-limited confident-convergence failure",
     ):
         assert statement in flat
+
+
+@pytest.mark.parametrize(
+    "stale_sentence",
+    (
+        "Persona-v2 results will be reported later.",
+        "P2 is reserved for a later version.",
+        "The Persona-v2 slot remains empty.",
+        "Persona-v2 and P2 are absent by design.",
+        "No Persona-v2 outcome enters this version.",
+    ),
+)
+def test_final_manuscript_audit_rejects_result_related_future_or_absence(
+    tmp_path: Path,
+    stale_sentence: str,
+) -> None:
+    from experiments import journal_manuscript
+
+    references = tmp_path / "references.json"
+    references.write_text(
+        json.dumps(
+            {
+                "schema_version": "yher.verified-references.v1",
+                "references": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="pending manuscript"):
+        journal_manuscript.audit_manuscript(
+            f"# Final\n\n{stale_sentence}\n",
+            references_path=references,
+        )
 
 
 def test_manuscript_has_exactly_ten_limitations_and_ai_disclosures() -> None:
@@ -216,13 +291,20 @@ def test_cover_letter_and_reviewer_matrix_are_honest_drafts() -> None:
     assert "[TARGET JOURNAL TO BE SELECTED]" in cover
     assert "does not represent an external submission" in cover
     assert "No human participants were enrolled" in cover
-    assert "Persona-v2 and prescription outcomes are not claimed" in cover
+    flat_cover = " ".join(cover.split())
+    assert (
+        "The secondary Persona-v2 analysis is limited to paired answer-state shifts "
+        "and blind response robustness"
+    ) in flat_cover
+    assert "two-target, supply-bound mechanical illustration" in flat_cover
+    assert "slots that remain empty" not in cover
 
     assert matrix.startswith("# Anticipated Reviewer Objections and Response Matrix")
     assert "| ID | Anticipated objection |" in matrix
     rows = re.findall(r"^\| R\d{2} \|", matrix, re.MULTILINE)
     assert len(rows) >= 12
     assert "Evidence required before insertion" in matrix
+    assert "empty machine result slot" not in matrix
 
 
 @pytest.mark.skipif(not RENDER_TOOLS_AVAILABLE, reason="journal render tools unavailable")
@@ -273,7 +355,7 @@ def test_journal_manuscript_renders_to_a4_submission_surface(tmp_path: Path) -> 
         text=True,
     ).stdout
     for visible in (
-        "When Accurate Terminal Decisions Do Not Converge",
+        "Terminal Accuracy Without Confident Convergence",
         "Structured Abstract",
         "Table 1. Same-support terminal and confident-convergence estimates.",
         "Declaration of Generative AI and AI-assisted Technologies",

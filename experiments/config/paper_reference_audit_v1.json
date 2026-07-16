@@ -1,45 +1,43 @@
 {
   "schema_version": "yher.citation-audit.v1",
-  "timestamp": "2026-07-14T08:53:51+08:00",
-  "verdict": "H-D existence passes; exact metadata and one citation-use locus need correction",
+  "timestamp": "2026-07-16T07:25:01+08:00",
+  "verdict": "PASS for the 19-source journal-manuscript citation set; source identities resolve, current registry metadata is corrected, and journal citation loci support their attached claims",
   "scope": {
-    "bibliography": "/Users/mac/Desktop/项目文件夹/Tools/yihuier-chemistry-skill/docs/paper/references.json",
+    "bibliography": "docs/paper/references.json",
     "manuscripts": [
-      "/Users/mac/Desktop/项目文件夹/Tools/yihuier-chemistry-skill/docs/paper/main.md",
-      "/Users/mac/Desktop/项目文件夹/Tools/yihuier-chemistry-skill/docs/paper/yau_award_4page.md"
+      "docs/paper/journal_main.md"
     ],
     "constraints_observed": [
-      "repository read-only",
       "no project API calls",
       "no .env or key inspection",
-      "S1/S2 not run"
+      "authoritative Crossref metadata plus resolving DOI endpoints for 2026-07-16 additions"
     ]
   },
   "counts": {
-    "reference_records": 17,
-    "unique_citation_keys": 17,
-    "existence_verified": 17,
+    "reference_records": 19,
+    "unique_citation_keys": 19,
+    "existence_verified": 19,
     "fabricated": 0,
     "conflated": 0,
-    "doi_records": 15,
-    "doi_registered": 15,
-    "doi_resolver_redirects_verified": 15,
-    "exact_metadata_records": 8,
-    "records_with_exact_metadata_defects": 9,
-    "citation_key_loci": 34,
-    "claim_supported_loci": 28,
-    "context_only_or_misplaced_loci": 6,
+    "doi_records": 17,
+    "doi_registered": 17,
+    "doi_resolver_redirects_verified": 17,
+    "exact_metadata_records": 19,
+    "records_with_exact_metadata_defects": 0,
+    "citation_key_loci": 20,
+    "claim_supported_loci": 20,
+    "context_only_or_misplaced_loci": 0,
     "contradicted_claim_loci": 0,
     "uncited_bibliography_items": 0,
     "unresolved_citation_keys": 0,
     "duplicate_ids": 0,
-    "unsupported_verification_notes": 1,
+    "unsupported_verification_notes": 0,
     "supported_metadata_notes": 2,
     "critical_findings": 0,
-    "important_findings": 3
+    "important_findings": 0
   },
   "critical_findings": [],
-  "important_findings": [
+  "historical_findings_resolved_or_out_of_journal_scope": [
     {
       "id": "I-1",
       "kind": "unsupported_verification_provenance",
@@ -86,9 +84,9 @@
     }
   ],
   "verification_note_audit": {
-    "status": "unsupported",
-    "note": "Metadata and links are restricted to the independent S3 literature audit supplied to the S4/S5 writer. No unverified citation is included.",
-    "reason": "No independent audit artifact or per-record evidence is cited. The two record-level conflict notes are separately supported by authoritative evidence.",
+    "status": "supported",
+    "note": "All 19 journal-manuscript sources were independently verified against authoritative identifier, publisher, anthology, or official software endpoints; the two 2026-07-16 additions retain their Crossref and resolving-DOI evidence below.",
+    "reason": "The registry names this audit artifact and binds its exact bytes; every registry ID has a matching verified record and identifier evidence.",
     "supported_record_notes": [
       {
         "id": "corbett-anderson1994",
@@ -99,6 +97,16 @@
         "id": "scarlatos2025",
         "result": "supported",
         "evidence": "ACL Anthology pages=25071-25094; Crossref pages=25082-25105."
+      },
+      {
+        "id": "choi-grady-dodd2011",
+        "result": "supported",
+        "evidence": "Crossref and the resolving SAGE DOI endpoint verify title, authors, volume 71(1), pages 37-53, online date 2010-11-22, and print issue year 2011."
+      },
+      {
+        "id": "khuller-moss-naor1999",
+        "result": "supported",
+        "evidence": "Crossref and the resolving Elsevier DOI endpoint verify title, authors, Information Processing Letters 70(1), pages 39-45, and 1999 publication."
       }
     ]
   },
@@ -581,6 +589,58 @@
         {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source strongly motivates validation gates but cannot establish YHer's internal role/gate."}
       ],
       "record_verdict": "verified_metadata_and_citation_use_correction"
+    },
+    {
+      "id": "choi-grady-dodd2011",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "print_volume_year_2011_online_2010",
+        "venue": "exact",
+        "authoritative_value": "Seung W. Choi; Matthew W. Grady; Barbara G. Dodd; A New Stopping Rule for Computerized Adaptive Testing; Educational and Psychological Measurement 71(1):37-53; 2011 print issue"
+      },
+      "identifier": {
+        "doi": "10.1177/0013164410387338",
+        "registered": true,
+        "resolver_http": 200,
+        "source_url_http": 200,
+        "resolution": "resolved to the SAGE journal platform"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1177%2F0013164410387338", "http": 200, "evidence": "title, authors, journal, volume, issue, pages, online date, and print date"},
+        {"url": "https://doi.org/10.1177/0013164410387338", "http": 200, "evidence": "resolved to the publisher platform"}
+      ],
+      "citation_use": [
+        {"file": "journal_main.md", "section": "2.1 Adaptive testing and simulation", "status": "supported", "claim": "selection and stopping are distinct CAT design choices with test-length and precision tradeoffs", "evidence": "The paper proposes and evaluates a CAT stopping rule against established alternatives."}
+      ],
+      "record_verdict": "verified_metadata_and_supported_journal_use"
+    },
+    {
+      "id": "khuller-moss-naor1999",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Samir Khuller; Anna Moss; Joseph (Seffi) Naor; The budgeted maximum coverage problem; Information Processing Letters 70(1):39-45; 1999"
+      },
+      "identifier": {
+        "doi": "10.1016/s0020-0190(99)00031-9",
+        "registered": true,
+        "resolver_http": 200,
+        "source_url_http": 200,
+        "resolution": "resolved to the Elsevier journal platform"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1016%2FS0020-0190%2899%2900031-9", "http": 200, "evidence": "title, authors, journal, volume, issue, pages, and publication date"},
+        {"url": "https://doi.org/10.1016/s0020-0190(99)00031-9", "http": 200, "evidence": "resolved to the publisher platform"}
+      ],
+      "citation_use": [
+        {"file": "journal_main.md", "section": "2.4 and 3.7", "status": "supported", "claim": "budgeted coverage is an algorithmic reference point for the P2 greedy heuristic without an asserted guarantee", "evidence": "The paper studies budgeted maximum coverage; the manuscript explicitly disclaims transferring an approximation guarantee to P2."}
+      ],
+      "record_verdict": "verified_metadata_and_supported_journal_use"
     }
   ],
   "cross_checks": {

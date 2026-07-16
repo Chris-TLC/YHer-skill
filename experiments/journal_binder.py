@@ -13,6 +13,7 @@ import math
 import os
 import re
 import shutil
+import stat
 import tempfile
 from pathlib import Path
 from types import MappingProxyType
@@ -56,6 +57,55 @@ P2_PROHIBITED_CLAIM_FIELDS = frozenset(
         "human_population_effect",
         "actual_harm_or_benefit_minutes",
     }
+)
+
+PERSONA_PROVIDERS = (
+    "deepseek",
+    "glm",
+    "kimi",
+    "minimax",
+    "doubao",
+    "tongyi",
+)
+PERSONA_CONTROLLED_STATES = (
+    "correct_answer",
+    "incorrect_answer",
+    "abstention",
+    "technical_or_schema_failure",
+)
+PERSONA_EFFECT_ORIENTATIONS = {
+    "conditional_answer_accuracy": "control_minus_deficit",
+    "correct_response_yield": "control_minus_deficit",
+    "incorrect_response_yield": "deficit_minus_control",
+    "abstention_yield": "deficit_minus_control",
+    "technical_or_schema_failure_yield": "deficit_minus_control",
+}
+PERSONA_PUBLICATION_ARTIFACTS = {
+    "tables": (
+        "provider_lifecycle.csv",
+        "controlled_composition.csv",
+        "controlled_paired_effects.csv",
+        "blind_agreement.csv",
+        "blind_stability.csv",
+    ),
+    "figure_data": (
+        "figure_data/controlled_composition.csv",
+        "figure_data/blind_agreement.csv",
+        "figure_data/blind_stability.csv",
+    ),
+    "figures": (
+        "figures/controlled_composition.png",
+        "figures/controlled_composition.svg",
+        "figures/blind_terminal_agreement.png",
+        "figures/blind_terminal_agreement.svg",
+        "figures/blind_output_stability.png",
+        "figures/blind_output_stability.svg",
+    ),
+}
+P2_PUBLICATION_ARTIFACTS = (
+    "figure_data.json",
+    "p2_supply_bound_illustration.png",
+    "p2_supply_bound_illustration.svg",
 )
 
 PAIR_SPECS = {
@@ -744,12 +794,31 @@ def _denominator_definition(metric_id: str, row: Mapping[str, Any]) -> str:
     )
 
 
+def _strict_json_bytes(data: bytes, *, label: str) -> Any:
+    def pairs(rows: list[tuple[str, Any]]) -> dict[str, Any]:
+        value: dict[str, Any] = {}
+        for key, item in rows:
+            if key in value:
+                raise BinderError(f"{label} contains a duplicate JSON key: {key}")
+            value[key] = item
+        return value
+
+    def reject_constant(value: str) -> None:
+        raise BinderError(f"{label} contains a non-finite JSON constant: {value}")
+
+    try:
+        return json.loads(
+            data,
+            object_pairs_hook=pairs,
+            parse_constant=reject_constant,
+        )
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise BinderError(f"{label} is not valid JSON") from exc
+
+
 def _load_registry(path: Path) -> tuple[dict[str, Mapping[str, Any]], dict[str, str]]:
     raw_bytes = path.read_bytes()
-    try:
-        payload = json.loads(raw_bytes)
-    except json.JSONDecodeError as exc:
-        raise BinderError("metric registry is not valid JSON") from exc
+    payload = _strict_json_bytes(raw_bytes, label="metric registry")
     if not isinstance(payload, list):
         raise BinderError("metric registry root must be a list")
     by_id: dict[str, Mapping[str, Any]] = {}
@@ -767,10 +836,7 @@ def _load_registry(path: Path) -> tuple[dict[str, Mapping[str, Any]], dict[str, 
 
 def _load_json_object(path: Path, *, label: str) -> tuple[Mapping[str, Any], bytes]:
     raw_bytes = path.read_bytes()
-    try:
-        payload = json.loads(raw_bytes)
-    except json.JSONDecodeError as exc:
-        raise BinderError(f"{label} is not valid JSON") from exc
+    payload = _strict_json_bytes(raw_bytes, label=label)
     if not isinstance(payload, Mapping):
         raise BinderError(f"{label} root must be an object")
     return payload, raw_bytes
@@ -1086,6 +1152,1202 @@ def _same_support_pairs(metrics: Mapping[str, Mapping[str, Any]]) -> dict[str, A
     return output
 
 
+def _persona_number(
+    value: Any,
+    *,
+    label: str,
+    minimum: float | None = None,
+    maximum: float | None = None,
+) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise BinderError(f"Persona-v2 {label} is not numeric")
+    number = float(value)
+    if not math.isfinite(number):
+        raise BinderError(f"Persona-v2 {label} is not finite")
+    if minimum is not None and number < minimum:
+        raise BinderError(f"Persona-v2 {label} is below its valid range")
+    if maximum is not None and number > maximum:
+        raise BinderError(f"Persona-v2 {label} is above its valid range")
+    return number
+
+
+def _persona_integer(
+    value: Any,
+    *,
+    label: str,
+    minimum: int = 0,
+    maximum: int | None = None,
+) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise BinderError(f"Persona-v2 {label} is not an integer")
+    if value < minimum or (maximum is not None and value > maximum):
+        raise BinderError(f"Persona-v2 {label} is outside its valid range")
+    return value
+
+
+def _persona_same_number(left: Any, right: Any) -> bool:
+    if left is None or right is None:
+        return left is right
+    try:
+        return math.isclose(float(left), float(right), rel_tol=0.0, abs_tol=1e-12)
+    except (TypeError, ValueError):
+        return False
+
+
+def _validate_persona_ci(
+    value: Any,
+    *,
+    point: Any,
+    label: str,
+) -> list[float] | None:
+    if point is None:
+        if value is not None:
+            raise BinderError(f"Persona-v2 {label} CI exists without an estimate")
+        return None
+    estimate = _persona_number(point, label=f"{label} estimate")
+    if not isinstance(value, list) or len(value) != 2:
+        raise BinderError(f"Persona-v2 {label} CI is invalid")
+    low = _persona_number(value[0], label=f"{label} CI low")
+    high = _persona_number(value[1], label=f"{label} CI high")
+    if low > estimate or estimate > high:
+        raise BinderError(f"Persona-v2 {label} CI does not contain its estimate")
+    return [low, high]
+
+
+def _validate_persona_bootstrap(
+    value: Any,
+    *,
+    label: str,
+    point: Any,
+    provider_keys: set[str] | None = None,
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise BinderError(f"Persona-v2 {label} bootstrap is missing")
+    _assert_exact_keys(
+        value,
+        {
+            "point_estimate",
+            "ci95",
+            "seed",
+            "resamples",
+            "defined_resamples",
+            "undefined_resamples",
+            "provider_equal_weighting",
+            "provider_point_estimates",
+        },
+        f"Persona-v2 {label} bootstrap",
+    )
+    if (
+        value.get("seed") != 2026071503
+        or value.get("resamples") != 10000
+        or value.get("provider_equal_weighting") is not True
+    ):
+        raise BinderError(f"Persona-v2 {label} bootstrap contract drifted")
+    defined = _persona_integer(
+        value.get("defined_resamples"),
+        label=f"{label} defined resamples",
+        maximum=10000,
+    )
+    undefined = _persona_integer(
+        value.get("undefined_resamples"),
+        label=f"{label} undefined resamples",
+        maximum=10000,
+    )
+    if defined + undefined != 10000:
+        raise BinderError(f"Persona-v2 {label} bootstrap resamples do not reconcile")
+    if not _persona_same_number(value.get("point_estimate"), point):
+        raise BinderError(f"Persona-v2 {label} bootstrap estimate drifted")
+    _validate_persona_ci(value.get("ci95"), point=point, label=f"{label} bootstrap")
+    points = value.get("provider_point_estimates")
+    if not isinstance(points, Mapping):
+        raise BinderError(f"Persona-v2 {label} provider points are missing")
+    if provider_keys is not None and set(points) != provider_keys:
+        raise BinderError(f"Persona-v2 {label} provider-point roster drifted")
+    for provider, provider_point in points.items():
+        if not isinstance(provider, str) or not provider:
+            raise BinderError(f"Persona-v2 {label} provider-point key is invalid")
+        if provider_point is not None:
+            _persona_number(provider_point, label=f"{label} provider point")
+    return dict(value)
+
+
+def _persona_asset(
+    *,
+    path: Path,
+    root: Path,
+    digest: str,
+    size: int,
+) -> dict[str, Any]:
+    return {
+        "relative_path": path.relative_to(root).as_posix(),
+        "source_path": str(path.resolve()),
+        "sha256": digest,
+        "bytes": size,
+    }
+
+
+def _source_artifact(path: Path, *, relative_path: str | None = None) -> dict[str, Any]:
+    data = path.read_bytes()
+    return {
+        "relative_path": relative_path or path.name,
+        "source_path": str(path.resolve()),
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "bytes": len(data),
+    }
+
+
+def _validate_persona_controlled(
+    value: Any,
+    *,
+    providers: Sequence[str],
+    lifecycle: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise BinderError("Persona-v2 controlled result surface is missing")
+    _assert_exact_keys(
+        value,
+        {"eligible_providers", "excluded_providers", "composition", "paired_effects"},
+        "Persona-v2 controlled results",
+    )
+    provider_list = list(providers)
+    eligible = [
+        provider
+        for provider in provider_list
+        if lifecycle[provider].get("controlled_eligible") is True
+    ]
+    excluded = [provider for provider in provider_list if provider not in eligible]
+    if value.get("eligible_providers") != eligible or value.get("excluded_providers") != excluded:
+        raise BinderError("Persona-v2 controlled eligibility differs from lifecycle")
+
+    composition = value.get("composition")
+    if not isinstance(composition, Mapping):
+        raise BinderError("Persona-v2 controlled composition is missing")
+    _assert_exact_keys(
+        composition,
+        {
+            "states",
+            "expected_tasks_per_provider",
+            "by_provider",
+            "aggregate_counts",
+            "all_provider_counts",
+        },
+        "Persona-v2 controlled composition",
+    )
+    if composition.get("states") != list(PERSONA_CONTROLLED_STATES):
+        raise BinderError("Persona-v2 controlled state roster drifted")
+    by_provider = composition.get("by_provider")
+    if not isinstance(by_provider, list) or [row.get("provider") for row in by_provider if isinstance(row, Mapping)] != provider_list:
+        raise BinderError("Persona-v2 controlled provider roster drifted")
+    recomputed_all = {state: 0 for state in PERSONA_CONTROLLED_STATES}
+    recomputed_eligible = {state: 0 for state in PERSONA_CONTROLLED_STATES}
+    expected_per_provider: int | None = None
+    for provider_row in by_provider:
+        if not isinstance(provider_row, Mapping):
+            raise BinderError("Persona-v2 controlled provider row is invalid")
+        _assert_exact_keys(provider_row, {"provider", "arms"}, "Persona-v2 controlled provider row")
+        provider = str(provider_row["provider"])
+        arms = provider_row.get("arms")
+        if not isinstance(arms, list) or [row.get("response_arm") for row in arms if isinstance(row, Mapping)] != ["deficit", "control"]:
+            raise BinderError("Persona-v2 controlled arm roster drifted")
+        provider_total = 0
+        for arm_row in arms:
+            if not isinstance(arm_row, Mapping):
+                raise BinderError("Persona-v2 controlled arm row is invalid")
+            _assert_exact_keys(
+                arm_row,
+                {
+                    "response_arm",
+                    "expected_denominator",
+                    "counts",
+                    "rates",
+                    "conditional_answer_accuracy",
+                    "conditional_answer_denominator",
+                },
+                "Persona-v2 controlled arm row",
+            )
+            denominator = _persona_integer(
+                arm_row.get("expected_denominator"), label="controlled arm denominator"
+            )
+            counts = arm_row.get("counts")
+            rates = arm_row.get("rates")
+            if not isinstance(counts, Mapping) or set(counts) != set(PERSONA_CONTROLLED_STATES):
+                raise BinderError("Persona-v2 controlled count state set drifted")
+            if not isinstance(rates, Mapping) or set(rates) != set(PERSONA_CONTROLLED_STATES):
+                raise BinderError("Persona-v2 controlled rate state set drifted")
+            normalized_counts = {
+                state: _persona_integer(counts[state], label=f"controlled {state} count")
+                for state in PERSONA_CONTROLLED_STATES
+            }
+            if sum(normalized_counts.values()) != denominator:
+                raise BinderError("Persona-v2 controlled count denominator does not reconcile")
+            for state, count in normalized_counts.items():
+                rate = _persona_number(
+                    rates[state], label=f"controlled {state} rate", minimum=0.0, maximum=1.0
+                )
+                if not math.isclose(rate, count / denominator, abs_tol=1e-12):
+                    raise BinderError("Persona-v2 controlled rate denominator does not reconcile")
+                recomputed_all[state] += count
+                if provider in eligible:
+                    recomputed_eligible[state] += count
+            answered = normalized_counts["correct_answer"] + normalized_counts["incorrect_answer"]
+            if arm_row.get("conditional_answer_denominator") != answered:
+                raise BinderError("Persona-v2 controlled conditional denominator drifted")
+            expected_accuracy = normalized_counts["correct_answer"] / answered if answered else None
+            if not _persona_same_number(arm_row.get("conditional_answer_accuracy"), expected_accuracy):
+                raise BinderError("Persona-v2 controlled conditional accuracy drifted")
+            provider_total += denominator
+        if expected_per_provider is None:
+            expected_per_provider = provider_total
+        elif provider_total != expected_per_provider:
+            raise BinderError("Persona-v2 controlled provider denominators differ")
+    if (
+        composition.get("expected_tasks_per_provider") != expected_per_provider
+        or composition.get("all_provider_counts") != recomputed_all
+        or composition.get("aggregate_counts") != recomputed_eligible
+    ):
+        raise BinderError("Persona-v2 controlled composition totals do not reconcile")
+
+    effects = value.get("paired_effects")
+    if not isinstance(effects, list) or len(effects) != len(PERSONA_EFFECT_ORIENTATIONS):
+        raise BinderError("Persona-v2 controlled paired effect table is incomplete")
+    effect_index: dict[str, dict[str, Any]] = {}
+    for effect in effects:
+        if not isinstance(effect, Mapping):
+            raise BinderError("Persona-v2 controlled paired effect row is invalid")
+        _assert_exact_keys(
+            effect,
+            {
+                "metric_id",
+                "orientation",
+                "estimate",
+                "ci95",
+                "eligible_providers",
+                "paired_persona_denominators",
+                "paired_persona_denominator_range",
+                "by_provider",
+                "bootstrap",
+            },
+            "Persona-v2 controlled paired effect row",
+        )
+        metric = str(effect.get("metric_id") or "")
+        if metric in effect_index or PERSONA_EFFECT_ORIENTATIONS.get(metric) != effect.get("orientation"):
+            raise BinderError("Persona-v2 controlled paired effect metric or orientation drifted")
+        if effect.get("eligible_providers") != eligible:
+            raise BinderError("Persona-v2 controlled paired effect eligibility drifted")
+        estimate = effect.get("estimate")
+        if estimate is not None:
+            _persona_number(estimate, label=f"controlled {metric} estimate", minimum=-1.0, maximum=1.0)
+        _validate_persona_ci(effect.get("ci95"), point=estimate, label=f"controlled {metric}")
+        denominators = effect.get("paired_persona_denominators")
+        if not isinstance(denominators, Mapping) or set(denominators) != set(eligible):
+            raise BinderError("Persona-v2 controlled paired denominator roster drifted")
+        normalized_denominators = {
+            provider: _persona_integer(
+                denominators[provider],
+                label=f"controlled {metric} paired persona denominator",
+                maximum=50,
+            )
+            for provider in eligible
+        }
+        expected_range = (
+            [min(normalized_denominators.values()), max(normalized_denominators.values())]
+            if normalized_denominators
+            else None
+        )
+        if effect.get("paired_persona_denominator_range") != expected_range:
+            raise BinderError("Persona-v2 controlled paired denominator range drifted")
+        provider_rows = effect.get("by_provider")
+        if not isinstance(provider_rows, list) or [row.get("provider") for row in provider_rows if isinstance(row, Mapping)] != provider_list:
+            raise BinderError("Persona-v2 controlled provider effect roster drifted")
+        for provider_row in provider_rows:
+            if not isinstance(provider_row, Mapping):
+                raise BinderError("Persona-v2 controlled provider effect row is invalid")
+            _assert_exact_keys(
+                provider_row,
+                {
+                    "provider",
+                    "included_in_aggregate",
+                    "estimate",
+                    "ci95",
+                    "paired_persona_denominator",
+                    "bootstrap",
+                },
+                "Persona-v2 controlled provider effect row",
+            )
+            provider = str(provider_row["provider"])
+            if provider_row.get("included_in_aggregate") is not (provider in eligible):
+                raise BinderError("Persona-v2 controlled provider effect inclusion drifted")
+            denominator = _persona_integer(
+                provider_row.get("paired_persona_denominator"),
+                label=f"controlled {metric} provider denominator",
+                maximum=50,
+            )
+            if provider in eligible and denominator != normalized_denominators[provider]:
+                raise BinderError("Persona-v2 controlled provider denominator drifted")
+            provider_estimate = provider_row.get("estimate")
+            if provider_estimate is not None:
+                _persona_number(provider_estimate, label=f"controlled {metric} provider estimate", minimum=-1.0, maximum=1.0)
+            _validate_persona_ci(provider_row.get("ci95"), point=provider_estimate, label=f"controlled {metric} provider")
+            _validate_persona_bootstrap(
+                provider_row.get("bootstrap"),
+                label=f"controlled {metric} {provider}",
+                point=provider_estimate,
+                provider_keys={provider},
+            )
+        _validate_persona_bootstrap(
+            effect.get("bootstrap"),
+            label=f"controlled {metric} aggregate",
+            point=estimate,
+            provider_keys=set(eligible),
+        )
+        effect_index[metric] = dict(effect)
+    if set(effect_index) != set(PERSONA_EFFECT_ORIENTATIONS):
+        raise BinderError("Persona-v2 controlled paired effect metric set drifted")
+    return dict(value)
+
+
+def _validate_persona_blind(
+    value: Any,
+    *,
+    providers: Sequence[str],
+    lifecycle: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise BinderError("Persona-v2 blind result surface is missing")
+    _assert_exact_keys(
+        value,
+        {
+            "primary_terminal_definition",
+            "terminal_subject_count",
+            "terminal_categories",
+            "provider_schema",
+            "eligible_providers",
+            "excluded_providers",
+            "agreement",
+            "multi_provider_descriptive",
+            "technical_or_schema_failure_rate",
+            "stability",
+            "stability_provider_equal_aggregate",
+        },
+        "Persona-v2 blind results",
+    )
+    provider_list = list(providers)
+    eligible = [
+        provider
+        for provider in provider_list
+        if lifecycle[provider].get("blind_eligible") is True
+    ]
+    excluded = [provider for provider in provider_list if provider not in eligible]
+    if (
+        value.get("primary_terminal_definition") != "frozen_final_blind_item"
+        or value.get("terminal_subject_count") != 100
+        or value.get("eligible_providers") != eligible
+        or value.get("excluded_providers") != excluded
+    ):
+        raise BinderError("Persona-v2 blind denominator or lifecycle eligibility drifted")
+    categories = value.get("terminal_categories")
+    if not isinstance(categories, list) or "NC" not in categories or len(categories) != len(set(categories)):
+        raise BinderError("Persona-v2 blind terminal category roster is invalid")
+
+    provider_schema = value.get("provider_schema")
+    if not isinstance(provider_schema, Mapping) or set(provider_schema) != set(provider_list):
+        raise BinderError("Persona-v2 blind provider schema roster drifted")
+    primary_denominator: int | None = None
+    for provider in provider_list:
+        row = provider_schema[provider]
+        if not isinstance(row, Mapping):
+            raise BinderError("Persona-v2 blind provider schema row is invalid")
+        _assert_exact_keys(
+            row,
+            {
+                "expected_primary_blind_tasks",
+                "invalid_schema_count",
+                "invalid_schema_fraction",
+                "strictly_above_half",
+                "invalid_schema_strictly_above_half",
+                "excluded_from_blind_aggregate",
+                "complete_cluster_count",
+                "exclusion_reasons",
+            },
+            "Persona-v2 blind provider schema row",
+        )
+        expected = _persona_integer(row.get("expected_primary_blind_tasks"), label="blind primary denominator", minimum=1)
+        invalid = _persona_integer(row.get("invalid_schema_count"), label="blind invalid-schema count", maximum=expected)
+        fraction = _persona_number(row.get("invalid_schema_fraction"), label="blind invalid-schema fraction", minimum=0.0, maximum=1.0)
+        above = fraction > 0.5
+        if (
+            not math.isclose(fraction, invalid / expected, abs_tol=1e-12)
+            or row.get("strictly_above_half") is not above
+            or row.get("invalid_schema_strictly_above_half") is not above
+            or row.get("excluded_from_blind_aggregate") is not (provider in excluded)
+            or row.get("complete_cluster_count") != lifecycle[provider].get("blind_complete_cluster_count")
+            or row.get("exclusion_reasons") != lifecycle[provider].get("blind_exclusion_reasons")
+        ):
+            raise BinderError("Persona-v2 blind provider schema does not reconcile")
+        if primary_denominator is None:
+            primary_denominator = expected
+        elif expected != primary_denominator:
+            raise BinderError("Persona-v2 blind primary denominators differ")
+
+    agreement = value.get("agreement")
+    if not isinstance(agreement, Mapping):
+        raise BinderError("Persona-v2 blind agreement is missing")
+    if agreement.get("status") != ("estimated" if len(eligible) >= 2 else "not_estimable"):
+        raise BinderError("Persona-v2 blind agreement status drifted")
+    if agreement.get("nc_retained") is not True or agreement.get("categories") != categories:
+        raise BinderError("Persona-v2 blind agreement NC policy drifted")
+    if set(agreement.get("providers") or ()) != set(eligible):
+        raise BinderError("Persona-v2 blind agreement provider roster drifted")
+    subjects = agreement.get("subjects")
+    if not isinstance(subjects, list) or len(subjects) != 100 or len(subjects) != len(set(subjects)):
+        raise BinderError("Persona-v2 blind agreement subject denominator drifted")
+    pairs = agreement.get("pairs")
+    expected_pairs = len(eligible) * (len(eligible) - 1) // 2
+    if not isinstance(pairs, list) or len(pairs) != expected_pairs:
+        raise BinderError("Persona-v2 blind agreement pair table is incomplete")
+    seen_pairs: set[frozenset[str]] = set()
+    for row in pairs:
+        if not isinstance(row, Mapping):
+            raise BinderError("Persona-v2 blind agreement row is invalid")
+        left = str(row.get("provider_left") or "")
+        right = str(row.get("provider_right") or "")
+        key = frozenset((left, right))
+        denominator = _persona_integer(row.get("denominator"), label="blind agreement denominator")
+        numerator = _persona_integer(row.get("exact_agreement_numerator"), label="blind agreement numerator", maximum=denominator)
+        estimate = _persona_number(row.get("exact_agreement"), label="blind agreement estimate", minimum=0.0, maximum=1.0)
+        if (
+            left == right
+            or left not in eligible
+            or right not in eligible
+            or key in seen_pairs
+            or denominator != 100
+            or not math.isclose(estimate, numerator / denominator, abs_tol=1e-12)
+        ):
+            raise BinderError("Persona-v2 blind agreement denominator or pair drifted")
+        kappa = row.get("cohen_kappa")
+        if kappa is not None:
+            _persona_number(kappa, label="blind Cohen kappa", minimum=-1.0, maximum=1.0)
+        _validate_persona_ci(row.get("exact_agreement_ci95"), point=estimate, label="blind agreement")
+        _validate_persona_bootstrap(
+            row.get("exact_agreement_bootstrap"),
+            label=f"blind agreement {left}/{right}",
+            point=estimate,
+        )
+        seen_pairs.add(key)
+
+    descriptive = value.get("multi_provider_descriptive")
+    if not isinstance(descriptive, Mapping) or set(descriptive.get("rectangular_providers") or ()) != set(eligible) or descriptive.get("subjects") != 100:
+        raise BinderError("Persona-v2 blind descriptive denominator drifted")
+    if len(eligible) >= 2:
+        numerator = _persona_integer(descriptive.get("unanimous_numerator"), label="blind unanimous numerator", maximum=100)
+        fraction = _persona_number(descriptive.get("unanimous_fraction"), label="blind unanimous fraction", minimum=0.0, maximum=1.0)
+        if descriptive.get("status") != "estimated" or not math.isclose(fraction, numerator / 100, abs_tol=1e-12):
+            raise BinderError("Persona-v2 blind unanimous fraction drifted")
+
+    failure = value.get("technical_or_schema_failure_rate")
+    if not isinstance(failure, Mapping):
+        raise BinderError("Persona-v2 blind failure-rate surface is missing")
+    estimate = failure.get("estimate")
+    if estimate is not None:
+        _persona_number(estimate, label="blind failure rate", minimum=0.0, maximum=1.0)
+    _validate_persona_ci(failure.get("ci95"), point=estimate, label="blind failure rate")
+    _validate_persona_bootstrap(
+        failure.get("bootstrap"),
+        label="blind failure rate",
+        point=estimate,
+        provider_keys=set(eligible),
+    )
+
+    stability = value.get("stability")
+    if not isinstance(stability, list) or [row.get("provider") for row in stability if isinstance(row, Mapping)] != provider_list:
+        raise BinderError("Persona-v2 blind stability provider roster drifted")
+    for row in stability:
+        if not isinstance(row, Mapping):
+            raise BinderError("Persona-v2 blind stability row is invalid")
+        provider = str(row.get("provider") or "")
+        expected = _persona_integer(row.get("expected_pairs"), label="blind stability expected pairs")
+        answer_denominator = _persona_integer(row.get("answer_agreement_denominator"), label="blind stability answer denominator", maximum=expected)
+        answer_numerator = row.get("answer_agreement_numerator")
+        answer = row.get("answer_agreement")
+        if provider in eligible:
+            numerator = _persona_integer(answer_numerator, label="blind stability answer numerator", maximum=answer_denominator)
+            answer_value = _persona_number(answer, label="blind stability answer", minimum=0.0, maximum=1.0)
+            if row.get("status") != "estimated" or answer_denominator != expected or not math.isclose(answer_value, numerator / answer_denominator, abs_tol=1e-12):
+                raise BinderError("Persona-v2 blind stability answer denominator drifted")
+        elif answer_numerator is not None or answer is not None or answer_denominator != 0:
+            raise BinderError("Persona-v2 blind ineligible stability row is estimable")
+        if row.get("excluded_from_blind_aggregate") is not (provider in excluded):
+            raise BinderError("Persona-v2 blind stability lifecycle inclusion drifted")
+        complete_denominator = _persona_integer(row.get("canonical_complete_pair_denominator"), label="blind stability canonical denominator", maximum=expected)
+        complete_numerator = _persona_integer(row.get("canonical_complete_pair_numerator"), label="blind stability canonical numerator", maximum=complete_denominator)
+        canonical = row.get("canonical_complete_pair_stability")
+        expected_canonical = complete_numerator / complete_denominator if complete_denominator else None
+        if not _persona_same_number(canonical, expected_canonical):
+            raise BinderError("Persona-v2 blind stability canonical denominator drifted")
+        _persona_number(row.get("canonical_itt_yield"), label="blind stability ITT yield", minimum=0.0, maximum=1.0)
+        _persona_integer(row.get("nc_nc_agreement_count"), label="blind stability NC count", maximum=expected)
+        _validate_persona_bootstrap(row.get("answer_bootstrap"), label=f"blind stability answer {provider}", point=answer, provider_keys={provider} if provider in eligible else set())
+        _validate_persona_bootstrap(row.get("canonical_complete_pair_bootstrap"), label=f"blind stability canonical {provider}", point=canonical if provider in eligible else None, provider_keys={provider} if provider in eligible else set())
+
+    aggregate = value.get("stability_provider_equal_aggregate")
+    if not isinstance(aggregate, Mapping) or aggregate.get("eligible_providers") != eligible:
+        raise BinderError("Persona-v2 blind aggregate stability roster drifted")
+    for key in ("answer", "canonical_complete_pair"):
+        bootstrap = aggregate.get(key)
+        point = bootstrap.get("point_estimate") if isinstance(bootstrap, Mapping) else None
+        _validate_persona_bootstrap(
+            bootstrap,
+            label=f"blind aggregate stability {key}",
+            point=point,
+            provider_keys=set(eligible),
+        )
+    return dict(value)
+
+
+def _validate_persona_judge(
+    value: Any, *, allow_fixture: bool = False
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise BinderError("Persona-v2 judge adjudication is missing")
+    _assert_exact_keys(
+        value,
+        {
+            "case_manifest",
+            "analysis",
+            "run_evidence_binding",
+            "result_manifests",
+        },
+        "Persona-v2 judge adjudication",
+    )
+    case_manifest = value.get("case_manifest")
+    analysis = value.get("analysis")
+    run_evidence_binding = value.get("run_evidence_binding")
+    result_manifests = value.get("result_manifests")
+    if (
+        not isinstance(case_manifest, Mapping)
+        or not isinstance(analysis, Mapping)
+        or not isinstance(run_evidence_binding, Mapping)
+        or not isinstance(result_manifests, Mapping)
+    ):
+        raise BinderError("Persona-v2 judge adjudication surfaces are incomplete")
+    _assert_exact_keys(
+        run_evidence_binding,
+        {
+            "schema_version",
+            "judge_run_evidence_receipt_sha256",
+            "committed_anchor_sha256",
+            "family_slots",
+        },
+        "Persona-v2 judge run evidence binding",
+    )
+    family_slots = run_evidence_binding.get("family_slots")
+    if (
+        run_evidence_binding.get("schema_version")
+        != "yher.llm_sim_v2.formal_judge_run_evidence_binding.v1"
+        or not isinstance(
+            run_evidence_binding.get("judge_run_evidence_receipt_sha256"), str
+        )
+        or re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(run_evidence_binding.get("judge_run_evidence_receipt_sha256")),
+        )
+        is None
+        or not isinstance(run_evidence_binding.get("committed_anchor_sha256"), str)
+        or re.fullmatch(
+            r"[0-9a-f]{64}",
+            str(run_evidence_binding.get("committed_anchor_sha256")),
+        )
+        is None
+        or not isinstance(family_slots, Mapping)
+        or set(family_slots) != {"claude", "gpt"}
+        or not all(isinstance(slot, Mapping) for slot in family_slots.values())
+    ):
+        raise BinderError("Persona-v2 judge run evidence binding is invalid")
+    case_payload = dict(case_manifest)
+    case_sha = case_payload.pop("case_manifest_sha256", None)
+    if (
+        case_manifest.get("schema_version")
+        != "yher.llm_sim_v2.judge_case_manifest.v2"
+        or case_manifest.get("simulated") is not True
+        or case_manifest.get("run_id") != "llm-personas-v2-dual"
+        or case_manifest.get("analysis_population") != "main"
+        or case_manifest.get("exploratory") is not True
+        or case_sha != hashlib.sha256(canonical_json_bytes(case_payload)).hexdigest()
+    ):
+        raise BinderError("Persona-v2 judge case schema v2 or self-hash drifted")
+    if (
+        case_manifest.get("target_labels_exported") is not False
+        or case_manifest.get("target_metadata_exported") is not False
+        or case_manifest.get("provider_identity_exported") is not False
+        or case_manifest.get("question_field_whitelist")
+        != ["kind", "options", "stem_blocks", "stem_text"]
+    ):
+        raise BinderError("Persona-v2 judge input exported a prohibited identity")
+    if not isinstance(case_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", case_sha):
+        raise BinderError("Persona-v2 judge case manifest hash is invalid")
+    amendment = case_manifest.get("judge_amendment")
+    if (
+        not isinstance(case_manifest.get("judge_protocol_sha256"), str)
+        or re.fullmatch(
+            r"[0-9a-f]{64}", str(case_manifest.get("judge_protocol_sha256"))
+        )
+        is None
+        or not isinstance(amendment, Mapping)
+        or amendment.get("path")
+        != "experiments/llm_sim_v2/judge_amendment_20260716.md"
+        or not isinstance(amendment.get("sha256"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", str(amendment.get("sha256"))) is None
+        or not isinstance(amendment.get("size"), int)
+        or amendment.get("size", 0) <= 0
+    ):
+        raise BinderError("Persona-v2 judge protocol or amendment binding drifted")
+    selected_count = _persona_integer(
+        case_manifest.get("selected_count"),
+        label="judge selected case count",
+        minimum=0,
+        maximum=120,
+    )
+    cases = case_manifest.get("cases")
+    if not isinstance(cases, list) or len(cases) != selected_count:
+        raise BinderError("Persona-v2 judge selected case roster is incomplete")
+    case_ids = [
+        str(row.get("case_id") or "")
+        for row in cases
+        if isinstance(row, Mapping)
+    ]
+    if (
+        len(case_ids) != selected_count
+        or any(not value for value in case_ids)
+        or len(case_ids) != len(set(case_ids))
+    ):
+        raise BinderError("Persona-v2 judge selected case IDs are invalid")
+    _assert_exact_keys(
+        analysis,
+        {
+            "schema_version",
+            "simulated",
+            "run_id",
+            "exploratory",
+            "case_manifest_sha256",
+            "selected_count",
+            "cases",
+            "result_manifest_sha256",
+            "execution_receipt_sha256",
+            "execution_ids",
+            "judge_families",
+            "judge_models",
+            "judge_transports",
+            "judge_accounting",
+            "expected_judges",
+            "available_judges",
+            "missing_judges",
+            "status",
+            "category_counts",
+            "pairwise_label_agreement",
+            "pairwise_error_category_agreement",
+            "label_disagreement_examples",
+            "error_category_disagreement_examples",
+        },
+        "Persona-v2 judge analysis v2",
+    )
+    if (
+        analysis.get("case_manifest_sha256") != case_sha
+        or analysis.get("selected_count") != selected_count
+        or analysis.get("cases") != case_ids
+    ):
+        raise BinderError("Persona-v2 judge analysis/case hash drifted")
+    if (
+        analysis.get("schema_version") != "yher.llm_sim_v2.judge_analysis.v2"
+        or analysis.get("simulated") is not True
+        or analysis.get("run_id") != "llm-personas-v2-dual"
+        or analysis.get("exploratory") is not True
+        or analysis.get("expected_judges") != ["claude", "gpt"]
+    ):
+        raise BinderError("Persona-v2 judge analysis v2 envelope drifted")
+    status = analysis.get("status")
+    available = analysis.get("available_judges")
+    missing = analysis.get("missing_judges")
+    if status == "complete":
+        expected_available = ["claude", "gpt"]
+        expected_missing: list[str] = []
+    elif status == "partial_missing_judge":
+        expected_available = ["gpt"]
+        expected_missing = ["claude"]
+    elif status == "not_applicable_zero_cases":
+        expected_available = []
+        expected_missing = []
+    else:
+        raise BinderError("Persona-v2 judge analysis status is invalid")
+    if available != expected_available or missing != expected_missing:
+        raise BinderError("Persona-v2 judge availability profile drifted")
+    if set(result_manifests) != {"claude", "gpt"}:
+        raise BinderError("Persona-v2 judge result manifest profile is incomplete")
+    available_set = set(expected_available)
+    for judge in ("claude", "gpt"):
+        embedded = result_manifests.get(judge)
+        if judge in available_set:
+            if not isinstance(embedded, Mapping):
+                raise BinderError("Persona-v2 judge result manifest profile is incomplete")
+        elif embedded is not None:
+            raise BinderError("Persona-v2 judge result manifest profile has a stray result")
+    if status in {"complete", "partial_missing_judge"} and selected_count == 0:
+        raise BinderError("Persona-v2 applicable judge profile has no selected cases")
+    if status == "not_applicable_zero_cases":
+        empty_map_fields = (
+            "result_manifest_sha256",
+            "execution_receipt_sha256",
+            "execution_ids",
+            "judge_families",
+            "judge_models",
+            "judge_transports",
+            "judge_accounting",
+            "category_counts",
+        )
+        if (
+            selected_count != 0
+            or cases != []
+            or case_manifest.get("selected_stratum_counts")
+            != {"disagreement": 0, "agreement": 0}
+            or any(analysis.get(field) != {} for field in empty_map_fields)
+            or analysis.get("pairwise_label_agreement") is not None
+            or analysis.get("pairwise_error_category_agreement") is not None
+            or analysis.get("label_disagreement_examples") != []
+            or analysis.get("error_category_disagreement_examples") != []
+            or result_manifests != {"claude": None, "gpt": None}
+        ):
+            raise BinderError("Persona-v2 zero-case judge profile drifted")
+        return {
+            "case_manifest": dict(case_manifest),
+            "analysis": dict(analysis),
+            "run_evidence_binding": dict(run_evidence_binding),
+            "result_manifests": dict(result_manifests),
+        }
+    for field in ("result_manifest_sha256", "execution_receipt_sha256"):
+        hashes = analysis.get(field)
+        if not isinstance(hashes, Mapping) or set(hashes) != available_set:
+            raise BinderError(f"Persona-v2 judge {field} values are incomplete")
+        for digest in hashes.values():
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise BinderError(f"Persona-v2 judge {field} value is invalid")
+    execution_ids = analysis.get("execution_ids")
+    models = analysis.get("judge_models")
+    families = analysis.get("judge_families")
+    transports = analysis.get("judge_transports")
+    if (
+        not isinstance(execution_ids, Mapping)
+        or set(execution_ids) != available_set
+        or not all(isinstance(value, str) and value for value in execution_ids.values())
+        or len(set(execution_ids.values())) != len(available_set)
+        or not isinstance(models, Mapping)
+        or set(models) != available_set
+        or not all(isinstance(value, str) and value for value in models.values())
+        or len(set(models.values())) != len(available_set)
+        or families != {judge: judge for judge in expected_available}
+    ):
+        raise BinderError(
+            "Persona-v2 judge executions do not prove independent families, models, and IDs"
+        )
+    expected_transports = {
+        judge: (
+            "fixture"
+            if allow_fixture
+            else "claude_cli"
+            if judge == "claude"
+            else "codex_cli"
+        )
+        for judge in expected_available
+    }
+    if transports != expected_transports:
+        raise BinderError("Persona-v2 judge transport routes are not independent")
+    accounting = analysis.get("judge_accounting")
+    if not isinstance(accounting, Mapping) or set(accounting) != available_set:
+        raise BinderError("Persona-v2 judge accounting is incomplete")
+    accounting_keys = {
+        "request_count",
+        "retry_count",
+        "transport_error_count",
+        "schema_error_count",
+        "content_retry_count",
+        "input_tokens",
+        "output_tokens",
+        "known_cost_yuan",
+        "unknown_cost_reserve_yuan",
+        "accounted_cost_yuan",
+    }
+    for judge, row in accounting.items():
+        if not isinstance(row, Mapping) or set(row) != accounting_keys:
+            raise BinderError("Persona-v2 judge accounting schema drifted")
+        for field in (
+            "request_count",
+            "retry_count",
+            "transport_error_count",
+            "schema_error_count",
+            "content_retry_count",
+            "input_tokens",
+            "output_tokens",
+        ):
+            _persona_integer(
+                row.get(field), label=f"judge {judge} accounting {field}"
+            )
+        if row.get("request_count", 0) <= 0:
+            raise BinderError("Persona-v2 judge accounting has no request")
+        known = _persona_number(
+            row.get("known_cost_yuan"),
+            label=f"judge {judge} known cost",
+            minimum=0.0,
+        )
+        reserve = _persona_number(
+            row.get("unknown_cost_reserve_yuan"),
+            label=f"judge {judge} reserve cost",
+            minimum=0.0,
+        )
+        accounted = _persona_number(
+            row.get("accounted_cost_yuan"),
+            label=f"judge {judge} accounted cost",
+            minimum=0.0,
+        )
+        if not math.isclose(accounted, known + reserve, abs_tol=1e-8):
+            raise BinderError("Persona-v2 judge accounting does not reconcile")
+    category_counts = analysis.get("category_counts")
+    if not isinstance(category_counts, Mapping) or set(category_counts) != available_set:
+        raise BinderError("Persona-v2 judge category counts are incomplete")
+    if not isinstance(analysis.get("label_disagreement_examples"), list) or not isinstance(
+        analysis.get("error_category_disagreement_examples"), list
+    ):
+        raise BinderError("Persona-v2 judge disagreement examples are invalid")
+    pairwise_names = (
+        "pairwise_label_agreement",
+        "pairwise_error_category_agreement",
+    )
+    if status == "partial_missing_judge":
+        if any(analysis.get(name) is not None for name in pairwise_names):
+            raise BinderError("Persona-v2 missing judge profile reports pairwise agreement")
+        if analysis.get("label_disagreement_examples") != [] or analysis.get(
+            "error_category_disagreement_examples"
+        ) != []:
+            raise BinderError("Persona-v2 missing judge profile reports disagreements")
+        return {
+            "case_manifest": dict(case_manifest),
+            "analysis": dict(analysis),
+            "run_evidence_binding": dict(run_evidence_binding),
+            "result_manifests": dict(result_manifests),
+        }
+    for name in pairwise_names:
+        row = analysis.get(name)
+        if not isinstance(row, Mapping):
+            raise BinderError(f"Persona-v2 judge {name} is missing")
+        denominator = _persona_integer(row.get("denominator"), label=f"judge {name} denominator")
+        numerator = _persona_integer(row.get("exact_agreement_numerator"), label=f"judge {name} numerator", maximum=denominator)
+        estimate = row.get("exact_agreement")
+        if denominator:
+            estimate_value = _persona_number(estimate, label=f"judge {name} estimate", minimum=0.0, maximum=1.0)
+            if not math.isclose(estimate_value, numerator / denominator, abs_tol=1e-12):
+                raise BinderError(f"Persona-v2 judge {name} denominator drifted")
+        if name == "pairwise_label_agreement" and denominator != selected_count:
+            raise BinderError("Persona-v2 judge label denominator differs from selected cases")
+        if name == "pairwise_error_category_agreement":
+            total = _persona_integer(
+                row.get("total_case_count"), label="judge error-category total"
+            )
+            missing = _persona_integer(
+                row.get("missing_any_count"), label="judge error-category missing"
+            )
+            if total != selected_count or denominator + missing != total:
+                raise BinderError("Persona-v2 judge error-category denominator drifted")
+    return {
+        "case_manifest": dict(case_manifest),
+        "analysis": dict(analysis),
+        "run_evidence_binding": dict(run_evidence_binding),
+        "result_manifests": dict(result_manifests),
+    }
+
+
+def _validate_persona_judge_sources(
+    *,
+    input_manifest: Mapping[str, Any],
+    result_input_binding: Any,
+    judge_results: Mapping[str, Mapping[str, Any]],
+    judge_result_paths: Mapping[str, Path],
+    judge_adjudication: Mapping[str, Any],
+) -> None:
+    files = input_manifest.get("files")
+    if (
+        input_manifest.get("schema_version")
+        != "yher.llm_sim_v2.analysis_input_artifact_manifest.v1"
+        or input_manifest.get("simulated") is not True
+        or input_manifest.get("run_id") != "llm-personas-v2-dual"
+        or input_manifest.get("analysis_population") != "main"
+        or not isinstance(files, list)
+        or input_manifest.get("input_file_count") != len(files)
+        or input_manifest.get("input_file_set_sha256")
+        != hashlib.sha256(canonical_json_bytes(files)).hexdigest()
+    ):
+        raise BinderError("Persona-v2 analysis input artifact manifest drifted")
+    expected_input_binding = {
+        "input_file_count": input_manifest["input_file_count"],
+        "record_file_count": input_manifest.get("record_file_count"),
+        "input_file_set_sha256": input_manifest["input_file_set_sha256"],
+        "input_artifact_manifest_sha256": hashlib.sha256(
+            canonical_json_bytes(input_manifest)
+        ).hexdigest(),
+    }
+    if result_input_binding != expected_input_binding:
+        raise BinderError("Persona-v2 result/input artifact binding drifted")
+    input_index: dict[str, Mapping[str, Any]] = {}
+    for row in files:
+        if not isinstance(row, Mapping) or set(row) != {"path", "sha256", "size"}:
+            raise BinderError("Persona-v2 analysis input artifact row is invalid")
+        relative = row.get("path")
+        if not isinstance(relative, str) or not relative or relative in input_index:
+            raise BinderError("Persona-v2 analysis input artifact path is invalid")
+        input_index[relative] = row
+
+    case_manifest = judge_adjudication["case_manifest"]
+    analysis = judge_adjudication["analysis"]
+    case_ids = [str(row["case_id"]) for row in case_manifest["cases"]]
+    available_judges = tuple(analysis["available_judges"])
+    embedded_results = judge_adjudication.get("result_manifests")
+    if (
+        set(judge_results) != set(available_judges)
+        or set(judge_result_paths) != set(available_judges)
+        or not isinstance(embedded_results, Mapping)
+        or any(
+            embedded_results.get(judge) != judge_results[judge]
+            for judge in available_judges
+        )
+    ):
+        raise BinderError("Persona-v2 judge result manifest profile differs from analysis")
+    for missing_judge in analysis["missing_judges"]:
+        if f"judge-results/{missing_judge}.json" in input_index:
+            raise BinderError("Persona-v2 missing judge has a bound result artifact")
+    attempt_sets: dict[str, set[str]] = {}
+    raw_sets: dict[str, set[str]] = {}
+    for judge in available_judges:
+        result_manifest = judge_results[judge]
+        payload = dict(result_manifest)
+        advertised_result_sha = payload.pop("judge_result_manifest_sha256", None)
+        receipt = result_manifest.get("execution_receipt")
+        results = result_manifest.get("results")
+        if (
+            result_manifest.get("schema_version")
+            != "yher.llm_sim_v2.judge_result_manifest.v2"
+            or result_manifest.get("simulated") is not True
+            or result_manifest.get("run_id") != "llm-personas-v2-dual"
+            or result_manifest.get("judge") != judge
+            or result_manifest.get("case_manifest_sha256")
+            != case_manifest["case_manifest_sha256"]
+            or advertised_result_sha
+            != hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
+            or advertised_result_sha
+            != analysis["result_manifest_sha256"][judge]
+            or not isinstance(receipt, Mapping)
+            or not isinstance(results, list)
+            or [
+                str(row.get("case_id") or "")
+                for row in results
+                if isinstance(row, Mapping)
+            ]
+            != case_ids
+        ):
+            raise BinderError(f"Persona-v2 {judge} judge result manifest drifted")
+        receipt_payload = dict(receipt)
+        advertised_receipt_sha = receipt_payload.pop(
+            "execution_receipt_sha256", None
+        )
+        identity = receipt.get("identity")
+        attempts = receipt.get("ordered_attempt_ids")
+        raw_artifacts = receipt.get("raw_artifacts")
+        if (
+            receipt.get("schema_version")
+            != "yher.llm_sim_v2.judge_execution_receipt.v2"
+            or advertised_receipt_sha
+            != hashlib.sha256(canonical_json_bytes(receipt_payload)).hexdigest()
+            or advertised_receipt_sha
+            != analysis["execution_receipt_sha256"][judge]
+            or not isinstance(identity, Mapping)
+            or identity.get("judge_family") != analysis["judge_families"][judge]
+            or identity.get("requested_model") != analysis["judge_models"][judge]
+            or identity.get("transport") != analysis["judge_transports"][judge]
+            or identity.get("execution_id") != analysis["execution_ids"][judge]
+            or receipt.get("accounting") != analysis["judge_accounting"][judge]
+            or not isinstance(attempts, list)
+            or not attempts
+            or len(attempts) != len(set(attempts))
+            or not all(isinstance(value, str) and value for value in attempts)
+            or not isinstance(raw_artifacts, list)
+            or not raw_artifacts
+        ):
+            raise BinderError(f"Persona-v2 {judge} judge execution receipt drifted")
+        raw_hashes: set[str] = set()
+        for artifact in raw_artifacts:
+            digest = artifact.get("sha256") if isinstance(artifact, Mapping) else None
+            if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+                raise BinderError(
+                    f"Persona-v2 {judge} judge raw artifact binding drifted"
+                )
+            raw_hashes.add(digest)
+        if len(raw_hashes) != len(raw_artifacts):
+            raise BinderError(f"Persona-v2 {judge} judge raw artifact set repeats")
+        attempt_sets[judge] = set(attempts)
+        raw_sets[judge] = raw_hashes
+        relative = f"judge-results/{judge}.json"
+        input_row = input_index.get(relative)
+        result_path = judge_result_paths[judge]
+        if (
+            input_row is None
+            or input_row.get("sha256") != sha256_file(result_path)
+            or input_row.get("size") != result_path.stat().st_size
+        ):
+            raise BinderError(
+                f"Persona-v2 {judge} judge result is not hash-bound by analysis inputs"
+            )
+    if len(available_judges) == 2:
+        left, right = available_judges
+        if attempt_sets[left] & attempt_sets[right]:
+            raise BinderError("Persona-v2 judge attempt artifact sets are not independent")
+        if raw_sets[left] & raw_sets[right]:
+            raise BinderError("Persona-v2 judge raw artifact sets are not independent")
+
+
+def _validate_persona_judge_run_snapshot(
+    *,
+    root: Path,
+    snapshot_manifest: Mapping[str, Any],
+    snapshot_manifest_path: Path,
+    judge_results: Mapping[str, Mapping[str, Any]],
+    judge_analysis: Mapping[str, Any],
+    allow_fixture: bool = False,
+) -> tuple[set[str], dict[str, dict[str, Any]]]:
+    expected_manifest_path = root / "judge-snapshots/snapshot_manifest.json"
+    try:
+        actual_manifest_path = snapshot_manifest_path.resolve(strict=True)
+    except OSError as exc:
+        raise BinderError("Persona-v2 judge run snapshot manifest is missing") from exc
+    if actual_manifest_path != expected_manifest_path.resolve(strict=False):
+        raise BinderError("Persona-v2 judge run snapshot must use its fixed bundle path")
+
+    from experiments.llm_sim_v2.analyze import (
+        AnalysisContractError,
+        validate_judge_run_execution_snapshot,
+    )
+
+    try:
+        validated = validate_judge_run_execution_snapshot(
+            snapshot_manifest,
+            snapshot_root=snapshot_manifest_path.parent,
+            allow_fixture=allow_fixture,
+        )
+    except AnalysisContractError as exc:
+        raise BinderError(f"Persona-v2 judge run snapshot cannot replay: {exc}") from exc
+    if validated != dict(snapshot_manifest):
+        raise BinderError("Persona-v2 judge run snapshot changed during replay")
+
+    available_judges = tuple(judge_analysis["available_judges"])
+    if set(judge_results) != set(available_judges):
+        raise BinderError("Persona-v2 judge run snapshot result profile drifted")
+    expected_statuses = {
+        "complete": {"claude": "complete", "gpt": "complete"},
+        "partial_missing_judge": {"claude": "unavailable", "gpt": "complete"},
+        "not_applicable_zero_cases": {
+            "claude": "not_applicable_zero_cases",
+            "gpt": "not_applicable_zero_cases",
+        },
+    }
+    status = str(judge_analysis.get("status") or "")
+    family_slots = snapshot_manifest.get("family_slots")
+    if status not in expected_statuses or not isinstance(family_slots, Mapping):
+        raise BinderError("Persona-v2 judge run snapshot profile is invalid")
+    actual_statuses = {
+        family: slot.get("status") if isinstance(slot, Mapping) else None
+        for family, slot in family_slots.items()
+    }
+    if actual_statuses != expected_statuses[status]:
+        raise BinderError("Persona-v2 judge run snapshot family slots drifted")
+
+    for judge in available_judges:
+        slot = family_slots[judge]
+        result_manifest = judge_results[judge]
+        receipt = result_manifest.get("execution_receipt")
+        if not isinstance(slot, Mapping) or not isinstance(receipt, Mapping):
+            raise BinderError(f"Persona-v2 {judge} judge run slot is invalid")
+        identity = receipt.get("identity")
+        if not isinstance(identity, Mapping):
+            raise BinderError(f"Persona-v2 {judge} judge receipt identity is invalid")
+        if (
+            result_manifest.get("execution_receipt_path") != slot.get("receipt_path")
+            or slot.get("receipt_sha256")
+            != judge_analysis["execution_receipt_sha256"][judge]
+            or slot.get("execution_id") != judge_analysis["execution_ids"][judge]
+            or slot.get("requested_model") != judge_analysis["judge_models"][judge]
+            or slot.get("transport") != judge_analysis["judge_transports"][judge]
+            or slot.get("accounting") != judge_analysis["judge_accounting"][judge]
+            or identity.get("execution_id") != slot.get("execution_id")
+            or identity.get("requested_model") != slot.get("requested_model")
+            or identity.get("transport") != slot.get("transport")
+        ):
+            raise BinderError(
+                f"Persona-v2 {judge} judge result differs from the finalized run slot"
+            )
+
+    expected_artifact_paths = {"judge-snapshots/snapshot_manifest.json"}
+    bound_files: dict[str, dict[str, Any]] = {}
+    files = snapshot_manifest.get("files")
+    if not isinstance(files, list):
+        raise BinderError("Persona-v2 judge run snapshot file roster is invalid")
+    for row in files:
+        if not isinstance(row, Mapping):
+            raise BinderError("Persona-v2 judge run snapshot row is invalid")
+        relative = str(row.get("path") or "")
+        artifact_relative = f"judge-snapshots/{relative}"
+        path = snapshot_manifest_path.parent / relative
+        expected_artifact_paths.add(artifact_relative)
+        bound_files[artifact_relative] = {
+            "relative_path": artifact_relative,
+            "source_path": str(path.resolve()),
+            "sha256": str(row["sha256"]),
+            "bytes": int(row["size"]),
+            "role": "judge_run_evidence",
+            "judge": None,
+        }
+    return expected_artifact_paths, bound_files
+
+
+def _validate_persona_judge_snapshot_input_binding(
+    *,
+    input_manifest: Mapping[str, Any],
+    snapshot_manifest: Mapping[str, Any],
+) -> None:
+    input_files = input_manifest.get("files")
+    snapshot_files = snapshot_manifest.get("files")
+    if not isinstance(input_files, list) or not isinstance(snapshot_files, list):
+        raise BinderError("Persona-v2 judge input/snapshot rosters are invalid")
+    actual = {
+        str(row["path"]): row
+        for row in input_files
+        if isinstance(row, Mapping)
+        and str(row.get("path") or "").startswith("judge-results/")
+    }
+    expected: dict[str, Mapping[str, Any]] = {}
+    for row in snapshot_files:
+        if not isinstance(row, Mapping):
+            raise BinderError("Persona-v2 judge input/snapshot rosters are invalid")
+        snapshot_path = str(row.get("path") or "")
+        if not snapshot_path.startswith("run/"):
+            raise BinderError("Persona-v2 judge input/snapshot path is invalid")
+        expected[f"judge-results/{snapshot_path.removeprefix('run/')}"] = row
+    if set(actual) != set(expected):
+        raise BinderError("Persona-v2 judge input roster differs from canonical snapshot")
+    for relative, snapshot_row in expected.items():
+        input_row = actual[relative]
+        if (
+            input_row.get("sha256") != snapshot_row.get("sha256")
+            or input_row.get("size") != snapshot_row.get("size")
+        ):
+            raise BinderError(
+                "Persona-v2 judge input bytes differ from canonical snapshot"
+            )
+
+
 def persona_v2_slot() -> dict[str, Any]:
     return {
         "schema_version": "yher.journal_binder.persona_v2_pending.v1",
@@ -1121,6 +2383,47 @@ def _verify_self_hash(
     return computed
 
 
+def _read_relative_regular_file(
+    root: Path, relative: Path, *, label: str
+) -> tuple[Path, bytes]:
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise BinderError(f"{label} path escapes its root")
+    if root.is_symlink() or not root.is_dir():
+        raise BinderError(f"{label} root is missing, unsafe, or a symlink")
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY
+    file_flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        directory_flags |= os.O_NOFOLLOW
+        file_flags |= os.O_NOFOLLOW
+    descriptors: list[int] = []
+    try:
+        descriptor = os.open(root, directory_flags)
+        descriptors.append(descriptor)
+        for part in relative.parts[:-1]:
+            descriptor = os.open(part, directory_flags, dir_fd=descriptor)
+            descriptors.append(descriptor)
+        file_descriptor = os.open(
+            relative.parts[-1], file_flags, dir_fd=descriptor
+        )
+        descriptors.append(file_descriptor)
+        if not stat.S_ISREG(os.fstat(file_descriptor).st_mode):
+            raise BinderError(f"{label} is not a regular file")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(file_descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+    except (FileNotFoundError, NotADirectoryError) as exc:
+        raise BinderError(f"{label} is missing") from exc
+    except OSError as exc:
+        raise BinderError(f"{label} is unsafe or contains a symlink") from exc
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+    return root / relative, b"".join(chunks)
+
+
 def _load_bound_bundle_file(
     root: Path, entry: Mapping[str, Any], *, role: str
 ) -> tuple[Path, Mapping[str, Any], str]:
@@ -1132,24 +2435,32 @@ def _load_bound_bundle_file(
     relative = Path(path_value)
     if relative.is_absolute() or ".." in relative.parts:
         raise BinderError(f"Persona-v2 bundle file path escapes root: {role}")
-    path = root / relative
-    if not path.is_file():
-        raise BinderError(f"Persona-v2 bundle file is missing: {role}")
-    actual_hash = sha256_file(path)
+    path, data = _read_relative_regular_file(
+        root, relative, label=f"Persona-v2 bundle file {role}"
+    )
+    actual_hash = hashlib.sha256(data).hexdigest()
     if expected_hash != actual_hash:
         raise BinderError(f"Persona-v2 bundle file SHA-256 drift: {role}")
-    payload, _ = _load_json_object(path, label=f"Persona-v2 {role}")
+    payload = _strict_json_bytes(data, label=f"Persona-v2 {role}")
+    if not isinstance(payload, Mapping):
+        raise BinderError(f"Persona-v2 {role} root must be an object")
     return path, payload, actual_hash
 
 
-def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
+def bind_persona_v2_artifacts(
+    bundle_dir: Path | str, *, allow_fixture: bool = False
+) -> dict[str, Any]:
     root = Path(bundle_dir)
-    binding_path = root / "binding_manifest.json"
-    if not binding_path.is_file():
-        raise BinderError("Persona-v2 formal W3 binding manifest is missing")
-    binding, binding_bytes = _load_json_object(
-        binding_path, label="Persona-v2 binding manifest"
+    binding_path, binding_bytes = _read_relative_regular_file(
+        root,
+        Path("binding_manifest.json"),
+        label="Persona-v2 formal W3 binding manifest",
     )
+    binding = _strict_json_bytes(
+        binding_bytes, label="Persona-v2 binding manifest"
+    )
+    if not isinstance(binding, Mapping):
+        raise BinderError("Persona-v2 binding manifest root must be an object")
     _assert_exact_keys(
         binding,
         {"schema_version", "simulated", "run_id", "analysis_population", "files"},
@@ -1164,15 +2475,52 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
     ):
         raise BinderError("Persona-v2 binding manifest envelope is invalid")
     files = binding.get("files")
-    expected_roles = {
+    base_roles = {
         "analysis_results",
         "analysis_artifact_manifest",
+        "analysis_input_artifact_manifest",
         "phase_provenance",
         "runtime_task_manifest",
         "mapping_manifest",
     }
-    if not isinstance(files, Mapping) or set(files) != expected_roles:
+    snapshot_roles = {"judge_run_execution_snapshot_manifest"}
+    gpt_roles = {"gpt_judge_result_manifest"}
+    claude_roles = {"claude_judge_result_manifest"}
+    allowed_role_sets = (
+        base_roles | snapshot_roles,
+        base_roles | snapshot_roles | gpt_roles,
+        base_roles | snapshot_roles | gpt_roles | claude_roles,
+    )
+    if not isinstance(files, Mapping) or set(files) not in allowed_role_sets:
         raise BinderError("Persona-v2 binding manifest file set is incomplete")
+    expected_roles = set(files)
+    canonical_role_paths = {
+        "analysis_results": "analysis/analysis_results.json",
+        "analysis_artifact_manifest": "analysis/artifact_manifest.json",
+        "analysis_input_artifact_manifest": (
+            "analysis/input_artifact_manifest.json"
+        ),
+        "phase_provenance": "evidence/phase_provenance.json",
+        "runtime_task_manifest": "evidence/runtime_task_manifest.json",
+        "mapping_manifest": "evidence/target_option_mapping.json",
+        "judge_run_execution_snapshot_manifest": (
+            "judge-snapshots/snapshot_manifest.json"
+        ),
+        "gpt_judge_result_manifest": "judge-snapshots/run/gpt.json",
+        "claude_judge_result_manifest": "judge-snapshots/run/claude.json",
+    }
+    for role in expected_roles:
+        descriptor = files.get(role)
+        if (
+            not isinstance(descriptor, Mapping)
+            or descriptor.get("path") != canonical_role_paths[role]
+        ):
+            raise BinderError(f"Persona-v2 {role} must use its canonical fixed path")
+    role_judges = {
+        judge
+        for judge, roles in (("gpt", gpt_roles), ("claude", claude_roles))
+        if roles <= expected_roles
+    }
     loaded: dict[str, Mapping[str, Any]] = {}
     paths: dict[str, Path] = {}
     file_hashes: dict[str, str] = {}
@@ -1380,6 +2728,29 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
     for row in lifecycle:
         if not isinstance(row, Mapping):
             raise BinderError("Persona-v2 provider lifecycle row is not an object")
+        _assert_exact_keys(
+            row,
+            {
+                "provider",
+                "provider_lifecycle",
+                "recomputed_provider_lifecycle",
+                "expected_count",
+                "present_count",
+                "missing_count",
+                "status_counts",
+                "missing_task_ids",
+                "known_cost_yuan",
+                "unknown_cost_reserve_yuan",
+                "accounted_cost_yuan",
+                "controlled_complete_cluster_count",
+                "controlled_eligible",
+                "controlled_exclusion_reasons",
+                "blind_complete_cluster_count",
+                "blind_eligible",
+                "blind_exclusion_reasons",
+            },
+            "Persona-v2 provider lifecycle row",
+        )
         provider = row.get("provider")
         status_counts = row.get("status_counts")
         missing_ids = row.get("missing_task_ids")
@@ -1387,16 +2758,48 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
             provider not in providers
             or provider in lifecycle_index
             or row.get("provider_lifecycle") not in allowed_lifecycles
+            or row.get("recomputed_provider_lifecycle")
+            != row.get("provider_lifecycle")
             or row.get("expected_count") != main_task_count
             or not isinstance(missing_ids, list)
             or not set(missing_ids).issubset(set(phase_tasks["main"]))
             or row.get("missing_count") != len(missing_ids)
             or row.get("present_count") + row.get("missing_count") != main_task_count
             or not isinstance(status_counts, Mapping)
-            or sum(int(value) for value in status_counts.values())
-            != row.get("present_count")
+            or any(
+                not isinstance(value, int) or isinstance(value, bool) or value < 0
+                for value in status_counts.values()
+            )
+            or sum(status_counts.values()) != row.get("present_count")
+            or not isinstance(row.get("controlled_eligible"), bool)
+            or not isinstance(row.get("blind_eligible"), bool)
+            or not isinstance(row.get("controlled_exclusion_reasons"), list)
+            or not isinstance(row.get("blind_exclusion_reasons"), list)
         ):
             raise BinderError("Persona-v2 provider lifecycle does not reconcile")
+        known = _persona_number(
+            row.get("known_cost_yuan"),
+            label=f"{provider} lifecycle known cost",
+            minimum=0.0,
+        )
+        reserve = _persona_number(
+            row.get("unknown_cost_reserve_yuan"),
+            label=f"{provider} lifecycle reserve cost",
+            minimum=0.0,
+        )
+        accounted = _persona_number(
+            row.get("accounted_cost_yuan"),
+            label=f"{provider} lifecycle accounted cost",
+            minimum=0.0,
+        )
+        if not math.isclose(accounted, known + reserve, abs_tol=1e-8):
+            raise BinderError("Persona-v2 provider lifecycle cost does not reconcile")
+        for condition in ("controlled", "blind"):
+            _persona_integer(
+                row.get(f"{condition}_complete_cluster_count"),
+                label=f"{provider} {condition} complete clusters",
+                maximum=50,
+            )
         lifecycle_index[str(provider)] = dict(row)
     if set(lifecycle_index) != set(providers):
         raise BinderError("Persona-v2 provider lifecycle roster drifted")
@@ -1413,10 +2816,73 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
         or sparse.get("target_set_hash") != target_hash
     ):
         raise BinderError("Persona-v2 analysis mapping surface drifted")
-    if not isinstance(result.get("controlled"), Mapping) or not isinstance(
-        result.get("blind"), Mapping
+    controlled = _validate_persona_controlled(
+        result.get("controlled"), providers=providers, lifecycle=lifecycle_index
+    )
+    blind = _validate_persona_blind(
+        result.get("blind"), providers=providers, lifecycle=lifecycle_index
+    )
+    judge_adjudication = _validate_persona_judge(
+        result.get("judge_adjudication"), allow_fixture=allow_fixture
+    )
+    available_judges = tuple(judge_adjudication["analysis"]["available_judges"])
+    if role_judges != set(available_judges):
+        raise BinderError("Persona-v2 judge binding role profile differs from analysis")
+    _validate_persona_judge_sources(
+        input_manifest=loaded["analysis_input_artifact_manifest"],
+        result_input_binding=result.get("input_artifact_binding"),
+        judge_results={
+            judge: loaded[f"{judge}_judge_result_manifest"]
+            for judge in available_judges
+        },
+        judge_result_paths={
+            judge: paths[f"{judge}_judge_result_manifest"]
+            for judge in available_judges
+        },
+        judge_adjudication=judge_adjudication,
+    )
+    snapshot_artifact_paths, snapshot_bound_files = (
+        _validate_persona_judge_run_snapshot(
+            root=root,
+            snapshot_manifest=loaded["judge_run_execution_snapshot_manifest"],
+            snapshot_manifest_path=paths[
+                "judge_run_execution_snapshot_manifest"
+            ],
+            judge_results={
+                judge: loaded[f"{judge}_judge_result_manifest"]
+                for judge in available_judges
+            },
+            judge_analysis=judge_adjudication["analysis"],
+            allow_fixture=allow_fixture,
+        )
+    )
+    run_evidence_binding = judge_adjudication["run_evidence_binding"]
+    snapshot_manifest = loaded["judge_run_execution_snapshot_manifest"]
+    _validate_persona_judge_snapshot_input_binding(
+        input_manifest=loaded["analysis_input_artifact_manifest"],
+        snapshot_manifest=snapshot_manifest,
+    )
+    if (
+        run_evidence_binding["judge_run_evidence_receipt_sha256"]
+        != snapshot_manifest.get("source_judge_run_evidence_receipt_sha256")
+        or run_evidence_binding["family_slots"]
+        != snapshot_manifest.get("family_slots")
     ):
-        raise BinderError("Persona-v2 controlled or blind result surface is missing")
+        raise BinderError("Persona-v2 judge run evidence binding drifted from snapshot")
+
+    outputs = result.get("outputs")
+    if not isinstance(outputs, Mapping) or (
+        outputs.get("machine_json") is not True
+        or outputs.get("machine_csv_tables") != 8
+        or outputs.get("figure_data_machine_readable") is not True
+        or outputs.get("publication_figures") != 3
+        or outputs.get("publication_formats") != ["png_300_dpi", "svg"]
+        or outputs.get("judge_case_export") is not True
+        or not isinstance(outputs.get("judge_shared_input_sha256"), str)
+        or re.fullmatch(r"[0-9a-f]{64}", str(outputs.get("judge_shared_input_sha256")))
+        is None
+    ):
+        raise BinderError("Persona-v2 publication output contract drifted")
 
     analysis_manifest = loaded["analysis_artifact_manifest"]
     if (
@@ -1440,6 +2906,7 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
     analysis_root = paths["analysis_artifact_manifest"].parent
     bound_result = False
     seen_artifacts: set[str] = set()
+    artifact_index: dict[str, dict[str, Any]] = {}
     for row in artifacts:
         if not isinstance(row, Mapping):
             raise BinderError("Persona-v2 analysis artifact row is not an object")
@@ -1450,12 +2917,18 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
         if not isinstance(relative_value, str) or not relative_value:
             raise BinderError("Persona-v2 analysis artifact path is invalid")
         relative = Path(relative_value)
-        if relative.is_absolute() or ".." in relative.parts or relative_value in seen_artifacts:
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or relative.as_posix() != relative_value
+            or relative_value in seen_artifacts
+        ):
             raise BinderError("Persona-v2 analysis artifact path is unsafe or duplicated")
-        path = analysis_root / relative
-        if not path.is_file():
-            raise BinderError(f"Persona-v2 analysis artifact is missing: {relative_value}")
-        artifact_bytes = path.read_bytes()
+        path, artifact_bytes = _read_relative_regular_file(
+            analysis_root,
+            relative,
+            label=f"Persona-v2 analysis artifact {relative_value}",
+        )
         if (
             row.get("sha256") != hashlib.sha256(artifact_bytes).hexdigest()
             or row.get("size") != len(artifact_bytes)
@@ -1464,8 +2937,67 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
         if path.resolve() == paths["analysis_results"].resolve():
             bound_result = True
         seen_artifacts.add(relative_value)
+        artifact_index[relative_value] = _persona_asset(
+            path=path,
+            root=analysis_root,
+            digest=str(row["sha256"]),
+            size=int(row["size"]),
+        )
     if not bound_result:
         raise BinderError("Persona-v2 analysis results are not bound by output manifest")
+    required_publication = {
+        relative
+        for group in PERSONA_PUBLICATION_ARTIFACTS.values()
+        for relative in group
+    }
+    missing_publication = required_publication - set(artifact_index)
+    if missing_publication:
+        raise BinderError(
+            "Persona-v2 publication artifact set is incomplete: "
+            + ", ".join(sorted(missing_publication))
+        )
+    input_artifact_entry = artifact_index.get("input_artifact_manifest.json")
+    if (
+        input_artifact_entry is None
+        or Path(input_artifact_entry["source_path"]).resolve()
+        != paths["analysis_input_artifact_manifest"].resolve()
+    ):
+        raise BinderError(
+            "Persona-v2 analysis input artifact manifest is not publication-bound"
+        )
+    missing_snapshot_artifacts = snapshot_artifact_paths - set(artifact_index)
+    if missing_snapshot_artifacts:
+        raise BinderError(
+            "Persona-v2 judge snapshot tree is not publication-bound: "
+            + ", ".join(sorted(missing_snapshot_artifacts))
+        )
+    for relative, descriptor in snapshot_bound_files.items():
+        artifact_descriptor = artifact_index[relative]
+        if (
+            artifact_descriptor["sha256"] != descriptor["sha256"]
+            or artifact_descriptor["bytes"] != descriptor["bytes"]
+        ):
+            raise BinderError(
+                f"Persona-v2 judge snapshot/output artifact drifted: {relative}"
+            )
+    for relative in PERSONA_PUBLICATION_ARTIFACTS["figures"]:
+        payload = Path(artifact_index[relative]["source_path"]).read_bytes()
+        if relative.endswith(".png") and not payload.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise BinderError(f"Persona-v2 publication artifact is not PNG: {relative}")
+        if relative.endswith(".svg") and b"<svg" not in payload[:500]:
+            raise BinderError(f"Persona-v2 publication artifact is not SVG: {relative}")
+    for relative, expected in (
+        ("judge/case_manifest.json", judge_adjudication["case_manifest"]),
+        ("judge/judge_analysis.json", judge_adjudication["analysis"]),
+    ):
+        if relative not in artifact_index:
+            raise BinderError(f"Persona-v2 judge publication artifact is missing: {relative}")
+        artifact_payload, _ = _load_json_object(
+            Path(artifact_index[relative]["source_path"]),
+            label=f"Persona-v2 {relative}",
+        )
+        if artifact_payload != expected:
+            raise BinderError(f"Persona-v2 judge publication artifact drifted: {relative}")
 
     source_hashes = {
         **file_hashes,
@@ -1478,6 +3010,39 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
             analysis_manifest["artifact_set_sha256"]
         ),
     }
+    publication_assets = {
+        "main_persona_composite_sources": {
+            "controlled_composition": artifact_index[
+                "figures/controlled_composition.png"
+            ],
+            "blind_terminal_agreement": artifact_index[
+                "figures/blind_terminal_agreement.png"
+            ],
+            "blind_output_stability": artifact_index[
+                "figures/blind_output_stability.png"
+            ],
+        },
+        "tables": {
+            relative: artifact_index[relative]
+            for relative in PERSONA_PUBLICATION_ARTIFACTS["tables"]
+        },
+        "figure_data": {
+            relative: artifact_index[relative]
+            for relative in PERSONA_PUBLICATION_ARTIFACTS["figure_data"]
+        },
+        "supplement_figures": {
+            relative: artifact_index[relative]
+            for relative in PERSONA_PUBLICATION_ARTIFACTS["figures"]
+        },
+        "judge_execution_snapshots": snapshot_bound_files,
+    }
+    source_artifacts = {
+        role: _source_artifact(path, relative_path=path.relative_to(root).as_posix())
+        for role, path in paths.items()
+    }
+    source_artifacts["binding_manifest"] = _source_artifact(
+        binding_path, relative_path="binding_manifest.json"
+    )
     return {
         "schema_version": "yher.journal_binder.persona_v2_bound.v1",
         "status": "bound_formal_w3",
@@ -1508,8 +3073,11 @@ def bind_persona_v2_artifacts(bundle_dir: Path | str) -> dict[str, Any]:
             "mapping_sha256": mapping_hash,
             "target_set_hash": target_hash,
         },
-        "controlled": dict(result["controlled"]),
-        "blind": dict(result["blind"]),
+        "controlled": controlled,
+        "blind": blind,
+        "judge_adjudication": judge_adjudication,
+        "publication_assets": publication_assets,
+        "source_artifacts": source_artifacts,
         "claim_boundary": claim_boundary,
         "source_hashes": source_hashes,
     }
@@ -1750,6 +3318,7 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
     if not isinstance(artifacts, list) or not artifacts:
         raise BinderError("P2 output manifest has no artifact list")
     seen_artifacts: set[str] = set()
+    artifact_index: dict[str, dict[str, Any]] = {}
     for row in artifacts:
         if not isinstance(row, Mapping):
             raise BinderError("P2 output artifact row is not an object")
@@ -1770,8 +3339,29 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
         ):
             raise BinderError(f"P2 output artifact hash or size drift: {filename}")
         seen_artifacts.add(filename)
+        artifact_index[filename] = {
+            "relative_path": filename,
+            "source_path": str(artifact_path.resolve()),
+            "sha256": str(row["sha256"]),
+            "bytes": int(row["bytes"]),
+        }
     if not {"summary.json", "input_manifest.json"}.issubset(seen_artifacts):
         raise BinderError("P2 output manifest does not bind summary and input manifest")
+    missing_publication = set(P2_PUBLICATION_ARTIFACTS) - seen_artifacts
+    if missing_publication:
+        raise BinderError(
+            "P2 publication artifact set is incomplete: "
+            + ", ".join(sorted(missing_publication))
+        )
+    for relative in (
+        "p2_supply_bound_illustration.png",
+        "p2_supply_bound_illustration.svg",
+    ):
+        payload = Path(artifact_index[relative]["source_path"]).read_bytes()
+        if relative.endswith(".png") and not payload.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise BinderError("P2 publication PNG artifact is invalid")
+        if relative.endswith(".svg") and b"<svg" not in payload[:500]:
+            raise BinderError("P2 publication SVG artifact is invalid")
 
     selector = input_manifest.get("selector")
     bootstrap_contract = input_manifest.get("bootstrap")
@@ -2171,6 +3761,25 @@ def _bind_p2(p2_dir: Path | None) -> dict[str, Any]:
         "unobtainable_supply_minutes": None,
         "unobtainable_reason": "no_frozen_role_compatible_dose",
         "claim_exclusions": sorted(P2_PROHIBITED_CLAIM_FIELDS),
+        "publication_assets": {
+            "main_table_source": artifact_index["summary.json"],
+            "figure_data": artifact_index["figure_data.json"],
+            "supplement_figure_png": artifact_index[
+                "p2_supply_bound_illustration.png"
+            ],
+            "supplement_figure_svg": artifact_index[
+                "p2_supply_bound_illustration.svg"
+            ],
+        },
+        "source_artifacts": {
+            "summary": _source_artifact(summary_path),
+            "input_manifest": _source_artifact(input_manifest_path),
+            "output_manifest": _source_artifact(output_manifest_path),
+            **{
+                role: _source_artifact(path)
+                for role, path in source_paths.items()
+            },
+        },
         "source_hashes": source_hashes,
     }
 
@@ -2184,6 +3793,7 @@ def build_binder(
     persona_v2_dir: Path | str | None = None,
     p2_dir: Path | str | None = DEFAULT_P2_DIR,
     require_complete: bool = True,
+    allow_fixture: bool = False,
 ) -> dict[str, Any]:
     if raw_manifest_path is None:
         raise BinderError(
@@ -2251,6 +3861,7 @@ def build_binder(
     source_hashes["raw_aggregate_hash"] = raw_aggregate_hash
 
     execution_integrity: dict[str, Any] | None = None
+    paper_artifact_file: Path | None = None
     if require_complete:
         if results is None or results_file is None:
             raise BinderError("results artifact is required for a complete binding")
@@ -2259,6 +3870,7 @@ def build_binder(
             if paper_artifact_manifest_path is not None
             else results_file.parent / "artifact_manifest.json"
         )
+        paper_artifact_file = artifact_path
         source_updates, execution_integrity = _validate_complete_h1_h4_evidence(
             raw_manifest_path=raw_path,
             registry_path=registry,
@@ -2289,7 +3901,9 @@ def build_binder(
     persona_v2 = (
         persona_v2_slot()
         if persona_v2_dir is None
-        else bind_persona_v2_artifacts(Path(persona_v2_dir))
+        else bind_persona_v2_artifacts(
+            Path(persona_v2_dir), allow_fixture=allow_fixture
+        )
     )
     p2_bound = _bind_p2(None if p2_dir is None else Path(p2_dir))
     if (
@@ -2298,6 +3912,16 @@ def build_binder(
         != raw_source_hashes["raw_manifest_sha256"]
     ):
         raise BinderError("P2 and H1-H4 binder use different raw manifests")
+    source_artifacts = {
+        "raw_manifest": _source_artifact(raw_path),
+        "metric_registry": _source_artifact(registry),
+    }
+    if results_file is not None:
+        source_artifacts["results"] = _source_artifact(results_file)
+    if paper_artifact_file is not None:
+        source_artifacts["paper_artifact_manifest"] = _source_artifact(
+            paper_artifact_file
+        )
     return {
         "schema_version": "yher.journal_support_binder.v1",
         "status": (
@@ -2349,6 +3973,7 @@ def build_binder(
         "same_support_pairs": pairs,
         "persona_v2": persona_v2,
         "p2": p2_bound,
+        "source_artifacts": source_artifacts,
         "source_hashes": source_hashes,
         "evidence_gaps": [
             "full_27_gap_has_no_machine_bound_bootstrap_interval",
@@ -2372,6 +3997,16 @@ def _metric_display(metric: Mapping[str, Any]) -> str:
         f"{_display_number(metric['denominator'])} "
         f"({100.0 * float(metric['value']):.1f}%)"
     )
+
+
+def _percent_display(value: Any) -> str:
+    return "NA" if value is None else f"{100.0 * float(value):.1f}%"
+
+
+def _ci_display(value: Any) -> str:
+    if not isinstance(value, list) or len(value) != 2:
+        return "NA"
+    return f"{_percent_display(value[0])} to {_percent_display(value[1])}"
 
 
 def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
@@ -2432,16 +4067,172 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         pilot = persona.get("pilot_exclusion")
         if not isinstance(pilot, Mapping) or pilot.get("task_rosters_disjoint") is not True:
             raise BinderError("bound Persona-v2 slot lacks pilot exclusion proof")
-        persona_markdown = (
-            "Formal Persona-v2 main results are machine-bound for 50 persona_id "
-            "clusters, with provider as a repeated measurement, text-only modality, "
-            "and disjoint pilot/main task rosters."
+        controlled = persona.get("controlled")
+        blind = persona.get("blind")
+        judge = persona.get("judge_adjudication")
+        if not all(isinstance(value, Mapping) for value in (controlled, blind, judge)):
+            raise BinderError("bound Persona-v2 quantitative surfaces are incomplete")
+        effects = controlled.get("paired_effects")
+        if not isinstance(effects, list):
+            raise BinderError("bound Persona-v2 paired effects are missing")
+        effect_index = {
+            str(row.get("metric_id")): row
+            for row in effects
+            if isinstance(row, Mapping)
+        }
+        effect_labels = {
+            "conditional_answer_accuracy": "Conditional answer accuracy",
+            "correct_response_yield": "Correct-response yield",
+            "incorrect_response_yield": "Incorrect-response yield",
+            "abstention_yield": "Abstention yield",
+            "technical_or_schema_failure_yield": "Technical/schema-failure yield",
+        }
+        conditional_effect = effect_index.get("conditional_answer_accuracy")
+        if not isinstance(conditional_effect, Mapping):
+            raise BinderError("bound Persona-v2 conditional-accuracy effect is missing")
+        persona_lines = [
+            (
+                "Formal Persona-v2 main results use 50 persona_id clusters, provider "
+                "as a repeated measurement, text-only modality, and disjoint "
+                "pilot/main task rosters. These simulated response-channel estimates "
+                "measure instruction following and robustness, not human behavioral "
+                "validity."
+            ),
+            "",
+            "| Controlled paired outcome | Oriented effect | 95% cluster CI | Denominator |",
+            "|---|---:|---:|---|",
+        ]
+        for metric in PERSONA_EFFECT_ORIENTATIONS:
+            row = effect_index.get(metric)
+            if not isinstance(row, Mapping):
+                raise BinderError(f"bound Persona-v2 effect is missing: {metric}")
+            denominator_range = row.get("paired_persona_denominator_range")
+            denominator_text = (
+                f"paired persona denominator {denominator_range[0]}-{denominator_range[1]}"
+                if isinstance(denominator_range, list) and len(denominator_range) == 2
+                else "paired persona denominator NA"
+            )
+            persona_lines.append(
+                f"| {effect_labels[metric]} | {_percent_display(row.get('estimate'))} "
+                f"({row['orientation']}) | {_ci_display(row.get('ci95'))} | "
+                f"{denominator_text} |"
+            )
+
+        agreement = blind.get("agreement")
+        stability = blind.get("stability_provider_equal_aggregate")
+        failure = blind.get("technical_or_schema_failure_rate")
+        judge_analysis = judge.get("analysis")
+        if not all(
+            isinstance(value, Mapping)
+            for value in (agreement, stability, failure, judge_analysis)
+        ):
+            raise BinderError("bound Persona-v2 blind or judge surface is incomplete")
+        agreement_rows = agreement.get("pairs")
+        if not isinstance(agreement_rows, list) or not agreement_rows:
+            raise BinderError("bound Persona-v2 blind agreement is not estimable")
+        agreement_values = [float(row["exact_agreement"]) for row in agreement_rows]
+        answer_stability = stability.get("answer")
+        judge_label = judge_analysis.get("pairwise_label_agreement")
+        if not isinstance(answer_stability, Mapping):
+            raise BinderError("bound Persona-v2 stability is missing")
+        judge_status = judge_analysis.get("status")
+        if judge_status == "complete":
+            if not isinstance(judge_label, Mapping):
+                raise BinderError("bound Persona-v2 judge agreement is missing")
+            judge_row = (
+                "| Cross-model judge label agreement (exploratory) | "
+                f"{judge_label['exact_agreement_numerator']}/"
+                f"{judge_label['denominator']} "
+                f"({_percent_display(judge_label.get('exact_agreement'))}) | "
+                "descriptive agreement only |"
+            )
+            judge_summary = (
+                f"judge agreement={judge_label['exact_agreement_numerator']}/"
+                f"{judge_label['denominator']} "
+                f"({_percent_display(judge_label.get('exact_agreement'))}; exploratory)"
+            )
+        elif judge_status == "partial_missing_judge":
+            if judge_label is not None:
+                raise BinderError("bound missing-judge profile reports pairwise agreement")
+            judge_row = (
+                "| Automated error coding (exploratory) | GPT-only exploratory coding | "
+                "Claude judge was unavailable; pairwise judge agreement was not estimable |"
+            )
+            judge_summary = (
+                "GPT-only coding; Claude unavailable; pairwise agreement not estimable"
+            )
+        elif judge_status == "not_applicable_zero_cases":
+            if judge_label is not None:
+                raise BinderError("bound zero-case profile reports pairwise agreement")
+            not_applicable = (
+                "exploratory adjudication was not applicable because no outcome-blind "
+                "cases survived structural exclusion"
+            )
+            judge_row = (
+                "| Automated error coding (exploratory) | Not applicable | "
+                f"{not_applicable} |"
+            )
+            judge_summary = not_applicable
+        else:
+            raise BinderError("bound Persona-v2 judge status is invalid")
+        persona_lines.extend(
+            [
+                "",
+                "| Blind/exploratory outcome | Estimate | Denominator/interval |",
+                "|---|---:|---|",
+                (
+                    "| Blind technical/schema failure rate | "
+                    f"{_percent_display(failure.get('estimate'))} | "
+                    f"{_ci_display(failure.get('ci95'))} |"
+                ),
+                (
+                    "| Blind terminal exact agreement | "
+                    f"{_percent_display(min(agreement_values))} to "
+                    f"{_percent_display(max(agreement_values))} | "
+                    f"{len(agreement_values)} provider pairs; 100 paired terminal subjects each |"
+                ),
+                (
+                    "| Repeat answer stability | "
+                    f"{_percent_display(answer_stability.get('point_estimate'))} | "
+                    f"{_ci_display(answer_stability.get('ci95'))} |"
+                ),
+                judge_row,
+                "",
+                '<figure class="persona-v2-composite">',
+                (
+                    '<div class="persona-v2-panels" style="display:grid;'
+                    'grid-template-columns:repeat(3,minmax(0,1fr));gap:3mm;'
+                    'break-inside:avoid-page">'
+                ),
+                '<img src="assets/persona_v2/controlled_composition.png" alt="Controlled response composition by provider and response arm">',
+                '<img src="assets/persona_v2/blind_terminal_agreement.png" alt="Blind terminal agreement across eligible providers">',
+                '<img src="assets/persona_v2/blind_output_stability.png" alt="Frozen repeat-output stability by provider">',
+                "</div>",
+                (
+                    "<figcaption>Figure. Compact Persona-v2 composite: controlled "
+                    "composition, blind terminal agreement, and repeat stability. "
+                    "Detailed provider panels remain in the supplement.</figcaption>"
+                ),
+                "</figure>",
+            ]
+        )
+        persona_markdown = "\n".join(persona_lines)
+        persona_abstract = (
+            "Persona v2: conditional-accuracy shift="
+            f"{_percent_display(conditional_effect.get('estimate'))} "
+            f"(95% CI {_ci_display(conditional_effect.get('ci95'))}); "
+            "blind agreement="
+            f"{_percent_display(min(agreement_values))}-"
+            f"{_percent_display(max(agreement_values))}, stability="
+            f"{_percent_display(answer_stability.get('point_estimate'))}, failure="
+            f"{_percent_display(failure.get('estimate'))}; {judge_summary}."
         )
     elif persona.get("status") == "pending_formal_w3_artifacts":
         persona_markdown = (
             "Formal Persona-v2 W3 artifacts are pending; no Persona-v2 result value "
             "is bound."
         )
+        persona_abstract = "Persona-v2 results are not bound in this draft."
     else:
         raise BinderError("Persona-v2 slot status is invalid")
 
@@ -2457,26 +4248,61 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
             raise BinderError("bound P2 slot is incomplete")
         p2_lines = [
             (
-                f"Illustrative P2 is supply-bound to {boundary['node_count']} nodes/"
-                f"{boundary['trusted_exact_segment_assignments']} trusted exact segment "
-                f"assignments; the analysis overlap is {overlap['target_count']} targets/"
-                f"{overlap['candidate_row_count']} rows/{overlap['physical_source_count']} "
-                "physical sources under a 600-second budget."
+                f"Illustrative P2 is supply-bound to {boundary['node_count']} nodes "
+                f"and {boundary['trusted_exact_segment_assignments']} trusted exact "
+                f"segment assignments. The fixed analytic overlap contains "
+                f"{overlap['target_count']} targets, {overlap['candidate_row_count']} "
+                f"candidate rows, and {overlap['physical_source_count']} physical "
+                "sources under a 600-second analytic budget. This illustrative "
+                "analysis does not estimate "
+                "learning benefit or external remediation quality."
             ),
             "",
-            "| Arm | Mechanically mismatched selected min | Missed available-supply min |",
-            "|---|---:|---:|",
+            "P/U role-compatible dose minutes are unavailable and remain null because "
+            "the frozen library has no role-compatible dose definition for those states.",
+            "",
+            "| Arm | Mechanically mismatched selected min | Missed available-supply min | Diagnostic structural-failure node fraction |",
+            "|---|---:|---:|---:|",
         ]
         for row in overall:
             if not isinstance(row, Mapping):
                 raise BinderError("bound P2 overall row is invalid")
             p2_lines.append(
                 f"| {row['arm']} | {float(row['mismatched_selected_minutes']):.3f} | "
-                f"{float(row['missed_available_supply_minutes']):.3f} |"
+                f"{float(row['missed_available_supply_minutes']):.3f} | "
+                f"{float(row['structural_failure_node_fraction']):.3f} |"
             )
+        p2_lines.extend(
+            [
+                "",
+                (
+                    "Arm C's failed-node fraction of 0.500 is a diagnostic structural "
+                    "failure and is retained intention-to-treat; it is not a zero-cost "
+                    "prescription. Missed available-supply minutes instead quantify "
+                    "supply scarcity within the fixed trusted library."
+                ),
+            ]
+        )
         p2_markdown = "\n".join(p2_lines)
+        overall_index = {
+            str(row["arm"]): row for row in overall if isinstance(row, Mapping)
+        }
+        if set(overall_index) != set(P2_ARMS):
+            raise BinderError("bound P2 abstract arm roster drifted")
+        p2_abstract = (
+            f"P2 (illustrative; {overlap['target_count']} targets/"
+            f"{overlap['candidate_row_count']} rows/"
+            f"{overlap['physical_source_count']} sources): mismatched minutes "
+            "A/B/C="
+            f"{float(overall_index['A']['mismatched_selected_minutes']):.3f}/"
+            f"{float(overall_index['B']['mismatched_selected_minutes']):.3f}/"
+            f"{float(overall_index['C']['mismatched_selected_minutes']):.3f}; "
+            "Arm-C structural-failure fraction="
+            f"{float(overall_index['C']['structural_failure_node_fraction']):.3f}."
+        )
     elif p2.get("status") == "not_requested":
         p2_markdown = "P2 is not bound in this binder generation."
+        p2_abstract = "P2 is not bound in this draft."
     else:
         raise BinderError("P2 slot status is invalid")
 
@@ -2485,6 +4311,7 @@ def render_manuscript_slots(binder: Mapping[str, Any]) -> dict[str, Any]:
         "hypothesis_decisions_markdown": "\n".join(decision_lines),
         "same_support_convergence_markdown": "\n".join(convergence_lines),
         "execution_integrity_markdown": execution_markdown,
+        "bound_abstract_results_markdown": f"{persona_abstract} {p2_abstract}",
         "persona_v2_markdown": persona_markdown,
         "p2_markdown": p2_markdown,
     }

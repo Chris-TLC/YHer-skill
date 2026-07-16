@@ -4,6 +4,7 @@ import hashlib
 import inspect
 import json
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -682,6 +683,21 @@ def _write_p2(root: Path, *, raw_manifest: Path) -> Path:
     }
     summary_bytes = _canonical(summary) + b"\n"
     (root / "summary.json").write_bytes(summary_bytes)
+    p2_publication_files = {
+        "figure_data.json": _canonical(
+            {
+                "schema_version": "yher.p2.figure_data.v1",
+                "simulated": True,
+                "illustrative": True,
+                "external_validity": False,
+            }
+        )
+        + b"\n",
+        "p2_supply_bound_illustration.png": b"\x89PNG\r\n\x1a\np2",
+        "p2_supply_bound_illustration.svg": b"<svg>p2</svg>\n",
+    }
+    for filename, payload in p2_publication_files.items():
+        (root / filename).write_bytes(payload)
     output_manifest = {
         "schema_version": "yher.p2.output_manifest.v1",
         "claim_boundary": claim_boundary,
@@ -702,6 +718,14 @@ def _write_p2(root: Path, *, raw_manifest: Path) -> Path:
                 "bytes": len(input_bytes),
                 "sha256": hashlib.sha256(input_bytes).hexdigest(),
             },
+            *[
+                {
+                    "filename": filename,
+                    "bytes": len(payload),
+                    "sha256": hashlib.sha256(payload).hexdigest(),
+                }
+                for filename, payload in p2_publication_files.items()
+            ],
         ],
     }
     (root / "output_manifest.json").write_bytes(_canonical(output_manifest) + b"\n")
@@ -714,10 +738,435 @@ def _self_hash(payload: dict[str, object], field: str) -> str:
     return hashlib.sha256(_canonical(value)).hexdigest()
 
 
-def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path:
+PERSONA_PROVIDERS = ("deepseek", "glm", "kimi", "minimax", "doubao", "tongyi")
+PERSONA_STATES = (
+    "correct_answer",
+    "incorrect_answer",
+    "abstention",
+    "technical_or_schema_failure",
+)
+
+
+def _persona_bootstrap(
+    point: float | None,
+    *,
+    provider_points: dict[str, float | None],
+) -> dict[str, object]:
+    return {
+        "point_estimate": point,
+        "ci95": None if point is None else [max(0.0, point - 0.05), min(1.0, point + 0.05)],
+        "seed": 2026071503,
+        "resamples": 10000,
+        "defined_resamples": 0 if point is None else 10000,
+        "undefined_resamples": 10000 if point is None else 0,
+        "provider_equal_weighting": True,
+        "provider_point_estimates": provider_points,
+    }
+
+
+def _persona_controlled_surface() -> dict[str, object]:
+    deficit_counts = {
+        "correct_answer": 5,
+        "incorrect_answer": 40,
+        "abstention": 3,
+        "technical_or_schema_failure": 2,
+    }
+    control_counts = {
+        "correct_answer": 45,
+        "incorrect_answer": 3,
+        "abstention": 1,
+        "technical_or_schema_failure": 1,
+    }
+    by_provider: list[dict[str, object]] = []
+    for provider in PERSONA_PROVIDERS:
+        arms: list[dict[str, object]] = []
+        for arm, counts in (("deficit", deficit_counts), ("control", control_counts)):
+            answered = counts["correct_answer"] + counts["incorrect_answer"]
+            arms.append(
+                {
+                    "response_arm": arm,
+                    "expected_denominator": 50,
+                    "counts": dict(counts),
+                    "rates": {state: counts[state] / 50 for state in PERSONA_STATES},
+                    "conditional_answer_accuracy": counts["correct_answer"] / answered,
+                    "conditional_answer_denominator": answered,
+                }
+            )
+        by_provider.append({"provider": provider, "arms": arms})
+
+    all_counts = {
+        state: len(PERSONA_PROVIDERS) * (deficit_counts[state] + control_counts[state])
+        for state in PERSONA_STATES
+    }
+    metric_specs = (
+        ("conditional_answer_accuracy", "control_minus_deficit", 0.80),
+        ("correct_response_yield", "control_minus_deficit", 0.80),
+        ("incorrect_response_yield", "deficit_minus_control", 0.74),
+        ("abstention_yield", "deficit_minus_control", 0.04),
+        ("technical_or_schema_failure_yield", "deficit_minus_control", 0.02),
+    )
+    effects: list[dict[str, object]] = []
+    for metric, orientation, estimate in metric_specs:
+        provider_points = {provider: estimate for provider in PERSONA_PROVIDERS}
+        effects.append(
+            {
+                "metric_id": metric,
+                "orientation": orientation,
+                "estimate": estimate,
+                "ci95": [max(0.0, estimate - 0.05), min(1.0, estimate + 0.05)],
+                "eligible_providers": list(PERSONA_PROVIDERS),
+                "paired_persona_denominators": {
+                    provider: 50 for provider in PERSONA_PROVIDERS
+                },
+                "paired_persona_denominator_range": [50, 50],
+                "by_provider": [
+                    {
+                        "provider": provider,
+                        "included_in_aggregate": True,
+                        "estimate": estimate,
+                        "ci95": [
+                            max(0.0, estimate - 0.05),
+                            min(1.0, estimate + 0.05),
+                        ],
+                        "paired_persona_denominator": 50,
+                        "bootstrap": _persona_bootstrap(
+                            estimate, provider_points={provider: estimate}
+                        ),
+                    }
+                    for provider in PERSONA_PROVIDERS
+                ],
+                "bootstrap": _persona_bootstrap(
+                    estimate, provider_points=provider_points
+                ),
+            }
+        )
+    return {
+        "eligible_providers": list(PERSONA_PROVIDERS),
+        "excluded_providers": [],
+        "composition": {
+            "states": list(PERSONA_STATES),
+            "expected_tasks_per_provider": 100,
+            "by_provider": by_provider,
+            "aggregate_counts": all_counts,
+            "all_provider_counts": all_counts,
+        },
+        "paired_effects": effects,
+    }
+
+
+def _persona_blind_surface() -> dict[str, object]:
+    subjects = [
+        f"persona-{index:02d}|{arm}"
+        for index in range(50)
+        for arm in ("deficit", "control")
+    ]
+    pairs: list[dict[str, object]] = []
+    sorted_providers = sorted(PERSONA_PROVIDERS)
+    for left_index, left in enumerate(sorted_providers):
+        for right in sorted_providers[left_index + 1 :]:
+            pairs.append(
+                {
+                    "provider_left": left,
+                    "provider_right": right,
+                    "exact_agreement_numerator": 80,
+                    "denominator": 100,
+                    "exact_agreement": 0.8,
+                    "cohen_kappa": 0.6,
+                    "exact_agreement_ci95": [0.75, 0.85],
+                    "exact_agreement_bootstrap": _persona_bootstrap(
+                        0.8, provider_points={f"{left}__{right}": 0.8}
+                    ),
+                }
+            )
+    provider_schema = {
+        provider: {
+            "expected_primary_blind_tasks": 100,
+            "invalid_schema_count": 0,
+            "invalid_schema_fraction": 0.0,
+            "strictly_above_half": False,
+            "invalid_schema_strictly_above_half": False,
+            "excluded_from_blind_aggregate": False,
+            "complete_cluster_count": 50,
+            "exclusion_reasons": [],
+        }
+        for provider in PERSONA_PROVIDERS
+    }
+    stability = [
+        {
+            "provider": provider,
+            "excluded_from_blind_aggregate": False,
+            "status": "estimated",
+            "expected_pairs": 20,
+            "answer_agreement_numerator": 18,
+            "answer_agreement_denominator": 20,
+            "answer_agreement": 0.9,
+            "answer_bootstrap": _persona_bootstrap(
+                0.9, provider_points={provider: 0.9}
+            ),
+            "nc_nc_agreement_count": 0,
+            "canonical_complete_pair_numerator": 16,
+            "canonical_complete_pair_denominator": 20,
+            "canonical_complete_pair_stability": 0.8,
+            "canonical_complete_pair_bootstrap": _persona_bootstrap(
+                0.8, provider_points={provider: 0.8}
+            ),
+            "canonical_itt_yield": 0.8,
+        }
+        for provider in PERSONA_PROVIDERS
+    ]
+    provider_points = {provider: 0.9 for provider in PERSONA_PROVIDERS}
+    canonical_points = {provider: 0.8 for provider in PERSONA_PROVIDERS}
+    return {
+        "primary_terminal_definition": "frozen_final_blind_item",
+        "terminal_subject_count": 100,
+        "terminal_categories": ["A", "B", "NC"],
+        "provider_schema": provider_schema,
+        "eligible_providers": list(PERSONA_PROVIDERS),
+        "excluded_providers": [],
+        "agreement": {
+            "subjects": subjects,
+            "providers": sorted_providers,
+            "categories": ["A", "B", "NC"],
+            "nc_retained": True,
+            "pairs": pairs,
+            "status": "estimated",
+        },
+        "multi_provider_descriptive": {
+            "rectangular_providers": list(PERSONA_PROVIDERS),
+            "subjects": 100,
+            "unanimous_numerator": 70,
+            "unanimous_fraction": 0.7,
+            "status": "estimated",
+        },
+        "technical_or_schema_failure_rate": {
+            "estimate": 0.02,
+            "ci95": [0.01, 0.03],
+            "bootstrap": _persona_bootstrap(
+                0.02,
+                provider_points={provider: 0.02 for provider in PERSONA_PROVIDERS},
+            ),
+        },
+        "stability": stability,
+        "stability_provider_equal_aggregate": {
+            "eligible_providers": list(PERSONA_PROVIDERS),
+            "answer": _persona_bootstrap(0.9, provider_points=provider_points),
+            "canonical_complete_pair": _persona_bootstrap(
+                0.8, provider_points=canonical_points
+            ),
+        },
+    }
+
+
+def _write_persona_judge_fixture(
+    root: Path, *, judge_profile: str
+) -> tuple[
+    dict[str, object],
+    dict[str, dict[str, object]],
+    dict[str, object],
+    dict[str, object],
+    dict[str, object],
+]:
+    from experiments.llm_sim_v2 import analyze, judge_execution
+
+    selected_count = 0 if judge_profile == "zero_cases" else 2
+    candidates: list[dict[str, object]] = []
+    for index in range(selected_count):
+        question = {
+            "kind": "mcq",
+            "stem_blocks": [],
+            "stem_text": f"Public judge question {index}",
+            "options": {"A": "one", "B": "two", "C": "three", "D": "four"},
+            "difficulty": 0.5,
+            "nodes": ["private-node"],
+            "source_label": "private-source",
+        }
+        candidates.append(
+            {
+                "candidate_identity": f"provider|task-{index:03d}",
+                "stratum": "agreement",
+                "public_question": question,
+                "model_output": {
+                    "simulated": True,
+                    "answer": "A",
+                    "rationale": f"Candidate rationale {index}",
+                    "abstain": False,
+                },
+                "persona": {
+                    "persona_id": f"private-persona-{index:03d}",
+                    "target_node": "private-node",
+                },
+                "item": {
+                    "item_id": f"private-item-{index:03d}",
+                    "public_question": question,
+                    "options": question["options"],
+                },
+            }
+        )
+    case_manifest = analyze.build_judge_case_manifest(
+        candidates, frozen_leakage_lexicon=()
+    )
+    case_ids = [str(row["case_id"]) for row in case_manifest["cases"]]
+    run_root = root.parent / f".{root.name}-judge-run-source"
+    judges = {
+        "both_complete": ("gpt", "claude"),
+        "gpt_only": ("gpt",),
+        "zero_cases": (),
+    }[judge_profile]
+    result_manifests: dict[str, dict[str, object]] = {}
+    artifact_roots: dict[str, str] = {}
+    for judge in judges:
+        model = f"fixture-{judge}-exact"
+        rows = [
+            {
+                "case_id": case_id,
+                "output": {
+                    "label": "consistent",
+                    "error_category": "none",
+                    "rationale": f"{judge} rationale for {case_id}",
+                    "simulated": True,
+                },
+            }
+            for case_id in case_ids
+        ]
+        responses = [
+            {
+                "schema_version": "yher.llm_sim_v2.judge_transport_response.v2",
+                "simulated": True,
+                "transport_reported_models": [model],
+                "transport_reported_model_source": "fixture_response",
+                "transport_request_id": f"fixture-{judge}-request-{offset // 10:03d}",
+                "results": rows[offset : offset + 10],
+                "usage": {"input_tokens": 100, "output_tokens": 20},
+                "billing": {
+                    "known_cost_yuan": 0.125,
+                    "unknown_cost_reserve_yuan": 0,
+                },
+                "tool_calls": [],
+            }
+            for offset in range(0, len(rows), 10)
+        ]
+        receipt_path = judge_execution.execute_judge_pass(
+            case_manifest=case_manifest,
+            output_root=run_root,
+            judge_family=judge,
+            exact_model=model,
+            transport=judge_execution.FixtureJudgeTransport(responses),
+        )
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        manifest: dict[str, object] = {
+            "schema_version": "yher.llm_sim_v2.judge_result_manifest.v2",
+            "simulated": True,
+            "run_id": "llm-personas-v2-dual",
+            "judge": judge,
+            "case_manifest_sha256": case_manifest["case_manifest_sha256"],
+            "execution_receipt_path": receipt_path.relative_to(run_root).as_posix(),
+            "execution_receipt": receipt,
+            "results": rows,
+        }
+        manifest["judge_result_manifest_sha256"] = (
+            judge_execution.canonical_sha256(manifest)
+        )
+        result_path = run_root / f"{judge}.json"
+        result_path.write_bytes(judge_execution.canonical_json_bytes(manifest) + b"\n")
+        result_manifests[judge] = manifest
+        artifact_roots[judge] = str(receipt_path.parent.resolve())
+
+    if judge_profile == "gpt_only":
+        judge_execution.record_judge_family_disposition(
+            case_manifest=case_manifest,
+            output_root=run_root,
+            judge_family="claude",
+            status="unavailable",
+            reason_code="production_cli_unavailable",
+        )
+    elif judge_profile == "zero_cases":
+        for judge in ("claude", "gpt"):
+            judge_execution.record_judge_family_disposition(
+                case_manifest=case_manifest,
+                output_root=run_root,
+                judge_family=judge,
+                status="not_applicable_zero_cases",
+                reason_code="selected_case_count_zero",
+            )
+
+    run_receipt_path = judge_execution.write_judge_run_evidence_receipt(
+        case_manifest=case_manifest,
+        output_root=run_root,
+        allow_fixture=True,
+    )
+    run_receipt = json.loads(run_receipt_path.read_text(encoding="utf-8"))
+    result_slots = {
+        judge: result_manifests.get(judge) for judge in ("claude", "gpt")
+    }
+    judge_analysis = analyze.ingest_judge_results(
+        case_manifest,
+        result_slots,
+        judge_artifact_roots=artifact_roots,
+        judge_run_evidence={"receipt": run_receipt},
+        allow_fixture=True,
+    )
+
+    source_files = sorted(
+        (path for path in run_root.rglob("*") if path.is_file()),
+        key=lambda path: path.relative_to(run_root).as_posix(),
+    )
+    input_files = [
+        {
+            "path": f"judge-results/{path.relative_to(run_root).as_posix()}",
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "size": path.stat().st_size,
+        }
+        for path in source_files
+    ]
+    input_manifest: dict[str, object] = {
+        "schema_version": "yher.llm_sim_v2.analysis_input_artifact_manifest.v1",
+        "simulated": True,
+        "run_id": "llm-personas-v2-dual",
+        "analysis_population": "main",
+        "files": input_files,
+        "input_file_count": len(input_files),
+        "record_file_count": 0,
+        "input_file_set_sha256": hashlib.sha256(_canonical(input_files)).hexdigest(),
+    }
+    sources = {
+        f"judge-results/{path.relative_to(run_root).as_posix()}": str(path.resolve())
+        for path in source_files
+    }
+    snapshot = analyze._stage_judge_execution_snapshots(
+        staging=root,
+        judge_artifact_sources=sources,
+        input_artifact_manifest=input_manifest,
+        allow_fixture=True,
+    )
+    return (
+        case_manifest,
+        result_manifests,
+        judge_analysis,
+        input_manifest,
+        snapshot,
+    )
+
+
+def _write_persona_v2_bundle(
+    root: Path,
+    *,
+    pilot_overlap: bool = False,
+    judge_profile: str = "both_complete",
+) -> Path:
+    if judge_profile not in {"both_complete", "gpt_only", "zero_cases"}:
+        raise ValueError("unsupported judge fixture profile")
     root.mkdir()
-    providers = ["deepseek", "glm", "kimi", "minimax", "doubao", "tongyi"]
-    main_ids = ["main-task-0", "main-task-1"]
+    analysis_root = root / "analysis"
+    evidence_root = root / "evidence"
+    analysis_root.mkdir()
+    evidence_root.mkdir()
+    providers = list(PERSONA_PROVIDERS)
+    judges = {
+        "both_complete": ("claude", "gpt"),
+        "gpt_only": ("gpt",),
+        "zero_cases": (),
+    }[judge_profile]
+    main_ids = [f"main-task-{index:03d}" for index in range(220)]
     pilot_ids = [main_ids[0]] if pilot_overlap else ["pilot-task-0"]
     runtime: dict[str, object] = {
         "schema_version": "yher.llm_sim_v2.runtime_task_manifest.v1",
@@ -750,7 +1199,7 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
     runtime["runtime_task_manifest_sha256"] = _self_hash(
         runtime, "runtime_task_manifest_sha256"
     )
-    runtime_path = root / "runtime_task_manifest.json"
+    runtime_path = evidence_root / "runtime_task_manifest.json"
     runtime_path.write_bytes(_canonical(runtime) + b"\n")
 
     mapping_rows = [
@@ -797,7 +1246,7 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
             "excluded_ambiguous_rows": 94,
         },
     }
-    mapping_path = root / "mapping_manifest.json"
+    mapping_path = evidence_root / "target_option_mapping.json"
     mapping_path.write_bytes(_canonical(mapping) + b"\n")
 
     phase: dict[str, object] = {
@@ -836,21 +1285,42 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
     phase["phase_provenance_sha256"] = _self_hash(
         phase, "phase_provenance_sha256"
     )
-    phase_path = root / "phase_provenance.json"
+    phase_path = evidence_root / "phase_provenance.json"
     phase_path.write_bytes(_canonical(phase) + b"\n")
 
     lifecycle = [
         {
             "provider": provider,
             "provider_lifecycle": "complete",
+            "recomputed_provider_lifecycle": "complete",
             "expected_count": len(main_ids),
             "present_count": len(main_ids),
             "missing_count": 0,
             "missing_task_ids": [],
             "status_counts": {"complete": len(main_ids)},
+            "known_cost_yuan": 1.0,
+            "unknown_cost_reserve_yuan": 0.0,
+            "accounted_cost_yuan": 1.0,
+            "controlled_complete_cluster_count": 50,
+            "controlled_eligible": True,
+            "controlled_exclusion_reasons": [],
+            "blind_complete_cluster_count": 50,
+            "blind_eligible": True,
+            "blind_exclusion_reasons": [],
         }
         for provider in providers
     ]
+    (
+        judge_case_manifest,
+        judge_result_manifests,
+        judge_analysis,
+        analysis_input_manifest,
+        judge_run_snapshot,
+    ) = _write_persona_judge_fixture(root, judge_profile=judge_profile)
+    judge_result_bytes = {
+        judge: _canonical(manifest) + b"\n"
+        for judge, manifest in judge_result_manifests.items()
+    }
     result = {
         "schema_version": "yher.llm_sim_v2.analysis_results.v1",
         "simulated": True,
@@ -883,6 +1353,16 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
             "tasks_per_provider": len(main_ids),
             "provider_task_cells": len(providers) * len(main_ids),
         },
+        "input_artifact_binding": {
+            "input_file_count": analysis_input_manifest["input_file_count"],
+            "record_file_count": analysis_input_manifest["record_file_count"],
+            "input_file_set_sha256": analysis_input_manifest[
+                "input_file_set_sha256"
+            ],
+            "input_artifact_manifest_sha256": hashlib.sha256(
+                _canonical(analysis_input_manifest)
+            ).hexdigest(),
+        },
         "bootstrap_contract": {
             "cluster_unit": "persona_id",
             "provider_equal_weighting": True,
@@ -903,29 +1383,91 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
             "target_set_hash": target_hash,
             "by_provider_and_arm": [],
         },
-        "controlled": {"composition": [], "paired_effects": []},
-        "blind": {
-            "eligible_providers": providers,
-            "excluded_providers": [],
-            "agreement": {},
-            "stability": [],
+        "controlled": _persona_controlled_surface(),
+        "blind": _persona_blind_surface(),
+        "judge_adjudication": {
+            "case_manifest": judge_case_manifest,
+            "analysis": judge_analysis,
+            "run_evidence_binding": {
+                "schema_version": (
+                    "yher.llm_sim_v2.formal_judge_run_evidence_binding.v1"
+                ),
+                "judge_run_evidence_receipt_sha256": judge_run_snapshot[
+                    "source_judge_run_evidence_receipt_sha256"
+                ],
+                "committed_anchor_sha256": "e" * 64,
+                "family_slots": judge_run_snapshot["family_slots"],
+            },
+            "result_manifests": {
+                judge: judge_result_manifests.get(judge)
+                for judge in ("claude", "gpt")
+            },
         },
         "outputs": {
             "machine_json": True,
-            "machine_csv_tables": 0,
+            "machine_csv_tables": 8,
             "figure_data_machine_readable": True,
-            "publication_figures": 0,
-            "publication_formats": [],
+            "publication_figures": 3,
+            "publication_formats": ["png_300_dpi", "svg"],
+            "judge_case_export": True,
+            "judge_shared_input_sha256": "1" * 64,
         },
     }
-    result_path = root / "analysis_results.json"
+    result_path = analysis_root / "analysis_results.json"
     result_path.write_bytes(_canonical(result) + b"\n")
+    input_artifact_path = analysis_root / "input_artifact_manifest.json"
+    input_artifact_path.write_bytes(_canonical(analysis_input_manifest) + b"\n")
+    judge_result_paths: dict[str, Path] = {}
+    for judge, payload in judge_result_bytes.items():
+        path = root / f"judge-snapshots/run/{judge}.json"
+        assert path.read_bytes() == payload
+        judge_result_paths[judge] = path
+    snapshot_manifest_path = root / "judge-snapshots/snapshot_manifest.json"
+    assert json.loads(snapshot_manifest_path.read_text(encoding="utf-8")) == (
+        judge_run_snapshot
+    )
+    snapshot_publication_files = {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in sorted(
+            (path for path in (root / "judge-snapshots").rglob("*") if path.is_file()),
+            key=lambda path: path.relative_to(root).as_posix(),
+        )
+    }
+    publication_files = {
+        "input_artifact_manifest.json": input_artifact_path.read_bytes(),
+        "provider_lifecycle.csv": b"provider,provider_lifecycle\ndeepseek,complete\n",
+        "controlled_composition.csv": b"provider,response_arm,state,count\ndeepseek,deficit,incorrect_answer,40\n",
+        "controlled_paired_effects.csv": b"metric_id,estimate\nconditional_answer_accuracy,0.8\n",
+        "blind_agreement.csv": b"provider_left,provider_right,exact_agreement\ndeepseek,glm,0.8\n",
+        "blind_stability.csv": b"provider,answer_agreement\ndeepseek,0.9\n",
+        "figure_data/controlled_composition.csv": b"provider,response_arm,state,count\ndeepseek,deficit,incorrect_answer,40\n",
+        "figure_data/blind_agreement.csv": b"provider_left,provider_right,exact_agreement\ndeepseek,glm,0.8\n",
+        "figure_data/blind_stability.csv": b"provider,answer_agreement\ndeepseek,0.9\n",
+        "figures/controlled_composition.png": b"\x89PNG\r\n\x1a\ncontrolled",
+        "figures/controlled_composition.svg": b"<svg>controlled</svg>\n",
+        "figures/blind_terminal_agreement.png": b"\x89PNG\r\n\x1a\nagreement",
+        "figures/blind_terminal_agreement.svg": b"<svg>agreement</svg>\n",
+        "figures/blind_output_stability.png": b"\x89PNG\r\n\x1a\nstability",
+        "figures/blind_output_stability.svg": b"<svg>stability</svg>\n",
+        "judge/case_manifest.json": _canonical(judge_case_manifest) + b"\n",
+        "judge/judge_analysis.json": _canonical(judge_analysis) + b"\n",
+        **snapshot_publication_files,
+    }
+    for relative, payload in publication_files.items():
+        path = analysis_root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(payload)
+    artifact_paths = [
+        result_path,
+        *(analysis_root / name for name in publication_files),
+    ]
     artifacts = [
         {
-            "path": "analysis_results.json",
-            "sha256": hashlib.sha256(result_path.read_bytes()).hexdigest(),
-            "size": len(result_path.read_bytes()),
+            "path": path.relative_to(analysis_root).as_posix(),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "size": len(path.read_bytes()),
         }
+        for path in artifact_paths
     ]
     analysis_manifest = {
         "schema_version": "yher.llm_sim_v2.analysis_artifact_manifest.v1",
@@ -940,15 +1482,21 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
         "artifacts": artifacts,
         "artifact_set_sha256": hashlib.sha256(_canonical(artifacts)).hexdigest(),
     }
-    analysis_manifest_path = root / "artifact_manifest.json"
+    analysis_manifest_path = analysis_root / "artifact_manifest.json"
     analysis_manifest_path.write_bytes(_canonical(analysis_manifest) + b"\n")
 
     bundle_files = {
         "analysis_results": result_path,
         "analysis_artifact_manifest": analysis_manifest_path,
+        "analysis_input_artifact_manifest": input_artifact_path,
         "phase_provenance": phase_path,
         "runtime_task_manifest": runtime_path,
         "mapping_manifest": mapping_path,
+        **{
+            f"{judge}_judge_result_manifest": judge_result_paths[judge]
+            for judge in judges
+        },
+        "judge_run_execution_snapshot_manifest": snapshot_manifest_path,
     }
     binding_manifest = {
         "schema_version": "yher.journal_binder.persona_v2_bundle.v1",
@@ -957,7 +1505,7 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
         "analysis_population": "main",
         "files": {
             role: {
-                "path": path.name,
+                "path": path.relative_to(root).as_posix(),
                 "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             }
             for role, path in bundle_files.items()
@@ -965,6 +1513,106 @@ def _write_persona_v2_bundle(root: Path, *, pilot_overlap: bool = False) -> Path
     }
     (root / "binding_manifest.json").write_bytes(_canonical(binding_manifest) + b"\n")
     return root
+
+
+def _rewrite_persona_result_bundle(
+    bundle: Path,
+    mutate: object,
+) -> None:
+    analysis_root = bundle / "analysis"
+    result_path = analysis_root / "analysis_results.json"
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    assert callable(mutate)
+    mutate(result)
+    result_path.write_bytes(_canonical(result) + b"\n")
+
+    judge_files = {
+        "judge/case_manifest.json": result["judge_adjudication"]["case_manifest"],
+        "judge/judge_analysis.json": result["judge_adjudication"]["analysis"],
+    }
+    for relative, payload in judge_files.items():
+        (analysis_root / relative).write_bytes(_canonical(payload) + b"\n")
+
+    artifact_path = analysis_root / "artifact_manifest.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    result_entry = next(
+        row for row in artifact["artifacts"] if row["path"] == "analysis_results.json"
+    )
+    result_entry["sha256"] = hashlib.sha256(result_path.read_bytes()).hexdigest()
+    result_entry["size"] = len(result_path.read_bytes())
+    for relative in judge_files:
+        path = analysis_root / relative
+        row = next(item for item in artifact["artifacts"] if item["path"] == relative)
+        row["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        row["size"] = len(path.read_bytes())
+    artifact["artifact_set_sha256"] = hashlib.sha256(
+        _canonical(artifact["artifacts"])
+    ).hexdigest()
+    artifact_path.write_bytes(_canonical(artifact) + b"\n")
+
+    binding_path = bundle / "binding_manifest.json"
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding["files"]["analysis_results"]["sha256"] = hashlib.sha256(
+        result_path.read_bytes()
+    ).hexdigest()
+    binding["files"]["analysis_artifact_manifest"]["sha256"] = hashlib.sha256(
+        artifact_path.read_bytes()
+    ).hexdigest()
+    binding_path.write_bytes(_canonical(binding) + b"\n")
+
+
+def _rewrite_persona_input_manifest_bundle(
+    bundle: Path,
+    mutate: object,
+) -> None:
+    analysis_root = bundle / "analysis"
+    input_path = analysis_root / "input_artifact_manifest.json"
+    input_manifest = json.loads(input_path.read_text(encoding="utf-8"))
+    assert callable(mutate)
+    mutate(input_manifest)
+    input_manifest["input_file_count"] = len(input_manifest["files"])
+    input_manifest["input_file_set_sha256"] = hashlib.sha256(
+        _canonical(input_manifest["files"])
+    ).hexdigest()
+    input_path.write_bytes(_canonical(input_manifest) + b"\n")
+
+    def bind_input(result: dict[str, object]) -> None:
+        input_binding = result["input_artifact_binding"]
+        assert isinstance(input_binding, dict)
+        input_binding.update(
+            {
+                "input_file_count": input_manifest["input_file_count"],
+                "record_file_count": input_manifest["record_file_count"],
+                "input_file_set_sha256": input_manifest["input_file_set_sha256"],
+                "input_artifact_manifest_sha256": hashlib.sha256(
+                    _canonical(input_manifest)
+                ).hexdigest(),
+            }
+        )
+
+    _rewrite_persona_result_bundle(bundle, bind_input)
+    artifact_path = analysis_root / "artifact_manifest.json"
+    artifact_manifest = json.loads(artifact_path.read_text(encoding="utf-8"))
+    input_row = next(
+        row
+        for row in artifact_manifest["artifacts"]
+        if row["path"] == "input_artifact_manifest.json"
+    )
+    input_row["sha256"] = hashlib.sha256(input_path.read_bytes()).hexdigest()
+    input_row["size"] = input_path.stat().st_size
+    artifact_manifest["artifact_set_sha256"] = hashlib.sha256(
+        _canonical(artifact_manifest["artifacts"])
+    ).hexdigest()
+    artifact_path.write_bytes(_canonical(artifact_manifest) + b"\n")
+    binding_path = bundle / "binding_manifest.json"
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding["files"]["analysis_input_artifact_manifest"]["sha256"] = (
+        hashlib.sha256(input_path.read_bytes()).hexdigest()
+    )
+    binding["files"]["analysis_artifact_manifest"]["sha256"] = hashlib.sha256(
+        artifact_path.read_bytes()
+    ).hexdigest()
+    binding_path.write_bytes(_canonical(binding) + b"\n")
 
 
 def test_raw_manifest_must_be_an_explicit_override(tmp_path: Path) -> None:
@@ -1247,7 +1895,7 @@ def test_persona_v2_formal_w3_bundle_has_a_verified_success_path(
     )
     bundle = _write_persona_v2_bundle(tmp_path / "persona")
 
-    bound = journal_binder.bind_persona_v2_artifacts(bundle)
+    bound = journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
 
     assert bound["status"] == "bound_formal_w3"
     assert bound["run_id"] == "llm-personas-v2-dual"
@@ -1258,12 +1906,513 @@ def test_persona_v2_formal_w3_bundle_has_a_verified_success_path(
     assert bound["modality_condition"] == "text_only"
     assert bound["pilot_exclusion"]["task_rosters_disjoint"] is True
     assert bound["pilot_exclusion"]["pilot_task_count"] == 1
-    assert bound["pilot_exclusion"]["main_task_count"] == 2
+    assert bound["pilot_exclusion"]["main_task_count"] == 220
     assert len(bound["provider_lifecycle"]) == 6
     assert bound["mapping"]["mapped_mapping_rows"] == 6
     assert bound["mapping"]["total_mapping_rows"] == 100
     assert len(bound["source_hashes"]["analysis_results_sha256"]) == 64
     assert len(bound["source_hashes"]["analysis_artifact_set_sha256"]) == 64
+    assert bound["controlled"]["paired_effects"][0][
+        "paired_persona_denominator_range"
+    ] == [50, 50]
+    assert bound["blind"]["agreement"]["pairs"][0]["denominator"] == 100
+    assert bound["blind"]["stability"][0]["answer_agreement_denominator"] == 20
+    assert bound["judge_adjudication"]["analysis"]["status"] == "complete"
+    assert bound["judge_adjudication"]["analysis"]["schema_version"] == (
+        "yher.llm_sim_v2.judge_analysis.v2"
+    )
+    assert set(
+        bound["judge_adjudication"]["analysis"]["execution_receipt_sha256"]
+    ) == {"claude", "gpt"}
+    assert set(bound["publication_assets"]["main_persona_composite_sources"]) == {
+        "controlled_composition",
+        "blind_terminal_agreement",
+        "blind_output_stability",
+    }
+
+
+def test_persona_v2_accepts_exact_gpt_only_claude_missing_profile(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(
+        tmp_path / "persona",
+        judge_profile="gpt_only",
+    )
+
+    bound = journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+    analysis = bound["judge_adjudication"]["analysis"]
+    assert analysis["status"] == "partial_missing_judge"
+    assert analysis["expected_judges"] == ["claude", "gpt"]
+    assert analysis["available_judges"] == ["gpt"]
+    assert analysis["missing_judges"] == ["claude"]
+    assert analysis["pairwise_label_agreement"] is None
+    assert analysis["pairwise_error_category_agreement"] is None
+    assert set(analysis["result_manifest_sha256"]) == {"gpt"}
+    snapshot_paths = set(
+        bound["publication_assets"]["judge_execution_snapshots"]
+    )
+    assert "judge-snapshots/run/family_dispositions/claude.json" in snapshot_paths
+    assert "judge-snapshots/run/gpt.json" in snapshot_paths
+    assert any(
+        path.startswith("judge-snapshots/run/executions/gpt/")
+        and path.endswith("/execution_receipt.json")
+        for path in snapshot_paths
+    )
+    assert not any(path == "judge-snapshots/run/claude.json" for path in snapshot_paths)
+    assert not any(
+        role.startswith("claude_") for role in bound["source_artifacts"]
+    )
+
+
+def test_persona_v2_rejects_renamed_identical_judge_result_role(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(
+        tmp_path / "persona", judge_profile="gpt_only"
+    )
+    canonical = bundle / "judge-snapshots/run/gpt.json"
+    renamed = bundle / "renamed-identical-gpt-result.json"
+    shutil.copyfile(canonical, renamed)
+    binding_path = bundle / "binding_manifest.json"
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding["files"]["gpt_judge_result_manifest"]["path"] = renamed.name
+    binding_path.write_bytes(_canonical(binding) + b"\n")
+
+    with pytest.raises(journal_binder.BinderError, match="fixed.*path|canonical.*path"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_rejects_symlinked_canonical_bundle_role(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    canonical = bundle / "analysis/analysis_results.json"
+    outside = tmp_path / "outside-analysis-results.json"
+    shutil.move(canonical, outside)
+    canonical.symlink_to(outside)
+
+    with pytest.raises(journal_binder.BinderError, match="symlink|unsafe|regular"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_rejects_symlinked_analysis_artifact(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    artifact = bundle / "analysis/figures/blind_output_stability.png"
+    outside = tmp_path / "outside-stability.png"
+    shutil.move(artifact, outside)
+    artifact.symlink_to(outside)
+
+    with pytest.raises(journal_binder.BinderError, match="symlink|unsafe|regular"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_rejects_duplicate_binding_role_json_key(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(
+        tmp_path / "persona", judge_profile="gpt_only"
+    )
+    binding_path = bundle / "binding_manifest.json"
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    role_parts: list[bytes] = []
+    for role, descriptor in binding["files"].items():
+        encoded = _canonical(role) + b":" + _canonical(descriptor)
+        role_parts.append(encoded)
+        if role == "gpt_judge_result_manifest":
+            role_parts.append(encoded)
+    raw_files = b"{" + b",".join(role_parts) + b"}"
+    binding_path.write_bytes(
+        b'{"analysis_population":"main","files":'
+        + raw_files
+        + b',"run_id":"llm-personas-v2-dual"'
+        + b',"schema_version":"yher.journal_binder.persona_v2_bundle.v1"'
+        + b',"simulated":true}\n'
+    )
+
+    with pytest.raises(journal_binder.BinderError, match="duplicate JSON key"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_rejects_stray_embedded_result_for_unavailable_judge(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(
+        tmp_path / "persona", judge_profile="gpt_only"
+    )
+    _rewrite_persona_result_bundle(
+        bundle,
+        lambda result: result["judge_adjudication"]["result_manifests"].__setitem__(
+            "claude", {"stray": True}
+        ),
+    )
+
+    with pytest.raises(journal_binder.BinderError, match="result manifest.*profile"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+@pytest.mark.parametrize("mutation", ["missing", "mismatched"])
+def test_persona_v2_rejects_incomplete_or_mismatched_embedded_result_manifest(
+    tmp_path: Path,
+    mutation: str,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+
+    def mutate(result: dict[str, object]) -> None:
+        adjudication = result["judge_adjudication"]
+        assert isinstance(adjudication, dict)
+        manifests = adjudication["result_manifests"]
+        assert isinstance(manifests, dict)
+        if mutation == "missing":
+            manifests.pop("gpt")
+        else:
+            gpt = manifests["gpt"]
+            assert isinstance(gpt, dict)
+            gpt["run_id"] = "tampered-run"
+
+    _rewrite_persona_result_bundle(bundle, mutate)
+
+    with pytest.raises(journal_binder.BinderError, match="result manifest.*profile"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_rejects_judge_run_evidence_binding_drift(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    _rewrite_persona_result_bundle(
+        bundle,
+        lambda result: result["judge_adjudication"]["run_evidence_binding"].__setitem__(
+            "judge_run_evidence_receipt_sha256", "0" * 64
+        ),
+    )
+
+    with pytest.raises(journal_binder.BinderError, match="run evidence binding.*drift"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_zero_case_rejects_bound_judge_result_input_row(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(
+        tmp_path / "persona", judge_profile="zero_cases"
+    )
+    _rewrite_persona_input_manifest_bundle(
+        bundle,
+        lambda manifest: manifest["files"].append(
+            {
+                "path": "judge-results/gpt.json",
+                "sha256": "0" * 64,
+                "size": 0,
+            }
+        ),
+    )
+
+    with pytest.raises(journal_binder.BinderError, match="judge.*input.*snapshot"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_rejects_snapshot_raw_attempt_missing_from_analysis_inputs(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(
+        tmp_path / "persona", judge_profile="gpt_only"
+    )
+
+    def remove_raw_attempt(manifest: dict[str, object]) -> None:
+        files = manifest["files"]
+        assert isinstance(files, list)
+        raw_rows = [row for row in files if "/raw_attempts/" in row["path"]]
+        assert raw_rows
+        files.remove(raw_rows[0])
+
+    _rewrite_persona_input_manifest_bundle(bundle, remove_raw_attempt)
+
+    with pytest.raises(journal_binder.BinderError, match="judge.*input.*snapshot"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def _persona_snapshot_file(bundle: Path, *, judge: str, kind: str) -> Path:
+    snapshot_path = bundle / "judge-snapshots/snapshot_manifest.json"
+    snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    matches = []
+    for row in snapshot["files"]:
+        relative = str(row["path"])
+        if not relative.startswith(f"run/executions/{judge}/"):
+            continue
+        if kind == "normalized_results" and relative.endswith(
+            "/normalized_results.jsonl"
+        ):
+            matches.append(relative)
+        elif kind == "raw_attempt" and "/raw_attempts/" in relative:
+            matches.append(relative)
+    assert len(matches) == 1
+    return snapshot_path.parent / matches[0]
+
+
+def _rehash_persona_snapshot_tree(bundle: Path) -> None:
+    snapshot_path = bundle / "judge-snapshots/snapshot_manifest.json"
+    snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    for row in snapshot["files"]:
+        path = snapshot_path.parent / row["path"]
+        if path.is_file():
+            row["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            row["size"] = len(path.read_bytes())
+    snapshot["file_count"] = len(snapshot["files"])
+    snapshot["file_set_sha256"] = hashlib.sha256(
+        _canonical(snapshot["files"])
+    ).hexdigest()
+    snapshot["snapshot_manifest_sha256"] = _self_hash(
+        snapshot, "snapshot_manifest_sha256"
+    )
+    snapshot_path.write_bytes(_canonical(snapshot) + b"\n")
+
+    analysis_root = bundle / "analysis"
+    artifact_path = analysis_root / "artifact_manifest.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    for row in artifact["artifacts"]:
+        path = analysis_root / row["path"]
+        if path.is_file():
+            row["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            row["size"] = len(path.read_bytes())
+    artifact["artifact_set_sha256"] = hashlib.sha256(
+        _canonical(artifact["artifacts"])
+    ).hexdigest()
+    artifact_path.write_bytes(_canonical(artifact) + b"\n")
+
+    binding_path = bundle / "binding_manifest.json"
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding["files"]["judge_run_execution_snapshot_manifest"]["sha256"] = (
+        hashlib.sha256(snapshot_path.read_bytes()).hexdigest()
+    )
+    binding["files"]["analysis_artifact_manifest"]["sha256"] = hashlib.sha256(
+        artifact_path.read_bytes()
+    ).hexdigest()
+    binding_path.write_bytes(_canonical(binding) + b"\n")
+
+
+def test_persona_v2_rejects_rehashed_raw_snapshot_that_differs_from_receipt(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    raw_path = _persona_snapshot_file(bundle, judge="gpt", kind="raw_attempt")
+    raw_path.write_bytes(raw_path.read_bytes() + b" ")
+    _rehash_persona_snapshot_tree(bundle)
+
+    with pytest.raises(
+        journal_binder.BinderError, match="snapshot cannot replay|exact tree|raw"
+    ):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+@pytest.mark.parametrize(
+    "kind",
+    (
+        "normalized_results",
+        "raw_attempt",
+    ),
+)
+def test_persona_v2_rejects_missing_required_snapshot_file(
+    tmp_path: Path,
+    kind: str,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona", judge_profile="gpt_only")
+    _persona_snapshot_file(bundle, judge="gpt", kind=kind).unlink()
+
+    with pytest.raises(
+        journal_binder.BinderError, match="snapshot cannot replay|missing file|file set"
+    ):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_missing_judge_profile_cannot_report_pairwise_agreement(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona", judge_profile="gpt_only")
+    _rewrite_persona_result_bundle(
+        bundle,
+        lambda result: result["judge_adjudication"]["analysis"].__setitem__(
+            "pairwise_label_agreement",
+            {
+                "metric": "judge_label_agreement",
+                "judges": ["claude", "gpt"],
+                "exact_agreement_numerator": 1,
+                "denominator": 1,
+                "exact_agreement": 1.0,
+                "cohen_kappa": 1.0,
+            },
+        ),
+    )
+
+    with pytest.raises(journal_binder.BinderError, match="missing judge.*pairwise"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        (
+            lambda result: result["controlled"].__setitem__("paired_effects", []),
+            "paired effect",
+        ),
+        (
+            lambda result: result["controlled"]["paired_effects"][0].__setitem__(
+                "paired_persona_denominator_range", [49, 50]
+            ),
+            "denominator",
+        ),
+        (
+            lambda result: result["blind"]["agreement"]["pairs"][0].__setitem__(
+                "denominator", 99
+            ),
+            "agreement",
+        ),
+        (
+            lambda result: result["blind"]["stability"][0].__setitem__(
+                "answer_agreement_numerator", 21
+            ),
+            "stability",
+        ),
+        (
+            lambda result: result["provider_lifecycle"][0].__setitem__(
+                "controlled_eligible", False
+            ),
+            "lifecycle|eligible",
+        ),
+        (
+            lambda result: result["judge_adjudication"]["analysis"].__setitem__(
+                "schema_version", "yher.llm_sim_v2.judge_analysis.v1"
+            ),
+            "judge.*v2|schema",
+        ),
+        (
+            lambda result: result["judge_adjudication"]["analysis"][
+                "judge_models"
+            ].__setitem__("gpt", "claude-opus-4"),
+            "judge.*independent|model|execution receipt",
+        ),
+        (
+            lambda result: result["judge_adjudication"]["analysis"][
+                "judge_transports"
+            ].__setitem__("gpt", "claude_cli"),
+            "transport",
+        ),
+        (
+            lambda result: result["judge_adjudication"]["analysis"][
+                "judge_accounting"
+            ]["gpt"].__setitem__("accounted_cost_yuan", 9.0),
+            "accounting",
+        ),
+        (
+            lambda result: result["judge_adjudication"]["analysis"][
+                "execution_receipt_sha256"
+            ].__setitem__("gpt", "0" * 64),
+            "receipt.*(?:hash|drift)|judge result",
+        ),
+    ),
+)
+def test_persona_v2_rejects_incomplete_or_unreconciled_quantitative_surfaces(
+    tmp_path: Path,
+    mutation: object,
+    message: str,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    _rewrite_persona_result_bundle(bundle, mutation)
+
+    with pytest.raises(journal_binder.BinderError, match=message):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_requires_hash_bound_publication_tables_and_figures(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    artifact_path = bundle / "analysis/artifact_manifest.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    artifact["artifacts"] = [
+        row
+        for row in artifact["artifacts"]
+        if row["path"] != "figures/blind_output_stability.png"
+    ]
+    artifact["artifact_set_sha256"] = hashlib.sha256(
+        _canonical(artifact["artifacts"])
+    ).hexdigest()
+    artifact_path.write_bytes(_canonical(artifact) + b"\n")
+    binding_path = bundle / "binding_manifest.json"
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding["files"]["analysis_artifact_manifest"]["sha256"] = hashlib.sha256(
+        artifact_path.read_bytes()
+    ).hexdigest()
+    binding_path.write_bytes(_canonical(binding) + b"\n")
+
+    with pytest.raises(journal_binder.BinderError, match="publication artifact"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
+
+
+def test_persona_v2_rejects_noncanonical_analysis_artifact_path_alias(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    bundle = _write_persona_v2_bundle(tmp_path / "persona")
+    artifact_path = bundle / "analysis/artifact_manifest.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    original = next(
+        row
+        for row in artifact["artifacts"]
+        if row["path"] == "controlled_composition.csv"
+    )
+    artifact["artifacts"].append(
+        {
+            **original,
+            "path": "./controlled_composition.csv",
+        }
+    )
+    artifact["artifact_set_sha256"] = hashlib.sha256(
+        _canonical(artifact["artifacts"])
+    ).hexdigest()
+    artifact_path.write_bytes(_canonical(artifact) + b"\n")
+    binding_path = bundle / "binding_manifest.json"
+    binding = json.loads(binding_path.read_text(encoding="utf-8"))
+    binding["files"]["analysis_artifact_manifest"]["sha256"] = hashlib.sha256(
+        artifact_path.read_bytes()
+    ).hexdigest()
+    binding_path.write_bytes(_canonical(binding) + b"\n")
+
+    with pytest.raises(journal_binder.BinderError, match="non-canonical|path.*unsafe"):
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
 
 
 def test_persona_v2_rejects_pilot_tasks_in_the_main_roster(tmp_path: Path) -> None:
@@ -1273,7 +2422,7 @@ def test_persona_v2_rejects_pilot_tasks_in_the_main_roster(tmp_path: Path) -> No
     bundle = _write_persona_v2_bundle(tmp_path / "persona", pilot_overlap=True)
 
     with pytest.raises(journal_binder.BinderError, match="pilot.*main.*disjoint"):
-        journal_binder.bind_persona_v2_artifacts(bundle)
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
 
 
 def test_persona_v2_rejects_unbound_analysis_output_bytes(tmp_path: Path) -> None:
@@ -1281,11 +2430,11 @@ def test_persona_v2_rejects_unbound_analysis_output_bytes(tmp_path: Path) -> Non
 
     assert hasattr(journal_binder, "bind_persona_v2_artifacts")
     bundle = _write_persona_v2_bundle(tmp_path / "persona")
-    result_path = bundle / "analysis_results.json"
+    result_path = bundle / "analysis/analysis_results.json"
     result_path.write_bytes(result_path.read_bytes() + b" ")
 
     with pytest.raises(journal_binder.BinderError, match="bundle file SHA-256"):
-        journal_binder.bind_persona_v2_artifacts(bundle)
+        journal_binder.bind_persona_v2_artifacts(bundle, allow_fixture=True)
 
 
 def test_build_binder_uses_the_formal_persona_artifact_binder(tmp_path: Path) -> None:
@@ -1306,6 +2455,7 @@ def test_build_binder_uses_the_formal_persona_artifact_binder(tmp_path: Path) ->
         persona_v2_dir=persona,
         p2_dir=None,
         require_complete=False,
+        allow_fixture=True,
     )
 
     assert bound["persona_v2"]["status"] == "bound_formal_w3"
@@ -1577,6 +2727,12 @@ def test_p2_binding_is_hash_bound_and_preserves_claim_boundary(tmp_path: Path) -
     assert p2_bound["source_hashes"]["p2_spec_sha256"] == input_manifest["spec"][
         "sha256"
     ]
+    assert p2_bound["publication_assets"]["supplement_figure_png"][
+        "relative_path"
+    ] == "p2_supply_bound_illustration.png"
+    assert p2_bound["publication_assets"]["supplement_figure_svg"][
+        "relative_path"
+    ] == "p2_supply_bound_illustration.svg"
 
 
 def test_p2_requires_an_input_manifest(tmp_path: Path) -> None:
@@ -1649,6 +2805,30 @@ def _complete_binder(tmp_path: Path) -> dict[str, object]:
     )
 
 
+def _complete_journal_binder(
+    tmp_path: Path,
+    *,
+    judge_profile: str = "both_complete",
+) -> dict[str, object]:
+    from experiments import journal_binder
+
+    bundle = _write_complete_h1_h4_bundle(tmp_path / "h1-h4")
+    persona = _write_persona_v2_bundle(
+        tmp_path / "persona",
+        judge_profile=judge_profile,
+    )
+    p2 = _write_p2(tmp_path / "p2", raw_manifest=bundle["raw"])
+    return journal_binder.build_binder(
+        raw_manifest_path=bundle["raw"],
+        registry_path=bundle["registry"],
+        results_path=bundle["results"],
+        persona_v2_dir=persona,
+        p2_dir=p2,
+        require_complete=True,
+        allow_fixture=True,
+    )
+
+
 def test_manuscript_slots_are_deterministically_rendered_from_bound_values(
     tmp_path: Path,
 ) -> None:
@@ -1669,6 +2849,111 @@ def test_manuscript_slots_are_deterministically_rendered_from_bound_values(
         "same_support_convergence_markdown"
     ]
     assert len(first["content_sha256"]) == 64
+
+
+def test_bound_persona_and_p2_slots_are_compact_complete_and_claim_bounded(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    slots = journal_binder.render_manuscript_slots(
+        _complete_journal_binder(tmp_path)
+    )
+    persona = slots["persona_v2_markdown"]
+    p2 = slots["p2_markdown"]
+
+    for text in (
+        "50 persona_id clusters",
+        "provider as a repeated measurement",
+        "Conditional answer accuracy",
+        "80.0%",
+        "paired persona denominator 50-50",
+        "Blind technical/schema failure rate",
+        "2.0%",
+        "Blind terminal exact agreement",
+        "80.0%",
+        "Repeat answer stability",
+        "90.0%",
+        "Cross-model judge label agreement",
+        "2/2",
+        "exploratory",
+        "not human behavioral validity",
+    ):
+        assert text in persona
+    assert persona.count("<figure") == 1
+    assert persona.count("<img ") == 3
+    assert "grid-template-columns:repeat(3,minmax(0,1fr))" in persona
+    assert "assets/persona_v2/controlled_composition.png" in persona
+    assert "assets/persona_v2/blind_terminal_agreement.png" in persona
+    assert "assets/persona_v2/blind_output_stability.png" in persona
+
+    for text in (
+        "2 targets",
+        "8 candidate rows",
+        "3 physical sources",
+        "600-second analytic budget",
+        "P/U role-compatible dose minutes are unavailable and remain null",
+        "Arm C",
+        "0.500",
+        "diagnostic structural failure",
+        "supply scarcity",
+        "illustrative",
+        "does not estimate learning benefit",
+    ):
+        assert text in p2
+    assert p2.count("| oracle |") == 1
+    assert p2.count("| A |") == 1
+    assert p2.count("| B |") == 1
+    assert p2.count("| C |") == 1
+
+
+def test_gpt_only_slots_disclose_missing_claude_without_pairwise_claim(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder
+
+    slots = journal_binder.render_manuscript_slots(
+        _complete_journal_binder(tmp_path, judge_profile="gpt_only")
+    )
+
+    persona = slots["persona_v2_markdown"]
+    abstract = slots["bound_abstract_results_markdown"]
+    assert "GPT-only exploratory coding" in persona
+    assert "Claude judge was unavailable" in persona
+    assert "pairwise judge agreement was not estimable" in persona
+    assert "GPT-only coding" in abstract
+    assert "Claude unavailable" in abstract
+    assert "pairwise agreement not estimable" in abstract
+    for text in (persona, abstract):
+        assert "Cross-model judge label agreement" not in text
+        assert "110/120" not in text
+    assert "P2 (illustrative;" in abstract
+
+
+def test_bound_abstract_result_slot_is_compact_but_keeps_core_limits(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    slots = journal_binder.render_manuscript_slots(
+        _complete_journal_binder(tmp_path, judge_profile="gpt_only")
+    )
+    abstract = slots["bound_abstract_results_markdown"]
+
+    assert len(journal_manuscript.ABSTRACT_WORD_PATTERN.findall(abstract)) <= 45
+    for text in (
+        "95% CI",
+        "blind agreement",
+        "stability",
+        "failure",
+        "GPT-only",
+        "Claude unavailable",
+        "pairwise agreement not estimable",
+        "P2",
+        "illustrative",
+        "Arm-C structural-failure",
+    ):
+        assert text in abstract
 
 
 def test_write_binder_publishes_an_atomic_generation_with_slot_fragments(
@@ -1725,3 +3010,401 @@ def test_interrupted_publish_keeps_the_previous_generation_visible(
 
     assert (output / "current").resolve() == previous_target
     assert (previous_target / "journal_binder.json").read_bytes() == previous_bytes
+
+
+def _write_finalizer_template(path: Path, *, persona_body: str = "TEMPLATE ONLY") -> Path:
+    path.write_text(
+        """# Bound Journal Manuscript
+
+## Structured Abstract
+
+**Results:** Frozen H1-H4 results are reported above.
+
+<!-- BEGIN RESULT SLOT: BOUND_ABSTRACT_RESULTS -->
+TEMPLATE ONLY
+<!-- END RESULT SLOT: BOUND_ABSTRACT_RESULTS -->
+
+## 4. Results
+
+### 4.5 Persona-v2
+
+<!-- BEGIN RESULT SLOT: PERSONA_V2_DUAL -->
+"""
+        + persona_body
+        + """
+<!-- END RESULT SLOT: PERSONA_V2_DUAL -->
+
+### 4.6 P2 illustration
+
+<!-- BEGIN RESULT SLOT: P2_ILLUSTRATIVE -->
+TEMPLATE ONLY
+<!-- END RESULT SLOT: P2_ILLUSTRATIVE -->
+
+## References
+""",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _write_reference_fixture(path: Path) -> Path:
+    path.write_bytes(
+        _canonical({"schema_version": "yher.verified-references.v1", "references": []})
+        + b"\n"
+    )
+    return path
+
+
+def test_journal_finalizer_binds_template_binder_slots_assets_and_final_bytes(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    binder = _complete_journal_binder(tmp_path / "inputs")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(binder, binder_root)
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    references = _write_reference_fixture(tmp_path / "references.json")
+
+    manifest = journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+
+    final_generation = (tmp_path / "final/current").resolve()
+    final_text = (final_generation / "journal_main.md").read_text(encoding="utf-8")
+    assert manifest["template"]["sha256"] == hashlib.sha256(
+        template.read_bytes()
+    ).hexdigest()
+    assert manifest["binder"]["generation_id"] == binder_generation.name
+    assert len(manifest["binder"]["journal_binder_sha256"]) == 64
+    assert len(manifest["slots"]["manuscript_slots_sha256"]) == 64
+    assert len(manifest["final_manuscript"]["sha256"]) == 64
+    assert manifest["structured_abstract"]["maximum_words"] == 300
+    assert 0 < manifest["structured_abstract"]["word_count"] <= 300
+    assert "BEGIN RESULT SLOT" not in final_text
+    assert "Persona v2: conditional-accuracy shift=" in final_text
+    assert "P2 (illustrative;" in final_text
+    assert "Formal Persona-v2 main results" in final_text
+    assert "Illustrative P2 is supply-bound" in final_text
+    for relative in (
+        "assets/persona_v2/controlled_composition.png",
+        "assets/persona_v2/blind_terminal_agreement.png",
+        "assets/persona_v2/blind_output_stability.png",
+        "assets/supplement/p2/p2_supply_bound_illustration.png",
+        "assets/supplement/p2/p2_supply_bound_illustration.svg",
+    ):
+        assert (final_generation / relative).is_file()
+    verified = journal_manuscript.verify_finalized_generation(
+        final_generation, references_path=references
+    )
+    assert verified == manifest
+
+
+def test_journal_finalizer_preserves_honest_gpt_only_judge_disclosure(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    binder = _complete_journal_binder(
+        tmp_path / "inputs",
+        judge_profile="gpt_only",
+    )
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(binder, binder_root)
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    references = _write_reference_fixture(tmp_path / "references.json")
+
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+
+    final_text = (tmp_path / "final/current/journal_main.md").read_text(
+        encoding="utf-8"
+    )
+    assert final_text.count("GPT-only exploratory coding") == 1
+    assert final_text.count("Claude judge was unavailable") == 1
+    assert final_text.count("pairwise judge agreement was not estimable") == 1
+    assert final_text.count("GPT-only coding") == 1
+    assert final_text.count("Claude unavailable") == 1
+    assert final_text.count("pairwise agreement not estimable") == 1
+    assert "Cross-model judge label agreement" not in final_text
+    assert "110/120" not in final_text
+
+
+def test_repository_journal_template_finalizes_without_stale_result_prose(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    binder = _complete_journal_binder(
+        tmp_path / "inputs",
+        judge_profile="gpt_only",
+    )
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(binder, binder_root)
+    binder_generation = (binder_root / "current").resolve()
+    template = Path(__file__).parents[1] / "docs/paper/journal_main.md"
+    references = Path(__file__).parents[1] / "docs/paper/references.json"
+
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+
+    final_text = (tmp_path / "final/current/journal_main.md").read_text(
+        encoding="utf-8"
+    )
+    journal_manuscript.audit_manuscript(final_text, references_path=references)
+    assert journal_manuscript.structured_abstract_word_count(final_text) <= 300
+    for stale in (
+        "BEGIN RESULT SLOT",
+        "no Persona-v2 outcome enters this version",
+        "slot remains empty",
+        "absent by design",
+        "P2 component will",
+        "P2 will compare",
+        "no Persona-v2 figure",
+    ):
+        assert stale.lower() not in final_text.lower()
+    assert "Persona v2: conditional-accuracy shift=" in final_text
+    assert "P2 (illustrative;" in final_text
+
+
+def test_journal_finalizer_rejects_overlong_fully_bound_structured_abstract(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    template.write_text(
+        template.read_text(encoding="utf-8").replace(
+            "**Results:** Frozen H1-H4 results are reported above.",
+            "**Results:** " + " ".join(f"word{index}" for index in range(301)),
+        ),
+        encoding="utf-8",
+    )
+    references = _write_reference_fixture(tmp_path / "references.json")
+
+    with pytest.raises(
+        journal_manuscript.FinalizationError,
+        match="Structured Abstract.*300",
+    ):
+        journal_manuscript.finalize_manuscript(
+            template_path=template,
+            binder_generation=binder_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "final",
+            expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+            expected_binder_generation_id=binder_generation.name,
+        )
+    assert not (tmp_path / "final/current").exists()
+
+
+def test_journal_finalizer_rejects_pending_binder_and_manual_slot_numbers(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    pending_root = tmp_path / "pending-binder"
+    journal_binder.write_binder(_complete_binder(tmp_path / "pending-inputs"), pending_root)
+    pending_generation = (pending_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    with pytest.raises(journal_manuscript.FinalizationError, match="fully bound"):
+        journal_manuscript.finalize_manuscript(
+            template_path=template,
+            binder_generation=pending_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "pending-final",
+            expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+            expected_binder_generation_id=pending_generation.name,
+        )
+
+    complete_root = tmp_path / "complete-binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "complete-inputs"), complete_root
+    )
+    complete_generation = (complete_root / "current").resolve()
+    manual = _write_finalizer_template(
+        tmp_path / "manual.md", persona_body="TEMPLATE ONLY: 99.9%"
+    )
+    with pytest.raises(journal_manuscript.FinalizationError, match="manual result number"):
+        journal_manuscript.finalize_manuscript(
+            template_path=manual,
+            binder_generation=complete_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "manual-final",
+            expected_template_sha256=hashlib.sha256(manual.read_bytes()).hexdigest(),
+            expected_binder_generation_id=complete_generation.name,
+        )
+
+    stale_prose = _write_finalizer_template(tmp_path / "stale-prose.md")
+    stale_prose.write_text(
+        stale_prose.read_text(encoding="utf-8")
+        + "\nPersona-v2 results are absent by design until a later insertion.\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(journal_manuscript.FinalizationError, match="pending manuscript"):
+        journal_manuscript.finalize_manuscript(
+            template_path=stale_prose,
+            binder_generation=complete_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "stale-prose-final",
+            expected_template_sha256=hashlib.sha256(
+                stale_prose.read_bytes()
+            ).hexdigest(),
+            expected_binder_generation_id=complete_generation.name,
+        )
+
+
+def test_journal_finalizer_rejects_stale_binder_source_and_post_finalize_drift(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder = _complete_journal_binder(tmp_path / "inputs")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(binder, binder_root)
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    persona_source = Path(
+        binder["persona_v2"]["publication_assets"][
+            "main_persona_composite_sources"
+        ]["controlled_composition"]["source_path"]
+    )
+    original = persona_source.read_bytes()
+    persona_source.write_bytes(original + b"drift")
+    with pytest.raises(journal_manuscript.FinalizationError, match="stale binder source"):
+        journal_manuscript.finalize_manuscript(
+            template_path=template,
+            binder_generation=binder_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "stale-final",
+            expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+            expected_binder_generation_id=binder_generation.name,
+        )
+    persona_source.write_bytes(original)
+
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+    final_generation = (tmp_path / "final/current").resolve()
+    manuscript = final_generation / "journal_main.md"
+    manuscript.write_text(
+        manuscript.read_text(encoding="utf-8").replace("80.0%", "81.0%", 1),
+        encoding="utf-8",
+    )
+    with pytest.raises(journal_manuscript.FinalizationError, match="final manuscript.*drift"):
+        journal_manuscript.verify_finalized_generation(
+            final_generation, references_path=references
+        )
+
+
+def test_journal_finalizer_rechecks_primary_binder_sources(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder = _complete_journal_binder(tmp_path / "inputs")
+    assert set(binder["source_artifacts"]) == {
+        "raw_manifest",
+        "metric_registry",
+        "results",
+        "paper_artifact_manifest",
+    }
+    assert "analysis_results" in binder["persona_v2"]["source_artifacts"]
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(binder, binder_root)
+    generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    registry = Path(binder["source_artifacts"]["metric_registry"]["source_path"])
+    original = registry.read_bytes()
+    registry.write_bytes(original + b" ")
+
+    with pytest.raises(journal_manuscript.FinalizationError, match="stale binder source"):
+        journal_manuscript.finalize_manuscript(
+            template_path=template,
+            binder_generation=binder_root / "current",
+            references_path=references,
+            output_dir=tmp_path / "stale-final",
+            expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+            expected_binder_generation_id=generation.name,
+        )
+    registry.write_bytes(original)
+
+
+def test_journal_pdf_metadata_binds_pdf_to_finalized_manuscript(
+    tmp_path: Path,
+) -> None:
+    from experiments import journal_binder, journal_manuscript
+
+    references = _write_reference_fixture(tmp_path / "references.json")
+    binder_root = tmp_path / "binder"
+    journal_binder.write_binder(
+        _complete_journal_binder(tmp_path / "inputs"), binder_root
+    )
+    binder_generation = (binder_root / "current").resolve()
+    template = _write_finalizer_template(tmp_path / "template.md")
+    journal_manuscript.finalize_manuscript(
+        template_path=template,
+        binder_generation=binder_root / "current",
+        references_path=references,
+        output_dir=tmp_path / "final",
+        expected_template_sha256=hashlib.sha256(template.read_bytes()).hexdigest(),
+        expected_binder_generation_id=binder_generation.name,
+    )
+    final_generation = (tmp_path / "final/current").resolve()
+    pdf = tmp_path / "journal_main.pdf"
+    pdf.write_bytes(b"%PDF-1.7\nsynthetic-test-pdf\n%%EOF\n")
+    metadata_path = tmp_path / "journal_main.pdf.metadata.json"
+
+    metadata = journal_manuscript.write_pdf_metadata(
+        pdf_path=pdf,
+        finalized_generation=final_generation,
+        references_path=references,
+        output_path=metadata_path,
+    )
+
+    assert metadata["schema_version"] == "yher.journal_pdf.metadata.v1"
+    assert metadata["pdf"]["sha256"] == hashlib.sha256(pdf.read_bytes()).hexdigest()
+    assert metadata["finalized_manuscript"]["sha256"] == hashlib.sha256(
+        (final_generation / "journal_main.md").read_bytes()
+    ).hexdigest()
+    assert metadata["binder_generation_id"] == binder_generation.name
+    assert journal_manuscript.verify_pdf_metadata(
+        metadata_path, references_path=references
+    ) == metadata
+
+    pdf.write_bytes(pdf.read_bytes() + b"drift")
+    with pytest.raises(journal_manuscript.FinalizationError, match="PDF bytes drifted"):
+        journal_manuscript.verify_pdf_metadata(
+            metadata_path, references_path=references
+        )
