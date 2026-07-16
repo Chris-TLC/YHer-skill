@@ -54,6 +54,9 @@ _CARRIED_COST_LEDGER_REL = Path(
 _MAIN_PHASE_RECEIPT_REL = Path(
     "experiments/llm_sim_v2/evidence_anchors/main_phase_evidence_receipt.json"
 )
+_JUDGE_RUN_RECEIPT_REL = Path(
+    "experiments/llm_sim_v2/evidence_anchors/judge_run_evidence_receipt.json"
+)
 
 
 class AnalysisContractError(ValueError):
@@ -135,6 +138,9 @@ _FORMAL_LOADER_BUNDLE_FIELDS = (
     "active_contract_proof",
     "cost_accounting",
     "judge_result_manifests",
+    "judge_run_evidence",
+    "judge_artifact_roots",
+    "judge_artifact_sources",
     "input_artifact_manifest",
     "phase_evidence",
 )
@@ -650,8 +656,16 @@ def build_judge_case_manifest(
 ) -> dict[str, Any]:
     """Select the frozen 80/40 exploratory adjudication sample and export it."""
 
-    from .prompts import render_judge_export
+    from .judge_protocol import (
+        JUDGE_PUBLIC_SCHEMA_KEYS,
+        judge_protocol,
+        judge_public_question_payload,
+        render_judge_export,
+    )
 
+    protocol = judge_protocol()
+    amendment_path = Path(__file__).with_name("judge_amendment_20260716.md")
+    amendment_bytes = amendment_path.read_bytes()
     normalized: dict[str, list[dict[str, Any]]] = {
         "disagreement": [],
         "agreement": [],
@@ -665,8 +679,18 @@ def build_judge_case_manifest(
     )
     pre_exclusion_counts = {"disagreement": 0, "agreement": 0}
     excluded_identity_rows: list[dict[str, Any]] = []
+    excluded_target_label_rows: list[dict[str, Any]] = []
+    target_terms_by_case: dict[str, tuple[str, ...]] = {}
     identities: set[str] = set()
-    for candidate_value in candidates:
+    ordered_candidates = sorted(
+        candidates,
+        key=lambda value: (
+            str(value.get("candidate_identity") or "")
+            if isinstance(value, Mapping)
+            else ""
+        ),
+    )
+    for candidate_value in ordered_candidates:
         candidate = _mapping(candidate_value, "judge candidate")
         identity = str(candidate.get("candidate_identity") or "")
         stratum = str(candidate.get("stratum") or "")
@@ -686,6 +710,7 @@ def build_judge_case_manifest(
             raise AnalysisContractError("judge candidate identity or payload is invalid")
         identities.add(identity)
         pre_exclusion_counts[stratum] += 1
+        identity_digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()
         allowed_output_fields = {"simulated", "answer", "rationale", "abstain"}
         if (
             set(model_output) - allowed_output_fields
@@ -698,31 +723,63 @@ def build_judge_case_manifest(
             is not (model_output.get("answer") is None)
         ):
             raise AnalysisContractError("judge candidate output surface is invalid")
-        public_messages = [
-            {
-                "role": "user",
-                "simulated": True,
-                "content": json.dumps(
-                    {"simulated": True, "public_question": dict(public_question)},
-                    ensure_ascii=False,
-                    sort_keys=True,
-                    separators=(",", ":"),
-                ),
-            }
-        ]
+        judge_question = judge_public_question_payload(
+            {"public_question": dict(public_question)}
+        )
+        target_label_terms = tuple(
+            sorted(
+                {
+                    normalized_term
+                    for value in (
+                        persona.get("target_node"),
+                        persona.get("target_label"),
+                        item.get("target_node"),
+                        item.get("target_label"),
+                    )
+                    if value is not None
+                    and (normalized_term := _normalize_identity_term(value))
+                }
+            )
+        )
+        target_label_hits = _provider_identity_hits(
+            judge_question, target_label_terms
+        )
+        if target_label_hits:
+            excluded_target_label_rows.append(
+                {
+                    "candidate_identity_sha256": identity_digest,
+                    "stratum": stratum,
+                    "matched_target_label_sha256": [
+                        hashlib.sha256(term.encode("utf-8")).hexdigest()
+                        for term in target_label_hits
+                    ],
+                }
+            )
+            continue
         try:
             judge_messages = render_judge_export(
-                blind_messages=public_messages,
+                public_question=judge_question,
                 model_output=dict(model_output),
-                persona=persona,
-                item=item,
-                frozen_leakage_lexicon=frozen_leakage_lexicon,
             )
         except (AssertionError, TypeError, ValueError) as exc:
             raise AnalysisContractError(
                 f"judge candidate contains target-label leakage: {exc}"
             ) from exc
-        identity_digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()
+        payload_target_label_hits = _provider_identity_hits(
+            judge_messages, target_label_terms
+        )
+        if payload_target_label_hits:
+            excluded_target_label_rows.append(
+                {
+                    "candidate_identity_sha256": identity_digest,
+                    "stratum": stratum,
+                    "matched_target_label_sha256": [
+                        hashlib.sha256(term.encode("utf-8")).hexdigest()
+                        for term in payload_target_label_hits
+                    ],
+                }
+            )
+            continue
         identity_hits = _provider_identity_hits(judge_messages, identity_terms)
         if identity_hits:
             excluded_identity_rows.append(
@@ -739,21 +796,27 @@ def build_judge_case_manifest(
         selection_digest = hashlib.sha256(
             f"{BOOTSTRAP_SEED}|{identity}".encode("utf-8")
         ).hexdigest()
-        normalized[stratum].append(
-            {
-                "candidate_identity_sha256": identity_digest,
-                "selection_sha256": selection_digest,
-                "stratum": stratum,
-                "case_id": "case-"
-                + hashlib.sha256(
-                    f"judge-case|{BOOTSTRAP_SEED}|{identity}".encode("utf-8")
-                ).hexdigest()[:24],
-                "judge_messages": judge_messages,
-                "judge_input_sha256": _canonical_sha(judge_messages),
-            }
-        )
+        case_row = {
+            "candidate_identity_sha256": identity_digest,
+            "selection_sha256": selection_digest,
+            "stratum": stratum,
+            "case_id": "case-"
+            + hashlib.sha256(
+                f"judge-case|{BOOTSTRAP_SEED}|{identity}".encode("utf-8")
+            ).hexdigest()[:24],
+            "judge_messages": judge_messages,
+            "judge_input_sha256": _canonical_sha(judge_messages),
+        }
+        normalized[stratum].append(case_row)
+        target_terms_by_case[case_row["case_id"]] = target_label_terms
     for values in normalized.values():
         values.sort(key=lambda row: (row["selection_sha256"], row["case_id"]))
+    excluded_identity_rows.sort(
+        key=lambda row: (row["candidate_identity_sha256"], row["stratum"])
+    )
+    excluded_target_label_rows.sort(
+        key=lambda row: (row["candidate_identity_sha256"], row["stratum"])
+    )
     disagreement = normalized["disagreement"]
     agreement = normalized["agreement"]
     selected_disagreement = disagreement[:80]
@@ -780,7 +843,7 @@ def build_judge_case_manifest(
     if len(selected) > 120 or len({row["case_id"] for row in selected}) != len(selected):
         raise AnalysisContractError("judge selection is not a unique at-most-120 set")
     manifest: dict[str, Any] = {
-        "schema_version": "yher.llm_sim_v2.judge_case_manifest.v1",
+        "schema_version": "yher.llm_sim_v2.judge_case_manifest.v2",
         "simulated": True,
         "run_id": RUN_ID,
         "analysis_population": "main",
@@ -799,7 +862,22 @@ def build_judge_case_manifest(
         "cross_stratum_fill": cross_fill,
         "selected_count": len(selected),
         "opaque_case_ids": True,
+        "judge_protocol": protocol,
+        "judge_protocol_sha256": _canonical_sha(protocol),
+        "judge_amendment": {
+            "path": "experiments/llm_sim_v2/judge_amendment_20260716.md",
+            "sha256": hashlib.sha256(amendment_bytes).hexdigest(),
+            "size": len(amendment_bytes),
+        },
+        "question_field_whitelist": sorted(JUDGE_PUBLIC_SCHEMA_KEYS),
+        "target_metadata_exported": False,
         "target_labels_exported": False,
+        "target_label_scan": {
+            "policy": "exclude_candidate_when_its_exact_target_label_occurs_in_sanitized_judge_payload",
+            "excluded_candidate_count": len(excluded_target_label_rows),
+            "excluded_candidates": excluded_target_label_rows,
+            "final_serialized_hit_count": None,
+        },
         "provider_identity_scan": {
             "policy": "exclude_candidate_without_redaction_before_selection",
             "identity_term_count": len(identity_terms),
@@ -821,6 +899,13 @@ def build_judge_case_manifest(
             "provider identity remained in final serialized judge bytes"
         )
     manifest["provider_identity_scan"]["final_serialized_hit_count"] = 0
+    final_target_label_hits = sum(
+        bool(_provider_identity_hits(row["judge_messages"], target_terms_by_case[row["case_id"]]))
+        for row in selected
+    )
+    if final_target_label_hits:
+        raise AnalysisContractError("target label remained in final judge case bytes")
+    manifest["target_label_scan"]["final_serialized_hit_count"] = 0
     manifest["provider_identity_exported"] = False
     manifest["shared_input_sha256"] = hashlib.sha256(shared_bytes).hexdigest()
     manifest["judge_inputs"] = {
@@ -834,28 +919,149 @@ def build_judge_case_manifest(
 def ingest_judge_results(
     case_manifest: Mapping[str, Any],
     judge_result_manifests: Mapping[str, Mapping[str, Any] | None],
+    *,
+    judge_artifact_roots: Mapping[str, str] | None = None,
+    judge_run_evidence: Mapping[str, Any] | None = None,
+    allow_fixture: bool = False,
 ) -> dict[str, Any]:
     """Validate two frozen judge passes and report descriptive agreement only."""
 
-    from .prompts import validate_judge_output
+    from .judge_execution import JudgeExecutionError, validate_execution_receipt
+    from .judge_protocol import (
+        JUDGE_PUBLIC_SCHEMA_KEYS,
+        judge_protocol,
+        validate_judge_output,
+    )
 
     cases = _mapping(case_manifest, "judge case manifest")
     payload = dict(cases)
     advertised_case_sha = payload.pop("case_manifest_sha256", None)
+    protocol = judge_protocol()
+    amendment_bytes = Path(__file__).with_name(
+        "judge_amendment_20260716.md"
+    ).read_bytes()
+    amendment_binding = {
+        "path": "experiments/llm_sim_v2/judge_amendment_20260716.md",
+        "sha256": hashlib.sha256(amendment_bytes).hexdigest(),
+        "size": len(amendment_bytes),
+    }
     if (
-        cases.get("schema_version") != "yher.llm_sim_v2.judge_case_manifest.v1"
+        cases.get("schema_version") != "yher.llm_sim_v2.judge_case_manifest.v2"
         or advertised_case_sha != _canonical_sha(payload)
         or cases.get("shared_input_sha256")
         != hashlib.sha256(judge_input_bytes(cases)).hexdigest()
+        or cases.get("judge_protocol") != protocol
+        or cases.get("judge_protocol_sha256") != _canonical_sha(protocol)
+        or cases.get("judge_amendment") != amendment_binding
+        or cases.get("question_field_whitelist")
+        != sorted(JUDGE_PUBLIC_SCHEMA_KEYS)
+        or cases.get("target_metadata_exported") is not False
+        or cases.get("target_labels_exported") is not False
     ):
         raise AnalysisContractError("judge case manifest hash or input bytes drifted")
     if set(judge_result_manifests) != {"claude", "gpt"}:
         raise AnalysisContractError("judge results must disclose both frozen judge slots")
     case_ids = [str(row["case_id"]) for row in cases.get("cases", ())]
+    run_receipt: Mapping[str, Any] | None = None
+    if judge_run_evidence is not None:
+        run_receipt = _mapping(
+            judge_run_evidence.get("receipt"), "judge run evidence receipt"
+        )
+        receipt_payload = dict(run_receipt)
+        advertised_run_sha = receipt_payload.pop(
+            "judge_run_evidence_receipt_sha256", None
+        )
+        family_slots = run_receipt.get("family_slots")
+        case_binding = run_receipt.get("case_binding")
+        if (
+            run_receipt.get("schema_version")
+            != "yher.llm_sim_v2.judge_run_evidence_receipt.v1"
+            or run_receipt.get("simulated") is not True
+            or run_receipt.get("run_id") != RUN_ID
+            or run_receipt.get("status") != "finalized"
+            or advertised_run_sha != _canonical_sha(receipt_payload)
+            or not isinstance(family_slots, Mapping)
+            or set(family_slots) != {"claude", "gpt"}
+            or not isinstance(case_binding, Mapping)
+            or case_binding.get("case_manifest_sha256") != advertised_case_sha
+            or case_binding.get("shared_input_sha256")
+            != cases.get("shared_input_sha256")
+            or case_binding.get("case_count") != len(case_ids)
+        ):
+            raise AnalysisContractError(
+                "judge run evidence receipt does not bind the analyzed case manifest"
+            )
+        for judge in ("claude", "gpt"):
+            slot = _mapping(family_slots[judge], f"{judge} judge family slot")
+            result = judge_result_manifests[judge]
+            if (slot.get("status") == "complete") != (result is not None):
+                raise AnalysisContractError(
+                    f"{judge} judge result availability differs from finalized run evidence"
+                )
+            if result is not None:
+                embedded = _mapping(
+                    result.get("execution_receipt"),
+                    f"{judge} embedded judge execution receipt",
+                )
+                if (
+                    slot.get("receipt_sha256")
+                    != embedded.get("execution_receipt_sha256")
+                    or slot.get("accounting") != embedded.get("accounting")
+                ):
+                    raise AnalysisContractError(
+                        f"{judge} judge result differs from finalized family slot"
+                    )
+    if not case_ids:
+        if any(judge_result_manifests.values()):
+            raise AnalysisContractError("zero-case judge run cannot contain judge results")
+        if run_receipt is not None and any(
+            _mapping(
+                _mapping(run_receipt["family_slots"], "judge family slots")[judge],
+                f"{judge} judge family slot",
+            ).get("status")
+            != "not_applicable_zero_cases"
+            for judge in ("claude", "gpt")
+        ):
+            raise AnalysisContractError(
+                "zero-case judge run must record both not-applicable dispositions"
+            )
+        return {
+            "schema_version": "yher.llm_sim_v2.judge_analysis.v2",
+            "simulated": True,
+            "run_id": RUN_ID,
+            "exploratory": True,
+            "case_manifest_sha256": advertised_case_sha,
+            "selected_count": 0,
+            "cases": [],
+            "result_manifest_sha256": {},
+            "execution_receipt_sha256": {},
+            "execution_ids": {},
+            "judge_families": {},
+            "judge_models": {},
+            "judge_transports": {},
+            "judge_accounting": {},
+            "expected_judges": ["claude", "gpt"],
+            "available_judges": [],
+            "missing_judges": [],
+            "status": "not_applicable_zero_cases",
+            "category_counts": {},
+            "pairwise_label_agreement": None,
+            "pairwise_error_category_agreement": None,
+            "label_disagreement_examples": [],
+            "error_category_disagreement_examples": [],
+        }
     normalized: dict[str, dict[str, dict[str, Any]]] = {}
     manifest_hashes: dict[str, str] = {}
     missing: list[str] = []
     category_counts: dict[str, dict[str, Any]] = {}
+    execution_receipt_hashes: dict[str, str] = {}
+    execution_ids: dict[str, str] = {}
+    judge_families: dict[str, str] = {}
+    judge_models: dict[str, str] = {}
+    judge_transports: dict[str, str] = {}
+    attempt_ids_by_judge: dict[str, set[str]] = {}
+    raw_hashes_by_judge: dict[str, set[str]] = {}
+    judge_accounting: dict[str, dict[str, Any]] = {}
     for judge in ("claude", "gpt"):
         raw = judge_result_manifests[judge]
         if raw is None:
@@ -865,20 +1071,59 @@ def ingest_judge_results(
         result_payload = dict(result_manifest)
         advertised = result_payload.pop("judge_result_manifest_sha256", None)
         results = result_manifest.get("results")
+        receipt_value = result_manifest.get("execution_receipt")
         if (
             result_manifest.get("schema_version")
-            != "yher.llm_sim_v2.judge_result_manifest.v1"
+            != "yher.llm_sim_v2.judge_result_manifest.v2"
             or result_manifest.get("simulated") is not True
             or result_manifest.get("run_id") != RUN_ID
             or result_manifest.get("judge") != judge
             or result_manifest.get("case_manifest_sha256") != advertised_case_sha
             or advertised != _canonical_sha(result_payload)
+            or not isinstance(receipt_value, Mapping)
             or not isinstance(results, list)
             or [str(row.get("case_id") or "") for row in results if isinstance(row, Mapping)]
             != case_ids
         ):
             raise AnalysisContractError(
                 f"{judge} judge result or case manifest hash drifted"
+            )
+        try:
+            receipt = validate_execution_receipt(
+                receipt_value,
+                cases,
+                judge,
+                artifact_root=(
+                    judge_artifact_roots.get(judge)
+                    if judge_artifact_roots is not None
+                    else None
+                ),
+                allow_fixture=allow_fixture,
+            )
+        except JudgeExecutionError as exc:
+            raise AnalysisContractError(
+                f"{judge} judge execution receipt is invalid: {exc}"
+            ) from exc
+        identity = _mapping(receipt.get("identity"), "judge execution identity")
+        expected_transport = (
+            "fixture"
+            if allow_fixture
+            else {"claude": "claude_cli", "gpt": "codex_cli"}[judge]
+        )
+        if identity.get("transport") != expected_transport:
+            raise AnalysisContractError(
+                f"{judge} judge execution transport is not independently admissible"
+            )
+        normalized_receipt = _mapping(
+            receipt.get("normalized_results"), "judge normalized result binding"
+        )
+        if (
+            normalized_receipt.get("row_count") != len(results)
+            or normalized_receipt.get("ordered_output_sha256")
+            != _canonical_sha([_canonical_sha(row) for row in results])
+        ):
+            raise AnalysisContractError(
+                f"{judge} judge normalized result receipt differs from results"
             )
         outputs: dict[str, dict[str, Any]] = {}
         try:
@@ -895,6 +1140,23 @@ def ingest_judge_results(
             raise AnalysisContractError(f"{judge} judge results repeat a case ID")
         normalized[judge] = outputs
         manifest_hashes[judge] = str(advertised)
+        execution_receipt_hashes[judge] = str(
+            receipt["execution_receipt_sha256"]
+        )
+        execution_ids[judge] = str(identity["execution_id"])
+        judge_families[judge] = str(identity["judge_family"])
+        judge_models[judge] = str(identity["requested_model"])
+        judge_transports[judge] = str(identity["transport"])
+        attempt_ids_by_judge[judge] = {
+            str(value) for value in receipt["ordered_attempt_ids"]
+        }
+        raw_hashes_by_judge[judge] = {
+            str(_mapping(row, "judge raw artifact")["sha256"])
+            for row in receipt["raw_artifacts"]
+        }
+        judge_accounting[judge] = dict(
+            _mapping(receipt.get("accounting"), "judge execution accounting")
+        )
         label_counts = Counter(output["label"] for output in outputs.values())
         error_counts = Counter(
             str(output["error_category"])
@@ -910,6 +1172,16 @@ def ingest_judge_results(
     label_disagreements: list[dict[str, Any]] = []
     error_category_disagreements: list[dict[str, Any]] = []
     if not missing:
+        if (
+            judge_families != {"claude": "claude", "gpt": "gpt"}
+            or len(set(execution_ids.values())) != 2
+            or len(set(judge_models.values())) != 2
+            or attempt_ids_by_judge["claude"] & attempt_ids_by_judge["gpt"]
+            or raw_hashes_by_judge["claude"] & raw_hashes_by_judge["gpt"]
+        ):
+            raise AnalysisContractError(
+                "judge executions are not independent across families, models, attempts, and raw artifacts"
+            )
         left = [normalized["claude"][case_id]["label"] for case_id in case_ids]
         right = [normalized["gpt"][case_id]["label"] for case_id in case_ids]
         if case_ids:
@@ -1001,12 +1273,20 @@ def ingest_judge_results(
                     }
                 )
     return {
-        "schema_version": "yher.llm_sim_v2.judge_analysis.v1",
+        "schema_version": "yher.llm_sim_v2.judge_analysis.v2",
         "simulated": True,
         "run_id": RUN_ID,
         "exploratory": True,
         "case_manifest_sha256": advertised_case_sha,
+        "selected_count": len(case_ids),
+        "cases": case_ids,
         "result_manifest_sha256": manifest_hashes,
+        "execution_receipt_sha256": execution_receipt_hashes,
+        "execution_ids": execution_ids,
+        "judge_families": judge_families,
+        "judge_models": judge_models,
+        "judge_transports": judge_transports,
+        "judge_accounting": judge_accounting,
         "expected_judges": ["claude", "gpt"],
         "available_judges": [
             judge for judge in ("claude", "gpt") if judge in normalized
@@ -2137,7 +2417,7 @@ def _controlled_analysis(
 ) -> dict[str, Any]:
     controlled = [row for row in expected_tasks if row["condition"] == "controlled"]
     by_provider: list[dict[str, Any]] = []
-    eligible = tuple(str(provider) for provider in eligible_providers)
+    eligible = tuple(sorted(str(provider) for provider in eligible_providers))
     aggregate_counts = Counter({state: 0 for state in CONTROLLED_STATES})
     all_provider_counts = Counter({state: 0 for state in CONTROLLED_STATES})
     persona_metrics: dict[str, dict[str, dict[str, float | None]]] = {
@@ -2742,13 +3022,16 @@ def _judge_candidates_from_terminal_records(
     eligible = tuple(str(provider) for provider in eligible_providers)
     if len(eligible) < 2:
         return []
-    terminal = [
-        task
-        for task in expected_tasks
-        if task["condition"] == "blind"
-        and task["is_stability_repeat"] is False
-        and task["is_terminal"] is True
-    ]
+    terminal = sorted(
+        (
+            task
+            for task in expected_tasks
+            if task["condition"] == "blind"
+            and task["is_stability_repeat"] is False
+            and task["is_terminal"] is True
+        ),
+        key=lambda task: str(task["task_id"]),
+    )
     candidates: list[dict[str, Any]] = []
     for task in terminal:
         task_id = str(task["task_id"])
@@ -2870,6 +3153,7 @@ def _prepare_cost_accounting(
             != "yher.llm_sim_v2.cost_accounting.v1"
             or cost_result.get("currency") != "CNY"
             or not isinstance(cost_result.get("provider_phase"), list)
+            or not isinstance(cost_result.get("judge"), list)
             or not isinstance(
                 cost_result.get("cost_reconciliation_artifact_manifest"), Mapping
             )
@@ -2924,6 +3208,9 @@ def analyze_dataset(
     active_contract_proof: Mapping[str, Any],
     cost_accounting: Mapping[str, Any] | None = None,
     judge_result_manifests: Mapping[str, Mapping[str, Any] | None] | None = None,
+    judge_run_evidence: Mapping[str, Any] | None = None,
+    judge_artifact_roots: Mapping[str, str] | None = None,
+    judge_artifact_sources: Mapping[str, str] | None = None,
     input_artifact_manifest: Mapping[str, Any] | None = None,
     phase_evidence: Mapping[str, Any] | None = None,
     _formal_loader_proof: _FormalLoaderProof | None = None,
@@ -2940,6 +3227,9 @@ def analyze_dataset(
         "active_contract_proof": active_contract_proof,
         "cost_accounting": cost_accounting,
         "judge_result_manifests": judge_result_manifests,
+        "judge_run_evidence": judge_run_evidence,
+        "judge_artifact_roots": judge_artifact_roots,
+        "judge_artifact_sources": judge_artifact_sources,
         "input_artifact_manifest": input_artifact_manifest,
         "phase_evidence": phase_evidence,
     }
@@ -2952,17 +3242,24 @@ def analyze_dataset(
             or cost_accounting is None
             or input_artifact_manifest is None
             or judge_result_manifests is None
+            or judge_artifact_roots is None
+            or judge_artifact_sources is None
             or phase_evidence is None
+            or bool(judge_artifact_sources) != (judge_run_evidence is not None)
         ):
             raise AnalysisContractError("formal loader proof does not bind analysis inputs")
     elif (
         cost_accounting is not None
         or input_artifact_manifest is not None
         or phase_evidence is not None
+        or judge_run_evidence is not None
+        or judge_artifact_roots is not None
+        or judge_artifact_sources is not None
     ):
         raise AnalysisContractError(
             "formal cost/input artifacts require a loader-generated proof"
         )
+    finalized_formal_mode = formal_mode and judge_run_evidence is not None
 
     input_proof = validate_inputs(
         phase_provenance=phase_provenance,
@@ -3034,19 +3331,71 @@ def analyze_dataset(
         judge_result_manifests
         if judge_result_manifests is not None
         else {"claude": None, "gpt": None},
+        judge_artifact_roots=judge_artifact_roots,
+        judge_run_evidence=judge_run_evidence,
     )
+    if formal_mode:
+        cost_judges = {
+            str(row.get("judge")): _mapping(row, "formal judge cost row")
+            for row in cost_result.get("judge", ())
+            if isinstance(row, Mapping)
+        }
+        analysis_accounting = _mapping(
+            judge_analysis.get("judge_accounting"),
+            "formal judge analysis accounting",
+        )
+        complete_cost_judges = {
+            judge: row
+            for judge, row in cost_judges.items()
+            if row.get("status") == "complete"
+        }
+        if set(complete_cost_judges) != set(analysis_accounting):
+            raise AnalysisContractError(
+                "formal judge costs differ from available adjudications"
+            )
+        for judge, accounting_value in analysis_accounting.items():
+            accounting = _mapping(
+                accounting_value, f"{judge} judge analysis accounting"
+            )
+            row = complete_cost_judges[judge]
+            if any(
+                row.get(field) != accounting.get(field)
+                for field in (
+                    "request_count",
+                    "retry_count",
+                    "transport_error_count",
+                    "schema_error_count",
+                    "content_retry_count",
+                    "input_tokens",
+                    "output_tokens",
+                    "known_cost_yuan",
+                    "unknown_cost_reserve_yuan",
+                    "accounted_cost_yuan",
+                )
+            ):
+                raise AnalysisContractError(
+                    f"{judge} judge cost differs from the validated execution receipt"
+                )
     return {
         "schema_version": (
             "yher.llm_sim_v2.analysis_results.v1"
+            if finalized_formal_mode
+            else "yher.llm_sim_v2.analysis_results.pre_adjudication.v1"
             if formal_mode
             else "yher.llm_sim_v2.analysis_results.synthetic_nonformal.v1"
         ),
         "simulated": True,
         "run_id": RUN_ID,
         "analysis_population": "main" if formal_mode else "synthetic_nonformal",
-        "analysis_mode": "formal_main" if formal_mode else "synthetic_nonformal",
-        "formal_analysis_eligible": formal_mode,
-        "publication_output_eligible": formal_mode,
+        "analysis_mode": (
+            "formal_main"
+            if finalized_formal_mode
+            else "formal_main_pre_adjudication"
+            if formal_mode
+            else "synthetic_nonformal"
+        ),
+        "formal_analysis_eligible": finalized_formal_mode,
+        "publication_output_eligible": finalized_formal_mode,
         "formal_loader_bundle_sha256": (
             _formal_loader_proof.bundle_sha256
             if formal_mode and _formal_loader_proof is not None
@@ -3107,6 +3456,32 @@ def analyze_dataset(
         "judge_adjudication": {
             "case_manifest": case_manifest,
             "analysis": judge_analysis,
+            "run_evidence_binding": (
+                {
+                    "schema_version": (
+                        "yher.llm_sim_v2.formal_judge_run_evidence_binding.v1"
+                    ),
+                    "judge_run_evidence_receipt_sha256": _mapping(
+                        judge_run_evidence.get("receipt"),
+                        "formal judge run evidence receipt",
+                    )["judge_run_evidence_receipt_sha256"],
+                    "committed_anchor_sha256": _mapping(
+                        judge_run_evidence.get("committed_anchor"),
+                        "formal committed judge run anchor",
+                    )["sha256"],
+                    "family_slots": _mapping(
+                        judge_run_evidence.get("receipt"),
+                        "formal judge run evidence receipt",
+                    )["family_slots"],
+                }
+                if judge_run_evidence is not None
+                else None
+            ),
+            "result_manifests": (
+                dict(judge_result_manifests)
+                if judge_result_manifests is not None
+                else {"claude": None, "gpt": None}
+            ),
         },
         "claim_boundary": (
             "independent simulated text-only response-channel stress test; "
@@ -3533,6 +3908,350 @@ def _plot_stability(rows: Sequence[Mapping[str, Any]], output: Path) -> None:
     _save_figure(figure, output, plt)
 
 
+def validate_judge_run_execution_snapshot(
+    snapshot_manifest: Mapping[str, Any] | str | Path,
+    *,
+    snapshot_root: str | Path,
+    allow_fixture: bool = False,
+) -> dict[str, Any]:
+    """Replay a byte-complete W3 snapshot of the single finalized judge run."""
+
+    supplied_root = Path(snapshot_root).expanduser()
+    if supplied_root.is_symlink():
+        raise AnalysisContractError("judge snapshot root cannot be a symlink")
+    try:
+        root = supplied_root.resolve(strict=True)
+    except OSError as exc:
+        raise AnalysisContractError("judge snapshot root cannot resolve") from exc
+    if not root.is_dir():
+        raise AnalysisContractError("judge snapshot root is not a directory")
+    manifest_path = root / "snapshot_manifest.json"
+    if isinstance(snapshot_manifest, Mapping):
+        value = dict(snapshot_manifest)
+        if (
+            manifest_path.is_symlink()
+            or not manifest_path.is_file()
+            or _strict_json(manifest_path, "judge snapshot manifest") != value
+        ):
+            raise AnalysisContractError(
+                "judge snapshot manifest differs from its fixed on-disk path"
+            )
+    else:
+        supplied_manifest = Path(snapshot_manifest).expanduser()
+        if supplied_manifest.is_symlink():
+            raise AnalysisContractError("judge snapshot manifest cannot be a symlink")
+        try:
+            resolved_manifest = supplied_manifest.resolve(strict=True)
+        except OSError as exc:
+            raise AnalysisContractError("judge snapshot manifest cannot resolve") from exc
+        if resolved_manifest != manifest_path.resolve(strict=False):
+            raise AnalysisContractError(
+                "judge snapshot manifest must use snapshot_manifest.json"
+            )
+        value = _strict_json(resolved_manifest, "judge snapshot manifest")
+    advertised = value.get("snapshot_manifest_sha256")
+    payload = dict(value)
+    payload.pop("snapshot_manifest_sha256", None)
+    expected_fields = {
+        "schema_version",
+        "simulated",
+        "run_id",
+        "case_manifest_sha256",
+        "source_judge_run_evidence_receipt_sha256",
+        "family_slots",
+        "files",
+        "file_count",
+        "file_set_sha256",
+        "directories",
+        "directory_count",
+        "directory_set_sha256",
+        "snapshot_manifest_sha256",
+    }
+    files = value.get("files")
+    directories = value.get("directories")
+    if (
+        set(value) != expected_fields
+        or value.get("schema_version")
+        != "yher.llm_sim_v2.judge_run_execution_snapshot_manifest.v1"
+        or value.get("simulated") is not True
+        or value.get("run_id") != RUN_ID
+        or advertised != _canonical_sha(payload)
+        or not isinstance(files, list)
+        or not isinstance(directories, list)
+        or value.get("file_count") != len(files)
+        or value.get("file_set_sha256") != _canonical_sha(files)
+        or value.get("directory_count") != len(directories)
+        or value.get("directory_set_sha256") != _canonical_sha(directories)
+        or directories != sorted(set(directories))
+        or not directories
+        or directories[0] != "run"
+    ):
+        raise AnalysisContractError("judge run snapshot manifest is invalid")
+    file_index: dict[str, Mapping[str, Any]] = {}
+    for row_value in files:
+        row = _mapping(row_value, "judge snapshot file row")
+        relative_value = row.get("path")
+        if (
+            set(row) != {"path", "sha256", "size"}
+            or not isinstance(relative_value, str)
+            or relative_value in file_index
+            or not relative_value.startswith("run/")
+            or not isinstance(row.get("sha256"), str)
+            or not re.fullmatch(r"[0-9a-f]{64}", str(row.get("sha256")))
+            or not isinstance(row.get("size"), int)
+            or isinstance(row.get("size"), bool)
+            or int(row["size"]) < 0
+        ):
+            raise AnalysisContractError("judge snapshot file binding is invalid")
+        relative = Path(relative_value)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise AnalysisContractError("judge snapshot file path is unsafe")
+        file_index[relative_value] = row
+    if list(file_index) != sorted(file_index):
+        raise AnalysisContractError("judge snapshot files must be canonically ordered")
+    for directory_value in directories:
+        if not isinstance(directory_value, str):
+            raise AnalysisContractError("judge snapshot directory binding is invalid")
+        relative = Path(directory_value)
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or (directory_value != "run" and not directory_value.startswith("run/"))
+        ):
+            raise AnalysisContractError("judge snapshot directory path is unsafe")
+
+    actual_files: set[str] = set()
+    actual_directories: set[str] = set()
+    for current_value, directory_names, file_names in os.walk(
+        root, topdown=True, followlinks=False
+    ):
+        current = Path(current_value)
+        if current != root:
+            actual_directories.add(current.relative_to(root).as_posix())
+        for name in directory_names:
+            directory = current / name
+            if directory.is_symlink() or not directory.is_dir():
+                raise AnalysisContractError(
+                    "judge snapshot contains an unsafe directory"
+                )
+        for name in file_names:
+            path = current / name
+            if path.is_symlink() or not path.is_file():
+                raise AnalysisContractError("judge snapshot contains an unsafe entry")
+            actual_files.add(path.relative_to(root).as_posix())
+    if (
+        actual_files != set(file_index) | {"snapshot_manifest.json"}
+        or actual_directories != set(directories)
+    ):
+        raise AnalysisContractError(
+            "judge snapshot contains an unbound or missing file or directory set"
+        )
+    for relative, row in file_index.items():
+        data = (root / relative).read_bytes()
+        if (
+            row.get("sha256") != hashlib.sha256(data).hexdigest()
+            or row.get("size") != len(data)
+        ):
+            raise AnalysisContractError(
+                f"judge snapshot file bytes drifted: {relative}"
+            )
+
+    run_root = root / "run"
+    case_path = run_root / "case_manifest.json"
+    receipt_path = run_root / "judge_run_evidence_receipt.json"
+    case_manifest = _strict_json(case_path, "snapshotted judge case manifest")
+    receipt = _strict_json(receipt_path, "snapshotted judge run receipt")
+    try:
+        from .judge_execution import (
+            JudgeExecutionError,
+            validate_judge_run_evidence_receipt,
+        )
+
+        validated = validate_judge_run_evidence_receipt(
+            receipt,
+            case_manifest=case_manifest,
+            output_root=run_root,
+            allow_fixture=allow_fixture,
+        )
+    except JudgeExecutionError as exc:
+        raise AnalysisContractError(
+            f"snapshotted judge run cannot replay: {exc}"
+        ) from exc
+    if (
+        validated != receipt
+        or value.get("case_manifest_sha256")
+        != case_manifest.get("case_manifest_sha256")
+        or value.get("source_judge_run_evidence_receipt_sha256")
+        != receipt.get("judge_run_evidence_receipt_sha256")
+        or value.get("family_slots") != receipt.get("family_slots")
+    ):
+        raise AnalysisContractError(
+            "judge snapshot manifest differs from the replayed run evidence"
+        )
+    return value
+
+
+def _stage_judge_execution_snapshots(
+    *,
+    staging: Path,
+    judge_artifact_sources: Mapping[str, str],
+    input_artifact_manifest: Mapping[str, Any],
+    judge_result_manifests: Mapping[str, Mapping[str, Any] | None] | None = None,
+    allow_fixture: bool = False,
+) -> dict[str, Any]:
+    """Copy the entire finalized judge run under one replayable snapshot."""
+
+    del judge_result_manifests
+    input_files = input_artifact_manifest.get("files")
+    if not isinstance(input_files, list):
+        raise AnalysisContractError("judge snapshot input manifest is invalid")
+    input_index = {
+        str(row.get("path")): row
+        for row in input_files
+        if isinstance(row, Mapping)
+        and str(row.get("path") or "").startswith("judge-results/")
+    }
+    if not judge_artifact_sources:
+        if input_index:
+            raise AnalysisContractError(
+                "judge snapshot inputs exist without artifact sources"
+            )
+        return {}
+    if set(judge_artifact_sources) != set(input_index):
+        raise AnalysisContractError(
+            "judge snapshot source roster differs from loader-bound inputs"
+        )
+    case_key = "judge-results/case_manifest.json"
+    if case_key not in judge_artifact_sources:
+        raise AnalysisContractError("judge snapshot lacks the run case manifest")
+    case_source = Path(judge_artifact_sources[case_key])
+    if not case_source.is_absolute() or case_source.is_symlink():
+        raise AnalysisContractError("judge snapshot case source is unsafe")
+    try:
+        source_root = case_source.resolve(strict=True).parent
+    except OSError as exc:
+        raise AnalysisContractError("judge snapshot source root cannot resolve") from exc
+
+    source_bytes: dict[str, bytes] = {}
+    for source_key, source_value in sorted(judge_artifact_sources.items()):
+        relative_value = source_key.removeprefix("judge-results/")
+        relative = Path(relative_value)
+        source = Path(source_value)
+        expected_source = source_root / relative
+        if (
+            relative.is_absolute()
+            or not relative.parts
+            or ".." in relative.parts
+            or not source.is_absolute()
+            or source.is_symlink()
+        ):
+            raise AnalysisContractError("judge snapshot source path is unsafe")
+        try:
+            resolved_source = source.resolve(strict=True)
+        except OSError as exc:
+            raise AnalysisContractError("judge snapshot source is missing") from exc
+        if resolved_source != expected_source.resolve(strict=False) or not resolved_source.is_file():
+            raise AnalysisContractError(
+                "judge snapshot source is outside the single finalized run root"
+            )
+        data = resolved_source.read_bytes()
+        binding = _mapping(input_index[source_key], "judge snapshot input binding")
+        if (
+            binding.get("sha256") != hashlib.sha256(data).hexdigest()
+            or binding.get("size") != len(data)
+        ):
+            raise AnalysisContractError(
+                f"judge snapshot source changed after input binding: {source_key}"
+            )
+        source_bytes[relative_value] = data
+
+    observed_files: set[str] = set()
+    observed_directories: set[str] = set()
+    for current_value, directory_names, file_names in os.walk(
+        source_root, topdown=True, followlinks=False
+    ):
+        current = Path(current_value)
+        if current != source_root:
+            observed_directories.add(current.relative_to(source_root).as_posix())
+        for name in directory_names:
+            directory = current / name
+            if directory.is_symlink() or not directory.is_dir():
+                raise AnalysisContractError("judge source run contains a symlink")
+        for name in file_names:
+            path = current / name
+            if path.is_symlink() or not path.is_file():
+                raise AnalysisContractError("judge source run contains an unsafe entry")
+            observed_files.add(path.relative_to(source_root).as_posix())
+    if observed_files != set(source_bytes):
+        raise AnalysisContractError(
+            "judge snapshot source roster is not the complete finalized run root"
+        )
+    case_manifest = json.loads(source_bytes["case_manifest.json"])
+    receipt = json.loads(source_bytes["judge_run_evidence_receipt.json"])
+    try:
+        from .judge_execution import (
+            JudgeExecutionError,
+            validate_judge_run_evidence_receipt,
+        )
+
+        validate_judge_run_evidence_receipt(
+            receipt,
+            case_manifest=case_manifest,
+            output_root=source_root,
+            allow_fixture=allow_fixture,
+        )
+    except (JudgeExecutionError, TypeError, ValueError) as exc:
+        raise AnalysisContractError(
+            f"judge snapshot source run cannot replay: {exc}"
+        ) from exc
+
+    files = [
+        {
+            "path": f"run/{relative}",
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "size": len(data),
+        }
+        for relative, data in sorted(source_bytes.items())
+    ]
+    directories = ["run", *(f"run/{value}" for value in sorted(observed_directories))]
+    snapshot: dict[str, Any] = {
+        "schema_version": "yher.llm_sim_v2.judge_run_execution_snapshot_manifest.v1",
+        "simulated": True,
+        "run_id": RUN_ID,
+        "case_manifest_sha256": case_manifest["case_manifest_sha256"],
+        "source_judge_run_evidence_receipt_sha256": receipt[
+            "judge_run_evidence_receipt_sha256"
+        ],
+        "family_slots": receipt["family_slots"],
+        "files": files,
+        "file_count": len(files),
+        "file_set_sha256": _canonical_sha(files),
+        "directories": directories,
+        "directory_count": len(directories),
+        "directory_set_sha256": _canonical_sha(directories),
+    }
+    snapshot["snapshot_manifest_sha256"] = _canonical_sha(snapshot)
+    destination = staging / "judge-snapshots"
+    if destination.exists():
+        raise AnalysisContractError("judge snapshot destination already exists")
+    try:
+        for relative, data in sorted(source_bytes.items()):
+            target = destination / "run" / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        _write_json(destination / "snapshot_manifest.json", snapshot)
+        validate_judge_run_execution_snapshot(
+            destination / "snapshot_manifest.json",
+            snapshot_root=destination,
+            allow_fixture=allow_fixture,
+        )
+    except BaseException:
+        if destination.exists():
+            shutil.rmtree(destination)
+        raise
+    return snapshot
+
+
 def _validate_publication_cost_accounting(result: Mapping[str, Any]) -> None:
     cost = _mapping(result.get("cost_accounting"), "formal publication cost accounting")
     rows = cost.get("provider_phase")
@@ -3622,6 +4341,92 @@ def _validate_publication_cost_accounting(result: Mapping[str, Any]) -> None:
             "formal publication provider-phase rows are incomplete or unordered"
         )
 
+    judge_rows_value = cost.get("judge")
+    if not isinstance(judge_rows_value, list):
+        raise AnalysisContractError("formal publication judge costs are invalid")
+    judge_integer_fields = (
+        "request_count",
+        "retry_count",
+        "transport_error_count",
+        "schema_error_count",
+        "content_retry_count",
+        "input_tokens",
+        "output_tokens",
+    )
+    normalized_judge_rows: list[dict[str, Any]] = []
+    for value in judge_rows_value:
+        row = dict(_mapping(value, "formal publication judge cost row"))
+        if (
+            row.get("judge") not in {"claude", "gpt"}
+            or row.get("status") not in {"complete", "failed"}
+            or not isinstance(row.get("execution_id"), str)
+            or not isinstance(row.get("requested_model"), str)
+            or not isinstance(row.get("transport_reported_models"), list)
+            or any(
+                not isinstance(model, str) or not model
+                for model in row.get("transport_reported_models", ())
+            )
+            or row.get("transport")
+            != {"claude": "claude_cli", "gpt": "codex_cli"}[row["judge"]]
+            or not isinstance(row.get("execution_receipt_sha256"), str)
+            or len(row["execution_receipt_sha256"]) != 64
+            or any(
+                not isinstance(row.get(field), int)
+                or isinstance(row.get(field), bool)
+                or int(row[field]) < 0
+                for field in judge_integer_fields
+            )
+        ):
+            raise AnalysisContractError("formal publication judge cost row is invalid")
+        judge_amounts: dict[str, float] = {}
+        for field in money_fields:
+            raw = row.get(field)
+            if (
+                not isinstance(raw, (int, float))
+                or isinstance(raw, bool)
+                or not math.isfinite(float(raw))
+                or float(raw) < 0.0
+            ):
+                raise AnalysisContractError(
+                    "formal publication judge cost row is invalid"
+                )
+            judge_amounts[field] = float(raw)
+        if not math.isclose(
+            judge_amounts["accounted_cost_yuan"],
+            judge_amounts["known_cost_yuan"]
+            + judge_amounts["unknown_cost_reserve_yuan"],
+            rel_tol=0.0,
+            abs_tol=1e-8,
+        ):
+            raise AnalysisContractError(
+                "formal publication judge cost does not reconcile"
+            )
+        normalized_judge_rows.append(row)
+    judge_identities = [str(row["judge"]) for row in normalized_judge_rows]
+    if (
+        len(judge_identities) != len(set(judge_identities))
+        or judge_identities != [
+            judge for judge in ("claude", "gpt") if judge in judge_identities
+        ]
+    ):
+        raise AnalysisContractError(
+            "formal publication judge cost identities are duplicated or unordered"
+        )
+    judge_known = round(
+        sum(float(row["known_cost_yuan"]) for row in normalized_judge_rows), 8
+    )
+    judge_reserve = round(
+        sum(
+            float(row["unknown_cost_reserve_yuan"])
+            for row in normalized_judge_rows
+        ),
+        8,
+    )
+    judge_accounted = round(
+        sum(float(row["accounted_cost_yuan"]) for row in normalized_judge_rows),
+        8,
+    )
+
     immutable = _mapping(
         cost.get("immutable_record_totals"), "formal immutable record totals"
     )
@@ -3657,25 +4462,65 @@ def _validate_publication_cost_accounting(result: Mapping[str, Any]) -> None:
             )
             and immutable["unknown_attempt_count"] == row_unknown_attempts
         )
-        expected_known = round(
+        collection_known = round(
             float(cost["prior_known_cost_yuan"])
             + float(cost["carried_forward_known_cost_yuan"])
             + row_known,
             8,
         )
-        expected_reserve = round(
+        collection_reserve = round(
             float(cost["prior_ambiguity_reserve_yuan"])
             + float(cost["carried_forward_unknown_reserve_yuan"])
             + row_reserve,
             8,
         )
-        expected_accounted = round(
+        collection_accounted = round(
             float(cost["prior_accounted_cost_yuan"])
             + float(cost["carried_forward_accounted_cost_yuan"])
             + row_accounted,
             8,
         )
+        expected_known = round(collection_known + judge_known, 8)
+        expected_reserve = round(collection_reserve + judge_reserve, 8)
+        expected_accounted = round(collection_accounted + judge_accounted, 8)
         cumulative_matches = (
+            math.isclose(
+                float(cost["collection_total_known_cost_yuan"]),
+                collection_known,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(cost["collection_total_unknown_reserve_yuan"]),
+                collection_reserve,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(cost["collection_total_accounted_cost_yuan"]),
+                collection_accounted,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(cost["judge_total_known_cost_yuan"]),
+                judge_known,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(cost["judge_total_unknown_reserve_yuan"]),
+                judge_reserve,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and math.isclose(
+                float(cost["judge_total_accounted_cost_yuan"]),
+                judge_accounted,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+            and
             math.isclose(
                 float(cost["total_known_cost_yuan"]),
                 expected_known,
@@ -3702,6 +4547,7 @@ def _validate_publication_cost_accounting(result: Mapping[str, Any]) -> None:
             )
             and float(cost["soft_warning_yuan"]) == 300.0
             and float(cost["hard_fuse_yuan"]) == 450.0
+            and expected_accounted < 450.0
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise AnalysisContractError(
@@ -3742,6 +4588,7 @@ def write_analysis_outputs(
     result_dir: str | Path,
     *,
     input_artifact_manifest: Mapping[str, Any] | None = None,
+    judge_artifact_sources: Mapping[str, str] | None = None,
     _formal_publication_proof: _FormalPublicationProof | None = None,
 ) -> dict[str, Any]:
     """Write one complete machine-readable and publication-figure package."""
@@ -3774,6 +4621,10 @@ def write_analysis_outputs(
     input_manifest = _mapping(
         input_artifact_manifest, "input artifact manifest"
     )
+    if not isinstance(judge_artifact_sources, Mapping):
+        raise AnalysisContractError(
+            "formal publication requires loader-bound judge artifact sources"
+        )
     input_files = input_manifest.get("files")
     if (
         input_manifest.get("schema_version")
@@ -3964,6 +4815,22 @@ def write_analysis_outputs(
                 judge_analysis.get("error_category_disagreement_examples") or ()
             ),
         )
+        result_manifests = _mapping(
+            judge.get("result_manifests"), "judge result manifests"
+        )
+        _stage_judge_execution_snapshots(
+            staging=staging,
+            judge_result_manifests={
+                judge_name: (
+                    _mapping(value, f"{judge_name} judge result manifest")
+                    if value is not None
+                    else None
+                )
+                for judge_name, value in result_manifests.items()
+            },
+            judge_artifact_sources=judge_artifact_sources,
+            input_artifact_manifest=input_manifest,
+        )
         _write_csv(
             staging / "figure_data/controlled_composition.csv",
             composition_fields,
@@ -4070,36 +4937,450 @@ def _strict_json(path: Path, label: str) -> dict[str, Any]:
 
 def _load_judge_result_manifests(
     judge_results_dir: str | Path | None,
-) -> tuple[dict[str, Mapping[str, Any] | None], list[tuple[str, Path]]]:
+    *,
+    repo_root: str | Path | None = None,
+    allow_fixture: bool = False,
+) -> tuple[
+    dict[str, Mapping[str, Any] | None],
+    list[tuple[str, Path]],
+    dict[str, str],
+    dict[str, Any] | None,
+]:
+    """Load one finalized judge run and its exact committed evidence anchor."""
+
     output: dict[str, Mapping[str, Any] | None] = {
         "claude": None,
         "gpt": None,
     }
     if judge_results_dir is None:
-        return output, []
+        return output, [], {}, None
+    supplied_root = Path(judge_results_dir).expanduser()
+    if supplied_root.is_symlink():
+        raise AnalysisContractError("judge result root cannot be a symlink")
     try:
-        root = Path(judge_results_dir).expanduser().resolve(strict=True)
+        root = supplied_root.resolve(strict=True)
     except OSError as exc:
         raise AnalysisContractError(
             f"judge result directory is missing or cannot resolve: {judge_results_dir}"
         ) from exc
     if not root.is_dir():
         raise AnalysisContractError("judge result path is not a directory")
-    entries = {entry.name: entry for entry in root.iterdir()}
-    allowed = {"claude.json", "gpt.json"}
-    if not set(entries).issubset(allowed) or any(
-        not entry.is_file() for entry in entries.values()
+    if repo_root is None:
+        raise AnalysisContractError(
+            "judge run requires the repository containing its committed fixed anchor"
+        )
+    supplied_repo = Path(repo_root).expanduser()
+    if supplied_repo.is_symlink():
+        raise AnalysisContractError("judge anchor repository cannot be a symlink")
+    try:
+        repo = supplied_repo.resolve(strict=True)
+    except OSError as exc:
+        raise AnalysisContractError("judge anchor repository cannot resolve") from exc
+    if not repo.is_dir():
+        raise AnalysisContractError("judge anchor repository is not a directory")
+
+    case_path = root / "case_manifest.json"
+    internal_receipt_path = root / "judge_run_evidence_receipt.json"
+    budget_path = root / "budget_authority.json"
+    if any(
+        path.is_symlink() or not path.is_file()
+        for path in (case_path, internal_receipt_path, budget_path)
     ):
         raise AnalysisContractError(
-            "judge result directory permits only claude.json and gpt.json"
+            "judge run lacks its case, budget, or internal run evidence receipt"
         )
-    paths: list[tuple[str, Path]] = []
+    case_manifest = _strict_json(case_path, "judge run case manifest")
+    internal_receipt = _strict_json(
+        internal_receipt_path, "internal judge run evidence receipt"
+    )
+    external_anchor_path, committed_anchor = _verify_committed_repo_file(
+        repo, _JUDGE_RUN_RECEIPT_REL
+    )
+    if external_anchor_path.read_bytes() != internal_receipt_path.read_bytes():
+        raise AnalysisContractError(
+            "internal judge run receipt differs from the exact committed fixed anchor"
+        )
+    try:
+        from .judge_execution import (
+            JudgeExecutionError,
+            validate_judge_run_evidence_receipt,
+        )
+
+        validated_run = validate_judge_run_evidence_receipt(
+            internal_receipt,
+            case_manifest=case_manifest,
+            output_root=root,
+            allow_fixture=allow_fixture,
+        )
+    except JudgeExecutionError as exc:
+        raise AnalysisContractError(
+            f"judge run evidence cannot replay the exact root: {exc}"
+        ) from exc
+    if validated_run != internal_receipt:
+        raise AnalysisContractError("judge run evidence changed during validation")
+
+    observed_files: dict[str, Path] = {}
+    observed_directories: set[str] = set()
+    for current_value, directory_names, file_names in os.walk(
+        root, topdown=True, followlinks=False
+    ):
+        current = Path(current_value)
+        if current != root:
+            observed_directories.add(current.relative_to(root).as_posix())
+        for name in directory_names:
+            directory = current / name
+            if directory.is_symlink() or not directory.is_dir():
+                raise AnalysisContractError("judge run tree contains an unsafe directory")
+        for name in file_names:
+            artifact = current / name
+            if artifact.is_symlink() or not artifact.is_file():
+                raise AnalysisContractError("judge run tree contains an unsafe entry")
+            observed_files[artifact.relative_to(root).as_posix()] = artifact
+
+    expected_files = {
+        "case_manifest.json",
+        "budget_authority.json",
+        "judge_run_evidence_receipt.json",
+    }
+    expected_directories: set[str] = set()
+    artifact_roots: dict[str, str] = {}
+    family_receipts: dict[str, Mapping[str, Any]] = {}
+    family_slots = _mapping(
+        internal_receipt.get("family_slots"), "judge run family slots"
+    )
     for judge in ("claude", "gpt"):
-        path = entries.get(f"{judge}.json")
-        if path is not None:
-            output[judge] = _strict_json(path, f"{judge} judge result manifest")
-            paths.append((judge, path))
-    return output, paths
+        slot = _mapping(family_slots.get(judge), f"{judge} judge run family slot")
+        status = slot.get("status")
+        receipt_relative = Path(str(slot.get("receipt_path") or ""))
+        if (
+            receipt_relative.is_absolute()
+            or not receipt_relative.parts
+            or ".." in receipt_relative.parts
+        ):
+            raise AnalysisContractError(f"{judge} judge slot receipt path is unsafe")
+        receipt_path = root / receipt_relative
+        expected_files.add(receipt_relative.as_posix())
+        parent = receipt_relative.parent
+        while parent.as_posix() != ".":
+            expected_directories.add(parent.as_posix())
+            parent = parent.parent
+        family_receipt = _strict_json(
+            receipt_path, f"{judge} judge family receipt"
+        )
+        family_receipts[judge] = family_receipt
+        result_path = root / f"{judge}.json"
+        if status in {"unavailable", "not_applicable_zero_cases"}:
+            if result_path.exists() or slot.get("execution_id") is not None:
+                raise AnalysisContractError(
+                    f"{judge} disposition slot cannot contain an execution result"
+                )
+            continue
+        if status not in {"complete", "failed"}:
+            raise AnalysisContractError(f"{judge} judge run slot status is invalid")
+        execution_id = slot.get("execution_id")
+        expected_receipt_relative = (
+            Path("executions")
+            / judge
+            / str(execution_id or "")
+            / (
+                "execution_receipt.json"
+                if status == "complete"
+                else "failed_execution_receipt.json"
+            )
+        )
+        if receipt_relative != expected_receipt_relative:
+            raise AnalysisContractError(
+                f"{judge} judge execution path differs from its finalized family slot"
+            )
+        execution_root = receipt_path.parent
+        normalized = _mapping(
+            family_receipt.get("normalized_results"),
+            f"{judge} normalized judge result binding",
+        )
+        artifact_bindings = [normalized]
+        raw_artifacts = family_receipt.get("raw_artifacts")
+        if not isinstance(raw_artifacts, list):
+            raise AnalysisContractError(f"{judge} raw judge artifact list is invalid")
+        artifact_bindings.extend(
+            _mapping(row, f"{judge} raw judge artifact") for row in raw_artifacts
+        )
+        for binding in artifact_bindings:
+            relative = Path(str(binding.get("path") or ""))
+            if (
+                relative.is_absolute()
+                or not relative.parts
+                or ".." in relative.parts
+            ):
+                raise AnalysisContractError(f"{judge} judge artifact path is unsafe")
+            artifact_relative = receipt_relative.parent / relative
+            expected_files.add(artifact_relative.as_posix())
+            parent = artifact_relative.parent
+            while parent.as_posix() != ".":
+                expected_directories.add(parent.as_posix())
+                parent = parent.parent
+        if status == "failed":
+            if result_path.exists():
+                raise AnalysisContractError(
+                    f"{judge} failed execution cannot have a result manifest"
+                )
+            continue
+        if result_path.is_symlink() or not result_path.is_file():
+            raise AnalysisContractError(
+                f"{judge} complete execution lacks its bound result manifest"
+            )
+        expected_files.add(f"{judge}.json")
+        result_manifest = _strict_json(result_path, f"{judge} judge result manifest")
+        if (
+            result_manifest.get("schema_version")
+            != "yher.llm_sim_v2.judge_result_manifest.v2"
+            or result_manifest.get("simulated") is not True
+            or result_manifest.get("run_id") != RUN_ID
+            or result_manifest.get("judge") != judge
+            or result_manifest.get("execution_receipt_path")
+            != receipt_relative.as_posix()
+            or result_manifest.get("execution_receipt") != family_receipt
+        ):
+            raise AnalysisContractError(
+                f"{judge} judge result manifest envelope is invalid"
+            )
+        _verify_internal_digest(
+            result_manifest,
+            field="judge_result_manifest_sha256",
+            label=f"{judge} judge result manifest",
+        )
+        artifact_roots[judge] = str(execution_root.resolve())
+        output[judge] = result_manifest
+
+    if set(observed_files) != expected_files or observed_directories != expected_directories:
+        raise AnalysisContractError(
+            "judge run contains an unbound or missing file or directory set"
+        )
+    paths = sorted(observed_files.items())
+    run_evidence: dict[str, Any] = {
+        "schema_version": "yher.llm_sim_v2.formal_judge_run_evidence_binding.v1",
+        "receipt": internal_receipt,
+        "committed_anchor": committed_anchor,
+        "family_receipts": family_receipts,
+    }
+    ingest_judge_results(
+        case_manifest,
+        output,
+        judge_artifact_roots=artifact_roots,
+        judge_run_evidence=run_evidence,
+        allow_fixture=allow_fixture,
+    )
+    return output, paths, artifact_roots, run_evidence
+
+
+def _judge_cost_accounting(
+    judge_result_manifests: Mapping[str, Mapping[str, Any] | None],
+    *,
+    judge_run_evidence: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    integer_fields = (
+        "request_count",
+        "retry_count",
+        "transport_error_count",
+        "schema_error_count",
+        "content_retry_count",
+        "input_tokens",
+        "output_tokens",
+    )
+    money_fields = (
+        "known_cost_yuan",
+        "unknown_cost_reserve_yuan",
+        "accounted_cost_yuan",
+    )
+    run_slots: Mapping[str, Any] | None = None
+    family_receipts: Mapping[str, Any] | None = None
+    if judge_run_evidence is not None:
+        run_receipt = _mapping(
+            judge_run_evidence.get("receipt"), "judge cost run evidence receipt"
+        )
+        run_slots = _mapping(
+            run_receipt.get("family_slots"), "judge cost family slots"
+        )
+        family_receipts = _mapping(
+            judge_run_evidence.get("family_receipts"),
+            "judge cost family receipts",
+        )
+    for judge in ("claude", "gpt"):
+        result_manifest = judge_result_manifests.get(judge)
+        status = "complete" if result_manifest is not None else None
+        if run_slots is not None:
+            slot = _mapping(run_slots.get(judge), f"{judge} judge cost family slot")
+            status = str(slot.get("status") or "")
+            if status not in {"complete", "failed"}:
+                continue
+            assert family_receipts is not None
+            receipt = _mapping(
+                family_receipts.get(judge), f"{judge} judge family receipt"
+            )
+            if status == "complete" and (
+                result_manifest is None
+                or result_manifest.get("execution_receipt") != receipt
+            ):
+                raise AnalysisContractError(
+                    f"{judge} completed judge cost lacks its result receipt"
+                )
+            if status == "failed" and result_manifest is not None:
+                raise AnalysisContractError(
+                    f"{judge} failed judge cost cannot have a result manifest"
+                )
+        else:
+            if result_manifest is None:
+                continue
+            receipt = _mapping(
+                result_manifest.get("execution_receipt"),
+                f"{judge} judge execution receipt",
+            )
+        identity = _mapping(
+            receipt.get("identity"), f"{judge} judge execution identity"
+        )
+        accounting = _mapping(
+            receipt.get("accounting"), f"{judge} judge execution accounting"
+        )
+        if any(
+            not isinstance(accounting.get(field), int)
+            or isinstance(accounting.get(field), bool)
+            or int(accounting[field]) < 0
+            for field in integer_fields
+        ):
+            raise AnalysisContractError(f"{judge} judge counters are invalid")
+        amounts: dict[str, float] = {}
+        for field in money_fields:
+            value = accounting.get(field)
+            if (
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(float(value))
+                or float(value) < 0.0
+            ):
+                raise AnalysisContractError(f"{judge} judge cost is invalid")
+            amounts[field] = round(float(value), 8)
+        if not math.isclose(
+            amounts["accounted_cost_yuan"],
+            amounts["known_cost_yuan"] + amounts["unknown_cost_reserve_yuan"],
+            rel_tol=0.0,
+            abs_tol=1e-8,
+        ):
+            raise AnalysisContractError(f"{judge} judge cost does not reconcile")
+        rows.append(
+            {
+                "judge": judge,
+                "status": status,
+                "execution_id": identity.get("execution_id"),
+                "requested_model": identity.get("requested_model"),
+                "transport_reported_models": list(
+                    identity.get("transport_reported_models") or ()
+                ),
+                "transport": identity.get("transport"),
+                "execution_receipt_sha256": receipt.get(
+                    "execution_receipt_sha256"
+                    if status == "complete"
+                    else "failed_execution_receipt_sha256"
+                ),
+                **{field: int(accounting[field]) for field in integer_fields},
+                **amounts,
+            }
+        )
+    return {
+        "schema_version": "yher.llm_sim_v2.judge_cost_accounting.v1",
+        "currency": "CNY",
+        "rows": rows,
+        "total_known_cost_yuan": round(
+            sum(float(row["known_cost_yuan"]) for row in rows), 8
+        ),
+        "total_unknown_reserve_yuan": round(
+            sum(float(row["unknown_cost_reserve_yuan"]) for row in rows), 8
+        ),
+        "total_accounted_cost_yuan": round(
+            sum(float(row["accounted_cost_yuan"]) for row in rows), 8
+        ),
+    }
+
+
+def _merge_judge_cost_accounting(
+    collection_cost: Mapping[str, Any],
+    judge_cost: Mapping[str, Any],
+) -> dict[str, Any]:
+    merged = dict(collection_cost)
+    try:
+        collection_known = float(collection_cost["total_known_cost_yuan"])
+        collection_reserve = float(collection_cost["total_unknown_reserve_yuan"])
+        collection_accounted = float(collection_cost["total_accounted_cost_yuan"])
+        judge_known = float(judge_cost["total_known_cost_yuan"])
+        judge_reserve = float(judge_cost["total_unknown_reserve_yuan"])
+        judge_accounted = float(judge_cost["total_accounted_cost_yuan"])
+        hard_fuse = float(collection_cost["hard_fuse_yuan"])
+        soft_warning = float(collection_cost["soft_warning_yuan"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise AnalysisContractError("judge cumulative cost inputs are invalid") from exc
+    values = (
+        collection_known,
+        collection_reserve,
+        collection_accounted,
+        judge_known,
+        judge_reserve,
+        judge_accounted,
+        hard_fuse,
+        soft_warning,
+    )
+    if any(not math.isfinite(value) or value < 0.0 for value in values):
+        raise AnalysisContractError("judge cumulative cost inputs are invalid")
+    if (
+        not math.isclose(
+            collection_accounted,
+            collection_known + collection_reserve,
+            rel_tol=0.0,
+            abs_tol=1e-8,
+        )
+        or not math.isclose(
+            judge_accounted,
+            judge_known + judge_reserve,
+            rel_tol=0.0,
+            abs_tol=1e-8,
+        )
+        or hard_fuse != 450.0
+        or soft_warning != 300.0
+    ):
+        raise AnalysisContractError("judge cumulative cost totals do not reconcile")
+    total_known = round(collection_known + judge_known, 8)
+    total_reserve = round(collection_reserve + judge_reserve, 8)
+    total_accounted = round(collection_accounted + judge_accounted, 8)
+    if total_accounted >= hard_fuse:
+        raise AnalysisContractError(
+            "judge cost reaches the CNY 450 hard fuse; user authorization is required"
+        )
+    reasons = list(collection_cost.get("needs_user_reasons") or ())
+    if judge_reserve > 0.0 and "unknown_judge_billing_reserved" not in reasons:
+        reasons.append("unknown_judge_billing_reserved")
+    rows = judge_cost.get("rows")
+    if not isinstance(rows, list):
+        raise AnalysisContractError("judge cost rows are invalid")
+    merged.update(
+        {
+            "collection_total_known_cost_yuan": round(collection_known, 8),
+            "collection_total_unknown_reserve_yuan": round(
+                collection_reserve, 8
+            ),
+            "collection_total_accounted_cost_yuan": round(
+                collection_accounted, 8
+            ),
+            "judge": [dict(_mapping(row, "judge cost row")) for row in rows],
+            "judge_total_known_cost_yuan": round(judge_known, 8),
+            "judge_total_unknown_reserve_yuan": round(judge_reserve, 8),
+            "judge_total_accounted_cost_yuan": round(judge_accounted, 8),
+            "total_known_cost_yuan": total_known,
+            "total_unknown_reserve_yuan": total_reserve,
+            "total_accounted_cost_yuan": total_accounted,
+            "needs_user": bool(collection_cost.get("needs_user"))
+            or judge_reserve > 0.0,
+            "needs_user_reasons": reasons,
+        }
+    )
+    return merged
 
 
 def _main_store_root(output_base: str | Path) -> Path:
@@ -4487,6 +5768,8 @@ def _reconcile_cost_ledgers(
     phase_provenance: Mapping[str, Any],
     run_budget_ledger: Mapping[str, Any],
     main_records: Mapping[str, Mapping[str, Mapping[str, Any]]],
+    judge_result_manifests: Mapping[str, Mapping[str, Any] | None],
+    judge_run_evidence: Mapping[str, Any] | None,
 ) -> tuple[dict[str, Any], Path, Path, list[tuple[str, str, Path]]]:
     """Rebuild immutable pilot/main costs and reconcile the cumulative ledger."""
 
@@ -4844,8 +6127,7 @@ def _reconcile_cost_ledgers(
         "files": cost_input_files,
         "file_set_sha256": _canonical_sha(cost_input_files),
     }
-    return (
-        {
+    collection_cost = {
             "schema_version": "yher.llm_sim_v2.cost_accounting.v1",
             "currency": "CNY",
             "prior_cost_ledger_sha256": prior["prior_cost_ledger_sha256"],
@@ -4880,7 +6162,16 @@ def _reconcile_cost_ledgers(
                 "reconciled_prior_carried_forward_and_immutable_attempt_ledgers"
             ),
             "cost_reconciliation_artifact_manifest": cost_input_manifest,
-        },
+        }
+    cost_accounting = _merge_judge_cost_accounting(
+        collection_cost,
+        _judge_cost_accounting(
+            judge_result_manifests,
+            judge_run_evidence=judge_run_evidence,
+        ),
+    )
+    return (
+        cost_accounting,
         prior_path,
         carried_path,
         cost_only_paths,
@@ -5173,6 +6464,15 @@ def load_analysis_inputs(
         relative=carried_cost_relative,
     )
     (
+        judge_result_manifests,
+        judge_result_paths,
+        judge_artifact_roots,
+        judge_run_evidence,
+    ) = _load_judge_result_manifests(
+        judge_results_dir,
+        repo_root=repo,
+    )
+    (
         cost_accounting,
         prior_cost_path,
         carried_cost_path,
@@ -5183,6 +6483,8 @@ def load_analysis_inputs(
         phase_provenance=phase,
         run_budget_ledger=run_budget_ledger,
         main_records=records_by_provider,
+        judge_result_manifests=judge_result_manifests,
+        judge_run_evidence=judge_run_evidence,
     )
     if (
         prior_cost_path != expected_prior_cost_path
@@ -5195,10 +6497,6 @@ def load_analysis_inputs(
         raise AnalysisContractError(
             "cost ledger input changed while cost accounting was reconciled"
         )
-    judge_result_manifests, judge_result_paths = _load_judge_result_manifests(
-        judge_results_dir
-    )
-
     input_files = [
         bound_input_rows["main/phase_provenance.json"],
         _input_file_row(
@@ -5247,10 +6545,17 @@ def load_analysis_inputs(
     input_files.extend(
         _input_file_row(
             path,
-            relative=f"judge-results/{judge}.json",
+            relative=f"judge-results/{relative}",
         )
-        for judge, path in judge_result_paths
+        for relative, path in judge_result_paths
     )
+    if judge_run_evidence is not None:
+        input_files.append(
+            _input_file_row(
+                repo / _JUDGE_RUN_RECEIPT_REL,
+                relative=f"repo/{_JUDGE_RUN_RECEIPT_REL.as_posix()}",
+            )
+        )
     (
         final_phase_evidence,
         final_anchor_path,
@@ -5288,8 +6593,8 @@ def load_analysis_inputs(
             "analysis input manifest does not bind the committed phase evidence bytes"
         )
     judge_sources = {
-        f"judge-results/{judge}.json": path
-        for judge, path in judge_result_paths
+        f"judge-results/{relative}": path
+        for relative, path in judge_result_paths
     }
     for row in input_files:
         relative = str(row.get("path") or "")
@@ -5329,6 +6634,12 @@ def load_analysis_inputs(
         "active_contract_proof": active_contract_proof,
         "cost_accounting": cost_accounting,
         "judge_result_manifests": judge_result_manifests,
+        "judge_run_evidence": judge_run_evidence,
+        "judge_artifact_roots": judge_artifact_roots,
+        "judge_artifact_sources": {
+            f"judge-results/{relative}": str(path.resolve())
+            for relative, path in judge_result_paths
+        },
         "input_artifact_manifest": input_artifact_manifest,
         "phase_evidence": phase_evidence,
     }
@@ -5337,6 +6648,54 @@ def load_analysis_inputs(
         bundle_sha256=_formal_loader_bundle_sha256(loaded),
     )
     return loaded
+
+
+def prepare_judge_cases(
+    *,
+    output_base: str | Path,
+    judge_results_dir: str | Path,
+    repo_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Freeze only the deterministic blind case manifest; never publish W3 output."""
+
+    repo = (
+        Path(repo_root).expanduser().resolve(strict=True)
+        if repo_root is not None
+        else Path(__file__).resolve().parents[2]
+    )
+    loaded = load_analysis_inputs(
+        output_base=output_base,
+        repo_root=repo,
+        judge_results_dir=None,
+    )
+    result = analyze_dataset(**loaded)
+    if (
+        result.get("schema_version")
+        != "yher.llm_sim_v2.analysis_results.pre_adjudication.v1"
+        or result.get("analysis_mode") != "formal_main_pre_adjudication"
+        or result.get("formal_analysis_eligible") is not False
+        or result.get("publication_output_eligible") is not False
+    ):
+        raise AnalysisContractError("judge preparation unexpectedly became publishable")
+    judge = _mapping(result.get("judge_adjudication"), "judge preparation")
+    case_manifest = dict(
+        _mapping(judge.get("case_manifest"), "prepared judge case manifest")
+    )
+    analysis = _mapping(judge.get("analysis"), "prepared judge analysis")
+    if analysis.get("status") not in {
+        "missing_all_judges",
+        "not_applicable_zero_cases",
+    }:
+        raise AnalysisContractError("judge preparation contains adjudication results")
+    from .judge_execution import bind_prepared_judge_case_manifest
+
+    path = bind_prepared_judge_case_manifest(
+        case_manifest=case_manifest,
+        output_root=judge_results_dir,
+    )
+    if _strict_json(path, "installed prepared judge case manifest") != case_manifest:
+        raise AnalysisContractError("prepared judge case bytes changed during installation")
+    return case_manifest
 
 
 def _build_formal_run_analysis_authority():
@@ -5403,6 +6762,10 @@ def _build_formal_run_analysis_authority():
     ) -> dict[str, Any]:
         """Load, analyze, and atomically publish one formal-main package."""
 
+        if judge_results_dir is None:
+            raise AnalysisContractError(
+                "final formal analysis requires a finalized judge run root"
+            )
         repo = (
             Path(repo_root).expanduser().resolve(strict=True)
             if repo_root is not None
@@ -5433,6 +6796,7 @@ def _build_formal_run_analysis_authority():
             result,
             result_dir,
             input_artifact_manifest=input_manifest,
+            judge_artifact_sources=loaded["judge_artifact_sources"],
             _formal_publication_proof=publication_proof,
         )
         return result
@@ -5456,17 +6820,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--result-dir",
-        required=True,
         type=Path,
-        help="New directory for machine results and publication figures.",
+        help="New final directory for machine results and publication figures.",
     )
     parser.add_argument(
         "--judge-results-dir",
         type=Path,
         help=(
-            "Optional directory containing hash-bound claude.json and/or gpt.json "
-            "judge result manifests."
+            "Judge run root: a new case-only root in preparation mode, or the "
+            "finalized anchored run root in final mode."
         ),
+    )
+    parser.add_argument(
+        "--prepare-judge-cases",
+        action="store_true",
+        help="Freeze only the nonpublication judge case manifest.",
     )
     parser.add_argument(
         "--repo-root",
@@ -5481,22 +6849,47 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        result = run_analysis(
-            output_base=args.output_base,
-            result_dir=args.result_dir,
-            repo_root=args.repo_root,
-            judge_results_dir=args.judge_results_dir,
-        )
-    except AnalysisContractError as exc:
-        parser.exit(2, f"analysis contract error: {exc}\n")
-    print(
-        json.dumps(
-            {
+        if args.prepare_judge_cases:
+            if args.judge_results_dir is None or args.result_dir is not None:
+                raise AnalysisContractError(
+                    "judge preparation requires --judge-results-dir and forbids --result-dir"
+                )
+            case_manifest = prepare_judge_cases(
+                output_base=args.output_base,
+                judge_results_dir=args.judge_results_dir,
+                repo_root=args.repo_root,
+            )
+            summary = {
+                "run_id": RUN_ID,
+                "analysis_population": "main",
+                "mode": "formal_main_pre_adjudication",
+                "publication_output_eligible": False,
+                "selected_count": case_manifest["selected_count"],
+                "case_manifest_sha256": case_manifest["case_manifest_sha256"],
+                "judge_results_dir": str(args.judge_results_dir),
+            }
+        else:
+            if args.result_dir is None or args.judge_results_dir is None:
+                raise AnalysisContractError(
+                    "final analysis requires --result-dir and --judge-results-dir"
+                )
+            result = run_analysis(
+                output_base=args.output_base,
+                result_dir=args.result_dir,
+                repo_root=args.repo_root,
+                judge_results_dir=args.judge_results_dir,
+            )
+            summary = {
                 "run_id": result["run_id"],
                 "analysis_population": result["analysis_population"],
                 "persona_clusters": result["independent_cluster_count"],
                 "result_dir": str(args.result_dir),
-            },
+            }
+    except AnalysisContractError as exc:
+        parser.exit(2, f"analysis contract error: {exc}\n")
+    print(
+        json.dumps(
+            summary,
             ensure_ascii=False,
             sort_keys=True,
         )
@@ -5516,6 +6909,7 @@ __all__ = [
     "pairwise_terminal_agreement",
     "load_analysis_inputs",
     "main",
+    "prepare_judge_cases",
     "run_analysis",
     "validate_inputs",
 ]

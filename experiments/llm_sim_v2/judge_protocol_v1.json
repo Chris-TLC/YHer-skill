@@ -1,0 +1,54 @@
+{
+  "error_categories": {
+    "answer_selection": "The selected option does not follow from the otherwise interpretable response.",
+    "chemistry_reasoning": "The response contains an identifiable chemistry or quantitative reasoning error.",
+    "format_or_schema": "The candidate response is materially malformed beyond the normalized response schema.",
+    "internal_contradiction": "The selected answer, abstention, and rationale contradict one another.",
+    "none": "No error category applies to a response labelled consistent.",
+    "not_applicable": "No concrete error category can be assigned under an unknown or insufficient-evidence label.",
+    "other": "A concrete inconsistency is present but none of the other frozen categories applies.",
+    "question_interpretation": "The response misreads a material condition or demand in the public question.",
+    "unsupported_abstention": "The response abstains even though the public question and candidate rationale provide enough basis to answer."
+  },
+  "label_category_policy": {
+    "consistent": [
+      "none"
+    ],
+    "inconsistent": [
+      "answer_selection",
+      "chemistry_reasoning",
+      "format_or_schema",
+      "internal_contradiction",
+      "other",
+      "question_interpretation",
+      "unsupported_abstention"
+    ],
+    "insufficient_evidence": [
+      "not_applicable"
+    ],
+    "unknown": [
+      "not_applicable"
+    ]
+  },
+  "label_definitions": {
+    "consistent": "The selected answer or abstention and its rationale form a coherent response to the public question, with no identifiable contradiction or reasoning error.",
+    "inconsistent": "The selected answer, abstention, or rationale contradicts the public question, contradicts itself, or contains an identifiable reasoning or answer-selection error.",
+    "insufficient_evidence": "A missing, illegible, truncated, or materially incomplete public question or candidate response prevents application of the rubric.",
+    "unknown": "The relevant evidence is present, but genuine ambiguity or equipoise prevents a defensible consistent-versus-inconsistent classification."
+  },
+  "question_field_whitelist": [
+    "kind",
+    "options",
+    "stem_blocks",
+    "stem_text"
+  ],
+  "required_output_fields": [
+    "error_category",
+    "label",
+    "rationale",
+    "simulated"
+  ],
+  "schema_version": "yher.llm_sim_v2.judge_protocol.v1",
+  "scope": "exploratory_blind_response_consistency",
+  "simulated": true
+}

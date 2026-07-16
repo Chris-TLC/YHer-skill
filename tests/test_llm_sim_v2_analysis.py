@@ -104,12 +104,12 @@ def _expected_tasks() -> list[dict[str, object]]:
                         "random_wrong_option_baseline": None,
                     }
                 )
-    for row in rows:
+    for row_index, row in enumerate(rows):
         task_id = str(row["task_id"])
         public_question = {
             "kind": "mcq",
             "stem_blocks": [],
-            "stem_text": f"Public question for {row['item_id']}",
+            "stem_text": f"Public question {row_index}",
             "options": {
                 "A": "public option A",
                 "B": "public option B",
@@ -1274,7 +1274,19 @@ def test_cli_accepts_main_output_base_and_result_dir_without_analysis_knobs() ->
         ]
     )
     assert with_judges.judge_results_dir == Path("/tmp/persona-v2-judge-results")
+    prepared = parser.parse_args(
+        [
+            "--output-base",
+            "/tmp/persona-v2-main-input",
+            "--judge-results-dir",
+            "/tmp/persona-v2-prepared-judge",
+            "--prepare-judge-cases",
+        ]
+    )
+    assert prepared.prepare_judge_cases is True
+    assert prepared.result_dir is None
     help_text = parser.format_help()
+    assert "--prepare-judge-cases" in help_text
     assert "--bootstrap-seed" not in help_text
     assert "--bootstrap-resamples" not in help_text
 
@@ -1287,6 +1299,23 @@ def test_missing_judge_result_directory_is_a_contract_error(tmp_path: Path) -> N
 
     with pytest.raises(AnalysisContractError, match="judge result.*missing|cannot resolve"):
         _load_judge_result_manifests(tmp_path / "missing-judge-results")
+
+
+def test_final_run_analysis_rejects_missing_judge_root_before_output(
+    tmp_path: Path,
+) -> None:
+    import experiments.llm_sim_v2.analyze as analyze
+
+    destination = tmp_path / "must-not-exist"
+    with pytest.raises(
+        analyze.AnalysisContractError, match="finalized judge run root"
+    ):
+        analyze.run_analysis(
+            output_base=tmp_path / "collection",
+            result_dir=destination,
+            repo_root=tmp_path,
+        )
+    assert not destination.exists()
 
 
 def test_machine_outputs_include_csv_figure_data_png_svg_and_hash_manifest(
@@ -1305,10 +1334,17 @@ def test_machine_outputs_include_csv_figure_data_png_svg_and_hash_manifest(
         ),
     )
     output = tmp_path / "analysis-results"
+    judge_root, prepared_manifest = _prepare_and_finalize_zero_case_judge_run(
+        analyze=analyze,
+        output_base=output_base,
+        repo=repo,
+        tmp_path=tmp_path,
+    )
     result = analyze.run_analysis(
         output_base=output_base,
         result_dir=output,
         repo_root=repo,
+        judge_results_dir=judge_root,
     )
     manifest = json.loads(
         (output / "artifact_manifest.json").read_text(encoding="utf-8")
@@ -1316,6 +1352,10 @@ def test_machine_outputs_include_csv_figure_data_png_svg_and_hash_manifest(
 
     assert result["analysis_mode"] == "formal_main"
     assert result["formal_analysis_eligible"] is True
+    assert (
+        result["judge_adjudication"]["case_manifest"]["case_manifest_sha256"]
+        == prepared_manifest["case_manifest_sha256"]
+    )
     with pytest.raises(
         analyze.AnalysisContractError, match="input artifact manifest|formal.*loader"
     ):
@@ -1417,7 +1457,8 @@ def test_machine_outputs_include_csv_figure_data_png_svg_and_hash_manifest(
     judge_analysis = json.loads(
         (output / "judge/judge_analysis.json").read_text(encoding="utf-8")
     )
-    assert judge_analysis["missing_judges"] == ["claude", "gpt"]
+    assert judge_analysis["status"] == "not_applicable_zero_cases"
+    assert judge_analysis["missing_judges"] == []
 
     disk_manifest = json.loads(
         (output / "artifact_manifest.json").read_text(encoding="utf-8")
@@ -1862,6 +1903,112 @@ def _filesystem_main_fixture(
     return output_base, repo, tasks
 
 
+def _prepare_and_finalize_zero_case_judge_run(
+    *,
+    analyze: object,
+    output_base: Path,
+    repo: Path,
+    tmp_path: Path,
+) -> tuple[Path, dict[str, object]]:
+    from experiments.llm_sim_v2 import judge_execution
+
+    root = tmp_path / "judge-results"
+    manifest = analyze.prepare_judge_cases(  # type: ignore[attr-defined]
+        output_base=output_base,
+        judge_results_dir=root,
+        repo_root=repo,
+    )
+    assert manifest["selected_count"] == 0
+    judge_execution.mint_judge_budget_authority(
+        case_manifest=manifest,
+        output_root=root,
+        repo_root=repo,
+        run_budget_ledger=output_base / RUN_ID / "run_budget_ledger.json",
+    )
+    for family in ("gpt", "claude"):
+        judge_execution.record_judge_family_disposition(
+            case_manifest=manifest,
+            output_root=root,
+            judge_family=family,
+            status="not_applicable_zero_cases",
+            reason_code="selected_case_count_zero",
+        )
+    internal = judge_execution.write_judge_run_evidence_receipt(
+        case_manifest=manifest,
+        output_root=root,
+    )
+    anchor = judge_execution.write_judge_run_evidence_receipt(
+        case_manifest=manifest,
+        output_root=root,
+        output=(
+            repo
+            / "experiments/llm_sim_v2/evidence_anchors/"
+            "judge_run_evidence_receipt.json"
+        ),
+    )
+    assert anchor.read_bytes() == internal.read_bytes()
+    subprocess.run(
+        ["git", "add", anchor.relative_to(repo).as_posix()], cwd=repo, check=True
+    )
+    subprocess.run(
+        [
+            "git",
+            "commit",
+            "-q",
+            "-m",
+            "anchor finalized judge run",
+            "--author",
+            "Test Runner <tests@example.invalid>",
+        ],
+        cwd=repo,
+        check=True,
+        env={
+            **os.environ,
+            "GIT_COMMITTER_NAME": "Test Runner",
+            "GIT_COMMITTER_EMAIL": "tests@example.invalid",
+        },
+    )
+    return root, manifest
+
+
+def test_prepare_judge_cases_writes_only_a_nonpublication_case_manifest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import experiments.llm_sim_v2.analyze as analyze
+
+    output_base, repo, tasks = _filesystem_main_fixture(tmp_path)
+    monkeypatch.setattr(analyze, "_load_expected_tasks", lambda _repo, _runtime: tasks)
+    monkeypatch.setattr(
+        analyze,
+        "_validate_active_contract_inputs",
+        lambda _repo, *, runtime_manifest, phase_provenance: _active_contract_proof(
+            dict(runtime_manifest), dict(phase_provenance)
+        ),
+    )
+    root = tmp_path / "prepared-judge"
+    manifest = analyze.prepare_judge_cases(
+        output_base=output_base,
+        judge_results_dir=root,
+        repo_root=repo,
+    )
+
+    assert manifest["selected_count"] == 0
+    assert {path.relative_to(root).as_posix() for path in root.rglob("*")} == {
+        "case_manifest.json"
+    }
+    loaded = analyze.load_analysis_inputs(output_base=output_base, repo_root=repo)
+    pre_adjudication = analyze.analyze_dataset(**loaded)
+    assert pre_adjudication["analysis_mode"] == "formal_main_pre_adjudication"
+    assert pre_adjudication["formal_analysis_eligible"] is False
+    assert pre_adjudication["publication_output_eligible"] is False
+    assert (
+        pre_adjudication["judge_adjudication"]["case_manifest"]
+        ["case_manifest_sha256"]
+        == manifest["case_manifest_sha256"]
+    )
+
+
 def test_run_analysis_reconstructs_expected_denominator_when_record_store_is_empty(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1881,10 +2028,17 @@ def test_run_analysis_reconstructs_expected_denominator_when_record_store_is_emp
         ),
     )
     result_dir = tmp_path / "result"
+    judge_root, _prepared_manifest = _prepare_and_finalize_zero_case_judge_run(
+        analyze=analyze,
+        output_base=output_base,
+        repo=repo,
+        tmp_path=tmp_path,
+    )
     result = analyze.run_analysis(
         output_base=output_base,
         result_dir=result_dir,
         repo_root=repo,
+        judge_results_dir=judge_root,
     )
 
     assert result["expected_denominator"]["tasks_per_provider"] == len(tasks)
@@ -3493,6 +3647,10 @@ def test_judge_selection_uses_80_40_quota_fill_and_identical_case_bytes() -> Non
     manifest = analyze.build_judge_case_manifest(
         candidates, frozen_leakage_lexicon=()
     )
+    reversed_manifest = analyze.build_judge_case_manifest(
+        list(reversed(candidates)), frozen_leakage_lexicon=()
+    )
+    assert reversed_manifest == manifest
     assert manifest["selected_count"] == 120
     assert manifest["selected_stratum_counts"] == {
         "disagreement": 80,
@@ -3527,6 +3685,75 @@ def test_judge_selection_uses_80_40_quota_fill_and_identical_case_bytes() -> Non
         "agreement": 110,
     }
     assert filled["cross_stratum_fill"] == 70
+
+
+def test_judge_selection_exports_only_the_strict_question_whitelist() -> None:
+    import experiments.llm_sim_v2.analyze as analyze
+
+    candidate = _judge_candidate(7, stratum="disagreement")
+    candidate["public_question"]["nodes"] = ["private-node"]  # type: ignore[index]
+    candidate["public_question"]["difficulty"] = 0.91  # type: ignore[index]
+    candidate["public_question"]["source_label"] = "private-source"  # type: ignore[index]
+    manifest = analyze.build_judge_case_manifest(
+        [candidate], frozen_leakage_lexicon=()
+    )
+
+    assert manifest["schema_version"] == "yher.llm_sim_v2.judge_case_manifest.v2"
+    assert manifest["question_field_whitelist"] == [
+        "kind",
+        "options",
+        "stem_blocks",
+        "stem_text",
+    ]
+    assert manifest["target_metadata_exported"] is False
+    amendment = manifest["judge_amendment"]
+    assert amendment["path"] == (
+        "experiments/llm_sim_v2/judge_amendment_20260716.md"
+    )
+    assert len(amendment["sha256"]) == 64
+    assert amendment["size"] > 0
+    exported = analyze.judge_input_bytes(manifest).decode("utf-8")
+    for forbidden in (
+        "private-node",
+        "private-source",
+        '"nodes"',
+        '"difficulty"',
+        '"source_label"',
+    ):
+        assert forbidden not in exported
+    for visible in ("Question 7", "one"):
+        assert visible in exported
+
+
+def test_judge_selection_excludes_question_text_containing_the_target_label() -> None:
+    import experiments.llm_sim_v2.analyze as analyze
+
+    candidate = _judge_candidate(8, stratum="agreement")
+    candidate["public_question"]["stem_text"] = "Question about private-node"  # type: ignore[index]
+    candidate["item"]["public_question"] = candidate["public_question"]  # type: ignore[index]
+    manifest = analyze.build_judge_case_manifest(
+        [candidate], frozen_leakage_lexicon=()
+    )
+
+    assert manifest["selected_count"] == 0
+    assert manifest["target_label_scan"]["excluded_candidate_count"] == 1
+    assert manifest["target_label_scan"]["final_serialized_hit_count"] == 0
+    assert "private-node" not in analyze.judge_input_bytes(manifest).decode("utf-8")
+
+
+def test_judge_selection_excludes_model_output_containing_the_target_label() -> None:
+    import experiments.llm_sim_v2.analyze as analyze
+
+    candidate = _judge_candidate(9, stratum="agreement")
+    candidate["model_output"]["rationale"] = "This suggests private-node."  # type: ignore[index]
+    manifest = analyze.build_judge_case_manifest(
+        [candidate], frozen_leakage_lexicon=()
+    )
+
+    assert manifest["selected_count"] == 0
+    assert manifest["target_label_scan"]["excluded_candidate_count"] == 1
+    assert manifest["target_label_scan"]["final_serialized_hit_count"] == 0
+    assert "private-node" not in analyze.judge_input_bytes(manifest).decode("utf-8")
 
 
 def test_judge_selection_rejects_nested_or_encoded_private_fields() -> None:
@@ -3602,71 +3829,43 @@ def _judge_result_manifest(
     return manifest
 
 
-def test_judge_ingestion_reports_pairwise_categories_disagreements_and_missing() -> None:
-    import experiments.llm_sim_v2.analyze as analyze
-
-    assert hasattr(analyze, "build_judge_case_manifest"), "judge selector is missing"
-    assert hasattr(analyze, "ingest_judge_results"), "judge ingestion is missing"
-    cases = analyze.build_judge_case_manifest(
-        [_judge_candidate(index, stratum="disagreement") for index in range(6)],
-        frozen_leakage_lexicon=(),
-    )
-    claude = _judge_result_manifest(cases, "claude")
-    missing = analyze.ingest_judge_results(
-        cases, {"claude": claude, "gpt": None}
-    )
-    assert missing["status"] == "partial_missing_judge"
-    assert missing["missing_judges"] == ["gpt"]
-    assert missing["pairwise_label_agreement"] is None
-    assert missing["pairwise_error_category_agreement"] is None
-
-    disagree_case = str(cases["cases"][0]["case_id"])
-    gpt = _judge_result_manifest(cases, "gpt", disagree_case=disagree_case)
-    complete = analyze.ingest_judge_results(
-        cases, {"claude": claude, "gpt": gpt}
-    )
-    assert complete["status"] == "complete"
-    assert complete["pairwise_label_agreement"]["denominator"] == 6
-    assert complete["pairwise_label_agreement"]["exact_agreement_numerator"] == 5
-    assert complete["pairwise_error_category_agreement"]["denominator"] == 6
-    assert complete["pairwise_error_category_agreement"][
-        "exact_agreement_numerator"
-    ] == 6
-    assert complete["category_counts"]["claude"]["labels"] == {"consistent": 6}
-    assert complete["label_disagreement_examples"][0]["case_id"] == disagree_case
-    assert "authenticity" not in json.dumps(complete).lower()
-
-
-def test_judge_category_agreement_has_separate_missing_policy_and_examples() -> None:
+def test_judge_ingestion_rejects_legacy_unreceipted_result_manifest() -> None:
     import experiments.llm_sim_v2.analyze as analyze
 
     cases = analyze.build_judge_case_manifest(
-        [_judge_candidate(index, stratum="agreement") for index in range(6)],
+        [_judge_candidate(index, stratum="disagreement") for index in range(2)],
         frozen_leakage_lexicon=(),
     )
-    omitted_case = str(cases["cases"][0]["case_id"])
     claude = _judge_result_manifest(cases, "claude")
-    gpt = _judge_result_manifest(
-        cases,
-        "gpt",
-        error_category="answer_selection",
-        omit_error_category_case=omitted_case,
-    )
+    with pytest.raises(
+        analyze.AnalysisContractError,
+        match="judge result|execution|receipt|hash",
+    ):
+        analyze.ingest_judge_results(
+            cases, {"claude": claude, "gpt": None}
+        )
 
-    result = analyze.ingest_judge_results(
-        cases, {"claude": claude, "gpt": gpt}
-    )
 
-    assert result["pairwise_label_agreement"]["exact_agreement"] == 1.0
-    category = result["pairwise_error_category_agreement"]
-    assert category["denominator_policy"] == "paired_nonmissing_error_categories"
-    assert category["total_case_count"] == 6
-    assert category["denominator"] == 5
-    assert category["missing_any_count"] == 1
-    assert category["exact_agreement_numerator"] == 0
-    assert category["exact_agreement"] == 0.0
-    assert len(result["error_category_disagreement_examples"]) == 5
-    assert result["label_disagreement_examples"] == []
+def test_judge_ingestion_rejects_rehashed_protocol_or_amendment_drift() -> None:
+    import experiments.llm_sim_v2.analyze as analyze
+
+    cases = analyze.build_judge_case_manifest(
+        [_judge_candidate(1, stratum="agreement")],
+        frozen_leakage_lexicon=(),
+    )
+    for field in ("judge_protocol", "judge_amendment"):
+        drifted = copy.deepcopy(cases)
+        drifted[field]["simulated" if field == "judge_protocol" else "size"] = (  # type: ignore[index]
+            False if field == "judge_protocol" else 1
+        )
+        _rehash(drifted, "case_manifest_sha256")
+        with pytest.raises(
+            analyze.AnalysisContractError,
+            match="case manifest|input bytes|drift",
+        ):
+            analyze.ingest_judge_results(
+                drifted, {"claude": None, "gpt": None}
+            )
 
 
 def test_judge_ingestion_rejects_case_or_result_manifest_hash_drift() -> None:
