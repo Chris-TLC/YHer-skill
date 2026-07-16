@@ -2224,6 +2224,58 @@ def test_codex_receipt_does_not_synthesize_a_transport_reported_model(
     assert receipt["command"]["strict_configuration_verified_from_argv"] is True
 
 
+def test_python_module_entrypoint_codex_class_identity_replays_canonically(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from experiments.llm_sim_v2 import judge_execution
+
+    binary = shutil.which("codex")
+    assert binary is not None
+    manifest = _case_manifest(count=1)
+    _authority, _ledger, root = _mint_test_budget_authority(
+        tmp_path, manifest=manifest, baseline_yuan=0.0
+    )
+    events = [
+        {"type": "thread.started", "thread_id": "codex-module-entrypoint"},
+        {
+            "type": "item.completed",
+            "item": {
+                "type": "agent_message",
+                "text": json.dumps({"results": [_output("case-000")]}),
+            },
+        },
+        {"type": "turn.completed", "usage": {"input_tokens": 7, "output_tokens": 3}},
+    ]
+    completed = subprocess.CompletedProcess(
+        args=[],
+        returncode=0,
+        stdout=b"".join(_canonical_bytes(event) + b"\n" for event in events),
+        stderr=b"",
+    )
+    transport = judge_execution.CodexCLIJudgeTransport(binary=binary)
+    monkeypatch.setattr(transport, "_run", lambda argv, prompt: completed)
+    receipt_path = judge_execution.execute_judge_pass(
+        case_manifest=manifest,
+        output_root=root,
+        judge_family="gpt",
+        exact_model="gpt-5.6-sol",
+        transport=transport,
+    )
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt["executable_evidence"]["transport_class"] = (
+        "__main__.CodexCLIJudgeTransport"
+    )
+    _rehash_receipt(receipt)
+    receipt_path.write_bytes(_canonical_bytes(receipt) + b"\n")
+
+    assert judge_execution.validate_execution_receipt(
+        receipt_path,
+        manifest,
+        "gpt",
+    )["execution_receipt_sha256"] == receipt["execution_receipt_sha256"]
+
+
 def test_claude_parser_claims_only_raw_model_usage_identity() -> None:
     from experiments.llm_sim_v2 import judge_execution
 

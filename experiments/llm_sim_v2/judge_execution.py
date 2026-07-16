@@ -1076,7 +1076,10 @@ def _validate_executable_evidence(
         "codex_cli": "experiments.llm_sim_v2.judge_execution.CodexCLIJudgeTransport",
         "claude_cli": "experiments.llm_sim_v2.judge_execution.ClaudeCLIJudgeTransport",
     }.get(transport_name)
-    if evidence.get("transport_class") != expected_class:
+    allowed_classes = {expected_class}
+    if transport_name != "fixture" and isinstance(expected_class, str):
+        allowed_classes.add(f"__main__.{expected_class.rsplit('.', 1)[-1]}")
+    if evidence.get("transport_class") not in allowed_classes:
         raise JudgeExecutionError("judge transport class evidence drifted")
     if transport_name == "fixture":
         expected = FixtureJudgeTransport([]).executable_evidence()
