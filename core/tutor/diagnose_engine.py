@@ -207,6 +207,22 @@ class DiagnoseEngine:
                 ))
             return questions[:6]
 
+        # AI 内化真题生成的诊断题(前3-5题用AI出题,Chris定稿核心)
+        # 预生成在 data/ai_diagnostic_bank/,秒取;无则继续KG兜底
+        try:
+            from scripts.ai_diagnostic_provider import get_ai_questions, to_diagnostic_format
+            ai_qs = get_ai_questions(node_id, limit=4)
+            if ai_qs:
+                for i, q in enumerate(ai_qs):
+                    fmt = to_diagnostic_format(q, i)
+                    questions.append(DiagnosticQuestion(
+                        id=fmt["id"], level=fmt["level"], axis=fmt["axis"],
+                        prompt=fmt["prompt"], look_for=fmt["look_for"], source="ai_generated",
+                    ))
+                return questions[:6]
+        except Exception:
+            pass  # AI题不可用 → 不阻塞,继续KG兜底
+
         # 动态兜底：用 KG common_failures（每条自带高质量诊断问）
         if node:
             levels = ["L1 基础概念", "L2 入口判断", "L3 应试坑点", "L4 综合迁移"]

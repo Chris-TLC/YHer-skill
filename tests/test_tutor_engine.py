@@ -28,9 +28,11 @@ def test_item_repository():
     from core.data.item_repository import get_item_repository
     repo = get_item_repository()
     assert repo.count() >= 2, "应有样例题"
-    item = repo.get_item("eq-sample-001")
-    assert item is not None
-    assert any(p.get("must_have") for p in item["rubric"]), "应有 must_have 得分点"
+    # v3.4接线后:题库为6438道真题(item_id为hash),验证按135节点能筛到题且有must_have得分点
+    items = repo.find_items(kg_node="氧化还原反应", limit=1)
+    assert items, "应能按135节点筛到题"
+    item = items[0]
+    assert any(p.get("must_have") for p in item.get("rubric", [])), "应有 must_have 得分点"
     print("✅ test_item_repository")
 
 

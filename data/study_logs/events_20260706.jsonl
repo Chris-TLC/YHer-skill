@@ -1,0 +1,300 @@
+{"event": "session_start", "item_id": null, "node": null, "seen_count": 0, "session_id": "smr8pnm3ace0iy", "ts": "2026-07-06T04:19:38.028310+00:00"}
+{"event": "item_shown", "item_id": "4edc1a0183a2bd4efa8d72219557427eaf06f14e", "node": null, "session_id": "smr8pnm3ace0iy", "ts": "2026-07-06T04:19:38.226475+00:00"}
+{"event": "answer_revealed", "item_id": "4edc1a0183a2bd4efa8d72219557427eaf06f14e", "node": null, "session_id": "smr8pnm3ace0iy", "think_ms": 102745, "ts": "2026-07-06T04:21:20.782716+00:00"}
+{"event": "self_mark", "item_id": "4edc1a0183a2bd4efa8d72219557427eaf06f14e", "mark": "right", "node": null, "session_id": "smr8pnm3ace0iy", "total_ms": 134232, "ts": "2026-07-06T04:21:52.263674+00:00"}
+{"event": "item_shown", "item_id": "92e023f3ab0d3a87cc2492ae13717a20b87222ca", "node": null, "session_id": "smr8pnm3ace0iy", "ts": "2026-07-06T04:21:52.272740+00:00"}
+{"event": "report_bad", "item_id": "92e023f3ab0d3a87cc2492ae13717a20b87222ca", "node": null, "reason": "答案错误", "session_id": "smr8pnm3ace0iy", "ts": "2026-07-06T04:22:13.756805+00:00"}
+{"event": "session_start", "item_id": null, "node": null, "seen_count": 1, "session_id": "smr8pnm3ace0iy", "ts": "2026-07-06T04:32:40.533671+00:00"}
+{"event": "item_shown", "item_id": "515a3b215f2d96326fb9fdf4c05ec38844bf6473", "node": null, "session_id": "smr8pnm3ace0iy", "ts": "2026-07-06T04:32:40.752606+00:00"}
+{"event": "session_start", "item_id": null, "node": null, "seen_count": 0, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:41:32.169291+00:00"}
+{"event": "item_shown", "item_id": "a0fb843166504a3b663611d0a59d63a6a40e637e", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:41:32.223997+00:00"}
+{"event": "answer_revealed", "item_id": "a0fb843166504a3b663611d0a59d63a6a40e637e", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 30468, "ts": "2026-07-06T04:42:02.649486+00:00"}
+{"event": "self_mark", "item_id": "a0fb843166504a3b663611d0a59d63a6a40e637e", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 42960, "ts": "2026-07-06T04:42:15.138466+00:00"}
+{"event": "item_shown", "item_id": "85b4888c67c643dcac2b9177dc72bc717cbda0b3", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:42:15.151814+00:00"}
+{"event": "answer_revealed", "item_id": "85b4888c67c643dcac2b9177dc72bc717cbda0b3", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 29197, "ts": "2026-07-06T04:42:44.345253+00:00"}
+{"event": "self_mark", "item_id": "85b4888c67c643dcac2b9177dc72bc717cbda0b3", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 30580, "ts": "2026-07-06T04:42:45.723196+00:00"}
+{"event": "item_shown", "item_id": "a30cff9246adf4f720454d3120f83773b7f549fa", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:42:45.730293+00:00"}
+{"event": "answer_revealed", "item_id": "a30cff9246adf4f720454d3120f83773b7f549fa", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1751, "ts": "2026-07-06T04:42:47.481682+00:00"}
+{"event": "report_bad", "item_id": "a30cff9246adf4f720454d3120f83773b7f549fa", "node": null, "reason": "", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:43:13.824169+00:00"}
+{"event": "self_mark", "item_id": "a30cff9246adf4f720454d3120f83773b7f549fa", "mark": "unsure", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 32495, "ts": "2026-07-06T04:43:18.224647+00:00"}
+{"event": "item_shown", "item_id": "6b1559a193acf8071a82efe8d418b199ff44756b", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:43:18.232990+00:00"}
+{"event": "answer_revealed", "item_id": "6b1559a193acf8071a82efe8d418b199ff44756b", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 4899, "ts": "2026-07-06T04:43:23.133454+00:00"}
+{"event": "self_mark", "item_id": "6b1559a193acf8071a82efe8d418b199ff44756b", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 66679, "ts": "2026-07-06T04:44:24.911463+00:00"}
+{"event": "item_shown", "item_id": "107f3585f9fbead21a50d65e9e8b1a410060e87f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:44:24.918646+00:00"}
+{"event": "answer_revealed", "item_id": "107f3585f9fbead21a50d65e9e8b1a410060e87f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1578, "ts": "2026-07-06T04:44:26.498397+00:00"}
+{"event": "self_mark", "item_id": "107f3585f9fbead21a50d65e9e8b1a410060e87f", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3395, "ts": "2026-07-06T04:44:28.312627+00:00"}
+{"event": "item_shown", "item_id": "51709f8e4716934d54069af9365674b824d9b551", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:44:28.318269+00:00"}
+{"event": "answer_revealed", "item_id": "51709f8e4716934d54069af9365674b824d9b551", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2637, "ts": "2026-07-06T04:44:30.957220+00:00"}
+{"event": "report_bad", "item_id": "51709f8e4716934d54069af9365674b824d9b551", "node": null, "reason": "", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:44:38.968134+00:00"}
+{"event": "self_mark", "item_id": "51709f8e4716934d54069af9365674b824d9b551", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 11921, "ts": "2026-07-06T04:44:40.238496+00:00"}
+{"event": "item_shown", "item_id": "1ffc56c548fff95f5a39f8331f04b39d9cee3f3b", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:44:40.246053+00:00"}
+{"event": "answer_revealed", "item_id": "1ffc56c548fff95f5a39f8331f04b39d9cee3f3b", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 3032, "ts": "2026-07-06T04:44:43.279782+00:00"}
+{"event": "self_mark", "item_id": "1ffc56c548fff95f5a39f8331f04b39d9cee3f3b", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4731, "ts": "2026-07-06T04:44:44.975965+00:00"}
+{"event": "item_shown", "item_id": "88099e19e6f69bbbb3124965fc165bd8c15939d8", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:44:44.985368+00:00"}
+{"event": "answer_revealed", "item_id": "88099e19e6f69bbbb3124965fc165bd8c15939d8", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 6016, "ts": "2026-07-06T04:44:51.010851+00:00"}
+{"event": "self_mark", "item_id": "88099e19e6f69bbbb3124965fc165bd8c15939d8", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 14745, "ts": "2026-07-06T04:44:59.726757+00:00"}
+{"event": "item_shown", "item_id": "23779b9dc5e596935df4717fe3fa27ca79400293", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:44:59.742650+00:00"}
+{"event": "answer_revealed", "item_id": "23779b9dc5e596935df4717fe3fa27ca79400293", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 842, "ts": "2026-07-06T04:45:00.582277+00:00"}
+{"event": "self_mark", "item_id": "23779b9dc5e596935df4717fe3fa27ca79400293", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 6216, "ts": "2026-07-06T04:45:05.948475+00:00"}
+{"event": "item_shown", "item_id": "80ca189130e6842e0f04b07baa5abaee14e013da", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:05.955779+00:00"}
+{"event": "answer_revealed", "item_id": "80ca189130e6842e0f04b07baa5abaee14e013da", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 838, "ts": "2026-07-06T04:45:06.794524+00:00"}
+{"event": "self_mark", "item_id": "80ca189130e6842e0f04b07baa5abaee14e013da", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2805, "ts": "2026-07-06T04:45:08.759394+00:00"}
+{"event": "item_shown", "item_id": "2052a5bf34d98741676e76b0da3a3de4092fcb54", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:08.770849+00:00"}
+{"event": "answer_revealed", "item_id": "2052a5bf34d98741676e76b0da3a3de4092fcb54", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 6970, "ts": "2026-07-06T04:45:15.738548+00:00"}
+{"event": "self_mark", "item_id": "2052a5bf34d98741676e76b0da3a3de4092fcb54", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 8548, "ts": "2026-07-06T04:45:17.311628+00:00"}
+{"event": "item_shown", "item_id": "636f530096bc1fe0cc6220293ec35e33a686377c", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:17.318255+00:00"}
+{"event": "answer_revealed", "item_id": "636f530096bc1fe0cc6220293ec35e33a686377c", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1161, "ts": "2026-07-06T04:45:18.481197+00:00"}
+{"event": "self_mark", "item_id": "636f530096bc1fe0cc6220293ec35e33a686377c", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 6313, "ts": "2026-07-06T04:45:23.631272+00:00"}
+{"event": "item_shown", "item_id": "9fd28aff8ee44c7e813781e00e41ac032994a83d", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:23.638862+00:00"}
+{"event": "report_bad", "item_id": "9fd28aff8ee44c7e813781e00e41ac032994a83d", "node": null, "reason": "题面缺失", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:28.975730+00:00"}
+{"event": "answer_revealed", "item_id": "9fd28aff8ee44c7e813781e00e41ac032994a83d", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 6401, "ts": "2026-07-06T04:45:30.041328+00:00"}
+{"event": "self_mark", "item_id": "9fd28aff8ee44c7e813781e00e41ac032994a83d", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 7893, "ts": "2026-07-06T04:45:31.529258+00:00"}
+{"event": "item_shown", "item_id": "2d42607312968db47dd57360e950115ce3f3b2e1", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:31.536183+00:00"}
+{"event": "answer_revealed", "item_id": "2d42607312968db47dd57360e950115ce3f3b2e1", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1096, "ts": "2026-07-06T04:45:32.634388+00:00"}
+{"event": "self_mark", "item_id": "2d42607312968db47dd57360e950115ce3f3b2e1", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2682, "ts": "2026-07-06T04:45:34.217168+00:00"}
+{"event": "item_shown", "item_id": "139e65cc88031a88efc3b208858797bd873d1bb4", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:34.224015+00:00"}
+{"event": "answer_revealed", "item_id": "139e65cc88031a88efc3b208858797bd873d1bb4", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1086, "ts": "2026-07-06T04:45:35.311231+00:00"}
+{"event": "self_mark", "item_id": "139e65cc88031a88efc3b208858797bd873d1bb4", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2249, "ts": "2026-07-06T04:45:36.471879+00:00"}
+{"event": "item_shown", "item_id": "7ffd365e2dc281dc648da3a3dc0a4c38014b6a60", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:36.479059+00:00"}
+{"event": "answer_revealed", "item_id": "7ffd365e2dc281dc648da3a3dc0a4c38014b6a60", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 800, "ts": "2026-07-06T04:45:37.277999+00:00"}
+{"event": "self_mark", "item_id": "7ffd365e2dc281dc648da3a3dc0a4c38014b6a60", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1907, "ts": "2026-07-06T04:45:38.383010+00:00"}
+{"event": "item_shown", "item_id": "1ce40245115b633b447831a794e6b7fa5a8c3897", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:38.388823+00:00"}
+{"event": "answer_revealed", "item_id": "1ce40245115b633b447831a794e6b7fa5a8c3897", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 656, "ts": "2026-07-06T04:45:39.046076+00:00"}
+{"event": "self_mark", "item_id": "1ce40245115b633b447831a794e6b7fa5a8c3897", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1507, "ts": "2026-07-06T04:45:39.895356+00:00"}
+{"event": "item_shown", "item_id": "c085fc8c32caa662f295169dc36811d27a46ebde", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:39.903864+00:00"}
+{"event": "answer_revealed", "item_id": "c085fc8c32caa662f295169dc36811d27a46ebde", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2710, "ts": "2026-07-06T04:45:42.613644+00:00"}
+{"event": "self_mark", "item_id": "c085fc8c32caa662f295169dc36811d27a46ebde", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 10454, "ts": "2026-07-06T04:45:50.355537+00:00"}
+{"event": "item_shown", "item_id": "93d70e9206282b9e9ae87fdf10f6ae50bb4abada", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:50.361959+00:00"}
+{"event": "answer_revealed", "item_id": "93d70e9206282b9e9ae87fdf10f6ae50bb4abada", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1794, "ts": "2026-07-06T04:45:52.159501+00:00"}
+{"event": "self_mark", "item_id": "93d70e9206282b9e9ae87fdf10f6ae50bb4abada", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2688, "ts": "2026-07-06T04:45:53.049272+00:00"}
+{"event": "item_shown", "item_id": "a18bf1f022ef0f5ef204b0285c423fb405508971", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:53.055402+00:00"}
+{"event": "answer_revealed", "item_id": "a18bf1f022ef0f5ef204b0285c423fb405508971", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 742, "ts": "2026-07-06T04:45:53.799279+00:00"}
+{"event": "self_mark", "item_id": "a18bf1f022ef0f5ef204b0285c423fb405508971", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2530, "ts": "2026-07-06T04:45:55.585700+00:00"}
+{"event": "item_shown", "item_id": "06e24c15344740faf7d3178d56fd6edd034ff031", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:45:55.592091+00:00"}
+{"event": "answer_revealed", "item_id": "06e24c15344740faf7d3178d56fd6edd034ff031", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 5911, "ts": "2026-07-06T04:46:01.505364+00:00"}
+{"event": "self_mark", "item_id": "06e24c15344740faf7d3178d56fd6edd034ff031", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 7641, "ts": "2026-07-06T04:46:03.230523+00:00"}
+{"event": "item_shown", "item_id": "6a8f58c3ca19cc582afa14b5e3b80d08c1fdb04d", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:03.239176+00:00"}
+{"event": "answer_revealed", "item_id": "6a8f58c3ca19cc582afa14b5e3b80d08c1fdb04d", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 964, "ts": "2026-07-06T04:46:04.203403+00:00"}
+{"event": "self_mark", "item_id": "6a8f58c3ca19cc582afa14b5e3b80d08c1fdb04d", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2131, "ts": "2026-07-06T04:46:05.366320+00:00"}
+{"event": "item_shown", "item_id": "852431edad064742c90ff0bbd0a050336d6f7ca8", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:05.372139+00:00"}
+{"event": "answer_revealed", "item_id": "852431edad064742c90ff0bbd0a050336d6f7ca8", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 750, "ts": "2026-07-06T04:46:06.126382+00:00"}
+{"event": "self_mark", "item_id": "852431edad064742c90ff0bbd0a050336d6f7ca8", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1989, "ts": "2026-07-06T04:46:07.360661+00:00"}
+{"event": "item_shown", "item_id": "112273c86c4ce6048907428a2ead82be70cf3ac6", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:07.369552+00:00"}
+{"event": "answer_revealed", "item_id": "112273c86c4ce6048907428a2ead82be70cf3ac6", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 13314, "ts": "2026-07-06T04:46:20.683880+00:00"}
+{"event": "self_mark", "item_id": "112273c86c4ce6048907428a2ead82be70cf3ac6", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 15539, "ts": "2026-07-06T04:46:22.904182+00:00"}
+{"event": "item_shown", "item_id": "23f305269321d74429f3c2fd47f3c977b381011c", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:22.910474+00:00"}
+{"event": "answer_revealed", "item_id": "23f305269321d74429f3c2fd47f3c977b381011c", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2003, "ts": "2026-07-06T04:46:24.915449+00:00"}
+{"event": "self_mark", "item_id": "23f305269321d74429f3c2fd47f3c977b381011c", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3138, "ts": "2026-07-06T04:46:26.048795+00:00"}
+{"event": "item_shown", "item_id": "a69acfe39918df02dad2b77db1362fea21206092", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:26.055357+00:00"}
+{"event": "answer_revealed", "item_id": "a69acfe39918df02dad2b77db1362fea21206092", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 720, "ts": "2026-07-06T04:46:26.772180+00:00"}
+{"event": "self_mark", "item_id": "a69acfe39918df02dad2b77db1362fea21206092", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4377, "ts": "2026-07-06T04:46:30.432180+00:00"}
+{"event": "item_shown", "item_id": "bb3ef0873a6e0c6312a83ba4401a1aabd4927f99", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:30.439900+00:00"}
+{"event": "answer_revealed", "item_id": "bb3ef0873a6e0c6312a83ba4401a1aabd4927f99", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1643, "ts": "2026-07-06T04:46:32.090924+00:00"}
+{"event": "self_mark", "item_id": "bb3ef0873a6e0c6312a83ba4401a1aabd4927f99", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4214, "ts": "2026-07-06T04:46:34.651064+00:00"}
+{"event": "item_shown", "item_id": "d3c428f51ed86656d3707bb99131db7497aee6a8", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:34.667919+00:00"}
+{"event": "answer_revealed", "item_id": "d3c428f51ed86656d3707bb99131db7497aee6a8", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 853, "ts": "2026-07-06T04:46:35.516665+00:00"}
+{"event": "self_mark", "item_id": "d3c428f51ed86656d3707bb99131db7497aee6a8", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1953, "ts": "2026-07-06T04:46:36.609059+00:00"}
+{"event": "item_shown", "item_id": "bf084f6fb6e44b07580841b1338fb627dea40b58", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:36.618118+00:00"}
+{"event": "answer_revealed", "item_id": "bf084f6fb6e44b07580841b1338fb627dea40b58", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1844, "ts": "2026-07-06T04:46:38.460792+00:00"}
+{"event": "self_mark", "item_id": "bf084f6fb6e44b07580841b1338fb627dea40b58", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2871, "ts": "2026-07-06T04:46:39.487785+00:00"}
+{"event": "item_shown", "item_id": "ed9d3c8597671ff1482140a2456902fd370086f0", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:39.495249+00:00"}
+{"event": "answer_revealed", "item_id": "ed9d3c8597671ff1482140a2456902fd370086f0", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 795, "ts": "2026-07-06T04:46:40.293162+00:00"}
+{"event": "self_mark", "item_id": "ed9d3c8597671ff1482140a2456902fd370086f0", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1871, "ts": "2026-07-06T04:46:41.365740+00:00"}
+{"event": "item_shown", "item_id": "302a39aca584dd2712aab8b860973ea2ea9d767e", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:41.372684+00:00"}
+{"event": "answer_revealed", "item_id": "302a39aca584dd2712aab8b860973ea2ea9d767e", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 553, "ts": "2026-07-06T04:46:41.928096+00:00"}
+{"event": "self_mark", "item_id": "302a39aca584dd2712aab8b860973ea2ea9d767e", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1630, "ts": "2026-07-06T04:46:43.000664+00:00"}
+{"event": "item_shown", "item_id": "05245c7f3492abd7b4d95b5821d295f25b09ec5f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:43.007716+00:00"}
+{"event": "answer_revealed", "item_id": "05245c7f3492abd7b4d95b5821d295f25b09ec5f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1779, "ts": "2026-07-06T04:46:44.791803+00:00"}
+{"event": "self_mark", "item_id": "05245c7f3492abd7b4d95b5821d295f25b09ec5f", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3079, "ts": "2026-07-06T04:46:46.084996+00:00"}
+{"event": "item_shown", "item_id": "58187f0785379c7aee8552d26384810fd8383548", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:46.101749+00:00"}
+{"event": "answer_revealed", "item_id": "58187f0785379c7aee8552d26384810fd8383548", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1049, "ts": "2026-07-06T04:46:47.146980+00:00"}
+{"event": "self_mark", "item_id": "58187f0785379c7aee8552d26384810fd8383548", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2121, "ts": "2026-07-06T04:46:48.216464+00:00"}
+{"event": "item_shown", "item_id": "d0c8abf7a0b196fe3f6654741d9ca035494a6b59", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:46:48.227914+00:00"}
+{"event": "answer_revealed", "item_id": "d0c8abf7a0b196fe3f6654741d9ca035494a6b59", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 9961, "ts": "2026-07-06T04:46:58.189910+00:00"}
+{"event": "self_mark", "item_id": "d0c8abf7a0b196fe3f6654741d9ca035494a6b59", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 13029, "ts": "2026-07-06T04:47:01.250771+00:00"}
+{"event": "item_shown", "item_id": "69cc79ecb0f1f5f1aeef17a58904b6d8e8305bef", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:01.261106+00:00"}
+{"event": "answer_revealed", "item_id": "69cc79ecb0f1f5f1aeef17a58904b6d8e8305bef", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 5975, "ts": "2026-07-06T04:47:07.235580+00:00"}
+{"event": "self_mark", "item_id": "69cc79ecb0f1f5f1aeef17a58904b6d8e8305bef", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 7895, "ts": "2026-07-06T04:47:09.151402+00:00"}
+{"event": "item_shown", "item_id": "3bb6354ceb11db4dd39a35bcf0f817acd6a2bb5b", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:09.160744+00:00"}
+{"event": "answer_revealed", "item_id": "3bb6354ceb11db4dd39a35bcf0f817acd6a2bb5b", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 6728, "ts": "2026-07-06T04:47:15.899621+00:00"}
+{"event": "self_mark", "item_id": "3bb6354ceb11db4dd39a35bcf0f817acd6a2bb5b", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 9196, "ts": "2026-07-06T04:47:18.353645+00:00"}
+{"event": "item_shown", "item_id": "7475b7ac3774df2ed49bb77c94cf3a33644e09f4", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:18.365439+00:00"}
+{"event": "answer_revealed", "item_id": "7475b7ac3774df2ed49bb77c94cf3a33644e09f4", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1678, "ts": "2026-07-06T04:47:20.044076+00:00"}
+{"event": "self_mark", "item_id": "7475b7ac3774df2ed49bb77c94cf3a33644e09f4", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4128, "ts": "2026-07-06T04:47:22.490570+00:00"}
+{"event": "item_shown", "item_id": "92e023f3ab0d3a87cc2492ae13717a20b87222ca", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:22.498773+00:00"}
+{"event": "answer_revealed", "item_id": "92e023f3ab0d3a87cc2492ae13717a20b87222ca", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 841, "ts": "2026-07-06T04:47:23.339270+00:00"}
+{"event": "self_mark", "item_id": "92e023f3ab0d3a87cc2492ae13717a20b87222ca", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1785, "ts": "2026-07-06T04:47:24.282998+00:00"}
+{"event": "item_shown", "item_id": "36be421d46a0fd3ea1ed5bffc1a80d750de505ea", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:24.289721+00:00"}
+{"event": "answer_revealed", "item_id": "36be421d46a0fd3ea1ed5bffc1a80d750de505ea", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1294, "ts": "2026-07-06T04:47:25.585000+00:00"}
+{"event": "self_mark", "item_id": "36be421d46a0fd3ea1ed5bffc1a80d750de505ea", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2131, "ts": "2026-07-06T04:47:26.420787+00:00"}
+{"event": "item_shown", "item_id": "330070c310e5424043b5d14ebd5bc65855df134a", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:26.428293+00:00"}
+{"event": "answer_revealed", "item_id": "330070c310e5424043b5d14ebd5bc65855df134a", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2822, "ts": "2026-07-06T04:47:29.250983+00:00"}
+{"event": "self_mark", "item_id": "330070c310e5424043b5d14ebd5bc65855df134a", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4087, "ts": "2026-07-06T04:47:30.513350+00:00"}
+{"event": "item_shown", "item_id": "366d911d0bbbf5de28dd257874aa560ea67a1e68", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:30.520484+00:00"}
+{"event": "answer_revealed", "item_id": "366d911d0bbbf5de28dd257874aa560ea67a1e68", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2089, "ts": "2026-07-06T04:47:32.611108+00:00"}
+{"event": "self_mark", "item_id": "366d911d0bbbf5de28dd257874aa560ea67a1e68", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3337, "ts": "2026-07-06T04:47:33.855365+00:00"}
+{"event": "item_shown", "item_id": "10eb15f4b9466a829751dd59f9ef34398e065b56", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:33.865005+00:00"}
+{"event": "answer_revealed", "item_id": "10eb15f4b9466a829751dd59f9ef34398e065b56", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 3795, "ts": "2026-07-06T04:47:37.658385+00:00"}
+{"event": "report_bad", "item_id": "10eb15f4b9466a829751dd59f9ef34398e065b56", "node": null, "reason": "", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:53.153278+00:00"}
+{"event": "self_mark", "item_id": "10eb15f4b9466a829751dd59f9ef34398e065b56", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 20874, "ts": "2026-07-06T04:47:54.734724+00:00"}
+{"event": "item_shown", "item_id": "427d92541a3467de8c37ff0f74fed49376d791cf", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:54.741443+00:00"}
+{"event": "answer_revealed", "item_id": "427d92541a3467de8c37ff0f74fed49376d791cf", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1444, "ts": "2026-07-06T04:47:56.186539+00:00"}
+{"event": "self_mark", "item_id": "427d92541a3467de8c37ff0f74fed49376d791cf", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2424, "ts": "2026-07-06T04:47:57.166196+00:00"}
+{"event": "item_shown", "item_id": "112ed1db1928bf01c285e210f5407cce7039d249", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:47:57.175753+00:00"}
+{"event": "answer_revealed", "item_id": "112ed1db1928bf01c285e210f5407cce7039d249", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 12368, "ts": "2026-07-06T04:48:09.545799+00:00"}
+{"event": "self_mark", "item_id": "112ed1db1928bf01c285e210f5407cce7039d249", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 13655, "ts": "2026-07-06T04:48:10.825050+00:00"}
+{"event": "item_shown", "item_id": "25082036e7b3aa675ffe55f185839422d5661c55", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:10.837090+00:00"}
+{"event": "answer_revealed", "item_id": "25082036e7b3aa675ffe55f185839422d5661c55", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1301, "ts": "2026-07-06T04:48:12.137142+00:00"}
+{"event": "self_mark", "item_id": "25082036e7b3aa675ffe55f185839422d5661c55", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3357, "ts": "2026-07-06T04:48:14.188739+00:00"}
+{"event": "item_shown", "item_id": "48fff809cc40471ee1f6ce447fc723d272ab10ee", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:14.196902+00:00"}
+{"event": "answer_revealed", "item_id": "48fff809cc40471ee1f6ce447fc723d272ab10ee", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 6483, "ts": "2026-07-06T04:48:20.681134+00:00"}
+{"event": "self_mark", "item_id": "48fff809cc40471ee1f6ce447fc723d272ab10ee", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 7610, "ts": "2026-07-06T04:48:21.804047+00:00"}
+{"event": "item_shown", "item_id": "b9413adf0f1acb9978d64695fb8d47a5c3ecc843", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:21.812305+00:00"}
+{"event": "answer_revealed", "item_id": "b9413adf0f1acb9978d64695fb8d47a5c3ecc843", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 16142, "ts": "2026-07-06T04:48:37.957714+00:00"}
+{"event": "self_mark", "item_id": "b9413adf0f1acb9978d64695fb8d47a5c3ecc843", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 17370, "ts": "2026-07-06T04:48:39.180348+00:00"}
+{"event": "item_shown", "item_id": "405e49ce4aa4b387e0d371e1473e7d6eccc5e8b8", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:39.189667+00:00"}
+{"event": "answer_revealed", "item_id": "405e49ce4aa4b387e0d371e1473e7d6eccc5e8b8", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1151, "ts": "2026-07-06T04:48:40.342166+00:00"}
+{"event": "self_mark", "item_id": "405e49ce4aa4b387e0d371e1473e7d6eccc5e8b8", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2665, "ts": "2026-07-06T04:48:41.851955+00:00"}
+{"event": "item_shown", "item_id": "3118e4166a288d9a0d1e7dfbf54b1b04074525d6", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:41.860880+00:00"}
+{"event": "answer_revealed", "item_id": "3118e4166a288d9a0d1e7dfbf54b1b04074525d6", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1095, "ts": "2026-07-06T04:48:42.954953+00:00"}
+{"event": "self_mark", "item_id": "3118e4166a288d9a0d1e7dfbf54b1b04074525d6", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1605, "ts": "2026-07-06T04:48:43.463285+00:00"}
+{"event": "item_shown", "item_id": "7bd2f8a8c099300fa8896c3607fdf343d955e21f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:43.470316+00:00"}
+{"event": "answer_revealed", "item_id": "7bd2f8a8c099300fa8896c3607fdf343d955e21f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1558, "ts": "2026-07-06T04:48:45.029602+00:00"}
+{"event": "self_mark", "item_id": "7bd2f8a8c099300fa8896c3607fdf343d955e21f", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2354, "ts": "2026-07-06T04:48:45.822375+00:00"}
+{"event": "item_shown", "item_id": "028008ce30692dd6a2bc402eb0f3026670e7f8c7", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:45.829219+00:00"}
+{"event": "answer_revealed", "item_id": "028008ce30692dd6a2bc402eb0f3026670e7f8c7", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1015, "ts": "2026-07-06T04:48:46.844796+00:00"}
+{"event": "self_mark", "item_id": "028008ce30692dd6a2bc402eb0f3026670e7f8c7", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2490, "ts": "2026-07-06T04:48:48.318914+00:00"}
+{"event": "item_shown", "item_id": "cba028240032d3b0f3ca206c3778ce2a63d4ba3c", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:48.325781+00:00"}
+{"event": "answer_revealed", "item_id": "cba028240032d3b0f3ca206c3778ce2a63d4ba3c", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1033, "ts": "2026-07-06T04:48:49.360434+00:00"}
+{"event": "self_mark", "item_id": "cba028240032d3b0f3ca206c3778ce2a63d4ba3c", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2902, "ts": "2026-07-06T04:48:51.227509+00:00"}
+{"event": "item_shown", "item_id": "b5d4d9577f1a562ca734ea8241e784c4fe2ebc30", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:51.233141+00:00"}
+{"event": "answer_revealed", "item_id": "b5d4d9577f1a562ca734ea8241e784c4fe2ebc30", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2515, "ts": "2026-07-06T04:48:53.749512+00:00"}
+{"event": "self_mark", "item_id": "b5d4d9577f1a562ca734ea8241e784c4fe2ebc30", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3073, "ts": "2026-07-06T04:48:54.306327+00:00"}
+{"event": "item_shown", "item_id": "c967f50054c64d37f8dab0a9f49fbc650169aecc", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:54.313413+00:00"}
+{"event": "answer_revealed", "item_id": "c967f50054c64d37f8dab0a9f49fbc650169aecc", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1382, "ts": "2026-07-06T04:48:55.694120+00:00"}
+{"event": "self_mark", "item_id": "c967f50054c64d37f8dab0a9f49fbc650169aecc", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4244, "ts": "2026-07-06T04:48:58.555787+00:00"}
+{"event": "item_shown", "item_id": "d544a7850e7c0c40382b16f486d281294f9d9da8", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:48:58.562467+00:00"}
+{"event": "report_bad", "item_id": "d544a7850e7c0c40382b16f486d281294f9d9da8", "node": null, "reason": "题面缺失", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:06.312735+00:00"}
+{"event": "answer_revealed", "item_id": "d544a7850e7c0c40382b16f486d281294f9d9da8", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 8733, "ts": "2026-07-06T04:49:07.297367+00:00"}
+{"event": "self_mark", "item_id": "d544a7850e7c0c40382b16f486d281294f9d9da8", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 9532, "ts": "2026-07-06T04:49:08.092643+00:00"}
+{"event": "item_shown", "item_id": "7f99262344bee960814e3e447fea057d23467f6f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:08.099105+00:00"}
+{"event": "answer_revealed", "item_id": "7f99262344bee960814e3e447fea057d23467f6f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1009, "ts": "2026-07-06T04:49:09.111094+00:00"}
+{"event": "self_mark", "item_id": "7f99262344bee960814e3e447fea057d23467f6f", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2266, "ts": "2026-07-06T04:49:10.366632+00:00"}
+{"event": "item_shown", "item_id": "c428316edc19163defdfe4f620ca0477096a6261", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:10.372742+00:00"}
+{"event": "answer_revealed", "item_id": "c428316edc19163defdfe4f620ca0477096a6261", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 728, "ts": "2026-07-06T04:49:11.103905+00:00"}
+{"event": "self_mark", "item_id": "c428316edc19163defdfe4f620ca0477096a6261", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1911, "ts": "2026-07-06T04:49:12.283361+00:00"}
+{"event": "item_shown", "item_id": "089ca7c87ee6769a6f02e24f7a9c38eaa87a7d4f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:12.290474+00:00"}
+{"event": "answer_revealed", "item_id": "089ca7c87ee6769a6f02e24f7a9c38eaa87a7d4f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 695, "ts": "2026-07-06T04:49:12.988057+00:00"}
+{"event": "self_mark", "item_id": "089ca7c87ee6769a6f02e24f7a9c38eaa87a7d4f", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1493, "ts": "2026-07-06T04:49:13.781503+00:00"}
+{"event": "item_shown", "item_id": "907884cd77524f73436172760643c5d875e24620", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:13.789026+00:00"}
+{"event": "answer_revealed", "item_id": "907884cd77524f73436172760643c5d875e24620", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1090, "ts": "2026-07-06T04:49:14.877595+00:00"}
+{"event": "self_mark", "item_id": "907884cd77524f73436172760643c5d875e24620", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2505, "ts": "2026-07-06T04:49:16.292102+00:00"}
+{"event": "item_shown", "item_id": "3615815efe1c9ed277fa17dc0231815e64580679", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:16.301608+00:00"}
+{"event": "answer_revealed", "item_id": "3615815efe1c9ed277fa17dc0231815e64580679", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 3021, "ts": "2026-07-06T04:49:19.322218+00:00"}
+{"event": "report_bad", "item_id": "3615815efe1c9ed277fa17dc0231815e64580679", "node": null, "reason": "", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:24.636491+00:00"}
+{"event": "self_mark", "item_id": "3615815efe1c9ed277fa17dc0231815e64580679", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 10508, "ts": "2026-07-06T04:49:26.804877+00:00"}
+{"event": "item_shown", "item_id": "216abbd2c77fd2bb7d0b0d6b228be3125b45066f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:26.812374+00:00"}
+{"event": "answer_revealed", "item_id": "216abbd2c77fd2bb7d0b0d6b228be3125b45066f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2468, "ts": "2026-07-06T04:49:29.283531+00:00"}
+{"event": "report_bad", "item_id": "216abbd2c77fd2bb7d0b0d6b228be3125b45066f", "node": null, "reason": "", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:45.736734+00:00"}
+{"event": "self_mark", "item_id": "216abbd2c77fd2bb7d0b0d6b228be3125b45066f", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 19941, "ts": "2026-07-06T04:49:46.751153+00:00"}
+{"event": "item_shown", "item_id": "201be664b516b614e40969e0f77cc4320bda8bc4", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:46.759170+00:00"}
+{"event": "report_bad", "item_id": "201be664b516b614e40969e0f77cc4320bda8bc4", "node": null, "reason": "", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:53.949329+00:00"}
+{"event": "answer_revealed", "item_id": "201be664b516b614e40969e0f77cc4320bda8bc4", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 7858, "ts": "2026-07-06T04:49:54.619302+00:00"}
+{"event": "self_mark", "item_id": "201be664b516b614e40969e0f77cc4320bda8bc4", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 8783, "ts": "2026-07-06T04:49:55.539735+00:00"}
+{"event": "item_shown", "item_id": "66acd967933c7315b177f4b21d99405d2b91e14c", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:55.545727+00:00"}
+{"event": "answer_revealed", "item_id": "66acd967933c7315b177f4b21d99405d2b91e14c", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2796, "ts": "2026-07-06T04:49:58.348197+00:00"}
+{"event": "self_mark", "item_id": "66acd967933c7315b177f4b21d99405d2b91e14c", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3965, "ts": "2026-07-06T04:49:59.511171+00:00"}
+{"event": "item_shown", "item_id": "7f5e4fa86f03a19cea7a77934cf2c79fb0db8163", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:49:59.518418+00:00"}
+{"event": "answer_revealed", "item_id": "7f5e4fa86f03a19cea7a77934cf2c79fb0db8163", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 4500, "ts": "2026-07-06T04:50:04.017951+00:00"}
+{"event": "self_mark", "item_id": "7f5e4fa86f03a19cea7a77934cf2c79fb0db8163", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 5611, "ts": "2026-07-06T04:50:05.126924+00:00"}
+{"event": "item_shown", "item_id": "22084edddec1a1d395b36891daa86b57d7ecbe6e", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:05.135187+00:00"}
+{"event": "answer_revealed", "item_id": "22084edddec1a1d395b36891daa86b57d7ecbe6e", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 3317, "ts": "2026-07-06T04:50:08.452891+00:00"}
+{"event": "self_mark", "item_id": "22084edddec1a1d395b36891daa86b57d7ecbe6e", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4562, "ts": "2026-07-06T04:50:09.694620+00:00"}
+{"event": "item_shown", "item_id": "5c320b4eb99f8ae54affa302c175fecf61d48217", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:09.700526+00:00"}
+{"event": "answer_revealed", "item_id": "5c320b4eb99f8ae54affa302c175fecf61d48217", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 845, "ts": "2026-07-06T04:50:10.546110+00:00"}
+{"event": "self_mark", "item_id": "5c320b4eb99f8ae54affa302c175fecf61d48217", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1892, "ts": "2026-07-06T04:50:11.591467+00:00"}
+{"event": "item_shown", "item_id": "b1cff4357920b3920117676f63878fb1325568da", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:11.598201+00:00"}
+{"event": "answer_revealed", "item_id": "b1cff4357920b3920117676f63878fb1325568da", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 560, "ts": "2026-07-06T04:50:12.159714+00:00"}
+{"event": "self_mark", "item_id": "b1cff4357920b3920117676f63878fb1325568da", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1209, "ts": "2026-07-06T04:50:12.805140+00:00"}
+{"event": "item_shown", "item_id": "cc7c0bcf6863e53564e058192315e73ec97092c5", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:12.812503+00:00"}
+{"event": "answer_revealed", "item_id": "cc7c0bcf6863e53564e058192315e73ec97092c5", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2387, "ts": "2026-07-06T04:50:15.201250+00:00"}
+{"event": "self_mark", "item_id": "cc7c0bcf6863e53564e058192315e73ec97092c5", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3928, "ts": "2026-07-06T04:50:16.737789+00:00"}
+{"event": "item_shown", "item_id": "364ebd5839a5dc58ca72a1a42ce2bb0aff1c353b", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:16.743712+00:00"}
+{"event": "answer_revealed", "item_id": "364ebd5839a5dc58ca72a1a42ce2bb0aff1c353b", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1112, "ts": "2026-07-06T04:50:17.856013+00:00"}
+{"event": "self_mark", "item_id": "364ebd5839a5dc58ca72a1a42ce2bb0aff1c353b", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1812, "ts": "2026-07-06T04:50:18.554459+00:00"}
+{"event": "item_shown", "item_id": "6d526f916fe3968cc4738ed819d5a83face7cad1", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:18.559887+00:00"}
+{"event": "answer_revealed", "item_id": "6d526f916fe3968cc4738ed819d5a83face7cad1", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 546, "ts": "2026-07-06T04:50:19.105993+00:00"}
+{"event": "self_mark", "item_id": "6d526f916fe3968cc4738ed819d5a83face7cad1", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1549, "ts": "2026-07-06T04:50:20.109356+00:00"}
+{"event": "item_shown", "item_id": "e39f323e9fe62f7a047c4a0ec9b6771a7ce51fed", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:20.116237+00:00"}
+{"event": "answer_revealed", "item_id": "e39f323e9fe62f7a047c4a0ec9b6771a7ce51fed", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 10215, "ts": "2026-07-06T04:50:30.338410+00:00"}
+{"event": "self_mark", "item_id": "e39f323e9fe62f7a047c4a0ec9b6771a7ce51fed", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 12221, "ts": "2026-07-06T04:50:32.334174+00:00"}
+{"event": "item_shown", "item_id": "e963aea847cabc83c664188932f849ffde9e495c", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:32.341960+00:00"}
+{"event": "answer_revealed", "item_id": "e963aea847cabc83c664188932f849ffde9e495c", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1887, "ts": "2026-07-06T04:50:34.229109+00:00"}
+{"event": "self_mark", "item_id": "e963aea847cabc83c664188932f849ffde9e495c", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3121, "ts": "2026-07-06T04:50:35.462385+00:00"}
+{"event": "item_shown", "item_id": "0c4c6d6f391f7fec578c1ef956adc48349f839f9", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:35.472108+00:00"}
+{"event": "answer_revealed", "item_id": "0c4c6d6f391f7fec578c1ef956adc48349f839f9", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 5879, "ts": "2026-07-06T04:50:41.351089+00:00"}
+{"event": "self_mark", "item_id": "0c4c6d6f391f7fec578c1ef956adc48349f839f9", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 6878, "ts": "2026-07-06T04:50:42.344725+00:00"}
+{"event": "item_shown", "item_id": "fe8cc95fbff4457bb0dedd756d31c583aa050111", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:42.352768+00:00"}
+{"event": "answer_revealed", "item_id": "fe8cc95fbff4457bb0dedd756d31c583aa050111", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 5942, "ts": "2026-07-06T04:50:48.300282+00:00"}
+{"event": "self_mark", "item_id": "fe8cc95fbff4457bb0dedd756d31c583aa050111", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 7011, "ts": "2026-07-06T04:50:49.360366+00:00"}
+{"event": "item_shown", "item_id": "ba5bdaa90a97f008f78534db6246d6debaf2943f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:49.364977+00:00"}
+{"event": "answer_revealed", "item_id": "ba5bdaa90a97f008f78534db6246d6debaf2943f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 972, "ts": "2026-07-06T04:50:50.339370+00:00"}
+{"event": "self_mark", "item_id": "ba5bdaa90a97f008f78534db6246d6debaf2943f", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1944, "ts": "2026-07-06T04:50:51.308327+00:00"}
+{"event": "item_shown", "item_id": "e99e0fce63f433bef37a58ed8a033f054035a4b0", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:51.313848+00:00"}
+{"event": "answer_revealed", "item_id": "e99e0fce63f433bef37a58ed8a033f054035a4b0", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 2075, "ts": "2026-07-06T04:50:53.390682+00:00"}
+{"event": "self_mark", "item_id": "e99e0fce63f433bef37a58ed8a033f054035a4b0", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2902, "ts": "2026-07-06T04:50:54.216400+00:00"}
+{"event": "item_shown", "item_id": "e79d73fc807799922ed983291f57b63c626a28ed", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:54.222043+00:00"}
+{"event": "answer_revealed", "item_id": "e79d73fc807799922ed983291f57b63c626a28ed", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 991, "ts": "2026-07-06T04:50:55.215988+00:00"}
+{"event": "self_mark", "item_id": "e79d73fc807799922ed983291f57b63c626a28ed", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1628, "ts": "2026-07-06T04:50:55.849400+00:00"}
+{"event": "item_shown", "item_id": "4ca3cb414f741dde5228d3cc3daff290c7f814f5", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:55.855178+00:00"}
+{"event": "answer_revealed", "item_id": "4ca3cb414f741dde5228d3cc3daff290c7f814f5", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 812, "ts": "2026-07-06T04:50:56.669930+00:00"}
+{"event": "self_mark", "item_id": "4ca3cb414f741dde5228d3cc3daff290c7f814f5", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1345, "ts": "2026-07-06T04:50:57.200096+00:00"}
+{"event": "item_shown", "item_id": "a3e7f94bade96b82e459e9a3fc20ae582e2467c0", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:50:57.212550+00:00"}
+{"event": "answer_revealed", "item_id": "a3e7f94bade96b82e459e9a3fc20ae582e2467c0", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 4221, "ts": "2026-07-06T04:51:01.432718+00:00"}
+{"event": "self_mark", "item_id": "a3e7f94bade96b82e459e9a3fc20ae582e2467c0", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 6805, "ts": "2026-07-06T04:51:04.010807+00:00"}
+{"event": "item_shown", "item_id": "3a71bfe9b03a2a0cc07fb07474bf08557fb972e5", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:51:04.017990+00:00"}
+{"event": "session_end", "n_done": 79, "n_right": 50, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T04:52:19.640411+00:00"}
+{"event": "session_start", "item_id": null, "node": "氨基酸/蛋白质", "seen_count": 79, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:17.785168+00:00"}
+{"event": "range_exhausted", "item_id": null, "node": "氨基酸/蛋白质", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:17.790004+00:00"}
+{"event": "session_start", "item_id": null, "node": "糖类/油脂", "seen_count": 79, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:21.407382+00:00"}
+{"event": "item_shown", "item_id": "8bb61225fd171f24d7bfaa51a5a6d4a72c4d312e", "node": "糖类/油脂", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:21.414639+00:00"}
+{"event": "answer_revealed", "item_id": "8bb61225fd171f24d7bfaa51a5a6d4a72c4d312e", "node": "糖类/油脂", "session_id": "smr8q5cj21hrcp", "think_ms": 1486, "ts": "2026-07-06T05:03:22.898937+00:00"}
+{"event": "self_mark", "item_id": "8bb61225fd171f24d7bfaa51a5a6d4a72c4d312e", "mark": "wrong", "node": "糖类/油脂", "session_id": "smr8q5cj21hrcp", "total_ms": 3092, "ts": "2026-07-06T05:03:24.503780+00:00"}
+{"event": "item_shown", "item_id": "92d8dc49607aff6577fdf7d44b5f02dadfb4c3f0", "node": "糖类/油脂", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:24.516247+00:00"}
+{"event": "answer_revealed", "item_id": "92d8dc49607aff6577fdf7d44b5f02dadfb4c3f0", "node": "糖类/油脂", "session_id": "smr8q5cj21hrcp", "think_ms": 4374, "ts": "2026-07-06T05:03:28.887599+00:00"}
+{"event": "self_mark", "item_id": "92d8dc49607aff6577fdf7d44b5f02dadfb4c3f0", "mark": "wrong", "node": "糖类/油脂", "session_id": "smr8q5cj21hrcp", "total_ms": 5338, "ts": "2026-07-06T05:03:29.846771+00:00"}
+{"event": "range_exhausted", "item_id": "92d8dc49607aff6577fdf7d44b5f02dadfb4c3f0", "node": "糖类/油脂", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:29.849976+00:00"}
+{"event": "session_start", "item_id": "92d8dc49607aff6577fdf7d44b5f02dadfb4c3f0", "node": null, "seen_count": 81, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:36.631236+00:00"}
+{"event": "item_shown", "item_id": "baeefb8b3f3aa62daf7bfcc475ef348f5f78ad7d", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:36.637866+00:00"}
+{"event": "answer_revealed", "item_id": "baeefb8b3f3aa62daf7bfcc475ef348f5f78ad7d", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1134, "ts": "2026-07-06T05:03:37.772961+00:00"}
+{"event": "self_mark", "item_id": "baeefb8b3f3aa62daf7bfcc475ef348f5f78ad7d", "mark": "wrong", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 3255, "ts": "2026-07-06T05:03:39.891054+00:00"}
+{"event": "item_shown", "item_id": "4cdec6c6cdd5574b228a85c3548235af272adf1a", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:39.895954+00:00"}
+{"event": "answer_revealed", "item_id": "4cdec6c6cdd5574b228a85c3548235af272adf1a", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 807, "ts": "2026-07-06T05:03:40.706925+00:00"}
+{"event": "report_bad", "item_id": "4cdec6c6cdd5574b228a85c3548235af272adf1a", "node": null, "reason": "答案错误", "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:56.103425+00:00"}
+{"event": "self_mark", "item_id": "4cdec6c6cdd5574b228a85c3548235af272adf1a", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 19693, "ts": "2026-07-06T05:03:59.589981+00:00"}
+{"event": "item_shown", "item_id": "c9c14ab3f6075b1ae129ae79d5c17db7e259846f", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:03:59.596953+00:00"}
+{"event": "answer_revealed", "item_id": "c9c14ab3f6075b1ae129ae79d5c17db7e259846f", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1658, "ts": "2026-07-06T05:04:01.258505+00:00"}
+{"event": "self_mark", "item_id": "c9c14ab3f6075b1ae129ae79d5c17db7e259846f", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2901, "ts": "2026-07-06T05:04:02.497258+00:00"}
+{"event": "item_shown", "item_id": "37064c679563dfb2625f3b065ee3f28d3f08a7e3", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:02.506698+00:00"}
+{"event": "answer_revealed", "item_id": "37064c679563dfb2625f3b065ee3f28d3f08a7e3", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 985, "ts": "2026-07-06T05:04:03.497701+00:00"}
+{"event": "self_mark", "item_id": "37064c679563dfb2625f3b065ee3f28d3f08a7e3", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1982, "ts": "2026-07-06T05:04:04.483132+00:00"}
+{"event": "item_shown", "item_id": "d477593b8399d74c96d831d5c9c38cef69277af3", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:04.490582+00:00"}
+{"event": "answer_revealed", "item_id": "d477593b8399d74c96d831d5c9c38cef69277af3", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 680, "ts": "2026-07-06T05:04:05.173587+00:00"}
+{"event": "self_mark", "item_id": "d477593b8399d74c96d831d5c9c38cef69277af3", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1596, "ts": "2026-07-06T05:04:06.084012+00:00"}
+{"event": "item_shown", "item_id": "9874e5f92d353213b162e280b24ac27fe35709dd", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:06.092112+00:00"}
+{"event": "answer_revealed", "item_id": "9874e5f92d353213b162e280b24ac27fe35709dd", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 3219, "ts": "2026-07-06T05:04:09.314294+00:00"}
+{"event": "self_mark", "item_id": "9874e5f92d353213b162e280b24ac27fe35709dd", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 4783, "ts": "2026-07-06T05:04:10.873517+00:00"}
+{"event": "item_shown", "item_id": "87bede536e5c3e5c8d222624052fca5542cba991", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:10.883092+00:00"}
+{"event": "answer_revealed", "item_id": "87bede536e5c3e5c8d222624052fca5542cba991", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 3677, "ts": "2026-07-06T05:04:14.559295+00:00"}
+{"event": "self_mark", "item_id": "87bede536e5c3e5c8d222624052fca5542cba991", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 5222, "ts": "2026-07-06T05:04:16.099623+00:00"}
+{"event": "item_shown", "item_id": "2ca7ed16b8eea1b14b543ab211d3eaefa7dc4a54", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:16.106283+00:00"}
+{"event": "answer_revealed", "item_id": "2ca7ed16b8eea1b14b543ab211d3eaefa7dc4a54", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 843, "ts": "2026-07-06T05:04:16.952448+00:00"}
+{"event": "self_mark", "item_id": "2ca7ed16b8eea1b14b543ab211d3eaefa7dc4a54", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1796, "ts": "2026-07-06T05:04:17.901063+00:00"}
+{"event": "item_shown", "item_id": "92565533dd45c55fd6cdba4f4dd4feb5ae0640a4", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:17.906271+00:00"}
+{"event": "answer_revealed", "item_id": "92565533dd45c55fd6cdba4f4dd4feb5ae0640a4", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 1145, "ts": "2026-07-06T05:04:19.055719+00:00"}
+{"event": "self_mark", "item_id": "92565533dd45c55fd6cdba4f4dd4feb5ae0640a4", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 2183, "ts": "2026-07-06T05:04:20.087647+00:00"}
+{"event": "item_shown", "item_id": "c405822c7964311fc949a60f9e430a2ae74b7335", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:20.099300+00:00"}
+{"event": "answer_revealed", "item_id": "c405822c7964311fc949a60f9e430a2ae74b7335", "node": null, "session_id": "smr8q5cj21hrcp", "think_ms": 591, "ts": "2026-07-06T05:04:20.686923+00:00"}
+{"event": "self_mark", "item_id": "c405822c7964311fc949a60f9e430a2ae74b7335", "mark": "right", "node": null, "session_id": "smr8q5cj21hrcp", "total_ms": 1558, "ts": "2026-07-06T05:04:21.650728+00:00"}
+{"event": "item_shown", "item_id": "73fb14188effc2174441a54ee15ea5fcbe3b8071", "node": null, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:21.659046+00:00"}
+{"event": "session_end", "n_done": 12, "n_right": 9, "session_id": "smr8q5cj21hrcp", "ts": "2026-07-06T05:04:24.607881+00:00"}

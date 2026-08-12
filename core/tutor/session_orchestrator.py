@@ -20,6 +20,10 @@ from typing import Any, Callable, Dict, List, Optional
 from core.data.item_repository import get_item_repository
 from core.data.knowledge_repository import get_knowledge_repository
 from core.tutor.diagnose_engine import DiagnoseEngine, RubricPoint
+from core.tutor.product_loop import (
+    build_warmup_contract,
+    select_formal_questions,
+)
 from core.tutor.prompts import (
     SYSTEM_PROMPT,
     build_diagnosis_prompt,
@@ -55,6 +59,8 @@ class TutorSession:
     region: str
     time_budget_min: int
     created_at: str
+    grade_detail: str = ""
+    learning_purpose: str = ""
     tasks: List[Dict[str, Any]] = field(default_factory=list)
     current_task_id: str = "T1"
     transcript: List[Dict[str, Any]] = field(default_factory=list)
@@ -86,6 +92,7 @@ class SessionOrchestrator:
     def create_session(
         self, user_id: str, goal: str, node_id: str = "", grade: str = "高二",
         region: str = "全国卷", time_budget_min: int = 180, subject: str = "chemistry",
+        grade_detail: str = "", learning_purpose: str = "",
     ) -> TutorSession:
         if not node_id:
             node = self.kg.find_node(goal)
@@ -97,6 +104,8 @@ class SessionOrchestrator:
             goal=goal or "补化学薄弱点", grade=grade, region=region,
             time_budget_min=time_budget_min,
             created_at=datetime.now().isoformat(timespec="seconds"),
+            grade_detail=grade_detail,
+            learning_purpose=learning_purpose,
             tasks=[asdict(t) for t in tasks], current_task_id="T1",
         )
 
@@ -118,6 +127,24 @@ class SessionOrchestrator:
 
     def diagnostic_questions(self, session: TutorSession) -> List[Dict[str, Any]]:
         return [asdict(q) for q in self.diagnose.build_progressive_questions(session.node_id)]
+
+    def prepare_diagnosis(self, session: TutorSession) -> Dict[str, Any]:
+        formal = select_formal_questions(session.node_id, limit=5)
+        return {
+            "session_id": session.session_id,
+            "node_id": session.node_id,
+            "grade": session.grade,
+            "grade_detail": session.grade_detail,
+            "learning_purpose": session.learning_purpose,
+            "warmup": build_warmup_contract(session.node_id),
+            "formal_questions": formal,
+            "formal_count": len(formal),
+            "ready_for_formal_diagnosis": len(formal) >= 3,
+            "fallback": None if len(formal) >= 3 else {
+                "reason": "insufficient_strong_questions",
+                "message": "这个知识点的正式诊断题正在整理复核，可以先选择其他知识点或进入低风险练习。",
+            },
+        }
 
     # === 诊断一轮 ===
     def run_diagnosis_turn(
@@ -187,7 +214,7 @@ class SessionOrchestrator:
     ) -> Dict[str, Any]:
         task = self._current_task(session)
         # 取一道关联真题做标准解锚点
-        items = self.items.find_items(kg_node=session.node_id, limit=1)
+        items = self.items.find_items(kg_node=session.node_id, limit=1, purpose="teaching")
         item = items[0] if items else None
 
         # 恶性循环检测

@@ -204,7 +204,21 @@ def main():
     ITEM_BANK_DIR.mkdir(parents=True, exist_ok=True)
     out_file = ITEM_BANK_DIR / f"{topic}.jsonl"
 
+    import datetime
+    progress_file = ITEM_BANK_DIR.parent / "ingest_progress.json"
+
+    def _write_ingest(done, status="running"):
+        try:
+            progress_file.write_text(json.dumps({
+                "done": done, "total": len(items), "cost": round(total_cost, 4),
+                "status": status,
+                "updated": datetime.datetime.now().strftime("%H:%M:%S"),
+            }, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
     total_cost, ok, fail = 0.0, 0, 0
+    _write_ingest(0, "running")
     with open(out_file, "a", encoding="utf-8") as fout:
         for i, it in enumerate(items, 1):
             try:
@@ -212,6 +226,7 @@ def main():
                 if result.get("_error"):
                     fail += 1
                     print(f"  {i}. ✗ {it.get('source','?')}: {result['_error']}")
+                    _write_ingest(i, "running")
                     continue
                 total_cost += result.pop("_cost", 0)
                 fout.write(json.dumps(result, ensure_ascii=False) + "\n")
@@ -222,7 +237,9 @@ def main():
             except Exception as e:
                 fail += 1
                 print(f"  {i}. ✗ {it.get('source','?')}: {e}")
+            _write_ingest(i, "running")
             time.sleep(0.3)  # 轻微限速
+    _write_ingest(len(items), "done")
 
     print(f"\n完成：{ok} 成功，{fail} 失败，成本 ¥{total_cost:.2f}")
     print(f"输出：{out_file}")

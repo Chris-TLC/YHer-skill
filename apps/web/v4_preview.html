@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/mhchem.min.js"></script>
+<script defer src="rir_renderer.js"></script>
+<title>YHer v4 Preview</title>
+<style>
+  *{box-sizing:border-box}
+  :root{--bg:#f5f5f7;--surface:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;--blue:#0066cc;--bad:#b42318}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,"SF Pro Text","PingFang SC",system-ui,sans-serif}
+  .shell{max-width:1160px;margin:0 auto;padding:24px}
+  .toolbar{position:sticky;top:0;z-index:2;background:rgba(245,245,247,.92);backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line);padding:14px 24px;margin:0 -24px 22px}
+  .toolbar-inner{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center}
+  input{width:100%;height:40px;border:1px solid var(--line);border-radius:8px;padding:0 12px;font:inherit;background:#fff;color:var(--text)}
+  button{height:40px;border:1px solid var(--line);border-radius:8px;padding:0 13px;background:#fff;color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+  button.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  button[aria-pressed="true"]{background:#1d1d1f;color:#fff;border-color:#1d1d1f}
+  .status{min-height:22px;color:var(--muted);font-size:13px;margin-bottom:12px}
+  .status.bad{color:var(--bad)}
+  .viewport{width:100%;margin:0 auto;transition:max-width .25s ease}
+  .viewport.mobile{max-width:390px}
+  .item{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px;margin-bottom:18px}
+  .item-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px}
+  .item-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+  .badge{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 9px;color:var(--muted);white-space:nowrap}
+  .zone-title{font-size:14px;color:var(--muted);font-weight:700;margin:20px 0 10px}
+  .empty{color:var(--muted);font-size:14px}
+  @media(max-width:700px){.shell{padding:14px}.toolbar{padding:12px 14px;margin:0 -14px 16px}.toolbar-inner{grid-template-columns:1fr 1fr}.toolbar-inner input{grid-column:1/-1}.item{padding:16px}.item-head{display:block}.badge{display:inline-block;margin-top:10px}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <div class="toolbar">
+    <div class="toolbar-inner">
+      <input id="item-id" placeholder="item_id" autocomplete="off">
+      <button class="primary" id="load-btn">渲染</button>
+      <button id="random-btn">随机服务题</button>
+      <button id="viewport-btn" aria-pressed="false">移动端</button>
+    </div>
+  </div>
+  <div id="status" class="status"></div>
+  <div id="viewport" class="viewport">
+    <section id="item" class="item">
+      <div class="empty">输入 item_id 或随机抽一题。</div>
+    </section>
+  </div>
+</main>
+<script>
+const API = new URLSearchParams(location.search).get("api") || (location.protocol === "file:" ? "http://127.0.0.1:8600" : location.origin);
+const SAMPLE_ITEM_IDS = [
+  "29b7d12af5f40ea73365aca54a27450a1be53f1f",
+  "1131f2780a8da4dfaf4189659b30c9d42171e27e",
+  "f25dc7703b753ed2c859da08fc2b9ecc0a44c348",
+  "7f655bf923cc48c04c07664fd613909f97e8a18b",
+  "0cdcf11be000e1f0771e55c80486d7f05ab40861",
+  "60e1aba66b46bb284ad5eb13baab633de33722c5",
+  "b140e5ac5cd2d9b0843c5203b5fdf1a0d9d54044",
+  "b368af061359a1a6522153264d2ffdd78ab50b3f",
+  "2c4a34c2c575f4be75f5ec15d6319f2582b59cfb",
+  "c0973685be192543e6b46cd9f2d0c8f1ca0f3091"
+];
+
+const $ = id => document.getElementById(id);
+let ids = SAMPLE_ITEM_IDS.slice();
+
+fetch("v4_service_item_ids.json").then(r=>r.ok?r.json():null).then(data=>{
+  if(Array.isArray(data) && data.length) ids = data;
+}).catch(()=>{});
+
+$("load-btn").addEventListener("click",()=>loadItem($("item-id").value.trim()));
+$("random-btn").addEventListener("click",()=>{
+  const id = ids[Math.floor(Math.random()*ids.length)];
+  $("item-id").value = id;
+  loadItem(id);
+});
+// G5 验收深链(2026-07-06): 清单里的 #<item_id> 链接直接渲染,免手动粘贴。
+function loadFromHash(){
+  const h = (location.hash || "").slice(1);
+  if (/^[0-9a-f]{40}$/.test(h)) { $("item-id").value = h; loadItem(h); }
+}
+window.addEventListener("hashchange", loadFromHash);
+loadFromHash();
+$("viewport-btn").addEventListener("click",()=>{
+  const pressed = $("viewport-btn").getAttribute("aria-pressed") === "true";
+  $("viewport-btn").setAttribute("aria-pressed", String(!pressed));
+  $("viewport").classList.toggle("mobile", !pressed);
+});
+
+async function loadItem(id){
+  if(!id) return;
+  setStatus("加载中");
+  try{
+    const res = await fetch(API.replace(/\/$/,"")+"/api/v4/items/"+encodeURIComponent(id)+"/rir?zones=stem,answer");
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const rir = await res.json();
+    renderItem(rir);
+    setStatus(rir.degraded ? "已渲染，含降级占位" : "已渲染");
+  }catch(err){
+    $("item").innerHTML = '<div class="empty">无法加载该题。</div>';
+    setStatus(err.message || String(err), true);
+  }
+}
+
+function renderItem(rir){
+  $("item").textContent = "";
+  const head = document.createElement("div");
+  head.className = "item-head";
+  const id = document.createElement("div");
+  id.className = "item-id";
+  id.textContent = rir.item_id || "";
+  const badge = document.createElement("div");
+  badge.className = "badge";
+  badge.textContent = rir.degraded ? "degraded" : "normal";
+  head.appendChild(id);
+  head.appendChild(badge);
+  $("item").appendChild(head);
+  appendZone("题干", "stem", rir);
+  appendZone("答案", "answer", rir);
+}
+
+function appendZone(label, key, rir){
+  const title = document.createElement("div");
+  title.className = "zone-title";
+  title.textContent = label;
+  const body = document.createElement("div");
+  $("item").appendChild(title);
+  $("item").appendChild(body);
+  window.YHerRirRenderer.renderZone((rir.zones && rir.zones[key]) || [], body, {
+    itemId: rir.item_id || "",
+    reportUrl: API.replace(/\/$/,"") + "/api/render_report"
+  });
+}
+
+function setStatus(text,bad=false){
+  $("status").textContent = text;
+  $("status").classList.toggle("bad", bad);
+}
+</script>
+</body>
+</html>
