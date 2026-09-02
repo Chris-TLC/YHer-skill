@@ -210,9 +210,19 @@ def test_S0_triggers_on_heldout_pass():
 def test_S_growth_first_review_and_fail():
     node = m.NodeBelief(b=np.array([0.8, 0.1, 0.05, 0.05]), S=3.0, last_review_at=0.0)
     m.review_update_S(node, passed=True, now=DAY, first_review=True)
-    assert np.isclose(node.S, 9.0)                 # 首次复核 ×3（第150行）
+    assert np.isclose(node.S, 9.0)                 # 首次复核 ×3（同 FSRS w0）
     m.review_update_S(node, passed=False, now=2 * DAY)
-    assert np.isclose(node.S, 4.5)                 # 失败 ×0.5（第151行）
+    assert np.isclose(node.S, 9.0 * 0.72)          # 失败 ×w11=0.72（FSRS-4.5）
+    assert node.S < 9.0
+
+
+def test_S_damped_growth_does_not_explode():
+    """审计反例：旧 ×3 无阻尼 → 10 次节奏后 S=4608 天；FSRS-4.5 阻尼应远小于该值。"""
+    node = m.NodeBelief(b=np.array([0.8, 0.1, 0.05, 0.05]), S=m.S0, last_review_at=0.0)
+    for i in range(10):
+        m.review_update_S(node, passed=True, now=(i + 1) * DAY)
+    assert node.S < m.S_MAX
+    assert node.S < 300.0                          # 远低于 4608（阻尼生效）
 
 
 def test_node_belief_rejects_invalid_probability_vectors():

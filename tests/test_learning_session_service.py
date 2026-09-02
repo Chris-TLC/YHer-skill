@@ -662,7 +662,8 @@ def test_held_out_events_apply_fsrs_stability_updates():
         }
     )
     failed = project_student("fsrs", events).to_dict()
-    assert failed["subjects"]["chemistry"]["kg_mastery"][NODE]["stability"] == 4.5
+    # FSRS-4.5 阻尼:失败 ×w11=0.72(旧手设 ×0.5 已由 2026-09 审计替换)
+    assert failed["subjects"]["chemistry"]["kg_mastery"][NODE]["stability"] == 9.0 * 0.72
 
 
 def test_completed_report_is_frozen_at_that_sessions_last_event():

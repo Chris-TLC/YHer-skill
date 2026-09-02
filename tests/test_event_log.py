@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from engine import recommender as rec
-from engine.event_log import JsonlEventLog
+from engine.event_log import JsonlEventLog, with_provenance
 
 
 def test_rec_served_jsonl_is_persistent_and_idempotent():
@@ -184,3 +184,20 @@ def test_incremental_writer_detects_copytruncate_refill_past_old_offset(tmp_path
     assert [row["event_id"] for row in rows] == [
         "replacement-generation", "stale-generation",
     ]
+
+
+def test_with_provenance_adds_source_and_schema_version():
+    assert with_provenance({"event_id": "e1"}) == {
+        "event_id": "e1", "source": "real", "schema_version": 2}
+
+
+def test_with_provenance_rejects_unknown_source():
+    import pytest
+    with pytest.raises(ValueError):
+        with_provenance({"event_id": "e2"}, source="hallucinated")
+
+
+def test_with_provenance_keeps_explicit_source():
+    r = with_provenance({"event_id": "e3", "source": "synthetic"})
+    assert r["source"] == "synthetic"
+    assert r["schema_version"] == 2

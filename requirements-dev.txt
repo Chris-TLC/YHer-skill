@@ -1,1 +1,8 @@
 pytest>=8.3,<9
+# 分析管线测试需要绘图/机器学习基础库(faiss 无 py3.14 wheel,retrieve 已做可选降级)
+matplotlib>=3.10.0
+scikit-learn>=1.3.0
+sentence-transformers>=2.2.2
+lxml
+python-dateutil
+requests

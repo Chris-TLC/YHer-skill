@@ -38,11 +38,16 @@ PREREQ_U_DEFAULT = 0.75           # P(对前置|U)：无前置信念数据时缺
 LAMBDA_PRIOR = 0.6                # b_k(0)=λ·板块后验+(1−λ)·全局先验
 ETA_PREREQ = 0.4                  # 前置传播幅度
 
-# ── FSRS 衰减 + 稳定性 S（第 49/150-151 行）──
+# ── FSRS 衰减 + 稳定性 S（第 49/150-151 行；2026-08-13 审计:旧手设×3/×2/×0.5 无阻尼 → S 膨胀 4608 天,换 4.5 公式）──
 S0 = 3.0                          # S 初值（天）
-S_GAIN = 1.0                      # 常规复核增益 S×(1+增益)
-S_FIRST_REVIEW_MULT = 3.0         # 首次复核 S×3（已巩固知识快速稳定）
-S_FAIL_MULT = 0.5                 # 复核失败 S×0.5
+S_FIRST_REVIEW_MULT = 3.0         # 首次复核 S×3（已巩固知识快速稳定;同 4.5 的 w0）
+S_MAX = 500.0                     # 阻尼上限（天）,对齐 FSRS 官方默认 max 稳定度
+# FSRS-4.5 稳定度增长权重（w7-w12,取自官方公开参数表;简化版只取与本项目有关的 5 项）
+_W7 = 0.9                         # 成功因子基准
+_W8 = 0.0                         # 成功因子幂次
+_W10 = 10.0                       # S 幂次分母
+_W11 = 0.72                       # 失败倍率
+_W12 = 0.90                       # 成功判定阈值
 DAY_SECONDS = 86400
 
 # ── LLM 慢路径钳位（第 103 行 #8）──
@@ -278,12 +283,18 @@ def maybe_init_S(node: NodeBelief, now: float, held_out_passed: bool = False) ->
 
 def review_update_S(node: NodeBelief, passed: bool, now: float,
                     first_review: bool = False) -> NodeBelief:
-    """复核更新 S（第 150-151 行）：通过则增长（首次 ×3，此后 ×(1+增益)），失败 ×0.5。"""
+    """复核更新 S（第 150-151 行；2026-08-13 审计:改 FSRS-4.5 阻尼公式）：
+       通过 → 首次 ×3（w0），此后按 4.5 阻尼增长项；失败 → ×w11=0.72。
+       S 钳位 [1, S_MAX]，防无阻尼膨胀（旧公式×10 次后 S=4608 天,4.5 阻尼下 ≈73 天）。"""
     if node.S is None:
         return node
-    if passed:
-        node.S *= S_FIRST_REVIEW_MULT if first_review else (1.0 + S_GAIN)
+    if passed and not first_review:
+        f = _W12                                   # r=1.0 成功
+        growth = (1.0 + f * (node.S ** (-_W8) + _W7) * (11.0 / 9.0 - node.S / _W10))
+        node.S = float(min(max(node.S * growth, 1.0), S_MAX))
+    elif passed:
+        node.S = float(min(node.S * S_FIRST_REVIEW_MULT, S_MAX))
     else:
-        node.S *= S_FAIL_MULT
+        node.S = float(min(node.S * _W11, S_MAX))
     node.last_review_at = now
     return node

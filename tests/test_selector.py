@@ -124,17 +124,23 @@ def test_seen_items_excluded():
     assert pick["item_id"] == "b"
 
 
-# ── 收敛终止（gap>0.45 且直接作答≥3 题）+ 预算耗尽 ─────────────────────
+# ── 收敛终止（P(top1)≥0.80 且直接作答≥4 题）+ 预算耗尽 ─────────────────────
 def test_should_stop_on_convergence():
-    b = {"k": np.array([0.7, 0.1, 0.15, 0.05])}           # gap=0.55>0.45
-    assert sel.should_stop(b, target_nodes=["k"], direct_answers={"k": 3},
+    b = {"k": np.array([0.85, 0.05, 0.08, 0.02])}         # top1=0.85≥0.80
+    assert sel.should_stop(b, target_nodes=["k"], direct_answers={"k": 4},
                            budget_items=15, asked=5)
 
 
-def test_should_not_stop_under_3_direct_answers():
-    b = {"k": np.array([0.8, 0.1, 0.05, 0.05])}           # gap 高但证据不足
-    assert not sel.should_stop(b, target_nodes=["k"], direct_answers={"k": 2},
-                               budget_items=15, asked=5)   # #9：<3 题不收敛
+def test_should_not_stop_below_min_direct_answers():
+    b = {"k": np.array([0.85, 0.05, 0.08, 0.02])}         # top1 达标但证据不足
+    assert not sel.should_stop(b, target_nodes=["k"], direct_answers={"k": 3},
+                               budget_items=15, asked=5)   # min_length=4：<4 题不收敛
+
+
+def test_should_not_stop_below_top1_threshold():
+    b = {"k": np.array([0.75, 0.1, 0.1, 0.05])}           # top1=0.75<0.80
+    assert not sel.should_stop(b, target_nodes=["k"], direct_answers={"k": 6},
+                               budget_items=15, asked=6)
 
 
 def test_should_stop_on_budget_exhausted():

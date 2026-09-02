@@ -26,8 +26,8 @@ import numpy as np
 
 from engine import mastery as m
 
-GAP_THRESHOLD = 0.45           # 用户 2026-07-08 拍板维持
-MIN_DIRECT_ANSWERS = 3         # #9：直接证据下限（防先验回声）
+TOP1_STOP = 0.80               # 停止：后验 argmax ≥ 0.80（文献无 gap 先例，改阈值家族）
+MIN_DIRECT_ANSWERS = 4         # 停止：直接证据下限（min_length 4–5，红队裁决）
 MIN_ITEMS_PER_TARGET = 2       # 每 session 目标节点最低题量
 
 
@@ -140,18 +140,19 @@ def select_next(candidates: Sequence[Dict], beliefs: Dict[str, np.ndarray],
 def should_stop(beliefs: Dict[str, np.ndarray], target_nodes: Sequence[str], *,
                 direct_answers: Dict[str, int], budget_items: int,
                 asked: int) -> bool:
-    """终止条件（第 128 行）：
-      [gap>0.45 且本节点直接作答≥3 题]（全部目标节点满足）  或  预算耗尽。"""
+    """终止条件（2026-08-13 审计替换）：
+      [P(top1)≥0.80 且本节点直接作答≥4 题]（全部目标节点满足）  或  预算耗尽。
+      旧 gap>0.45 规则无文献先例且早停误判 10.3%（红队1），已废止；
+      gap 值由调用方作为 UI 展示量保留，不再作为终止判据。"""
     if asked >= budget_items:
         return True                               # 预算耗尽
     for n in target_nodes:
         b = beliefs.get(n)
         if b is None:
             return False
-        srt = np.sort(np.asarray(b, dtype=float))
-        gap = srt[-1] - srt[-2]
-        if gap <= GAP_THRESHOLD:
+        top1 = float(np.max(np.asarray(b, dtype=float)))
+        if top1 < TOP1_STOP:
             return False
         if direct_answers.get(n, 0) < MIN_DIRECT_ANSWERS:
-            return False                          # #9：证据量不足不收敛
+            return False                          # 证据量不足不收敛
     return True

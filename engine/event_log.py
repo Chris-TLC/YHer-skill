@@ -11,6 +11,23 @@ from typing import Any, Mapping
 
 ANCHOR_BYTES = 4096
 
+# 事件溯源字段（2026-08-13 审计 E8：无 source 卡住一切校准；对齐 Caliper 1.2 / xAPI）
+EVENT_SOURCE = ("real", "qa", "synthetic")
+EVENT_SCHEMA_VERSION = 2
+
+
+def with_provenance(record: Mapping[str, Any], *,
+                    source: str = "real",
+                    schema_version: int = EVENT_SCHEMA_VERSION) -> dict[str, Any]:
+    """给事件记录附加溯源字段（source∈{real,qa,synthetic} + schema_version）。
+    兼容旧记录:缺省视为 real（历史事件均来自真实交互）。"""
+    if source not in EVENT_SOURCE:
+        raise ValueError(f"unknown event source: {source!r}")
+    enriched = dict(record)
+    enriched.setdefault("source", source)
+    enriched.setdefault("schema_version", schema_version)
+    return enriched
+
 
 def event_key(record: Mapping[str, Any]) -> str:
     for field in ("event_id", "rec_id"):

@@ -8,7 +8,13 @@ from pathlib import Path
 from collections import defaultdict
 from typing import List, Dict, Optional
 
-import faiss
+try:
+    import faiss
+    FAISS_AVAILABLE = True
+except ImportError:          # faiss 无 py3.14 wheel 时降级:检索显式报错,不阻断导入
+    faiss = None
+    FAISS_AVAILABLE = False
+
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
@@ -32,6 +38,10 @@ def _load_model():
 
 
 def _load_index(name):
+    if not FAISS_AVAILABLE:
+        raise RuntimeError(
+            "faiss 未安装(该平台/解释器无 wheel)。向量检索不可用;"
+            "诊断/判分/推荐等不含向量检索的主链路不受影响。")
     if name not in _indices:
         idx_path = EMBED_DIR / f"{name}.faiss"
         if idx_path.exists():
