@@ -50,6 +50,7 @@ venv/
 env/
 ENV/
 .venv/
+.venv-demo/
 
 # IDE
 .vscode/
@@ -89,3 +90,50 @@ exam_patterns_full_v1_*.jsonl
 # 系统
 Thumbs.db
 desktop.ini
+.gstack/
+
+# 派生数据(可重新生成)
+data/page_images_v2/
+data/page_images_v3/
+data/.doc_to_pdf_cache/
+data/_enrich_cache.json
+data/_video_map_cache.json
+data/clustered_questions/
+data/clustered_questions_150/
+data/distilled/
+data/evals/
+data/from_pdf/
+data/generated_questions/
+data/quality/
+data/question_generation_patterns/
+data/item_bank/v4/ws2_repaired_assets/
+
+# 中间批次产物
+data/batch6_candidate_20260703/
+data/batch7_apply_20260704/
+data/batch8_ws2_candidate_20260704/
+data/batch8p1_ws2_candidate_20260704/
+data/ws1_batch_v4_20260703/
+data/ws2_assets_v1_candidate_20260703/
+data/ws2_gold_set_20260704/
+data/ws3_apply_20260703/
+data/ws4_render_baseline_20260704/
+data/ai_diagnostic_bank/
+
+# 数据库与本地存储
+database/
+data/local_store/
+yher_memory.db
+*.db
+*.db-journal
+
+# 归档
+data/_archive_old_itembank/
+
+# 临时文件
+data/split_progress.json
+
+# 发布测试环境
+.venv-pub/
+.venv-demo/
+.venv-pipeline/
