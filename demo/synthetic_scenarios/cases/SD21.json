@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD21",
+  "label": "SYNTHETIC_DEMO",
+  "title": "硫及其化合物：预算断点",
+  "budget_tier": "2h",
+  "outcome": "partial",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD21",
+    "grade": "高三",
+    "learning_purpose": "preview"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD21-E1",
+      "node": "硫及其化合物",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "partial",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

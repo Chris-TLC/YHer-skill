@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YHer Visual Quality Preview</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; background: #0b0c0d; color: #f5f5f7; }
+main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
+h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: 0; }
+.sub { color: #a1a1aa; margin: 0 0 24px; line-height: 1.5; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.item-card { border: 1px solid #303236; border-radius: 8px; background: #17181a; overflow: hidden; }
+.item-card header { display: flex; justify-content: space-between; gap: 16px; padding: 16px 16px 10px; border-bottom: 1px solid #303236; }
+.item-card h2 { font-size: 16px; margin: 2px 0 0; letter-spacing: 0; overflow-wrap: anywhere; }
+.eyebrow { color: #a1a1aa; font-size: 12px; margin: 0; }
+.item-card strong { align-self: start; border: 1px solid #5b5f66; border-radius: 999px; padding: 4px 10px; font-size: 12px; color: #d4d4d8; }
+.item-card.allowed strong { border-color: #2f8f5b; color: #67e8a6; }
+.item-card.blocked strong { border-color: #9b6a2f; color: #f2b464; }
+.question { padding: 14px 16px; color: #e4e4e7; line-height: 1.65; }
+.question p { margin: 0 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.option { border-top: 1px solid #303236; padding: 8px 0; display: grid; grid-template-columns: 28px 1fr; gap: 8px; }
+.option span { color: #a1a1aa; }
+figure { margin: 0; border-top: 1px solid #303236; background: #0b0c0d; }
+img { display: block; width: 100%; height: auto; max-height: 620px; object-fit: contain; background: #fff; }
+.missing-image { min-height: 220px; display: grid; place-items: center; background: #1f2023; color: #f2b464; border-top: 1px solid #303236; }
+figcaption { color: #a1a1aa; font-size: 12px; line-height: 1.4; padding: 10px 16px; overflow-wrap: anywhere; }
+footer { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 12px 16px 16px; color: #d4d4d8; font-size: 13px; border-top: 1px solid #303236; }
+footer b { color: #a1a1aa; font-weight: 500; display: block; margin-bottom: 2px; }
+.blockers { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.blockers span { border: 1px solid #3f4248; border-radius: 999px; padding: 4px 8px; color: #c7c7cc; }
+@media (max-width: 760px) {
+  main { width: min(100% - 20px, 560px); padding-top: 18px; }
+  .grid { grid-template-columns: 1fr; gap: 12px; }
+  h1 { font-size: 22px; }
+  footer { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Visual Quality Preview</h1>
+  <p class="sub">Shows structured question text, original page image, source, and current quality gate status. Blocked visual items must not enter diagnosis/profile.</p>
+  <section class="grid">
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">organic_structure · T2 · 选择题</p>
+            <h2>4fa501b753ea6d0f</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>下列化学用语中正确的是（　　）
+A. 甲基的电子式：
+　　　　　H
+　　　　　∶
+　　　C∶H
+　　　　　∶
+　　　　　H
+B. 乙烷的结构式：H—C—C—H
+　　　　　　　　　　　│　│
+　　　　　　　　　　　H　H
+C. 丁烷的球棍模型：
+（图示：四个黑球代表碳原子呈锯齿状链，每个碳原子连接若干白球代表氢原子；具体为：左端碳连3个白球，中间两个碳各连2个白球，右端碳连3个白球；碳-碳键为短棍连接）
+D. 二氧化碳的空间填充模型：●○●（图示：中间一个较小的白球，两侧各一个较大的黑球，三者共线排列）</p>
+          <div class="options"><div class='option'><span>A</span>甲基的电子式：
+　　　　　H
+　　　　　∶
+　　　C∶H
+　　　　　∶
+　　　　　H</div><div class='option'><span>B</span>乙烷的结构式：H—C—C—H
+　　　　　　　　　　　│　│
+　　　　　　　　　　　H　H</div><div class='option'><span>C</span>丁烷的球棍模型：
+（图示：四个黑球代表碳原子呈锯齿状链，每个碳原子连接若干白球代表氢原子；具体为：左端碳连3个白球，中间两个碳各连2个白球，右端碳连3个白球；碳-碳键为短棍连接）</div><div class='option'><span>D</span>二氧化碳的空间填充模型：●○●（图示：中间一个较小的白球，两侧各一个较大的黑球，三者共线排列）</div></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/77aeb4987b71_p001.jpg" alt="Original exam page crop for 4fa501b753ea6d0f">
+          <figcaption>上海中学2022-2023学年高二下学期期中考试化学试卷.pdf · page 1</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> strong_candidate</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> strong</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">experiment_device · T2 · 选择题</p>
+            <h2>90033e87d0baf293</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>下列实验装置图及实验用品均正确的是(部分夹持仪器未画出)(　　)
+
+图A：左侧装置为圆底烧瓶置于水浴中加热，烧瓶内标注“酒精、稀硫酸和碎瓷片”，烧瓶口接导管伸入盛水的试管中；下方标注“A. 实验室用酒精制取乙烯”
+
+图B：右侧装置为蒸馏装置，含圆底烧瓶、温度计（水银球位于支管口处）、直形冷凝管（标注“进水口”在上、“出水口”在下）、锥形瓶接收；下方标注“B. 石油分馏”
+
+图C：左下方装置为三颈烧瓶置于水浴中加热，其中一颈插温度计（液泡浸入液面），另一颈插长导管通入盛有液体的试管（试管外侧标有刻度“60”），烧瓶下方标注“C. 实验室制硝基苯”
+
+图D：右下方装置为分液漏斗固定于铁架台，下端尖嘴伸入烧杯内，漏斗内有两层液体；下方标注“D. 用装置从下口放出上层液体”</p>
+          <div class="options"><div class='option'><span>A</span>图A：左侧装置为圆底烧瓶置于水浴中加热，烧瓶内标注“酒精、稀硫酸和碎瓷片”，烧瓶口接导管伸入盛水的试管中；下方标注“A. 实验室用酒精制取乙烯”</div><div class='option'><span>B</span>图B：右侧装置为蒸馏装置，含圆底烧瓶、温度计（水银球位于支管口处）、直形冷凝管（标注“进水口”在上、“出水口”在下）、锥形瓶接收；下方标注“B. 石油分馏”</div><div class='option'><span>C</span>图C：左下方装置为三颈烧瓶置于水浴中加热，其中一颈插温度计（液泡浸入液面），另一颈插长导管通入盛有液体的试管（试管外侧标有刻度“60”），烧瓶下方标注“C. 实验室制硝基苯”</div><div class='option'><span>D</span>图D：右下方装置为分液漏斗固定于铁架台，下端尖嘴伸入烧杯内，漏斗内有两层液体；下方标注“D. 用装置从下口放出上层液体”</div></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/77aeb4987b71_p002.jpg" alt="Original exam page crop for 90033e87d0baf293">
+          <figcaption>上海中学2022-2023学年高二下学期期中考试化学试卷.pdf · page 2</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> vl_answerable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> reject</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">process_flow · T2 · 填空题</p>
+            <h2>2d71e964db1b4d38</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>现在可以利用铁氧化物循环裂解水制备氢气，其过程如图所示：
+（图示为三步循环反应流程图）
+左：H₂O(g) ↓ 进入“反应Ⅱ”，反应Ⅱ输出H₂(g)和Fe₃O₄(s)；
+中间：“反应Ⅰ”输入Fe₃O₄(s)和CO₂(g)，输出FeO(s)和CO(g)；
+右：“反应Ⅲ”输入CO(g)和C(s)，输出CO(g)（箭头指向反应Ⅰ）及CO(g)（箭头指向右侧产物CO(g)）；
+另：FeO(s)从反应Ⅰ返回反应Ⅱ；
+整体构成闭合循环：
+H₂O(g) → 反应Ⅱ → H₂(g) + Fe₃O₄(s)
+Fe₃O₄(s) → 反应Ⅰ → FeO(s) + CO(g)
+FeO(s) → 返回反应Ⅱ
+CO₂(g) → 反应Ⅰ
+C(s) → 反应Ⅲ
+反应Ⅲ输出CO(g) → 返回反应Ⅰ（部分）及作为最终产物CO(g)
+
+写出反应Ⅲ的平衡常数表达式______。</p>
+          <div class="options"></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/875651ae600a_p010.jpg" alt="Original exam page crop for 2d71e964db1b4d38">
+          <figcaption>化学（上海B卷）（考试版）A4 (1).docx · page 10</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> student_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> reject</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">chart_curve · T2 · 选择题</p>
+            <h2>c4b63295188fc26f</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>其他条件相同，“液浸”中金属浸出率与温度、硫酸铁溶液浓度的关系如下图所示（浸出率指单位时间内金属溶解的质量，在此浓度下，硫酸铁溶液不影响细菌活性）。根据图示请选择 $c_1$ _________ $c_2$。
+（图：坐标系，横轴为 $T/^\circ\text{C}$，标有 20、$T_0$；纵轴为“浸出率”，原点为0。两条折线：
+- 曲线 $c_1$：由实心方块点连接，从左至右先上升至 $T_0$ 处达峰值，后下降；
+- 曲线 $c_2$：由实心圆点连接，从左至右先上升至 $T_0$ 处达峰值（低于 $c_1$ 峰值），后下降；
+- 在 $T_0$ 处有一条竖直虚线穿过两曲线峰值点。）
+A．＞　　B．＜　　C．＝</p>
+          <div class="options"><div class='option'><span>A</span>＞</div><div class='option'><span>B</span>＜</div><div class='option'><span>C</span>＝</div></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/011108ea61dc_p011.jpg" alt="Original exam page crop for c4b63295188fc26f">
+          <figcaption>上海奉贤区2025届高三一模化学试题.docx · page 11</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> strong_candidate</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> strong</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">crystal_cell · T3 · 填空题</p>
+            <h2>33910292aa894330</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>某含Cu²⁺的晶体晶胞结构如图所示。该晶胞中负离子为CN⁻（部分示例位置已用箭头标出），CN⁻连接着每一对相邻的Fe³⁺与Cu²⁺。已知该晶胞棱长为a nm，N_A为阿伏加德罗常数的值。
+（图：一个立方晶胞结构示意图，包含三种球体：白球○标记为Fe³⁺，黑球●标记为Cu²⁺，灰球●标记为K⁺；晶胞顶点、面心、棱上、体心分布有不同球体；部分CN⁻以虚线箭头标出连接Fe³⁺与Cu²⁺；图右侧图例说明：○ Fe³⁺，● Cu²⁺，● K⁺）
+（1）该晶胞中距Cu²⁺最近且等距的K⁺有__________个。</p>
+          <div class="options"></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/011108ea61dc_p002.jpg" alt="Original exam page crop for 33910292aa894330">
+          <figcaption>上海奉贤区2025届高三一模化学试题.docx · page 2</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> vl_answerable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> reject</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">electrochem_device · T2 · 选择题</p>
+            <h2>e58443336229e926</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>以 $\text{Cu}_3\text{Se}_2$ 为电极材料的电池工作原理如图所示：该电池放电过程中，$\text{Cu}_3\text{Se}_2$ 电极为该电池的 _________ 极
+（图：电池示意图。左侧为黑色长方体电极，标注“$\text{Cu}_3\text{Se}_2$”；右侧为白色长方体电极，标注“$\text{Na}_3\text{V}_2(\text{PO}_4)_3$”；两电极通过导线连接“用电器”。中间为电解质区域，含多个小圆圈（部分标“$\text{Na}^+$”）；箭头指示：放电时 $\text{Na}^+$ 向左移动（指向 $\text{Cu}_3\text{Se}_2$ 电极）；充电时箭头向右（指向 $\text{Na}_3\text{V}_2(\text{PO}_4)_3$ 电极）。）
+A. 正　　　　B. 负　　　　C. 阳　　　　D. 阴</p>
+          <div class="options"><div class='option'><span>A</span>正</div><div class='option'><span>B</span>负</div><div class='option'><span>C</span>阳</div><div class='option'><span>D</span>阴</div></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/011108ea61dc_p011.jpg" alt="Original exam page crop for e58443336229e926">
+          <figcaption>上海奉贤区2025届高三一模化学试题.docx · page 11</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> student_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> reject</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">crystal_cell · T1 · 填空题</p>
+            <h2>43c6052c9022eb64</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>2018年世界权威期刊《自然》，连刊两文报道石墨烯超导重大发现，论文的第一作者是四川成都籍中科大年轻博士曹原.
+2017年曹原团队发现了石墨烯中的非规“超导电性”，石墨烯是一层碳原子(如图，黑球代表碳原子)。
+曹原推测，当两层石墨烯叠在一起，若彼此之间发生轻微偏移
+（右侧配图：六边形蜂窝状晶格结构，由多个相连的正六边形组成，每个顶点有一个黑球，黑球之间以短线连接，构成二维平面网络结构）
+时，有可能产生超导现象，经过不懈努力，困扰世界107年的常温超导难题，终于被曹原团队突破！石墨烯属于__________(填“单质”或“化合物”)，两层石墨烯叠在一起轻微偏移时发生的是__________变化(填“物理”或“化学”)。</p>
+          <div class="options"></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/3cd30ef5f1c9_p004.jpg" alt="Original exam page crop for 43c6052c9022eb64">
+          <figcaption>上海市某校2023-2024学年高一上学期10月考试化学试题.pdf · page 4</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> student_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> weak</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card blocked">
+        <header>
+          <div>
+            <p class="eyebrow">crystal_cell · T1 · 选择题</p>
+            <h2>c2eda68c388a1f1d</h2>
+          </div>
+          <strong>not-student-readable</strong>
+        </header>
+        <section class="question">
+          <p>Se 的电负性 2.4、Pb 的电负性 1.9，判断硒化铅中 Se 与 Pb 之间的化学键是__________。
+A．离子键　　　　　　　　　　　　　B．共价键</p>
+          <div class="options"><div class='option'><span>A</span>离子键</div><div class='option'><span>B</span>共价键</div></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/8cebcadc2558_p021.jpg" alt="Original exam page crop for c2eda68c388a1f1d">
+          <figcaption>上海市金山区2024届高三下学期二模化学试题（解析版）.docx · page 21</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> crop_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> weak</div>
+          <div class="blockers"><span>answer_suspect</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">experiment_device · T1 · 填空题</p>
+            <h2>084aa89d01b261db</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>溴化钙可用作阻燃剂、制冷剂，具有易溶于水，易吸潮等性质。实验室用工业大理石（含有少量Al³⁺、Fe³⁺等杂质）制备溴化钙的主要流程如下：
+工业大理石 → I 溶解（加氢溴酸） → II 除杂（加试剂a） → III 过滤 → IV（加试剂b） → V → CaBr₂·6H₂O → CaBr₂
+完成下列填空：
+（1）上述使用的氢溴酸的质量分数为26%，若用47%的氢溴酸配置26%的氢溴酸500ml，所需的玻璃仪器有玻璃棒、__________。</p>
+          <div class="options"></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/43c0b1fd951e_p022.jpg" alt="Original exam page crop for 084aa89d01b261db">
+          <figcaption>2013年高考化学试卷（上海）（解析卷）.doc · page 22</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> student_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> weak</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">experiment_device · T1 · 填空题</p>
+            <h2>82bb02d073918757</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>CdTe是一种常见的半导体量子点，具有良好的光学性质，其粒子直径介于1～100nm。其制备原理和步骤如下所示。
+
+制备原理：Cd²⁺＋RSH ⇌ Cd(RS)⁺＋H⁺；Cd(RS)⁺＋HTe⁻ ＝ CdTe(RSH)
+
+步骤Ⅰ：按照如下图所示搭建反应装置。
+步骤Ⅱ：向 C 中加入 250mL 蒸馏水，再加入 0.23g 的 CdCl₂·2.5H₂O，并搅拌溶解，通入氮气，再加入 8 滴 RSH（巯基乙酸），用 2mol·L⁻¹ 的 NaOH 溶液调节 pH 为 8～9，继续通入氮气。
+步骤Ⅲ：使用滴管将 NaHTe 溶液（稍过量）快速一次性加入到上述含 Cd(RS)⁺ 溶液中。二者混合后即开始加热，同时通入冷凝水，反应一段时间，可得到由 RSH（巯基乙酸）修饰的 CdTe 量子点产物。
+
+回答下列问题：
+
+（1）仪器 C 的名称为__________。</p>
+          <div class="options"></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/054a8f49ad0b_p006.jpg" alt="Original exam page crop for 82bb02d073918757">
+          <figcaption>2025届高考模拟测试题（含解析）模拟卷01（新高考通用，14+4）（考试版）.docx · page 6</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> student_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> weak</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">process_flow · T1 · 填空题</p>
+            <h2>5f1d56d7c795097d</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>氯碱工业以电解精制饱和食盐水的方法制取氯气、氢气、烧碱和氯的含氧酸盐等系列化工产品。下图是离子交换膜法电解食盐水的示意图，图中的离子交换膜只允许阳离子通过。
+（图示内容描述如下：）
+一个矩形电解槽被中间的“离子交换膜”垂直分隔为左右两个室。
+左室：顶部标有“＋”极，电极为黑色竖条（阳极），标注“c”；底部出口为“a”；左侧有箭头指向室内，标注“Cl⁻”、“Na⁺”、“Cl⁻”；阳极附近有向上箭头标注“Cl₂”；膜左侧有向右箭头标注“Na⁺”。
+右室：顶部标有“－”极1，电极为黑色竖条（阴极），标注“d”；底部出口为“b”；右侧有箭头指向室内，标注“H⁺”、“OH⁻”；阴极附近有向上箭头标注“H₂”；膜右侧有向左箭头标注“Na⁺”；溶液中可见“Na⁺”、“OH⁻”符号。
+离子交换膜位于中央，下方标注“离子交换膜”。
+完成下列填空：
+写出电解饱和食盐水的离子方程式。______________________________________</p>
+          <div class="options"></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/364f275bf2a9_p023.jpg" alt="Original exam page crop for 5f1d56d7c795097d">
+          <figcaption>2015年高考化学试卷（上海）（解析卷）.doc · page 23</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> student_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> weak</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+      <article class="item-card allowed">
+        <header>
+          <div>
+            <p class="eyebrow">process_flow · T1 · 填空题</p>
+            <h2>e0354d2b8203759c</h2>
+          </div>
+          <strong>student-readable</strong>
+        </header>
+        <section class="question">
+          <p>上述合成过氧化脲的步骤可以总结为如下流程图，请将空格补充完整：______。
+[反应] → [减压蒸馏] → [　　　　] → [过滤] → [干燥]</p>
+          <div class="options"></div>
+        </section>
+        <figure>
+          <img src="../../data/page_images_v3/9dd6f6141d38_p022.jpg" alt="Original exam page crop for e0354d2b8203759c">
+          <figcaption>上海市闵行区2024-2025学年高三上学期质量调研（一模）化学试题（解析版）.docx · page 22</figcaption>
+        </figure>
+        <footer>
+          <div><b>stage</b> student_readable</div>
+          <div><b>visual</b> strong</div>
+          <div><b>readability</b> pass</div>
+          <div><b>llm</b> weak</div>
+          <div class="blockers"><span>no hard blockers</span></div>
+        </footer>
+      </article>
+
+  </section>
+</main>
+</body>
+</html>

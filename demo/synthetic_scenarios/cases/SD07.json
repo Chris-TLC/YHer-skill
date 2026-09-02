@@ -1,0 +1,35 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD07",
+  "label": "SYNTHETIC_DEMO",
+  "title": "盐类水解复访：中途暂停",
+  "budget_tier": "30min",
+  "outcome": "paused",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD07",
+    "grade": "高一",
+    "learning_purpose": "error_review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD07-E1",
+      "node": "盐类水解",
+      "expected_availability": "open",
+      "watch": "skip"
+    },
+    {
+      "synthetic": true,
+      "episode_id": "SD07-E2",
+      "node": "盐类水解",
+      "expected_availability": "open",
+      "watch": "skip"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "paused",
+    "profile_continuity": true,
+    "real_student_evidence": false
+  }
+}

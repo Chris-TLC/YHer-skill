@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-会话编排层（总蓝图 A：engine 心脏）。
+DEPRECATED: retained for historical tools; student traffic uses SessionService.
+
+会话编排层（历史总蓝图 A：engine 心脏）。
 
 把诊断引擎/教学引擎/任务状态机/学生模型/题库/检索/LLM 串成一个完整私教会话。
 纯逻辑，零界面依赖——FastAPI 后端和 Streamlit 壳调的是同一个 Orchestrator。
@@ -18,6 +20,10 @@ from typing import Any, Callable, Dict, List, Optional
 from core.data.item_repository import get_item_repository
 from core.data.knowledge_repository import get_knowledge_repository
 from core.tutor.diagnose_engine import DiagnoseEngine, RubricPoint
+from core.tutor.product_loop import (
+    build_warmup_contract,
+    select_formal_questions,
+)
 from core.tutor.prompts import (
     SYSTEM_PROMPT,
     build_diagnosis_prompt,
@@ -36,7 +42,8 @@ DEFAULT_TASKS = [
     TaskSpec("T2", "根因补洞", 40, mastery_gate=0.68, depends_on=["T1"]),
     TaskSpec("T3", "题型入口训练", 40, mastery_gate=0.72, depends_on=["T2"]),
     TaskSpec("T4", "视频定点巩固", 20, mastery_gate=0.65, depends_on=["T2"]),
-    TaskSpec("T5", "变式迁移训练", 45, mastery_gate=0.78, depends_on=["T3", "T4"]),
+    # Historical-only threshold. This task queue is unreachable from student HTTP routes.
+    TaskSpec("T5", "变式迁移训练", 45, mastery_gate=0.75, depends_on=["T3", "T4"]),
     TaskSpec("T6", "复盘与下次计划", 15, mastery_gate=0.70, depends_on=["T5"]),
 ]
 
@@ -52,6 +59,8 @@ class TutorSession:
     region: str
     time_budget_min: int
     created_at: str
+    grade_detail: str = ""
+    learning_purpose: str = ""
     tasks: List[Dict[str, Any]] = field(default_factory=list)
     current_task_id: str = "T1"
     transcript: List[Dict[str, Any]] = field(default_factory=list)
@@ -64,6 +73,10 @@ class TutorSession:
 
 # LLM 调用签名：(system, user) -> {"content":..., "cost_yuan":...}
 LLMCaller = Callable[[str, str], Dict[str, Any]]
+
+
+class LegacyStudentFlowDeprecated(RuntimeError):
+    """Raised when callers use the retired pre-canonical student flow."""
 
 
 class SessionOrchestrator:
@@ -79,6 +92,7 @@ class SessionOrchestrator:
     def create_session(
         self, user_id: str, goal: str, node_id: str = "", grade: str = "高二",
         region: str = "全国卷", time_budget_min: int = 180, subject: str = "chemistry",
+        grade_detail: str = "", learning_purpose: str = "",
     ) -> TutorSession:
         if not node_id:
             node = self.kg.find_node(goal)
@@ -90,6 +104,8 @@ class SessionOrchestrator:
             goal=goal or "补化学薄弱点", grade=grade, region=region,
             time_budget_min=time_budget_min,
             created_at=datetime.now().isoformat(timespec="seconds"),
+            grade_detail=grade_detail,
+            learning_purpose=learning_purpose,
             tasks=[asdict(t) for t in tasks], current_task_id="T1",
         )
 
@@ -111,6 +127,24 @@ class SessionOrchestrator:
 
     def diagnostic_questions(self, session: TutorSession) -> List[Dict[str, Any]]:
         return [asdict(q) for q in self.diagnose.build_progressive_questions(session.node_id)]
+
+    def prepare_diagnosis(self, session: TutorSession) -> Dict[str, Any]:
+        formal = select_formal_questions(session.node_id, limit=5)
+        return {
+            "session_id": session.session_id,
+            "node_id": session.node_id,
+            "grade": session.grade,
+            "grade_detail": session.grade_detail,
+            "learning_purpose": session.learning_purpose,
+            "warmup": build_warmup_contract(session.node_id),
+            "formal_questions": formal,
+            "formal_count": len(formal),
+            "ready_for_formal_diagnosis": len(formal) >= 3,
+            "fallback": None if len(formal) >= 3 else {
+                "reason": "insufficient_strong_questions",
+                "message": "这个知识点的正式诊断题正在整理复核，可以先选择其他知识点或进入低风险练习。",
+            },
+        }
 
     # === 诊断一轮 ===
     def run_diagnosis_turn(
@@ -159,6 +193,20 @@ class SessionOrchestrator:
         return {"visible": visible, "control": control, "mastery": mastery,
                 "next_question": next_q, "ready_for_execution": ready}
 
+    def build_post_video_verification(self, session: TutorSession) -> Dict[str, Any]:
+        del session
+        raise LegacyStudentFlowDeprecated(
+            "legacy verification is retired; use core.learning.SessionService held-out assignments"
+        )
+
+    def submit_post_video_verification(
+        self, session: TutorSession, answers: Dict[str, str]
+    ) -> Dict[str, Any]:
+        del session, answers
+        raise LegacyStudentFlowDeprecated(
+            "legacy verification is retired; use core.learning.SessionService held-out assignments"
+        )
+
     # === 执行教学一轮 ===
     def run_execution_turn(
         self, session: TutorSession, student_message: str,
@@ -166,7 +214,7 @@ class SessionOrchestrator:
     ) -> Dict[str, Any]:
         task = self._current_task(session)
         # 取一道关联真题做标准解锚点
-        items = self.items.find_items(kg_node=session.node_id, limit=1)
+        items = self.items.find_items(kg_node=session.node_id, limit=1, purpose="teaching")
         item = items[0] if items else None
 
         # 恶性循环检测

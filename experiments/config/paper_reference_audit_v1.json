@@ -1,0 +1,601 @@
+{
+  "schema_version": "yher.citation-audit.v1",
+  "timestamp": "2026-07-14T08:53:51+08:00",
+  "verdict": "H-D existence passes; exact metadata and one citation-use locus need correction",
+  "scope": {
+    "bibliography": "/Users/mac/Desktop/项目文件夹/Tools/yihuier-chemistry-skill/docs/paper/references.json",
+    "manuscripts": [
+      "/Users/mac/Desktop/项目文件夹/Tools/yihuier-chemistry-skill/docs/paper/main.md",
+      "/Users/mac/Desktop/项目文件夹/Tools/yihuier-chemistry-skill/docs/paper/yau_award_4page.md"
+    ],
+    "constraints_observed": [
+      "repository read-only",
+      "no project API calls",
+      "no .env or key inspection",
+      "S1/S2 not run"
+    ]
+  },
+  "counts": {
+    "reference_records": 17,
+    "unique_citation_keys": 17,
+    "existence_verified": 17,
+    "fabricated": 0,
+    "conflated": 0,
+    "doi_records": 15,
+    "doi_registered": 15,
+    "doi_resolver_redirects_verified": 15,
+    "exact_metadata_records": 8,
+    "records_with_exact_metadata_defects": 9,
+    "citation_key_loci": 34,
+    "claim_supported_loci": 28,
+    "context_only_or_misplaced_loci": 6,
+    "contradicted_claim_loci": 0,
+    "uncited_bibliography_items": 0,
+    "unresolved_citation_keys": 0,
+    "duplicate_ids": 0,
+    "unsupported_verification_notes": 1,
+    "supported_metadata_notes": 2,
+    "critical_findings": 0,
+    "important_findings": 3
+  },
+  "critical_findings": [],
+  "important_findings": [
+    {
+      "id": "I-1",
+      "kind": "unsupported_verification_provenance",
+      "location": "references.json:4",
+      "finding": "The top-level verification_note says an independent S3 literature audit was supplied and that no unverified citation is included, but no audit artifact, evidence pointer, hash, query log, or source URL is recorded in references.json, and a repository search found no separate S3 citation-audit artifact.",
+      "impact": "The claim is not independently reproducible from the bibliography file and overstates exact-metadata quality.",
+      "evidence": [
+        "Repository search for 'independent S3 literature audit', 'verified-references', the 2026 ACL DOI, and the verification note found only references.json, the manuscripts, and a schema test.",
+        "This audit found nine records with at least one exact-author/title/venue-label defect."
+      ]
+    },
+    {
+      "id": "I-2",
+      "kind": "citation_claim_mismatch",
+      "location": "yau_award_4page.md:236-238",
+      "finding": "Six LLM-simulated-student sources are attached directly to the YHer-specific sentence 'LLM-simulated students are secondary and manipulation-gated.' The sources support the existence, uses, and validation limits of simulated students, but they cannot establish this study's secondary status or its frozen manipulation gate.",
+      "affected_keys": [
+        "lu-wang2024",
+        "liu2024",
+        "jin2025",
+        "wu2025",
+        "scarlatos2025",
+        "scarlatos2026"
+      ],
+      "impact": "The 4-page paper makes valid project claims but cites external literature at the wrong claim locus. The corresponding main.md treatment is correctly separated and supported."
+    },
+    {
+      "id": "I-3",
+      "kind": "exact_metadata_defects",
+      "location": "references.json",
+      "finding": "Nine real sources have non-exact metadata: three author lists lose published diacritics; two software/documentation titles are constructed labels rather than exact page/repository titles; and four proceedings titles omit or generalize official wording.",
+      "affected_keys": [
+        "barrada2010",
+        "pelanek2017",
+        "tabibian2019",
+        "fsrs-repository",
+        "anki-fsrs-manual",
+        "lu-wang2024",
+        "jin2025",
+        "wu2025",
+        "scarlatos2026"
+      ],
+      "impact": "No source identity is in doubt, but the file does not meet a strict exact-title/authors/venue requirement."
+    }
+  ],
+  "verification_note_audit": {
+    "status": "unsupported",
+    "note": "Metadata and links are restricted to the independent S3 literature audit supplied to the S4/S5 writer. No unverified citation is included.",
+    "reason": "No independent audit artifact or per-record evidence is cited. The two record-level conflict notes are separately supported by authoritative evidence.",
+    "supported_record_notes": [
+      {
+        "id": "corbett-anderson1994",
+        "result": "supported",
+        "evidence": "Springer citation_publication_date=1994/12; Crossref issued/published-print=1995."
+      },
+      {
+        "id": "scarlatos2025",
+        "result": "supported",
+        "evidence": "ACL Anthology pages=25071-25094; Crossref pages=25082-25105."
+      }
+    ]
+  },
+  "records": [
+    {
+      "id": "lord1971",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Frederic M. Lord; Robbins-Monro Procedures for Tailored Testing; 1971; Educational and Psychological Measurement 31(1):3-31"
+      },
+      "identifier": {
+        "doi": "10.1177/001316447103100101",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 200,
+        "resolution": "resolved"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1177/001316447103100101", "http": 200, "evidence": "DOI, title, author, 1971, journal, volume/issue/pages match"},
+        {"url": "https://doi.org/10.1177/001316447103100101", "http": 302, "evidence": "redirects to SAGE landing page; automated final GET returned 200"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "121-126", "status": "supported", "claim": "tailored/CAT item selection is established prior art", "evidence": "The paper is the registered Robbins-Monro tailored-testing formulation."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "computerized adaptive testing is established", "evidence": "The source is foundational tailored-testing work."}
+      ],
+      "record_verdict": "verified_exact"
+    },
+    {
+      "id": "weiss1982",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "David J. Weiss; Improving Measurement Quality and Efficiency with Adaptive Testing; 1982; Applied Psychological Measurement 6(4):473-492"
+      },
+      "identifier": {
+        "doi": "10.1177/014662168200600408",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 200,
+        "resolution": "resolved"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1177/014662168200600408", "http": 200, "evidence": "metadata match"},
+        {"url": "https://doi.org/10.1177/014662168200600408", "http": 302, "evidence": "redirects to SAGE; automated final GET returned 200"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "121-126", "status": "supported", "claim": "adaptive selection can improve measurement efficiency", "evidence": "This is the source's explicit title and topic."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "CAT is established prior art", "evidence": "The source is an adaptive-testing measurement-efficiency article."}
+      ],
+      "record_verdict": "verified_exact"
+    },
+    {
+      "id": "weiss-kingsbury1984",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact_case_normalized",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "David J. Weiss and G. Gage Kingsbury; Application of Computerized Adaptive Testing to Educational Problems; 1984; Journal of Educational Measurement 21(4):361-375"
+      },
+      "identifier": {
+        "doi": "10.1111/j.1745-3984.1984.tb01040.x",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 403,
+        "resolution": "resolved; Wiley blocks automated final GET"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1111/j.1745-3984.1984.tb01040.x", "http": 200, "evidence": "metadata match; registered title is uppercase"},
+        {"url": "https://doi.org/10.1111/j.1745-3984.1984.tb01040.x", "http": 302, "evidence": "redirects to Wiley; publisher returned anti-bot 403"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "121-126", "status": "supported", "claim": "CAT has established educational applications", "evidence": "The source directly addresses educational CAT applications."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "CAT is established prior art", "evidence": "Directly supported by title and venue record."}
+      ],
+      "record_verdict": "verified_exact"
+    },
+    {
+      "id": "han2018",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Kyung (Chris) Tyek Han; Conducting simulation studies for computerized adaptive testing using SimulCAT: an instructional piece; 2018; Journal of Educational Evaluation for Health Professions 15:20"
+      },
+      "identifier": {
+        "doi": "10.3352/jeehp.2018.15.20",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 200,
+        "resolution": "resolved"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.3352/jeehp.2018.15.20", "http": 200, "evidence": "metadata match"},
+        {"url": "https://www.jeehp.org/journal/view.php?doi=10.3352/jeehp.2018.15.20", "http": 200, "evidence": "publisher abstract says simulation is important for CAT design and implementation"},
+        {"url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=10.3352%2Fjeehp.2018.15.20%5Bdoi%5D&retmode=json", "http": 200, "evidence": "PubMed count=1, PMID 30114899"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "125-126", "status": "supported", "claim": "simulation is standard for examining CAT designs/item selection", "evidence": "Publisher abstract explicitly describes CAT simulation and item-selection criteria."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "adaptive item selection is established", "evidence": "The tutorial covers CAT item-selection simulation."}
+      ],
+      "record_verdict": "verified_exact"
+    },
+    {
+      "id": "barrada2010",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "minor_inexact_ascii_diacritics",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Juan Ramón Barrada; Julio Olea; Vicente Ponsoda; Francisco José Abad; A Method for the Comparison of Item Selection Rules in Computerized Adaptive Testing; 2010; Applied Psychological Measurement 34(6):438-452",
+        "recorded_difference": "references.json has Juan Ramon and Francisco Jose"
+      },
+      "identifier": {
+        "doi": "10.1177/0146621610370152",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 200,
+        "resolution": "resolved"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1177/0146621610370152", "http": 200, "evidence": "registered metadata and abstract"},
+        {"url": "https://doi.org/10.1177/0146621610370152", "http": 302, "evidence": "redirects to SAGE; automated final GET returned 200"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "125-126", "status": "supported", "claim": "simulation examines CAT item-selection rules", "evidence": "Crossref abstract explicitly reports a simulation comparison of six selection rules."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "adaptive item-selection rules are established", "evidence": "Directly supported by source title and abstract."}
+      ],
+      "record_verdict": "verified_minor_metadata_correction"
+    },
+    {
+      "id": "corbett-anderson1994",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact_per_publisher",
+        "venue": "exact_per_publisher",
+        "authoritative_value": "Albert T. Corbett and John R. Anderson; Knowledge tracing: Modeling the acquisition of procedural knowledge; publisher date 1994/12; User Modeling and User-Adapted Interaction 4(4):253-278",
+        "registry_conflict": "Crossref and OpenAlex expose 1995; Springer publisher metadata exposes 1994/12. The existing metadata_note correctly discloses this."
+      },
+      "identifier": {
+        "doi": "10.1007/BF01099821",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 200,
+        "resolution": "resolved"
+      },
+      "lookups": [
+        {"url": "https://link.springer.com/article/10.1007/BF01099821", "http": 200, "evidence": "citation_publication_date=1994/12; title, volume 4, issue 4, pages 253-278"},
+        {"url": "https://api.crossref.org/works/10.1007/BF01099821", "http": 200, "evidence": "same identity but published-print=1995"},
+        {"url": "https://api.openalex.org/works/https://doi.org/10.1007/BF01099821", "http": 200, "evidence": "same identity; publication_year=1995"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "131-138", "status": "supported", "claim": "BKT models acquisition of procedural knowledge over time", "evidence": "This is the source's exact title and subject."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "Bayesian knowledge tracing is established", "evidence": "The paper is the foundational knowledge-tracing source."}
+      ],
+      "record_verdict": "verified_exact_with_supported_registry_note"
+    },
+    {
+      "id": "pelanek2017",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "minor_inexact_ascii_diacritic",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Radek Pelánek; Bayesian knowledge tracing, logistic models, and beyond: an overview of learner modeling techniques; 2017; User Modeling and User-Adapted Interaction 27(3-5):313-350",
+        "recorded_difference": "references.json has Radek Pelanek"
+      },
+      "identifier": {
+        "doi": "10.1007/s11257-017-9193-2",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 200,
+        "resolution": "resolved"
+      },
+      "lookups": [
+        {"url": "https://link.springer.com/article/10.1007/s11257-017-9193-2", "http": 200, "evidence": "publisher metadata confirms title/year/volume/pages"},
+        {"url": "https://api.crossref.org/works/10.1007/s11257-017-9193-2", "http": 200, "evidence": "author is Radek Pelánek; issue 3-5"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "133-138", "status": "supported", "claim": "later work compares BKT with logistic and related learner models", "evidence": "The registered title and overview scope directly support the claim."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "Bayesian knowledge tracing is established", "evidence": "The source is an overview of BKT and related learner models."}
+      ],
+      "record_verdict": "verified_minor_metadata_correction"
+    },
+    {
+      "id": "tabibian2019",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "minor_inexact_ascii_diacritic",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Behzad Tabibian; Utkarsh Upadhyay; Abir De; Ali Zarezade; Bernhard Schölkopf; Manuel Gomez-Rodriguez; Enhancing human learning via spaced repetition optimization; 2019; Proceedings of the National Academy of Sciences 116(10):3988-3993",
+        "recorded_difference": "references.json has Bernhard Scholkopf"
+      },
+      "identifier": {
+        "doi": "10.1073/pnas.1815156116",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 403,
+        "resolution": "resolved; PNAS blocks automated final GET"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1073/pnas.1815156116", "http": 200, "evidence": "metadata and abstract match"},
+        {"url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=10.1073%2Fpnas.1815156116%5Bdoi%5D&retmode=json", "http": 200, "evidence": "PubMed count=1, PMID 30670661"},
+        {"url": "https://doi.org/10.1073/pnas.1815156116", "http": 302, "evidence": "redirects to PNAS; publisher returned anti-bot 403"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "141-148", "status": "supported", "claim": "spaced-repetition research studies scheduling and memory dynamics", "evidence": "Abstract defines memory models and optimal review scheduling."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "spaced-repetition scheduling is established", "evidence": "Directly supported by title and abstract."}
+      ],
+      "record_verdict": "verified_minor_metadata_correction"
+    },
+    {
+      "id": "ye2022",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Junyao Ye; Jingyong Su; Yilong Cao; A Stochastic Shortest Path Algorithm for Optimizing Spaced Repetition Scheduling; 2022; Proceedings of the 28th ACM SIGKDD Conference on Knowledge Discovery and Data Mining:4381-4390"
+      },
+      "identifier": {
+        "doi": "10.1145/3534678.3539081",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 403,
+        "resolution": "resolved; ACM blocks automated final GET"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1145/3534678.3539081", "http": 200, "evidence": "metadata match"},
+        {"url": "https://api.openalex.org/works/https://doi.org/10.1145/3534678.3539081", "http": 200, "evidence": "independent registry metadata match"},
+        {"url": "https://doi.org/10.1145/3534678.3539081", "http": 302, "evidence": "redirects to ACM; publisher returned anti-bot 403"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "141-148", "status": "supported", "claim": "spaced-repetition research studies scheduling", "evidence": "Scheduling optimization is the paper's explicit topic."},
+        {"file": "yau_award_4page.md", "lines": "100-103", "status": "supported", "claim": "spaced-repetition scheduling is established", "evidence": "Directly supported by title and proceedings record."}
+      ],
+      "record_verdict": "verified_exact"
+    },
+    {
+      "id": "fsrs-repository",
+      "existence": "verified",
+      "metadata": {
+        "title": "descriptive_not_exact",
+        "authors": "acceptable_group_attribution",
+        "year": "not_applicable_unversioned",
+        "venue": "not_applicable",
+        "authoritative_value": "GitHub repository open-spaced-repetition/free-spaced-repetition-scheduler; README heading 'Free Spaced Repetition Scheduling Algorithm'; organization owner open-spaced-repetition",
+        "recorded_difference": "references.json title is 'Free Spaced Repetition Scheduler'"
+      },
+      "identifier": {
+        "doi": null,
+        "url": "https://github.com/open-spaced-repetition/free-spaced-repetition-scheduler",
+        "url_http": 200,
+        "resolution": "resolved; git ls-remote HEAD also succeeded"
+      },
+      "lookups": [
+        {"url": "https://github.com/open-spaced-repetition/free-spaced-repetition-scheduler", "http": 200, "evidence": "live official organization repository"},
+        {"url": "https://api.github.com/repos/open-spaced-repetition/free-spaced-repetition-scheduler", "http": 200, "evidence": "not archived/disabled; owner and repository identity confirmed"},
+        {"url": "https://api.github.com/repos/open-spaced-repetition/free-spaced-repetition-scheduler/contents/README.md", "http": 200, "evidence": "README exact heading and DSR description"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "143-148", "status": "supported", "claim": "FSRS software informed an FSRS-inspired projection but does not validate YHer's formula", "evidence": "The official repository documents the FSRS algorithm; the manuscript expressly avoids a validation claim."},
+        {"file": "yau_award_4page.md", "lines": "115-118", "status": "supported", "claim": "FSRS is treated as software rather than peer-reviewed validation", "evidence": "The source is correctly typed as a software repository."}
+      ],
+      "record_verdict": "verified_minor_metadata_correction"
+    },
+    {
+      "id": "anki-fsrs-manual",
+      "existence": "verified",
+      "metadata": {
+        "title": "descriptive_section_label_not_exact_document_title",
+        "authors": "acceptable_group_attribution",
+        "year": "not_applicable_unversioned",
+        "venue": "not_applicable",
+        "authoritative_value": "Document title 'Deck Options - Anki Manual', section heading 'FSRS'; maintained Anki documentation",
+        "recorded_difference": "references.json title is 'Anki Manual: FSRS'"
+      },
+      "identifier": {
+        "doi": null,
+        "url": "https://docs.ankiweb.net/deck-options.html#fsrs",
+        "url_http": 200,
+        "resolution": "resolved; #fsrs anchor exists"
+      },
+      "lookups": [
+        {"url": "https://docs.ankiweb.net/deck-options.html#fsrs", "http": 200, "evidence": "official manual; title Deck Options - Anki Manual; h2 id=fsrs; describes Free Spaced Repetition Scheduler"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "143-148", "status": "supported", "claim": "official Anki documentation operationally informs FSRS usage without validating YHer's formula", "evidence": "The official section explains FSRS and its settings; manuscript makes no research-validation claim."},
+        {"file": "yau_award_4page.md", "lines": "115-118", "status": "supported", "claim": "FSRS is represented by software documentation", "evidence": "The source is official software documentation."}
+      ],
+      "record_verdict": "verified_minor_metadata_correction"
+    },
+    {
+      "id": "lu-wang2024",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "inexact_generalized",
+        "authoritative_value": "Xinyi Lu and Xu Wang; Generative Students: Using LLM-Simulated Student Profiles to Support Question Item Evaluation; 2024; Proceedings of the Eleventh ACM Conference on Learning @ Scale:16-27",
+        "recorded_difference": "references.json says Proceedings of the ACM Conference on Learning at Scale"
+      },
+      "identifier": {
+        "doi": "10.1145/3657604.3662031",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 403,
+        "resolution": "resolved; ACM blocks automated final GET"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1145/3657604.3662031", "http": 200, "evidence": "exact registered title/authors/year/pages and official proceedings title"},
+        {"url": "https://export.arxiv.org/api/query?id_list=2405.11591", "http": 200, "evidence": "author preprint carries same title/DOI; abstract describes 45 GPT-4 student profiles used to evaluate MCQs"},
+        {"url": "https://doi.org/10.1145/3657604.3662031", "http": 302, "evidence": "redirects to ACM; publisher returned anti-bot 403"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM-simulated students have been used to evaluate questions across learner profiles", "evidence": "Abstract explicitly reports profile-conditioned simulated responses for MCQ evaluation."},
+        {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source motivates simulated-student validation but cannot establish YHer's internal role/gate."}
+      ],
+      "record_verdict": "verified_metadata_and_citation_use_correction"
+    },
+    {
+      "id": "liu2024",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact_per_acl_citation_and_crossref",
+        "year": "exact",
+        "venue": "exact",
+        "authoritative_value": "Zhengyuan Liu; Stella Xin Yin; Geyu Lin; Nancy F. Chen; Personality-aware Student Simulation for Conversational Intelligent Tutoring Systems; 2024; Proceedings of EMNLP 2024:626-642"
+      },
+      "identifier": {
+        "doi": "10.18653/v1/2024.emnlp-main.37",
+        "registered": true,
+        "resolver_http": 302,
+        "source_url_http": 200,
+        "resolution": "resolved to ACL Anthology"
+      },
+      "lookups": [
+        {"url": "https://aclanthology.org/2024.emnlp-main.37/", "http": 200, "evidence": "official title/authors/year/pages/DOI and abstract"},
+        {"url": "https://api.crossref.org/works/10.18653/v1/2024.emnlp-main.37", "http": 200, "evidence": "metadata match"},
+        {"url": "https://doi.org/10.18653/v1/2024.emnlp-main.37", "http": 302, "evidence": "redirects to ACL Anthology"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM-simulated students model behavior across profiles for tutoring systems", "evidence": "ACL abstract describes cognitive/noncognitive profiles, diverse responses, and adaptive tutoring scaffolds."},
+        {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The paper supports the field context, not YHer's internal role/gate."}
+      ],
+      "record_verdict": "verified_citation_use_correction"
+    },
+    {
+      "id": "jin2025",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "minor_inexact_omits_year",
+        "authoritative_value": "Hyoungwook Jin; Minju Yoo; Jeongeon Park; Yokyung Lee; Xu Wang; Juho Kim; TeachTune: Reviewing Pedagogical Agents Against Diverse Student Profiles with Simulated Students; 2025; Proceedings of the 2025 CHI Conference on Human Factors in Computing Systems:1-28",
+        "recorded_difference": "references.json omits '2025' from the official proceedings title"
+      },
+      "identifier": {
+        "doi": "10.1145/3706598.3714054",
+        "registered": true,
+        "resolver_http": 302,
+        "publisher_final_http": 403,
+        "resolution": "resolved; ACM blocks automated final GET"
+      },
+      "lookups": [
+        {"url": "https://api.crossref.org/works/10.1145/3706598.3714054", "http": 200, "evidence": "exact title/authors/year/pages and official proceedings title"},
+        {"url": "https://api.openalex.org/works/https://doi.org/10.1145/3706598.3714054", "http": 200, "evidence": "independent registry identity match; University of Michigan repository location"},
+        {"url": "https://doi.org/10.1145/3706598.3714054", "http": 302, "evidence": "redirects to ACM; publisher returned anti-bot 403"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "simulated students are used to review tutoring/pedagogical agents across profiles", "evidence": "This is the source's exact registered title and scope."},
+        {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source supports related-work context, not YHer's internal role/gate."}
+      ],
+      "record_verdict": "verified_metadata_and_citation_use_correction"
+    },
+    {
+      "id": "wu2025",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "minor_inexact_omits_volume_designation",
+        "authoritative_value": "Tao Wu; Jingyuan Chen; Wang Lin; Mengze Li; Yumeng Zhu; Ang Li; Kun Kuang; Fei Wu; Embracing Imperfection: Simulating Students with Diverse Cognitive Levels Using LLM-based Agents; 2025; Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers):9887-9908",
+        "recorded_difference": "references.json omits '(Volume 1: Long Papers)'"
+      },
+      "identifier": {
+        "doi": "10.18653/v1/2025.acl-long.488",
+        "registered": true,
+        "resolver_http": 302,
+        "source_url_http": 200,
+        "resolution": "resolved to ACL Anthology"
+      },
+      "lookups": [
+        {"url": "https://aclanthology.org/2025.acl-long.488/", "http": 200, "evidence": "official metadata and abstract"},
+        {"url": "https://api.crossref.org/works/10.18653/v1/2025.acl-long.488", "http": 200, "evidence": "metadata match"},
+        {"url": "https://doi.org/10.18653/v1/2025.acl-long.488", "http": 302, "evidence": "redirects to ACL Anthology"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM agents simulate behavior across diverse cognitive levels", "evidence": "ACL abstract explicitly describes cognitive prototypes, realistic mistakes, and diverse cognitive abilities."},
+        {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source supports related-work context, not YHer's internal role/gate."}
+      ],
+      "record_verdict": "verified_metadata_and_citation_use_correction"
+    },
+    {
+      "id": "scarlatos2025",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "exact",
+        "pages": "exact_per_acl_anthology",
+        "authoritative_value": "Alexander Scarlatos; Nigel Fernandez; Christopher Ormerod; Susan Lottridge; Andrew Lan; SMART: Simulated Students Aligned with Item Response Theory for Question Difficulty Prediction; 2025; Proceedings of EMNLP 2025:25071-25094",
+        "registry_conflict": "Crossref pages=25082-25105; ACL Anthology pages=25071-25094. The existing metadata_note correctly prefers ACL."
+      },
+      "identifier": {
+        "doi": "10.18653/v1/2025.emnlp-main.1274",
+        "registered": true,
+        "resolver_http": 302,
+        "source_url_http": 200,
+        "resolution": "resolved to ACL Anthology"
+      },
+      "lookups": [
+        {"url": "https://aclanthology.org/2025.emnlp-main.1274/", "http": 200, "evidence": "official metadata, pages 25071-25094, and abstract"},
+        {"url": "https://api.crossref.org/works/10.18653/v1/2025.emnlp-main.1274", "http": 200, "evidence": "same identity but inconsistent pages 25082-25105"},
+        {"url": "https://doi.org/10.18653/v1/2025.emnlp-main.1274", "http": 302, "evidence": "redirects to ACL Anthology"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "152-161", "status": "supported", "claim": "LLM-simulated students support question evaluation/difficulty prediction across ability profiles", "evidence": "ACL abstract describes IRT-aligned simulated students used to predict open-ended item difficulty."},
+        {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source motivates ability-alignment checks but does not establish YHer's internal role/gate."}
+      ],
+      "record_verdict": "verified_exact_with_supported_registry_note_and_citation_use_correction"
+    },
+    {
+      "id": "scarlatos2026",
+      "existence": "verified",
+      "metadata": {
+        "title": "exact",
+        "authors": "exact",
+        "year": "exact",
+        "venue": "minor_inexact_omits_volume_designation",
+        "authoritative_value": "Alexander Scarlatos; Jaewook Lee; Simon Woodhead; Andrew Lan; Simulated Students in Tutoring Dialogues: Substance or Illusion?; 2026; Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers):42349-42385",
+        "recorded_difference": "references.json omits '(Volume 1: Long Papers)'"
+      },
+      "identifier": {
+        "doi": "10.18653/v1/2026.acl-long.1960",
+        "registered": true,
+        "resolver_http": 302,
+        "source_url_http": 200,
+        "resolution": "resolved to ACL Anthology"
+      },
+      "lookups": [
+        {"url": "https://aclanthology.org/2026.acl-long.1960/", "http": 200, "evidence": "official metadata and abstract; ACL page built 2026-07-13"},
+        {"url": "https://api.crossref.org/works/10.18653/v1/2026.acl-long.1960", "http": 200, "evidence": "metadata match"},
+        {"url": "https://doi.org/10.18653/v1/2026.acl-long.1960", "http": 302, "evidence": "redirects to ACL Anthology"}
+      ],
+      "citation_use": [
+        {"file": "main.md", "lines": "156-161", "status": "supported", "claim": "simulated tutoring behavior needs validation beyond surface plausibility", "evidence": "ACL abstract reports prompting strategies perform poorly on linguistic, behavioral, and cognitive metrics; tuned methods remain limited."},
+        {"file": "yau_award_4page.md", "lines": "236-238", "status": "context_only_misplaced", "claim": "YHer LLM students are secondary and manipulation-gated", "evidence": "The source strongly motivates validation gates but cannot establish YHer's internal role/gate."}
+      ],
+      "record_verdict": "verified_metadata_and_citation_use_correction"
+    }
+  ],
+  "cross_checks": {
+    "citation_key_set_equals_reference_id_set": true,
+    "all_reference_ids_unique": true,
+    "all_bibliography_items_cited": true,
+    "all_citation_keys_resolved": true,
+    "manual_bibliographies_match_source_identities": true,
+    "publisher_anti_bot_403_records": [
+      "weiss-kingsbury1984",
+      "tabibian2019",
+      "ye2022",
+      "lu-wang2024",
+      "jin2025"
+    ],
+    "anti_bot_interpretation": "not a broken DOI: each DOI resolver returned 302 and Crossref returned the registered record"
+  }
+}

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="app.css">
+  <script defer src="vendor/katex/katex.min.js"></script>
+  <script defer src="vendor/katex/contrib/mhchem.min.js"></script>
+  <script defer src="rir_renderer.js"></script>
+  <script defer src="app.js"></script>
+  <title>YHer 化学</title>
+</head>
+<body>
+  <a class="skip-link" href="#app-main">跳到主要内容</a>
+
+  <div class="app-shell">
+    <header class="product-header">
+      <div>
+        <h1>YHer 化学</h1>
+        <p>上海高中化学</p>
+      </div>
+      <div id="synthetic-marker" class="synthetic-marker" hidden>SYNTHETIC_DEMO</div>
+    </header>
+
+    <div id="status-region" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="loading-strip" class="loading-strip" aria-hidden="true" hidden>
+      <span class="spinner" aria-hidden="true"></span>
+      <span id="loading-label">加载中</span>
+    </div>
+
+    <main id="app-main" tabindex="-1">
+      <section id="setup-view" class="view" aria-labelledby="setup-title">
+        <div class="view-heading">
+          <h2 id="setup-title">开始本次学习</h2>
+          <p>选择范围与时间</p>
+        </div>
+
+        <section id="resume-panel" class="resume-panel" aria-labelledby="resume-title" hidden>
+          <div>
+            <h3 id="resume-title">有一段未完成的学习</h3>
+            <p>可以从服务端保存的位置继续。</p>
+          </div>
+          <div class="button-row">
+            <button id="resume-button" class="button secondary" type="button">恢复进度</button>
+            <button id="discard-button" class="button quiet" type="button">开始新会话</button>
+          </div>
+        </section>
+
+        <form id="setup-form" class="setup-form" novalidate>
+          <div class="field">
+            <label for="user-id">学习档案编号</label>
+            <input id="user-id" name="user_id" type="text" autocomplete="username" maxlength="64" required>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="grade-select">年级</label>
+              <select id="grade-select" name="grade" required>
+                <option value="高一">高一</option>
+                <option value="高二" selected>高二</option>
+                <option value="高三">高三</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="purpose-select">学习目的</label>
+              <select id="purpose-select" name="learning_purpose" required>
+                <option value="薄弱突破" selected>薄弱突破</option>
+                <option value="预习新课">预习新课</option>
+                <option value="巩固复习">巩固复习</option>
+                <option value="考前冲刺">考前冲刺</option>
+                <option value="错题重做">错题重做</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="node-select">知识点</label>
+            <select id="node-select" name="node" required>
+              <option value="氧化还原反应" selected>氧化还原反应</option>
+            </select>
+            <p id="node-notice" class="field-note" aria-live="polite" hidden></p>
+          </div>
+
+          <fieldset class="budget-fieldset">
+            <legend>时间档</legend>
+            <div class="segmented-control" role="radiogroup" aria-label="选择学习时间">
+              <label>
+                <input type="radio" name="budget_tier" value="30min" checked>
+                <span>30 分钟</span>
+              </label>
+              <label>
+                <input type="radio" name="budget_tier" value="1h">
+                <span>60 分钟</span>
+              </label>
+              <label>
+                <input type="radio" name="budget_tier" value="2h">
+                <span>120 分钟</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <p id="setup-error" class="inline-error" role="alert" hidden></p>
+          <button id="start-button" class="button primary" type="submit">开始诊断</button>
+        </form>
+      </section>
+
+      <section id="session-view" class="view" aria-labelledby="stage-title" hidden>
+        <nav class="stage-nav" aria-label="学习阶段">
+          <ol>
+            <li data-stage="diagnostic"><span>1</span><b>诊断</b></li>
+            <li data-stage="learning"><span>2</span><b>学习</b></li>
+            <li data-stage="held_out"><span>3</span><b>验证</b></li>
+            <li data-stage="report"><span>4</span><b>复盘</b></li>
+          </ol>
+        </nav>
+
+        <div class="server-progress" aria-live="polite">
+          <div>
+            <span id="phase-progress-label"></span>
+            <span id="server-timing"></span>
+          </div>
+          <progress id="phase-progress" max="1" value="0" hidden></progress>
+        </div>
+
+        <div class="session-actions">
+          <button id="pause-button" class="button quiet compact" type="button">稍后继续</button>
+        </div>
+
+        <div class="view-heading stage-heading">
+          <h2 id="stage-title">诊断</h2>
+          <p id="stage-subtitle"></p>
+        </div>
+
+        <section id="learning-context" class="learning-context" aria-label="本阶段内容" hidden></section>
+
+        <section id="assignment-panel" class="card assignment-card" aria-labelledby="question-title" hidden>
+          <div id="assignment-meta" class="assignment-meta"></div>
+          <h3 id="question-title" class="sr-only">当前题目</h3>
+          <div id="question-content" class="question-content"></div>
+
+          <form id="answer-form" class="answer-form" novalidate>
+            <fieldset id="answer-fieldset">
+              <legend id="answer-legend">你的作答</legend>
+              <div id="answer-options" class="answer-options" role="radiogroup" aria-labelledby="answer-legend"></div>
+              <div id="free-answer-field" class="field" hidden>
+                <label id="free-answer-label" for="free-answer">你的答案</label>
+                <textarea id="free-answer" name="answer" rows="5" autocomplete="off" spellcheck="false"></textarea>
+              </div>
+            </fieldset>
+            <p id="answer-error" class="inline-error" role="alert" hidden></p>
+            <button id="submit-button" class="button primary" type="submit" disabled>提交作答</button>
+          </form>
+        </section>
+
+        <section id="checkpoint-panel" class="checkpoint-panel" aria-live="polite" hidden>
+          <h3 id="checkpoint-title"></h3>
+          <div id="checkpoint-content"></div>
+          <button id="continue-button" class="button primary" type="button">继续</button>
+        </section>
+
+        <section id="degraded-panel" class="degraded-panel" role="alert" hidden>
+          <h3>暂时无法继续</h3>
+          <p id="degraded-message"></p>
+          <button id="retry-button" class="button secondary" type="button">重试</button>
+        </section>
+      </section>
+
+      <section id="report-view" class="view" aria-labelledby="report-title" hidden>
+        <div class="view-heading">
+          <h2 id="report-title">本次复盘</h2>
+          <p id="report-state"></p>
+        </div>
+
+        <section class="card report-summary" aria-label="学习结论">
+          <div id="report-outcome" class="report-outcome"></div>
+          <dl id="report-metrics" class="report-metrics"></dl>
+        </section>
+
+        <section id="belief-section" class="belief-section" aria-labelledby="belief-title" hidden>
+          <h3 id="belief-title">当前画像</h3>
+          <div id="belief-list" class="belief-list"></div>
+        </section>
+
+        <section id="report-guidance" class="report-guidance" aria-labelledby="report-guidance-title" hidden>
+          <h3 id="report-guidance-title">下一步</h3>
+          <div id="report-guidance-content"></div>
+        </section>
+
+        <section id="report-empty" class="empty-state" hidden>
+          <h3>证据仍不足</h3>
+          <p>本次结果暂不生成数值估计。</p>
+        </section>
+
+        <p id="report-error" class="inline-error" role="alert" hidden></p>
+        <button id="new-session-button" class="button primary" type="button">开始下一次学习</button>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

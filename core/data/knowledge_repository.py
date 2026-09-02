@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
-KG_FILE = DATA_DIR / "knowledge_graph_full.jsonl"
+KG_FILE = DATA_DIR / "knowledge_graph_150_enriched.jsonl"  # v3.4: 135节点(98子节点已补judgment_criteria+common_failures);旧65节点图谱为 knowledge_graph_full.jsonl
 EXAM_PATTERN_FILE = DATA_DIR / "exam_patterns_curated.jsonl"
 
 

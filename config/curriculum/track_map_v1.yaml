@@ -1,0 +1,631 @@
+version: curriculum_v1_signed_20260713
+subject: chemistry
+tracks:
+- foundation
+- round1
+- sprint
+- topical
+- scene
+entities:
+- entity: bv:BV14g4y1w7rS
+  name_hint: 【真题讲解】有机合成与推断大题-2023年高考真题解析
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 14
+    catalog_entity_id: bv:BV14g4y1w7rS
+    catalog_name: 【真题讲解】有机合成与推断大题-2023年高考真题解析
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV16M4y1P7Kn
+  name_hint: 【一化】铝及化合物 基础与方法全集！从零开始，高中化学重难点自学|查漏补缺
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 15
+    catalog_entity_id: bv:BV16M4y1P7Kn
+    catalog_name: 【一化】铝及化合物 基础与方法全集！从零开始，高中化学重难点自学|查漏补缺
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV17N411w7aQ
+  name_hint: 【直播回放】必修二：化学反应与能量-百强名校进阶题
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 16
+    catalog_entity_id: bv:BV17N411w7aQ
+    catalog_name: 【直播回放】必修二：化学反应与能量-百强名校进阶题
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV19R4y1J7ps
+  name_hint: 【一化】电化学重难点梳理与复习全集|化学反应与电能|涵盖高考化学全重点
+  track: topical
+  confidence: med
+  needs_human: true
+  reviewer: ''
+  note: 标题命中专题/知识点类关键词
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 17
+    catalog_entity_id: bv:BV19R4y1J7ps
+    catalog_name: 【一化】电化学重难点梳理与复习全集|化学反应与电能|涵盖高考化学全重点
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1C44y157qF
+  name_hint: 保证精彩！电解质溶液易混乱题型汇总
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 18
+    catalog_entity_id: bv:BV1C44y157qF
+    catalog_name: 保证精彩！电解质溶液易混乱题型汇总
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1JX4y1s7Ev
+  name_hint: 【真题讲解】2023年全国新课标卷
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 19
+    catalog_entity_id: bv:BV1JX4y1s7Ev
+    catalog_name: 【真题讲解】2023年全国新课标卷
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1Lb4y187RH
+  name_hint: 【一化】物质的量 知识与解法全集！从零开始全覆盖|高中化学
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 20
+    catalog_entity_id: bv:BV1Lb4y187RH
+    catalog_name: 【一化】物质的量 知识与解法全集！从零开始全覆盖|高中化学
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1Mb4y1L7nk
+  name_hint: 【一化大电影】2024届湖北省十一校考第一次联考
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 21
+    catalog_entity_id: bv:BV1Mb4y1L7nk
+    catalog_name: 【一化大电影】2024届湖北省十一校考第一次联考
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1PL4y1M7mh
+  name_hint: 【高中化学必修二】化学反应与能量合集 |0基础起步！
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 22
+    catalog_entity_id: bv:BV1PL4y1M7mh
+    catalog_name: 【高中化学必修二】化学反应与能量合集 |0基础起步！
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1QG4y1X7e2
+  name_hint: 高考化学专题强化大合集|高考真题+招法讲解|解题觉醒视频合集
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 23
+    catalog_entity_id: bv:BV1QG4y1X7e2
+    catalog_name: 高考化学专题强化大合集|高考真题+招法讲解|解题觉醒视频合集
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1Qb4y1a7WK
+  name_hint: 【一化】氧化还原 基础与方法全集！从零开始，高中化学重难点自学|查漏补缺
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 24
+    catalog_entity_id: bv:BV1Qb4y1a7WK
+    catalog_name: 【一化】氧化还原 基础与方法全集！从零开始，高中化学重难点自学|查漏补缺
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1RX4y1p7mA
+  name_hint: 【真题讲解】2023年全国甲卷
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 25
+    catalog_entity_id: bv:BV1RX4y1p7mA
+    catalog_name: 【真题讲解】2023年全国甲卷
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1S34y157FD
+  name_hint: 2022年高考真题-有机合成与推断大题合集
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 26
+    catalog_entity_id: bv:BV1S34y157FD
+    catalog_name: 2022年高考真题-有机合成与推断大题合集
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1SS4y1S7q3
+  name_hint: 高中化学【无机非金属材料】知识与解法合集！学渣救星
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 27
+    catalog_entity_id: bv:BV1SS4y1S7q3
+    catalog_name: 高中化学【无机非金属材料】知识与解法合集！学渣救星
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1Su411Q7N7
+  name_hint: 高中化学重要离子检验，都在这儿！
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 28
+    catalog_entity_id: bv:BV1Su411Q7N7
+    catalog_name: 高中化学重要离子检验，都在这儿！
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1VC4y1i72M
+  name_hint: 【一化大电影】2024届T8联考|逐题讲解+复习+拓展
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 29
+    catalog_entity_id: bv:BV1VC4y1i72M
+    catalog_name: 【一化大电影】2024届T8联考|逐题讲解+复习+拓展
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1WS4y1o76H
+  name_hint: 【一化】硫及化合物 基础与方法全集！从零开始，高中化学重难点自学|查漏补缺
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 30
+    catalog_entity_id: bv:BV1WS4y1o76H
+    catalog_name: 【一化】硫及化合物 基础与方法全集！从零开始，高中化学重难点自学|查漏补缺
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1bi4y1X7SX
+  name_hint: 【一化】八省T8联考化学，详细解题思路，轻松拿捏分数
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 31
+    catalog_entity_id: bv:BV1bi4y1X7SX
+    catalog_name: 【一化】八省T8联考化学，详细解题思路，轻松拿捏分数
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1fDTu6yE9m
+  name_hint: 【高一化学】必修一+必修二 大合集|长期更新|从零开始拯救所有学渣！
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 32
+    catalog_entity_id: bv:BV1fDTu6yE9m
+    catalog_name: 【高一化学】必修一+必修二 大合集|长期更新|从零开始拯救所有学渣！
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1fG411S73L
+  name_hint: 【真题讲解】2023年化学高考-山东卷
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 33
+    catalog_entity_id: bv:BV1fG411S73L
+    catalog_name: 【真题讲解】2023年化学高考-山东卷
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1fM4y1x7j9
+  name_hint: 【真题讲解】2023年全国乙卷
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 34
+    catalog_entity_id: bv:BV1fM4y1x7j9
+    catalog_name: 【真题讲解】2023年全国乙卷
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1hg4y1G7m5
+  name_hint: 【高考总复习】无机工艺流程分析-高考真题精讲
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 35
+    catalog_entity_id: bv:BV1hg4y1G7m5
+    catalog_name: 【高考总复习】无机工艺流程分析-高考真题精讲
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1i3411x7s9
+  name_hint: 【一化】物质结构、元素周期律 基础与解法全集|从零开始覆盖全部知识与方法
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 36
+    catalog_entity_id: bv:BV1i3411x7s9
+    catalog_name: 【一化】物质结构、元素周期律 基础与解法全集|从零开始覆盖全部知识与方法
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1jm4y1H79X
+  name_hint: 【真题讲解】2023年化学高考-湖南卷
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 37
+    catalog_entity_id: bv:BV1jm4y1H79X
+    catalog_name: 【真题讲解】2023年化学高考-湖南卷
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1mu41197Kn
+  name_hint: 氮及化合物 基础与方法全集！从零开始，高中化学
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 38
+    catalog_entity_id: bv:BV1mu41197Kn
+    catalog_name: 氮及化合物 基础与方法全集！从零开始，高中化学
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1oM4y1A79E
+  name_hint: 【一化】铁及其化合物 知识与解法全集！从零开始全覆盖|高中化学
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 39
+    catalog_entity_id: bv:BV1oM4y1A79E
+    catalog_name: 【一化】铁及其化合物 知识与解法全集！从零开始全覆盖|高中化学
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1ph4y1c7Mc
+  name_hint: 【真题讲解】2023年化学高考-广东卷
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 40
+    catalog_entity_id: bv:BV1ph4y1c7Mc
+    catalog_name: 【真题讲解】2023年化学高考-广东卷
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1r14y1k77X
+  name_hint: 【一化大电影】浙江省A9协作体联考|保姆式讲解 助力一轮复习！
+  track: round1
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中一轮/总复习类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 41
+    catalog_entity_id: bv:BV1r14y1k77X
+    catalog_name: 【一化大电影】浙江省A9协作体联考|保姆式讲解 助力一轮复习！
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: bv:BV1xt4y1h7eU
+  name_hint: 【一化】自然资源的开发利用|知识+考点
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 42
+    catalog_entity_id: bv:BV1xt4y1h7eU
+    catalog_name: 【一化】自然资源的开发利用|知识+考点
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: misc:single_videos
+  name_hint: 未归入合集的单P视频
+  track: foundation
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 规模很大，暂按基础系统课候选
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 43
+    catalog_entity_id: misc:single_videos
+    catalog_name: 未归入合集的单P视频
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:1708584
+  name_hint: 合集·【题刷刷】高一同步刷题课（必修一+必修二）
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 6
+    catalog_entity_id: season:1708584
+    catalog_name: 合集·【题刷刷】高一同步刷题课（必修一+必修二）
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:1759818
+  name_hint: 合集·【学习方法】提高学习效率
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 7
+    catalog_entity_id: season:1759818
+    catalog_name: 合集·【学习方法】提高学习效率
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:1932908
+  name_hint: 合集·【选择性必修二】物质结构与性质
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 9
+    catalog_entity_id: season:1932908
+    catalog_name: 合集·【选择性必修二】物质结构与性质
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:1934140
+  name_hint: 合集·【题刷刷】高二同步刷题课（选择性必修一、二、三）
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 8
+    catalog_entity_id: season:1934140
+    catalog_name: 合集·【题刷刷】高二同步刷题课（选择性必修一、二、三）
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:2193704
+  name_hint: 合集·【2024高考冲刺】
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 10
+    catalog_entity_id: season:2193704
+    catalog_name: 合集·【2024高考冲刺】
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:282369
+  name_hint: 合集·高中有机化学合集（必修+选修）
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 3
+    catalog_entity_id: season:282369
+    catalog_name: 合集·高中有机化学合集（必修+选修）
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:378412
+  name_hint: 合集·【高考冲刺】2022年
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 11
+    catalog_entity_id: season:378412
+    catalog_name: 合集·【高考冲刺】2022年
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:509596
+  name_hint: 合集·【选择性必修一】化学反应原理——系列课程
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 5
+    catalog_entity_id: season:509596
+    catalog_name: 合集·【选择性必修一】化学反应原理——系列课程
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:6675079
+  name_hint: 合集·一化教辅
+  track: topical
+  confidence: low
+  needs_human: true
+  reviewer: ''
+  note: 未命中强关键词，暂放专题候选等待人工签字
+  neutral_reason: confidence_not_high
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 4
+    catalog_entity_id: season:6675079
+    catalog_name: 合集·一化教辅
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:7612311
+  name_hint: 合集·【高一化学】同步学新课程合集
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 1
+    catalog_entity_id: season:7612311
+    catalog_name: 合集·【高一化学】同步学新课程合集
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: season:8513016
+  name_hint: 合集·【2027新版】选择性必修一：零基础学新课程
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 2
+    catalog_entity_id: season:8513016
+    catalog_name: 合集·【2027新版】选择性必修一：零基础学新课程
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: series:1916889
+  name_hint: 基础大合集
+  track: foundation
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中基础/同步课程类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 12
+    catalog_entity_id: series:1916889
+    catalog_name: 基础大合集
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+- entity: series:4297171
+  name_hint: 【2023高考冲刺】
+  track: sprint
+  confidence: high
+  needs_human: false
+  reviewer: codex_sol_20260713
+  note: 标题命中冲刺/刷题/真题类关键词
+  evidence:
+    source_file: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+    source_line: 13
+    catalog_entity_id: series:4297171
+    catalog_name: 【2023高考冲刺】
+    match: exact_entity_id_and_title
+    reviewed_at: '2026-07-13'
+reviewer: codex_sol_20260713
+reviewed_at: '2026-07-13'
+provenance:
+  draft_sha256: 73638425babefa48a66944a2bd9864db851dfb2a4bbb341f697651abe039349d
+  catalog_source: /tmp/yher_channel_catalog/seasons_catalog.jsonl
+  catalog_sha256: d9ce060889f207f5e939e7adece2cdb26b6f865f07387f04bf2fd7196ddd9362
+  signing_rule: high confidence plus exact entity_id and exact catalog title

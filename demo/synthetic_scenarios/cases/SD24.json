@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD24",
+  "label": "SYNTHETIC_DEMO",
+  "title": "镁铝及其化合物：中途暂停",
+  "budget_tier": "2h",
+  "outcome": "paused",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD24",
+    "grade": "高三",
+    "learning_purpose": "exam"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD24-E1",
+      "node": "镁铝及其化合物",
+      "expected_availability": "open",
+      "watch": "skip"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "paused",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

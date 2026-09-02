@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD02",
+  "label": "SYNTHETIC_DEMO",
+  "title": "氢键基础：独立通过",
+  "budget_tier": "30min",
+  "outcome": "verified",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD02",
+    "grade": "高二",
+    "learning_purpose": "review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD02-E1",
+      "node": "分子间作用力/氢键",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "verified",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

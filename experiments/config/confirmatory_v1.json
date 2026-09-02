@@ -1,0 +1,32 @@
+{
+  "analysis_plan_commit": "6c559b6f2f8cbe9ab61808c351df3743dca1a0be",
+  "arms": ["A", "B", "C"],
+  "config_frozen_at_utc": "2026-07-13T13:10:33Z",
+  "bootstrap_seed": 2026071301,
+  "budgets": [9, 15, 25],
+  "c_probe_interval": 3,
+  "census_seed": 2026071300,
+  "census_analysis_plan_commit": "ed42a4fa96c3e357b701e04da74a9f6a54c36b92",
+  "conditions": ["matched", "misspecified"],
+  "fixed_difficulty_ladder": [0.25, 0.5, 0.75, 1.0],
+  "gap_threshold": 0.45,
+  "held_out_families": 2,
+  "master_seed": 20260713,
+  "max_items": 25,
+  "minimum_direct_answers": 3,
+  "minimum_prerequisite_families": 2,
+  "misspecified": {
+    "ability_offset_clip": [-0.1, 0.1],
+    "ability_offset_sd": 0.05,
+    "guess_range": [0.15, 0.35],
+    "probability_clip": [0.000001, 0.999999],
+    "slip_range": [0.05, 0.2]
+  },
+  "provider": "programmatic",
+  "replicates": 50,
+  "run_id": "confirmatory-v1",
+  "schema_version": "yher.confirmatory.v1",
+  "seed_derivation_version": "yher-confirmatory-v1",
+  "stop_budget_items": 26,
+  "truth_states": ["M", "P", "C", "U"]
+}

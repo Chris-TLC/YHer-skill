@@ -1,0 +1,37 @@
+{
+  "schema_version": "yher.llm_sim.config.v1",
+  "run_id": "llm-personas-v1",
+  "analysis_plan_commit": "6c559b6f2f8cbe9ab61808c351df3743dca1a0be",
+  "h5_analysis_plan_commit": "289be3bc4634336a8598ad80c0de084afdeba51d",
+  "h5_analysis_plan_sha256": "3ac258fe1d819cc857162588dead3d03e0ba414771269bf04f8ce9ec0ad99260",
+  "h5_analysis_plan_committed_at_utc": "2026-07-13T18:59:52Z",
+  "persona_seed_derivation_version": "yher-llm-persona-v2",
+  "prompt_version": "yher-llm-persona-prompt-v1",
+  "frozen_pre_observation_utc": "2026-07-13T18:59:52Z",
+  "study_seed": 2026071302,
+  "pair_count": 25,
+  "persona_count": 50,
+  "arms": ["A", "B"],
+  "providers": ["deepseek", "glm", "kimi", "minimax", "doubao", "tongyi"],
+  "max_items": 15,
+  "minimum_complete_per_cell": 45,
+  "maximum_prompt_rewrites": 1,
+  "accuracy_bands": {
+    "weak_upper_exclusive": 0.4,
+    "strong_lower_exclusive": 0.75
+  },
+  "manipulation_bootstrap": {
+    "seed": 2026071303,
+    "resamples": 10000,
+    "confidence_level": 0.95,
+    "cluster_unit": "persona_id"
+  },
+  "manipulation_mapping_policy": "explicit_machine_annotation_only",
+  "provider_policy": {
+    "max_attempts": 3,
+    "failure_threshold": 3,
+    "base_backoff_seconds": 1.0,
+    "max_backoff_seconds": 30.0,
+    "cooldown_seconds": 120.0
+  }
+}

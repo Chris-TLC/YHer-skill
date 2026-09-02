@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一化儿 · 练习舱</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/mhchem.min.js"></script>
+<style>
+  :root{--bg:#f5f5f7;--surface:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:#e5e5ea;
+        --blue:#0071e3;--green:#34c759;--red:#ff3b30;--amber:#ff9500;--radius:14px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:14px 16px calc(30px + env(safe-area-inset-bottom))}
+  header{display:flex;align-items:baseline;justify-content:space-between;padding:6px 2px 12px}
+  header h1{font-size:19px;font-weight:600;margin:0;letter-spacing:.2px}
+  #stats{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .card{background:var(--surface);border-radius:var(--radius);padding:20px 18px;
+        box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:14px}
+  select,button{font:inherit;border-radius:10px;border:1px solid var(--line);
+                background:var(--surface);color:var(--text);padding:10px 14px}
+  select{width:100%;height:44px;appearance:none;
+         background:var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="M1 1l5 5 5-5" stroke="%236e6e73" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>') right 14px center no-repeat}
+  button{cursor:pointer;height:44px;transition:opacity .18s ease,transform .08s ease}
+  button:active{transform:scale(.98)}
+  .primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600;width:100%}
+  .row{display:flex;gap:10px}
+  .row>button{flex:1}
+  .ghost{color:var(--blue);border-color:transparent;background:transparent}
+  .mark-right{background:rgba(52,199,89,.12);border-color:transparent;color:var(--green);font-weight:600}
+  .mark-wrong{background:rgba(255,59,48,.10);border-color:transparent;color:var(--red);font-weight:600}
+  .mark-unsure{background:rgba(255,149,0,.10);border-color:transparent;color:var(--amber);font-weight:600}
+  #meta{font-size:12px;color:var(--muted);margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap}
+  #meta .tag{background:var(--bg);border-radius:6px;padding:2px 8px}
+  .zone-label{font-size:12px;color:var(--muted);letter-spacing:.4px;margin:16px 0 6px}
+  #answer-wrap{display:none}
+  #answer-wrap.open{display:block;animation:fadein .25s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .hidden{display:none !important}
+  #report-panel{border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+  #report-panel .reasons{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  #report-panel .reasons button{height:36px;font-size:13px;padding:4px 12px}
+  #report-panel .reasons button.sel{background:var(--text);color:#fff;border-color:var(--text)}
+  #report-note{width:100%;height:60px;border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit}
+  #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);
+         background:rgba(29,29,31,.92);color:#fff;padding:9px 18px;border-radius:20px;font-size:14px;
+         opacity:0;pointer-events:none;transition:opacity .25s ease}
+  #toast.show{opacity:1}
+  /* RIR 渲染区(与 v4_preview 同款约束) */
+  .rir-para{margin:0 0 10px}
+  .rir img{max-width:100%;height:auto}
+  .rir .katex-display{overflow-x:auto;overflow-y:hidden}
+  .rir-option{padding-left:1.6em;text-indent:-1.6em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>练习舱</h1><div id="stats"></div></header>
+
+  <div class="card" id="setup">
+    <div class="zone-label">选择范围</div>
+    <select id="node-sel"><option value="">全部知识点（加载中…）</option></select>
+    <div style="height:12px"></div>
+    <button class="primary" id="start-btn">开始练习</button>
+  </div>
+
+  <div class="card hidden" id="item-card">
+    <div id="meta"></div>
+    <div id="stem" class="rir"></div>
+    <div style="height:14px"></div>
+    <button class="primary" id="reveal-btn">看答案</button>
+    <div id="answer-wrap">
+      <div class="zone-label">答案与解析</div>
+      <div id="answer" class="rir"></div>
+      <div class="zone-label">这题你做对了吗？</div>
+      <div class="row">
+        <button class="mark-right" data-mark="right">对了</button>
+        <button class="mark-wrong" data-mark="wrong">错了</button>
+        <button class="mark-unsure" data-mark="unsure">不确定</button>
+      </div>
+    </div>
+    <div id="report-panel">
+      <button class="ghost" id="report-toggle" style="height:34px;font-size:13px;padding:0">⚑ 这题有问题（报坏题）</button>
+      <div id="report-form" class="hidden">
+        <div class="reasons">
+          <button data-r="题面缺失">题面缺失/看不懂</button>
+          <button data-r="答案错误">答案错/对不上</button>
+          <button data-r="显示异常">公式或图显示异常</button>
+          <button data-r="其他">其他</button>
+        </div>
+        <textarea id="report-note" placeholder="补充说明（可选）"></textarea>
+        <div style="height:8px"></div>
+        <div class="row">
+          <button id="report-send" class="primary" style="height:38px">提交</button>
+          <button id="report-cancel" style="height:38px">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="done-card">
+    <div style="text-align:center;padding:12px 0">
+      <div style="font-size:34px">🎉</div>
+      <div style="font-weight:600;margin:6px 0">这个范围的题做完了</div>
+      <div style="color:var(--muted);font-size:14px">换个知识点继续吧</div>
+      <div style="height:14px"></div>
+      <button class="primary" id="restart-btn">重新选择</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="rir_renderer.js"></script>
+<script>
+const API = location.origin;
+const $ = id => document.getElementById(id);
+const S = {
+  sid: localStorage.getItem('yher_sid') || ('s' + Date.now().toString(36) + Math.random().toString(36).slice(2,7)),
+  seen: JSON.parse(localStorage.getItem('yher_seen') || '[]'),
+  node: '', cur: null, revealedAt: 0, shownAt: 0,
+  nDone: 0, nRight: 0,
+};
+localStorage.setItem('yher_sid', S.sid);
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1600); }
+function stats(){ $('stats').textContent = S.nDone ? `本次 ${S.nDone} 题 · 自评对 ${S.nRight}` : ''; }
+async function post(path, body){
+  try{ const r = await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
+  catch(e){ return {error:String(e)}; }
+}
+function ev(event, extra){ post('/api/v4/study/event', Object.assign({event, session_id:S.sid, item_id:S.cur&&S.cur.item_id||null, node:S.node||null}, extra||{})); }
+
+async function loadNodes(){
+  try{
+    const d = await (await fetch(API+'/api/v4/study/nodes')).json();
+    const sel = $('node-sel');
+    sel.innerHTML = `<option value="">全部知识点（${d.total_items} 题）</option>` +
+      d.nodes.map(n=>`<option value="${n.node.replace(/"/g,'&quot;')}">${n.node}（${n.count}）</option>`).join('');
+  }catch(e){ $('node-sel').innerHTML = '<option value="">全部知识点</option>'; }
+}
+
+async function renderZones(el, itemId, zones){
+  const r = await fetch(`${API}/api/v4/items/${itemId}/rir?zones=${zones}`);
+  if(!r.ok) throw new Error('rir '+r.status);
+  const rir = await r.json();
+  el.innerHTML = '';
+  if(window.YHerRirRenderer){ YHerRirRenderer.renderRir(rir, el, {itemId}); }
+  else el.textContent = '渲染器加载失败，请刷新';
+}
+
+async function nextItem(){
+  const d = await post('/api/v4/study/next', {node:S.node, seen_ids:S.seen});
+  if(d.done){ $('item-card').classList.add('hidden'); $('done-card').classList.remove('hidden'); ev('range_exhausted'); return; }
+  S.cur = d; S.shownAt = Date.now();
+  $('meta').innerHTML = (d.kg_nodes||[]).slice(0,2).map(n=>`<span class="tag">${n}</span>`).join('') +
+                        `<span class="tag">剩 ${d.remaining} 题</span>`;
+  $('answer-wrap').classList.remove('open');
+  $('reveal-btn').classList.remove('hidden');
+  $('report-form').classList.add('hidden');
+  $('done-card').classList.add('hidden');
+  $('item-card').classList.remove('hidden');
+  $('stem').innerHTML = '<span style="color:var(--muted)">加载中…</span>';
+  $('answer').innerHTML = '';
+  try{ await renderZones($('stem'), d.item_id, 'stem'); }
+  catch(e){ $('stem').textContent = '加载失败，请报坏题或跳过'; }
+  ev('item_shown');
+  window.scrollTo({top:0});
+}
+
+$('start-btn').onclick = async () => {
+  S.node = $('node-sel').value;
+  $('setup').classList.add('hidden');
+  ev('session_start', {seen_count: S.seen.length});
+  await nextItem();
+};
+$('reveal-btn').onclick = async () => {
+  $('reveal-btn').classList.add('hidden');
+  $('answer-wrap').classList.add('open');
+  S.revealedAt = Date.now();
+  $('answer').innerHTML = '<span style="color:var(--muted)">加载中…</span>';
+  try{ await renderZones($('answer'), S.cur.item_id, 'answer,analysis'); }
+  catch(e){ $('answer').textContent = '答案加载失败，请报坏题'; }
+  ev('answer_revealed', {think_ms: S.revealedAt - S.shownAt});
+};
+document.querySelectorAll('[data-mark]').forEach(b => b.onclick = async () => {
+  const mark = b.dataset.mark;
+  S.nDone++; if(mark==='right') S.nRight++;
+  S.seen.push(S.cur.item_id);
+  localStorage.setItem('yher_seen', JSON.stringify(S.seen.slice(-2000)));
+  ev('self_mark', {mark, total_ms: Date.now() - S.shownAt});
+  stats();
+  await nextItem();
+});
+$('report-toggle').onclick = () => $('report-form').classList.toggle('hidden');
+let reportReason = '';
+document.querySelectorAll('#report-panel .reasons button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#report-panel .reasons button').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); reportReason = b.dataset.r;
+});
+$('report-send').onclick = async () => {
+  if(!S.cur) return;
+  const d = await post('/api/v4/study/report_bad', {
+    item_id: S.cur.item_id, session_id: S.sid, reason: reportReason || '未选原因',
+    note: $('report-note').value.slice(0,500), node: S.node || null,
+  });
+  if(d.ok){ toast('已收到，谢谢反馈'); ev('report_bad', {reason: reportReason}); }
+  else toast('提交失败，稍后再试');
+  $('report-form').classList.add('hidden'); $('report-note').value=''; reportReason='';
+  document.querySelectorAll('#report-panel .reasons button').forEach(x=>x.classList.remove('sel'));
+};
+$('report-cancel').onclick = () => $('report-form').classList.add('hidden');
+$('restart-btn').onclick = () => { $('done-card').classList.add('hidden'); $('setup').classList.remove('hidden'); };
+window.addEventListener('beforeunload', () => { if(S.nDone) navigator.sendBeacon && navigator.sendBeacon(API+'/api/v4/study/event', new Blob([JSON.stringify({event:'session_end', session_id:S.sid, n_done:S.nDone, n_right:S.nRight})],{type:'application/json'})); });
+
+loadNodes();
+</script>
+</body>
+</html>

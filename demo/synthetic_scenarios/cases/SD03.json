@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD03",
+  "label": "SYNTHETIC_DEMO",
+  "title": "分离提纯：验证后继续补强",
+  "budget_tier": "30min",
+  "outcome": "needs_reinforcement",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD03",
+    "grade": "高三",
+    "learning_purpose": "error_review"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD03-E1",
+      "node": "分离提纯",
+      "expected_availability": "open",
+      "watch": "complete"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "needs_reinforcement",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "schema_version": "yher.synthetic_manifest.v1",
+  "synthetic": true,
+  "description": "24 labeled engineering scenarios; not real student evidence",
+  "scenario_count": 24,
+  "episode_count": 32,
+  "planned_node_count": 28,
+  "current_open_node_count_at_authoring": 27,
+  "current_closed_planned_nodes": [
+    "化学反应速率"
+  ],
+  "matrix_rule": "3 budgets x 4 outcomes x 2 scenarios",
+  "planned_nodes": [
+    "氧化还原反应",
+    "分子间作用力/氢键",
+    "分离提纯",
+    "化学平衡",
+    "化学计量（摩尔/阿伏伽德罗）",
+    "化学键",
+    "盐类水解",
+    "同分异构体",
+    "弱电解质电离平衡",
+    "有机推断",
+    "晶体结构",
+    "氮及其化合物",
+    "原子结构",
+    "元素周期律/周期表",
+    "氯及其化合物",
+    "物质分类",
+    "烷烃",
+    "芳香烃",
+    "物质制备",
+    "物质检验",
+    "基本操作",
+    "误差分析",
+    "电解质与非电解质",
+    "硫及其化合物",
+    "反应热/焓变",
+    "化学反应速率",
+    "铁及其化合物",
+    "镁铝及其化合物"
+  ],
+  "cases": [
+    {
+      "scenario_id": "SD01",
+      "file": "cases/SD01.json"
+    },
+    {
+      "scenario_id": "SD02",
+      "file": "cases/SD02.json"
+    },
+    {
+      "scenario_id": "SD03",
+      "file": "cases/SD03.json"
+    },
+    {
+      "scenario_id": "SD04",
+      "file": "cases/SD04.json"
+    },
+    {
+      "scenario_id": "SD05",
+      "file": "cases/SD05.json"
+    },
+    {
+      "scenario_id": "SD06",
+      "file": "cases/SD06.json"
+    },
+    {
+      "scenario_id": "SD07",
+      "file": "cases/SD07.json"
+    },
+    {
+      "scenario_id": "SD08",
+      "file": "cases/SD08.json"
+    },
+    {
+      "scenario_id": "SD09",
+      "file": "cases/SD09.json"
+    },
+    {
+      "scenario_id": "SD10",
+      "file": "cases/SD10.json"
+    },
+    {
+      "scenario_id": "SD11",
+      "file": "cases/SD11.json"
+    },
+    {
+      "scenario_id": "SD12",
+      "file": "cases/SD12.json"
+    },
+    {
+      "scenario_id": "SD13",
+      "file": "cases/SD13.json"
+    },
+    {
+      "scenario_id": "SD14",
+      "file": "cases/SD14.json"
+    },
+    {
+      "scenario_id": "SD15",
+      "file": "cases/SD15.json"
+    },
+    {
+      "scenario_id": "SD16",
+      "file": "cases/SD16.json"
+    },
+    {
+      "scenario_id": "SD17",
+      "file": "cases/SD17.json"
+    },
+    {
+      "scenario_id": "SD18",
+      "file": "cases/SD18.json"
+    },
+    {
+      "scenario_id": "SD19",
+      "file": "cases/SD19.json"
+    },
+    {
+      "scenario_id": "SD20",
+      "file": "cases/SD20.json"
+    },
+    {
+      "scenario_id": "SD21",
+      "file": "cases/SD21.json"
+    },
+    {
+      "scenario_id": "SD22",
+      "file": "cases/SD22.json"
+    },
+    {
+      "scenario_id": "SD23",
+      "file": "cases/SD23.json"
+    },
+    {
+      "scenario_id": "SD24",
+      "file": "cases/SD24.json"
+    }
+  ]
+}

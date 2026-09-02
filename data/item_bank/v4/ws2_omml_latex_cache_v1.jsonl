@@ -1,0 +1,1561 @@
+{"omml_sha1": "00468f96b727dd07aa55d4c0c120d0f5281e2a1d", "latex": "+1", "ok": true, "katex_ok": true}
+{"omml_sha1": "0114bc9dac3f1cc775db0ecd56fe346f1e66ee50", "latex": "1mol⋅L^{-1}CH_{3}COONa", "ok": true, "katex_ok": true}
+{"omml_sha1": "015403d922143fd7eb0ab52b431ce7686c75d02d", "latex": "K_{sp}\\left(BaSO_{3}\\right)=5.3×10^{-7}", "ok": true, "katex_ok": true}
+{"omml_sha1": "018696d550c027be24edf4df158336a64f0332db", "latex": "6.02×10^{23}", "ok": true, "katex_ok": true}
+{"omml_sha1": "019c8cf16daa1def2105441fda2d9f5e5668f4fb", "latex": "NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "01aecc19f2f00bd3bca247756b9b6fb284471ca2", "latex": "x=0.029", "ok": true, "katex_ok": true}
+{"omml_sha1": "01c222db2f2e13e165b6f589e59d1dd7c3a2ed6b", "latex": "C−H", "ok": true, "katex_ok": true}
+{"omml_sha1": "01fc5116a9c8537c368fb43e0ceb536a925ba170", "latex": "Ce^{4+}+Fe^{2+}=Ce^{3+}+Fe^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0221fba8fca3b692792d4623e5f04570102c2ead", "latex": "3d^{10}4s^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0226fa84358f1d359c73380666e4eefc47ae7af7", "latex": "2\\left[AgCl_{2}\\right]^{-}+Fe=Fe^{2+}+2Ag+4Cl^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "022d7c850ce8892695be3d91c9c9f862f6b7f7fe", "latex": "(M=245g/mol)", "ok": true, "katex_ok": true}
+{"omml_sha1": "023393ba7e43d0a03608c4dbad18d72142c77c91", "latex": "ZnSO_{4}⋅H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "02ab0b8c12f0a7e3794b436d5f46e42f1c8daa2f", "latex": "15.00mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "02b80ad5041a84fc00d44218f677fddb6c99bf0a", "latex": "CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "02bfcfa09fca768c32d657d3fa81de14b1c540f2", "latex": "O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "031ecb7e73613b488e5e7b3cf349cb2777018494", "latex": "sp^{3}d^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "032d39418bfede487e86ae4b9019771b78d88d33", "latex": "c(OH^{−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "0346647461e9eb44d81125cfb9538a29bd0dff23", "latex": "c\\left(OH^{-}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "03598f2fc2636a31fca2c30d539acfcbc5460bff", "latex": "Si−H", "ok": true, "katex_ok": true}
+{"omml_sha1": "039646ac91c89066d04d2a65644207a9fba207da", "latex": "CuSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0414667d4e93fbdd3aa73373e243f315cc059c2b", "latex": "0.10mol⋅L^{-1}Ce\\left(SO_{4}\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0453e7bb47b3dbc7cefd6cf2f164205798fab5b6", "latex": "CO(g)+3H_{2}(g)\\overset{}{\\underset{}{⇌}}CH_{4}(g)+H_{2}O(g)ΔH_{1}=-206.2kJ⋅mol^{-1}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "049620f25b4fe78e6f6d7a678793e36af1f16537", "latex": "2", "ok": true, "katex_ok": true}
+{"omml_sha1": "04dcd9b9ba5f5676ffd539b5b9174ef4640f653b", "latex": "\\frac{5.6g}{56g/mol}×4×N_{A}mol^{−1}=0.4N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "04f64c8876c6d9a515bfcd5df741b1f6fcc6729b", "latex": "H", "ok": true, "katex_ok": true}
+{"omml_sha1": "0566dfbaeb3b2292f063cd362c472d9ccf948f2e", "latex": "CaCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "05b032c5b5cca6696b94978b2b24c3fb8ab521f3", "latex": "CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "05cf2855857188cca0dd31826a5887072adfc000", "latex": "K=c(O_{2})", "ok": true, "katex_ok": true}
+{"omml_sha1": "05eb5976bafb807535964c879ff1a521d2d3a656", "latex": "4.50g", "ok": true, "katex_ok": true}
+{"omml_sha1": "0607dfdb0fe79258a77668278b71255db34990b3", "latex": "n(H_{2}O_{2})=0.2mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "068ba2a1e5bf40a8c35f9b0bcd39a580ea674f40", "latex": "\\frac{3}{12}", "ok": true, "katex_ok": true}
+{"omml_sha1": "06c2a12fca21eef3c0ae4f8c78bc1ac94591ebbd", "latex": "CN^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "06cd469980fbd5bb7d33b8803947af0c3eaf5208", "latex": "K_{sp}\\left(AgCl\\right)=1.56×10^{-10}", "ok": true, "katex_ok": true}
+{"omml_sha1": "072f46fa1310f6ccd6c2d43e44ca53133db8bb32", "latex": "β-GeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "07511f4dfb632afe66fea1df977269bd2e8f162a", "latex": "Zn～H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "076e259736d74fa390d08ca0be9f5ac602fda8df", "latex": "②c(Na^{+})=2c(HCO_{3}^{−})+2c(CO_{3}^{2−})+2c(H_{2}CO_{3})", "ok": true, "katex_ok": true}
+{"omml_sha1": "077b15ef3abec458fff9d8f695887da0c0091133", "latex": "\\left[OH^{-}\\right]>\\left[H^{+}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "07d8f05ecf8fcf5804090135bafbd5210ddc3f79", "latex": "Ca(ClO)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "07dc6377b2414d79924e7446327e4bef2bd55a80", "latex": "NaCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "07f7a73c77f5be35a19acec3cf92e8de90836343", "latex": "CH_{3}COOH⇌H^{+}+CH_{3}COO^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "08306017d962737f11cba715525ad8388282e9ff", "latex": "KI", "ok": true, "katex_ok": true}
+{"omml_sha1": "0835d9c1792521a33da43b4dd3eaa3cdf654dad9", "latex": "K_{sp}\\left[Fe(OH)_{3}\\right]=4×10^{-38}", "ok": true, "katex_ok": true}
+{"omml_sha1": "08403110d457614cfa21975e30b467183b1bda4b", "latex": "sp^{3}d^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0842021bdde0122acbc79b232a2b6ee7ce4f4166", "latex": "pH", "ok": true, "katex_ok": true}
+{"omml_sha1": "084f8e95e71b98f782f397319d6302608d0247ec", "latex": "Ba(OH)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0859c0a311a8f0d3225810a49818f54064adf1ff", "latex": "pH(H_{2}O_{2})", "ok": true, "katex_ok": true}
+{"omml_sha1": "0881e1e154a74da2a7341438803bd5361364314c", "latex": "c(OH^{−})=c(HCO_{3}^{−})+2c(H_{2}CO_{3})+c(H^{+})", "ok": true, "katex_ok": true}
+{"omml_sha1": "08a4c8d8bf475ff5cbe1be20ea1010e9225c7c72", "latex": "0.200mol/LHCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "08c23ad7c2f607572ff12da156112a3e05492ef9", "latex": "v_{逆}", "ok": true, "katex_ok": true}
+{"omml_sha1": "092b9187498d3b573a0893b216a1d1a14769df53", "latex": "\\left[Cu\\left(NH_{3}\\right)_{4}\\left(H_{2}O\\right)_{2}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "093988999eb3700788f266c8eee93668dc25a35d", "latex": "N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0941240765baa8f39a6e6c86b608e587ac9e83c2", "latex": "100mL0.01mol⋅L^{−1}Ba(OH)_{2}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "0945685852948204b87da9428469b48a96131420", "latex": "c\\left(H^{+}\\right)=10^{−13}mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "095fda0e446e9e43e6688af1de6bd2ba6d96121a", "latex": "2PdO+N_{2}H_{4}⋅H_{2}O=2Pd+N_{2}\\uparrow +3H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "0963720a9ddca3f1d1ee1d2b399295a267ecebb8", "latex": "HOCH_{2}CH_{2}CH_{2}CH_{2}CH_{2}COONa", "ok": true, "katex_ok": true}
+{"omml_sha1": "0975dfe1821dc6763a2a90dd4b0ebff69f8cd0c0", "latex": "Ba^{2+}+2OH^{-}+2HCO_{3}^{-}=BaCO_{3}\\downarrow +2H_{2}O+CO_{3}^{2-}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "098e1937791b8deabf6798f3bf897cc636f1ba55", "latex": "CO", "ok": true, "katex_ok": true}
+{"omml_sha1": "0a2a51aa099836929a66e8488bcc1abcee773963", "latex": "CH_{3}CH_{2}CH_{2}CH(CH_{3})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0a3bb8fd1d0f1db5f5096c452880e4f9cf4b0d87", "latex": "VmL", "ok": true, "katex_ok": true}
+{"omml_sha1": "0a900900a9b4680bcc62236216109f77d3eb5861", "latex": "\\frac{5.0×10^{-6}}{5.1×10^{-6}}×100\\%≈98\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "0ab4e1ca1011c93b25500b2c1229f60eed1afbf3", "latex": "Ag_{2}S、MnS、FeS_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0ab85db47e1e51a3084d573146df7473d25b4c4a", "latex": "V_{2}(", "ok": true, "katex_ok": true}
+{"omml_sha1": "0aca63cf338fee8d24b591a6bb81b8fb06d4c331", "latex": "SO_{2}+PCl_{5}\\begin{array}{c}\\overline{\\overline{40℃∼80℃}}\\\\\\end{array}POCl_{3}+SOCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0ad057bf94846621a9cad8f29645e7b416220b05", "latex": "PO_{4}^{3-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0ae4be2334a4147b940d97a9474410fa2176783f", "latex": "11.2L", "ok": true, "katex_ok": true}
+{"omml_sha1": "0aecaf012b3f4e46faf59c56d6bb8f93d7c09629", "latex": "BaSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0af359339d3abbf4074c9b4582993c6af663d990", "latex": "100mL18mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0b0c7e2f8a913f3b91fa44439bd57458f120860d", "latex": "12.0g⋅cm^{-3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0b26b71502951956c9233b23174c9cc3d59d45d7", "latex": "CS_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0b95e11d00fabbcbad141f1efaf76134ca2f4ac5", "latex": "2", "ok": true, "katex_ok": true}
+{"omml_sha1": "0bef6ba7423f2aa100a93e558cd4fa110ad4056a", "latex": "c(OH^{−})=c(H^{+})", "ok": true, "katex_ok": true}
+{"omml_sha1": "0bf1855a64d34b43705417d1bd6eec1c69a01985", "latex": "SO_{3}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0bf821ecb6b5f79f22b00773d8d801bdf205a71d", "latex": "n(O_{2})=\\frac{22.4L}{22.4L/mol}=0.1mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "0c193b7c8c26c055dbc6d7d7e8565fb2fc9a9f8c", "latex": "SiH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0c533edccd508b1ca498016f6be41c195aa477f1", "latex": "CaCO_{3}+2H^{+}=Ca^{2+}+H_{2}O+CO_{2}\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "0c91fe1e86bf6b8370b07480f09f2455cba27c82", "latex": "a", "ok": true, "katex_ok": true}
+{"omml_sha1": "0ddcd9e9e55d40b33a7cc84b3e0344e8036129c8", "latex": "N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0e06d77faa07548500e684c770040ea5a3884318", "latex": "Na_{2}S_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0e54bd74ed5cad483e1615e1bf710a470249a63a", "latex": "sp^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0e8d9cb36cafc9c18c44d226f23a78245d84d1d9", "latex": "NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "0e9fc94ec6d9c8bf5470d08a55033323e06cef1f", "latex": "Si−H", "ok": true, "katex_ok": true}
+{"omml_sha1": "0ea44c77d00596aae3dfa1d317e3ebb13420f055", "latex": "=Na_{0.6}MnO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0ead0aee8dd823ea721df1c75a6c5982ac50b0c2", "latex": "R_{1}CH_{2}COOR_{2}\\overset{Br_{2}/P}{\\rightarrow }R_{1}CH(Br)COOR_{2}\\overset{N_{2}H_{4}}{\\rightarrow }R_{1}CH(NH_{2})COOR_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0eaee2fa885dd874d9995f9b89fedeca5c9a9a9a", "latex": "KIO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0eb8d985e7371088a6e04346cdf439851d5d4684", "latex": "\\overset{NH_{3}}{\\underset{一定条件}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "0ebcd3bb4d1d0d0e09af9f89d47f49996b0884e1", "latex": "10HCO_{3}^{-}+8e^{-}=CH_{4}\\uparrow +9CO_{3}^{2-}+3H_{2}O（3分）", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f23f6d1784dde15cdb48166fc33acb108204f94", "latex": "448mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f33d874d040c172346f85d8d36b69268769f47e", "latex": "H_{2}O_{2}(", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f392310c004a30fcd38182838b191e75ff914b3", "latex": "n\\left(GeO_{2}\\right)=n\\left(Ge^{2+}\\right)=3n\\left(IO_{3}^{-}\\right)=0.5000mol/L×0.025L×3=0.0375mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f4bb150e8074f61a4cc9c7a07622517bb2f0c03", "latex": "\\frac{K_{a1}}{c(H^{+})}⋅\\frac{K_{a2}}{c(H^{+})}=\\frac{10^{−2.2}}{10^{−6}}×\\frac{10^{−7.2}}{10^{−6}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f60285731d4341b1baf086c77843ea14ef7db99", "latex": ">", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f76ebed6108c91df551679ba100c144cd6075bd", "latex": "\\left(H-S-C≡N\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f92259118c0b8a0e23a98c13fa76f52d86b4662", "latex": "\\frac{2×0.2a}{2a}×100\\%=20\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f9b16e03162b31e2e38d8bdb6895dd65218c7dc", "latex": "M(", "ok": true, "katex_ok": true}
+{"omml_sha1": "0f9cedb8b8022ab7e737a8e014643090fa9868a6", "latex": "a.H−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "0fb87f9cc4787e3afcf5b3d5ba71cc21f3c27781", "latex": "50mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "0fe3cce51ee12120c929468f32cc0602ededf7b4", "latex": "5", "ok": true, "katex_ok": true}
+{"omml_sha1": "1022846507b4d66ae920a36c1e92dfe8092052ca", "latex": "R", "ok": true, "katex_ok": true}
+{"omml_sha1": "10e241ca96965a56d20cc6a0b49f8bf29d0bdb62", "latex": "SO_{2}+Ba^{2+}+H_{2}O=BaSO_{3}\\downarrow +2H^{+}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "112f234c6b313b99e2ca9b79b16c0b269982ec26", "latex": "2.0mol⋅L^{-1}、2.5mol⋅L^{-1}、3.0mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "11810dbe44cdee088fd90f87a9058c7a1f5a9f7d", "latex": "BF_{4}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "11a5af20771b36c36943a7e549156d5126e9657d", "latex": "BrCH_{2}CH=CHCH_{2}Br", "ok": true, "katex_ok": true}
+{"omml_sha1": "1242b1487c98fac6dc9d178b796eb81309e24e33", "latex": "pH(H_{2}O_{2})<pH(H_{2}O)", "ok": true, "katex_ok": true}
+{"omml_sha1": "124994ac4abe5eb2d910426c45b957b6170be14e", "latex": "⇌", "ok": true, "katex_ok": true}
+{"omml_sha1": "1262331514874cb51febabf7b0b53123b089f8f1", "latex": "H_{2}PdCl_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1269831c329fa66c4f80f3c2c121b9bf0278ee14", "latex": "\\begin{matrix}&CH_{4}\\left(g\\right)&+&NH_{3}\\left(g\\right)&⇌&HCN\\left(g\\right)&+&3H_{2}\\left(g\\right)\\\\起始/mol⋅L^{-1}&2&&2&&0&&0\\\\变化/mol⋅L^{-1}&x&&x&&x&&3x\\\\平衡/mol⋅L^{-1}&2-x&&2-x&&x&&3x\\end{matrix}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1274bafbd2ead34f4d1f2e24f7d3004a33609add", "latex": "CO", "ok": true, "katex_ok": true}
+{"omml_sha1": "12adc41b5d110d21763214911b2254e7e38205d5", "latex": "(a)", "ok": true, "katex_ok": true}
+{"omml_sha1": "12c59124d484b7523a85d4506feda860efb9d84a", "latex": "\\vec{n}=", "ok": true, "katex_ok": true}
+{"omml_sha1": "12cfe355ba23e6947d99bc75777c3d0b29fb2bf4", "latex": "CH_{4}>SiH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "12defeaad297ca8101b25da0581a205335e68467", "latex": "①+③×3−②×4", "ok": true, "katex_ok": true}
+{"omml_sha1": "12e3c2578ae42aef7ca5b01ab8417320fe63a964", "latex": "K_{3}=10^{4.6}=\\frac{c\\{\\left[Cd\\left(CN\\right)_{3}\\right]^{-}\\}}{c\\{\\left[Cd\\left(CN\\right)_{2}\\right]\\}c(CN^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "131acd15c69ebdb792e39650a5ef1b04f00c34af", "latex": "lgK_{3}=4.6", "ok": true, "katex_ok": true}
+{"omml_sha1": "132c272882f04ad2b72829ebc2df9aa08ac124f5", "latex": "SO_{3}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "133493500f3fcad7ae7a7a8ed6bcc16e0539d8ef", "latex": "CuR^{+}+R^{-}⇌CuR_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "13e102d861ab35de9e60d388dcc989c06a6e9173", "latex": "H_{2}O(l)=H_{2}O(g) ΔH_{3}=+44kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "140bdd8fed306da143179c95031fe5017367e18d", "latex": "n", "ok": true, "katex_ok": true}
+{"omml_sha1": "14143195b10cdeecdfa1eb4434c473b5d49d0c37", "latex": "GeCl_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "14272cbaaa1bd9df34a9aaeb4256b14ebb2907db", "latex": "CH_{3}CH_{2}C(CH_{3})_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1433aa891773b98097a6c9482c18acb11ecd50ea", "latex": "\\frac{840×1}{12.0}mL=70.0mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "1451f0043f2e8d229d8629e26ce97ea445095162", "latex": "①K(s)+\\frac{1}{2}Cl_{2}(g)=KCl(s)+437kJ", "ok": true, "katex_ok": true}
+{"omml_sha1": "146c122bb991a4988ceee62dc67be79f90cff9af", "latex": "25.00mL0.500mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1475a499450a5d91da4276ee8bcd72a61f975ad5", "latex": "0.1mol H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "153fabd6f62599444b4636c2eca3c80080dbd650", "latex": "ZnO", "ok": true, "katex_ok": true}
+{"omml_sha1": "1547afd3d274d1b52c02abbfd19c858bbc4a5372", "latex": "HCO_{3}^{-}+OH^{-}+Ca^{2+}=H_{2}O+CaCO_{3}\\downarrow", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "15c1e20518c10988c9a5addacb97a41cc5da4198", "latex": "8g CH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "15e9e9c511443b2f04b5d8b93f86b64b2025c377", "latex": "\\frac{c(H_{2}PO_{4}^{−})}{c(H_{3}PO_{4})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "165e3f5bcab96df9058b011074466897236f01a5", "latex": "Na_{2}CO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "16695a013f07ff8974e0b087c242986f8e730fdc", "latex": "Fe^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "167746f53b35d7865d434da0f865a81a40f37f05", "latex": "H_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "1686ca726f5327029677a19abedcd963e6aaf6b6", "latex": "GeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "16ba8ca85532d9dd274bb3d030c0569974514cb6", "latex": "Fe^{3+}+4Cl^{-}+2H_{2}O⇌\\left[FeCl_{4}\\left(H_{2}O\\right)_{2}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "16cbc1d270ca38959efe9681d115327ac9ce5b3c", "latex": "CO_{3}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "16cdabbfd0ff8ca6c1ad12949273d0187d8af16d", "latex": "H_{3}AsO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "16f5860cb25b2ad6e84ca822d90c96cfc31f0f4b", "latex": "GeCl_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "170a5d495a168af362c0ed6fc76b5b7e31b1e3db", "latex": "c(Na^{+})>c(HCO_{3}^{−})>c(CO_{3}^{2−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "171a4eeb481cbbcadc786eb3bc64e82f4cc820ff", "latex": "\\frac{1}{T}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1754fa9fd79326b50d51e9e42b6a005ab32629d5", "latex": "Fe_{2}O_{3}\\rightarrow Fe", "ok": true, "katex_ok": true}
+{"omml_sha1": "178b7d0874d0982c265230cf5c0fbec3ba155154", "latex": "8", "ok": true, "katex_ok": true}
+{"omml_sha1": "17a6368db305e703669780098a4a31b87db578e8", "latex": "0.200mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "17aec58385007a1185f885003dc3c955033ca8ac", "latex": "1.44", "ok": true, "katex_ok": true}
+{"omml_sha1": "17c389402ec70f825184e87b9b8a7685e506bf16", "latex": "91\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "17c8056d2710478d5f64c411613c8f6572dd4661", "latex": "O_{2}+4e^{−}+4H^{+}=2H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "17d05d7157e706758dad132979d393467cfec564", "latex": "+2", "ok": true, "katex_ok": true}
+{"omml_sha1": "1804be1c2bbaf8c5fddfac566b4d4d48eda2138a", "latex": "G", "ok": true, "katex_ok": true}
+{"omml_sha1": "182bab694dd75ba63b7127ba74f4a2b76176b815", "latex": "L_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "186038f2a5fb3e00d5c3d89abdf242f184059738", "latex": "\\left[FeCl_{4}\\left(H_{2}O\\right)_{2}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "18be845204b551c8b561b1cde4465b6025c83a23", "latex": "3d", "ok": true, "katex_ok": true}
+{"omml_sha1": "190479deadd3a087629d82873fe37af577bd4319", "latex": "S", "ok": true, "katex_ok": true}
+{"omml_sha1": "1922f4925245a67a5b51097d749dfc2c8db14005", "latex": "3d^{10}4s^{1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "19263560022b7dd05ebea44ee24118a0f295cc32", "latex": "_{4}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "19512beb4015b0a5b15578b25718f64515aede61", "latex": "⇌", "ok": true, "katex_ok": true}
+{"omml_sha1": "195579d834cd048954df5c4031aaa303d171809d", "latex": "dsp^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "19703f0a93dc3f29dd3d3d3e61ab4a4f3b111e06", "latex": "(5)", "ok": true, "katex_ok": true}
+{"omml_sha1": "1971e8423f53c764456fd576a1bd9e1617381204", "latex": "GeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "199369b5742a883119289fba26f3512df46b6612", "latex": ")", "ok": true, "katex_ok": true}
+{"omml_sha1": "19b0a6a8cc4b0323358ae3bfdf1b2af1fa783507", "latex": "GeS_{2}+4H^{+}+2H_{2}O_{2}=Ge^{4+}+2S+4H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "19db44b90b89d1810f229984e43dfe3e82cb620b", "latex": "HNO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "19ecd2b30d5624f3eb5c6bdf37459ca8c6b1727e", "latex": "H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1a0bf2d00d2753e13c7821731c34b6c7519c26d0", "latex": "\\frac{c(HPO_{4}^{2−})}{c(H_{3}PO_{4})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1a48cb1cea41289134efe1af71fa32fdac8be6b4", "latex": "0.1mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "1a5bb2be5e5f8870be2bef02342fed7eb99c1e99", "latex": "0", "ok": true, "katex_ok": true}
+{"omml_sha1": "1a61e396337f283d920a34603d09790a5b524e3b", "latex": "75mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "1aa0849d2d5b21fa89aaf354396b34ebc6157b38", "latex": "H\\left[CuCl_{2}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "1abe89903f0505755687ea57805412f740703c42", "latex": "\\overset{}{\\underset{}{⇌}}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "1ac293331a9b3c3f3c98bc46f0e69319bc241ece", "latex": "12mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "1b7f473df0a1e3ff78af2fc2448733ae6f584d42", "latex": "V_{1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1b815780db3d6dbb80aec00fc3956d039b597572", "latex": "B", "ok": true, "katex_ok": true}
+{"omml_sha1": "1b8433c941b8105a190fbc3b44ba23d6f366fe35", "latex": "d", "ok": true, "katex_ok": true}
+{"omml_sha1": "1b8b20542666273669d23ee1ffa76ca0a4b8cddb", "latex": "CaO", "ok": true, "katex_ok": true}
+{"omml_sha1": "1b9b1cb5bfc0bcb571a2f7da922d7ff938ceb4fb", "latex": "I_{2}+2Na_{2}S_{2}O_{3}=Na_{2}S_{4}O_{6}+2NaI", "ok": true, "katex_ok": true}
+{"omml_sha1": "1bdc5047476a3159fe06b33fd6f490f62f4306f1", "latex": "−COOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "1beebfcea6a249ea4736eb5ff737412df3cfc753", "latex": "Cu", "ok": true, "katex_ok": true}
+{"omml_sha1": "1c02321082e89c1146aafc29331c5480e1817150", "latex": "CH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1c845c44c79db3c1f0bcd5c9a49eac6e2273169f", "latex": "ΔH_{1}=1212 kJ⋅mol^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1cd27d628c41b99759d72525db3fb54b49f3b9db", "latex": "3d^{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1d16f246160b4f04d9d5899f6f89727964e32589", "latex": "Q=144kJ", "ok": true, "katex_ok": true}
+{"omml_sha1": "1d1b3f2f95b56aaef3fff5e4bd08954b0ce32644", "latex": "Fe^{2+}+2HCO_{3}^{-}=FeCO_{3}\\downarrow +CO_{2}\\uparrow H_{2}O", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "1db183485a05dc406f7722d60bc356a106c8ab06", "latex": "c", "ok": true, "katex_ok": true}
+{"omml_sha1": "1e5f0e69cf65619e462cf235c9d0a0bd04a04820", "latex": "Fe^{2+}-e^{-}=Fe^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1e630ea0c564aad2cd0bdd39f41f45ffbfa6025c", "latex": "+2\\left[FeR_{3}\\right]^{3+}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "1e67f1d0169455123ae32a3cd4e94526b50c1bd2", "latex": "Fe\\rightarrow FeCl_{3}\\rightarrow Fe(OH)_{3}\\rightarrow Fe_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1e6fa204d591a99cefde568f074e93092220e6be", "latex": "Na_{0.6-x}MnO_{2}+xNa^{+}+xe^{-}=Na_{0.6}MnO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1e8bd56efbebd4f36b8d977a2cae8e18d46b3aa4", "latex": "lgc\\left(CN^{-}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "1eb069a1e53a652b8dfbffd2de2dc92ad1a77f8d", "latex": "PCl_{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1eb66c5b9c8ed7f1d25f450359e7f2298b98b680", "latex": "20\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "1edd85b13ec202afb18477e5adcd8f94864e216b", "latex": "dsp^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1ef498e0b6fca7fb218fb10938aefb8274ae1855", "latex": "g", "ok": true, "katex_ok": true}
+{"omml_sha1": "1efe0bd6062bda094b62bae4abce0f69cafa880c", "latex": "Q=\\frac{c\\left(PCl_{3}\\right)c\\left(Cl_{2}\\right)}{c\\left(PCl_{5}\\right)}=\\frac{1.2×0.2}{1.8}=\\frac{0.4}{3}>K=0.05", "ok": true, "katex_ok": true}
+{"omml_sha1": "1f0482088db34b5909865ca9f31b6b06aab0f503", "latex": "F", "ok": true, "katex_ok": true}
+{"omml_sha1": "1f07e0fe2bdd6dc7f67fc118bbb294a833cf1422", "latex": "\\frac{\\overline{△}}{}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1f15e39f322bf1545c0aba9d9bf5db34ec25295a", "latex": "[L-Fe-H]^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1f2087ea215c24a13a8e2ae1b04153ab9d0e0507", "latex": "H_{2}NCHCOOR_{1}\\overset{BrR_{2}}{\\rightarrow }R_{2}CHCOOR_{1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1f31f46e0da691ef857b6a81f43bf76dd5edd78d", "latex": "\\frac{c_{平}(X)}{c_{0}(Cl^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "1f6b5bcbaf461381a1a9009dc9d2ae985502c96a", "latex": "Zn", "ok": true, "katex_ok": true}
+{"omml_sha1": "1fcd0e5b81975fc58611ad6af90033218a405c98", "latex": "(4)E", "ok": true, "katex_ok": true}
+{"omml_sha1": "2002e0c3768eb6841a1139f636b20a45d8c8ead2", "latex": "N_{2}H_{4}⋅H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "20c28d675e6ea32017845a8450a166f8a829a09c", "latex": "CO(g)+H_{2}O(g)\\overset{}{\\underset{}{⇌}}CO_{2}(g)+H_{2}(g)ΔH_{2}=-41.0kJ⋅mol^{-1}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "20de89716a4ee0386d13eaf2a4f858deaf302f5e", "latex": "1molAs_{4}S_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "21239a0256d39a31990a90cfe18075f83b9d1e40", "latex": "_{33}As", "ok": true, "katex_ok": true}
+{"omml_sha1": "216e754142ecf8983fcd97e900f4c658f2d5340d", "latex": "HOOCCH(CH_{2}OH)COOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "217bd1582a647396de9774a1e0593a897a1eaeae", "latex": "\\overset{Δ}{=}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2182176e79615bf97cc65939e50a39ad7c60096f", "latex": "2CuCl(s)⇌", "ok": true, "katex_ok": true}
+{"omml_sha1": "21cf20291481e416a607c431a7e252ff3c229829", "latex": "\\frac{c(NH_{4}^{+})}{c(NH_{3}⋅H_{2}O)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "221b1339a2f3148a057ba031e8fdc3935abded37", "latex": "\\frac{c_{0}\\left(Cu^{2+}\\right)}{c_{0}\\left(R^{-}\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2257be1a79df3bea2e7b61c51576b98b14174d67", "latex": "c(O_{2})", "ok": true, "katex_ok": true}
+{"omml_sha1": "22cebb5fdeca5bee0083b877c788753152f03b37", "latex": "0.10-x-0.011=0.060", "ok": true, "katex_ok": true}
+{"omml_sha1": "22ed7ba4c75966ebe9eca5bd7ffb99a4c3aa58d9", "latex": "Co^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "230dc97f29add0543e23c43d128361082c42f1e3", "latex": "c(AsO_{3}^{3−})(", "ok": true, "katex_ok": true}
+{"omml_sha1": "230ff31015a329851a90ed3e2122771a0e5ab470", "latex": "Fe^{3+}+3OH^{-}=3Fe(OH)_{3}\\downarrow", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "23215f5c59d1d55e1fb664e022138abe0138e8d2", "latex": "c(H^{+})", "ok": true, "katex_ok": true}
+{"omml_sha1": "236abd17ae392555742bcfb4e929c7ad60fb2e8b", "latex": "2CO(g)+SO_{2}(g)\\begin{array}{c}\\overline{\\overline{催化剂}}\\\\\\end{array}S(s)+2CO_{2}(g) ΔH=-270kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "238f18a152e690df4b21d023fc34ee98b687efd2", "latex": "c\\left(H^{+}\\right)⋅c\\left(OH^{-}\\right)=K_{w}=1.0×10^{-14}", "ok": true, "katex_ok": true}
+{"omml_sha1": "238f79dbccd3d04fa12c1d98806462e5c432d97c", "latex": "MLA", "ok": true, "katex_ok": true}
+{"omml_sha1": "24050d628f04e5a9a67d2a58b021049154144b01", "latex": "C_{4}H_{8}⇌2C_{2}H_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "24759ce44f6a9bacffed196b70a1acd6a1dad9b7", "latex": "NH_{4}^{+}+OH^{−}=NH_{3}⋅H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "249e4ff780da6f1d04a9f5bee46c2ea7a15efab1", "latex": "NO_{2}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "24e45d7a8f1359e62e3c6d388dd079d385070599", "latex": "ΔH=", "ok": true, "katex_ok": true}
+{"omml_sha1": "2531f08ddf65c845e069a43a7b07b48de6939b11", "latex": "(1)A.", "ok": true, "katex_ok": true}
+{"omml_sha1": "256c02f290473dc39a5a9ff2ccd0065da05c4e0f", "latex": "\\frac{1}{2}×（5+1-2×3）+3=3", "ok": true, "katex_ok": true}
+{"omml_sha1": "259a5bf13b8e418476c1556be83b0b4a9836a20f", "latex": "H_{2}AsO_{3}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "25adfe57d5e3bd027482691c90e5c197caad0a20", "latex": "\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "25fbb49cc0ad014e15fe88aeefdd58687a4215a8", "latex": "K_{sp}[Cd(OH)_{2}]=7.2×10^{−15}", "ok": true, "katex_ok": true}
+{"omml_sha1": "264893e87adacd93748322406f47712c1bdc2f00", "latex": "A.N_{2}H_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2665600730f460c95efeb3c69f77264f9dc76afb", "latex": "CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "267f60be9507b4f986283b34d46e31469a777570", "latex": "NH_{4}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "26c39eaae693f7a060a4f32885fc9f5e0c125da6", "latex": "M(Na_{2}[Fe(CN)_{5}(NO)])=262 g⋅mol^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "26f8eae61a75894cb142e78c6d7f58696262698f", "latex": "Al_{2}(SO_{4})_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "270aa4975b7fdc10dfc6e9d8ac68a0b9c7e73dac", "latex": "CO_{3}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2747f504d97141006249a8e45d8de8a41d5fc662", "latex": "NaHCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "27e3bb3e7a70d65d24f357abda9b455d8bca4ad3", "latex": "9", "ok": true, "katex_ok": true}
+{"omml_sha1": "27eb9b5d0ea400fe2f8e805f39c7f49df1c6c2d4", "latex": "a", "ok": true, "katex_ok": true}
+{"omml_sha1": "28810a98a48b074e5db90c3bd7735e21e22576fd", "latex": "c(H^{+})=10^{−pH}=1×10^{−10}mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "28839acb310c6dd58175223137a6336f348e3f3a", "latex": "\\left[Cu\\left(NH_{3}\\right)_{4}\\right]SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "289e585dd52b5aa2e5d8290272d0b7f239d7f63b", "latex": "A.CH_{3}CH_{2}CH=CHCH_{2}CH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "28a066b535efb7fbf98c13252967f07aad82769a", "latex": "C−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "28e8438f1561ef9c85b680d7e1b4de9a8e3d1700", "latex": "π", "ok": true, "katex_ok": true}
+{"omml_sha1": "28eb2e494197a40aee79d8a48a3c10fb65824391", "latex": "S\\left(ML\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "292341f030365833b27aaa1b64da0a9dfce7742f", "latex": "\\frac{4×64}{a^{2}b×(10^{-7})^{3}×6.02×10^{23}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "292427f233edeb8adf7928040a7e3efb4360c522", "latex": "Ga\\left(4s^{2}4p^{1}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "29b21490336d82d88787f1882576aa0d2daf5dc5", "latex": "c\\left(Ge^{4+}\\right):c\\left(Fe^{3+}\\right)=\\frac{\\frac{K_{sp}\\left[Ge(OH)_{4}\\right]}{c^{4}\\left(OH^{-}\\right)}}{\\frac{K_{sp}\\left[Fe(OH)_{3}\\right]}{c^{3}\\left(OH^{-}\\right)}}=\\frac{\\frac{4×10^{-46}}{\\left(10^{-9.4}\\right)^{4}}}{\\frac{4×10^{-38}}{\\left(10^{-9.4}\\right)^{3}}}=10", "ok": true, "katex_ok": true}
+{"omml_sha1": "29b374c40bf9b55bb33c37c55de3bd70e50842eb", "latex": "MgSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "29cce34fcb8d88cd596cf34b4be3b2e84bff72bf", "latex": "\\frac{\\frac{136}{N_{A}}}{2a^{3}×10^{-30}^{}}g·cm^{-3}", "ok": true, "katex_ok": false}
+{"omml_sha1": "29f6e0dd71c2b7210516d4f2570ab55c18fb5f1b", "latex": "4.000gGeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2a1f680759698e8702385355ca610f2677e42204", "latex": "(3)H_{2}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2a41b988809eb8844ae632133cfec812b3c64a90", "latex": "NO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2a6cc22445327b6f7d7be63fc34a3210f1469743", "latex": "(1)", "ok": true, "katex_ok": true}
+{"omml_sha1": "2adcbb02d694e53032aee26a058f346fe0e1b6d8", "latex": "CH_{3}COONa", "ok": true, "katex_ok": true}
+{"omml_sha1": "2b63b7c1ad6b9740ba20f61e839e23547c4fcfa0", "latex": "2H^{+}+SO_{4}^{2-}+Ba^{2+}+2OH^{-}=BaSO_{4}\\downarrow +2H_{2}O", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "2b7c3bf607b159a498437b7f251679deb67eee99", "latex": "O", "ok": true, "katex_ok": true}
+{"omml_sha1": "2b9c1adfb9d8694687d8bcb9a641921cbaf9d743", "latex": "2Fe^{3+}+Fe=3Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2c0e1936aac0ab16b8a51e2446fd81c52fb450cc", "latex": "CaCO_{3}+2CH_{3}COOH=Ca^{2+}+2CH_{3}COO^{−}+H_{2}O+CO_{2}\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "2c21e805362cfff55beb7f57737720f3ddab301c", "latex": "C\\rightarrow D", "ok": true, "katex_ok": true}
+{"omml_sha1": "2c23a714928ebc20f0e74c9af655de4c9488a007", "latex": "\\left[Zn\\left(NH_{3}\\right)_{4}\\right]^{2+}(aq)+S^{2-}(aq)⇌ZnS(s)+", "ok": true, "katex_ok": true}
+{"omml_sha1": "2c61134d46cb6a2043205459fc8f3b118febd018", "latex": "《", "ok": true, "katex_ok": true}
+{"omml_sha1": "2c8b126596c22be1ef270d1d8703ff86f1d4da88", "latex": "FeCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2d47ee7f1bcd5997faf9ad639eeda2f7edef7061", "latex": "Na_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "2d65e4676ecfa5cbbd5d52adf61aa104f28db3bf", "latex": "MnCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2d90002c16ad54de9de24c2c1316295afbb4284c", "latex": "n(SO_{4}^{2−})=n(BaSO_{4})=\\frac{m}{M}=\\frac{2.33g}{233g/mol}=0.01mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "2e338437463a61939e8799c644e170ed81260923", "latex": "CaCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2e37136b9667d5280dfcc5f6adbbcb730fde74a6", "latex": "Fe", "ok": true, "katex_ok": true}
+{"omml_sha1": "2e7d24e7a3595d4e4b0717d6c002f7ea3c81e29e", "latex": "ZnSO_{3}+SO_{2}+H_{2}O=Zn^{2+}+2HSO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2ec558ae1e46a7f9285b98cf6f53dd387707ca55", "latex": "K=\\frac{2.5^{3}×0.5}{2.5×1.5}≈2.88>0.75", "ok": true, "katex_ok": true}
+{"omml_sha1": "2ed977e670d5a92fd613b6d76ce9cb1970c1eec9", "latex": "(H_{3}AsO_{3})", "ok": true, "katex_ok": true}
+{"omml_sha1": "2ee5ea6e801aa97019b1109f626a4be05bbd19b5", "latex": "d.H−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "2f95f264da49dcf708198a66430fc73e0fe80dc4", "latex": "60s", "ok": true, "katex_ok": true}
+{"omml_sha1": "2fbd0c0ce6b957bf734071b0594caae8cd7ec4c1", "latex": "−", "ok": true, "katex_ok": true}
+{"omml_sha1": "2fbec8987d634e5d1e0eed0d45ada85c77391d9b", "latex": "MnO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "2fe3fb6f38d175d6e928abadd0bf63956ef06440", "latex": "(4)25℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "2fed4a4b849faf9c04e0457827a55c8f3cef18d3", "latex": "20mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "2ff03e99a4986939d6cc2d6e68e9a2e3b8300f07", "latex": "Fe_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3011b752044eb9541a9530268191d7f058f68c6c", "latex": "\\sqrt{2a^{2}+b^{2}}pm", "ok": true, "katex_ok": true}
+{"omml_sha1": "3030ec00bba760e42d8588ea0e89577e303ff2e6", "latex": "(PMLA)", "ok": true, "katex_ok": true}
+{"omml_sha1": "3037f12fbaf9f326811cc67b467b958123d365c0", "latex": "K_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "303f87b6128d2ed130c80f4217539b170cc8dbeb", "latex": "ZnCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "306a294f8aaa09e3ed9666661f29da1256153fa9", "latex": "10HCO_{3}^{-}+8e^{-}=CH_{4}\\uparrow +9CO_{3}^{2-}+3H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "307e6daf3d230244d5b38c45c8530622debddc18", "latex": "K_{sp}\\left(MnS\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "30b6b18f47f3a29cea32ba45f447463a4abbbe31", "latex": "Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "30c9a1fa71e7fbe710e43dc5ca5a0baed78b8642", "latex": "12", "ok": true, "katex_ok": true}
+{"omml_sha1": "313baea67934f4a74ddbf265de82df4ddfa1feff", "latex": "C=O", "ok": true, "katex_ok": true}
+{"omml_sha1": "313bb12e3cc748def57f95936097162f86289914", "latex": "\\frac{1.54×10^{-2}}{1×10^{-7}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "313fb93b1b05ef829755d1b2a68cd232fa390379", "latex": "FeBr_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "318940148eeb496026f26506c0af59c685b9a8fd", "latex": "C_{2}H_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "31c04360337791c5d833d600631a2f46f7249277", "latex": "\\left[Co\\left(NH_{3}\\right)_{6}\\right]Cl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "31d086f0ce1cdc3ba38e104e35701e59dc389cfe", "latex": "H_{3}PO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "31d1bd151a3f8b5a7b275935a134feba9630fc91", "latex": "C_{5}H_{5}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "320bde3418fe1bfdd6b5b7535e5d71e5f7691856", "latex": "lg\\left[c\\left(Ge^{4+}\\right):c\\left(Fe^{3+}\\right)\\right]=", "ok": true, "katex_ok": true}
+{"omml_sha1": "322167ac3d17271e1e546745f0a64777bb0f81e1", "latex": "x", "ok": true, "katex_ok": true}
+{"omml_sha1": "3282f1e2e438a6ef8e6db90307274f3fabe93e9b", "latex": ")CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "328ac189f70a4738d0b59d585ae6e03e65767a44", "latex": "Al\\rightarrow Al_{2}O_{3}\\rightarrow Al(OH)_{3}\\rightarrow AlCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "329f53ff40d3c0c89c62b2426ea43f264f233521", "latex": "SO_{2}+H_{2}O+Ca^{2+}+ClO^{-}=CaSO_{4}\\downarrow +Cl^{-}+2H^{+}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "32c87bd18505e14320fb40d9f8d521f9596a595f", "latex": "H_{2}O_{2}(aq)⇌H^{+}(aq)+HO_{2}^{−}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "32ee41f021ebf5e8219bc9ca2923a2e57200bf3d", "latex": "Fe^{3+}+4Cl^{-}+2H_{2}O⇌\\left[FeCl_{4}\\left(H_{2}O\\right)_{2}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3313d57a3303f413b6f78be0f87d80a007e4759e", "latex": "_{4}^{3−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "331cc7db6e957c31dbc6729517b7a14b0148ba16", "latex": "Π_{x}^{y}", "ok": true, "katex_ok": true}
+{"omml_sha1": "33628c9c0d9f41aa0faba2f0968a554a66411dbb", "latex": "2023", "ok": true, "katex_ok": true}
+{"omml_sha1": "337a3d5593ec78931891afe4b496066305d181ca", "latex": "(3)A", "ok": true, "katex_ok": true}
+{"omml_sha1": "33b0308ffc21346bac0026dccde60ccf3d2bceaf", "latex": "3d", "ok": true, "katex_ok": true}
+{"omml_sha1": "33cae11fa56654813d359453df6e441426132a6a", "latex": ">", "ok": true, "katex_ok": true}
+{"omml_sha1": "33f0989016975697086ba24fe6ba5b4cc10186f1", "latex": "A.CH_{3}OH", "ok": true, "katex_ok": true}
+{"omml_sha1": "3423cb5f97949bb452cb9d457a23695f18af7650", "latex": "TeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "349bc36a0f090313a71bbbf8cf45d05f2993690c", "latex": "Na^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "34bd97a83efc7a639b9320d7d2b3fa1439f02849", "latex": "0.1mol⋅L^{-1}NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "34c958cda93d551896280297f9c14de52f9ccb38", "latex": "H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "34e7504a213c7707e7ba0cda08639efe65ab25c3", "latex": "Na\\rightarrow NaOH\\rightarrow Na_{2}CO_{3}\\rightarrow NaCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "34ef30c82e99beb4c0f2fab01563d9c124a1a2ca", "latex": "K_{1}=10^{5.5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "350f495c75259c414e31f2b142275967511afb95", "latex": "Na_{2}SO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "35110edd45c68f261cf01ba0e24e9fe9bc5645e4", "latex": "0.1mol I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "35350ac110e9d890acb35ae086b805ec817b171a", "latex": "(Si_{3}N_{4})", "ok": true, "katex_ok": true}
+{"omml_sha1": "35680221fc3407fa86058a93f7b3ef43400e777e", "latex": "\\frac{68×10^{30}}{a^{3}N_{A}}g·cm^{-3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "35771da8fa482e00bab523789381b0db299368ca", "latex": "H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "3578501543c8a273c305403c4b5a30a3dc7a5918", "latex": "K_{sp}\\left(Ag_{2}S\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "3587bf56722e97b097422c393a495d04d27205ae", "latex": "HSO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "35c052527e0b8ee8ee20b42a13d4cbcb138ef976", "latex": "ZnO", "ok": true, "katex_ok": true}
+{"omml_sha1": "362d24d0e6f49cf5dea10b4d6a5f5f2a73b5767b", "latex": "ΔH=\\frac{ΔH_{1}+3ΔH_{2}}{2}=\\frac{-475kJ⋅mol^{-1}+3×484kJ⋅mol^{-1}}{2}=+488.5kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "366bc6f3daeeae50f55c53a2b41cbafdc76b755b", "latex": "4KClO_{3}(s)=3KClO_{4}(s)+KCl(s)", "ok": true, "katex_ok": true}
+{"omml_sha1": "3680c0c8577e83ca7c7744ff429072b8e2341131", "latex": " ​^{15}N", "ok": true, "katex_ok": true}
+{"omml_sha1": "369502de75e281586a4586383affa981a37535bd", "latex": "NiSO_{4}⋅7H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "370fa170dacb2d7829fb89579a9844c2efa797e9", "latex": "(", "ok": true, "katex_ok": true}
+{"omml_sha1": "37463c86332e8e66be4736cdf807153183aac376", "latex": "E", "ok": true, "katex_ok": true}
+{"omml_sha1": "37b6f47713ffe86667858b64de2f2c51823ba404", "latex": "O", "ok": true, "katex_ok": true}
+{"omml_sha1": "37ce20d0cdd1dcf73b83f7a3705bdf6727d4b933", "latex": "②", "ok": true, "katex_ok": true}
+{"omml_sha1": "37ecd7e2effb53c83358853671812cb86059b201", "latex": "pH=5", "ok": true, "katex_ok": true}
+{"omml_sha1": "37f1423860e20f85d7a938d12b664a1b60c6e4ee", "latex": "Mg^{2+}+NH_{4}^{+}+HPO_{4}^{2-}+OH^{-}=MgNH_{4}PO_{4}\\downarrow +H_{2}O", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "3804b14e0480fc5b7f50c0239fee2b3cf7178da4", "latex": "K(40℃)(", "ok": true, "katex_ok": true}
+{"omml_sha1": "38201ecac980d3c9bd18495bc7a15c0e9ed3d1e5", "latex": "SO_{2}+H_{2}O+Ca^{2+}+3ClO^{-}=CaSO_{4}\\downarrow +Cl^{-}+2HClO", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "3847ec1dae67f64ee92b78b39e686bbc03753cf9", "latex": "\\overset{Cu/O_{2}}{\\underset{Δ}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "38b27997c91680eee1df4da66d7c8dd7a08ceaf3", "latex": "\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}=Cd^{2+}+4CN^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3922d5f591b11984a9ff2a2667f892516ab3f91c", "latex": "\\frac{c^{2}\\left(Q\\right)}{c^{3}\\left(M\\right)⋅c^{2}\\left(N\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "392e0ac12d9e557a7334089f08dc5b5b5390b28f", "latex": "0\\~1 min", "ok": true, "katex_ok": true}
+{"omml_sha1": "39b1abc7f50e92e6794f66db81d3c53d4ef9df85", "latex": "NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "39c5871f37c64ab3a14b740c23e7579b45a368ae", "latex": "H_{3}PO_{3}+H_{2}O+I_{2}=H_{3}PO_{4}+2HI", "ok": true, "katex_ok": true}
+{"omml_sha1": "39f467f4d1e198216c28846f0ee61b3a29854ec8", "latex": "(As_{4}S_{4})", "ok": true, "katex_ok": true}
+{"omml_sha1": "3a02244bd522a411f638259e91c3c311176d8577", "latex": "E\\rightarrow F", "ok": true, "katex_ok": true}
+{"omml_sha1": "3a14dbe4a69635ca3ccee1310cc59aa879d8330d", "latex": "③", "ok": true, "katex_ok": true}
+{"omml_sha1": "3a49e9aeba0282aa830c8ec954614fd45a5be899", "latex": "=\\frac{三氯化磷的质量}{样品的质量}×100\\%=\\frac{(0.5×20×10^{−3}−1×12×10^{−3}×\\frac{1}{2})×20×137.5}{20}×100\\%=55\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "3a98a566b67b05a4f09a8bdedbe38af8a4385082", "latex": "13", "ok": true, "katex_ok": true}
+{"omml_sha1": "3a9f02f3193fdc2b0428f6a4ec629b5f8b382c6d", "latex": "M", "ok": true, "katex_ok": true}
+{"omml_sha1": "3aa55e1fec52d672b5b550eb0983af1093a5a2e0", "latex": "ZnS", "ok": true, "katex_ok": true}
+{"omml_sha1": "3ab1dd790f027b55898289831a42d6f445cca950", "latex": "0.5000mol⋅L^{-1}KIO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3b4654ab60f8c708b5044d1158a2dfababc38d8b", "latex": "\\left[Zn\\left(NH_{3}\\right)_{4}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3b92e6974d93e4129c2c276a53f799316038a0be", "latex": "Cu", "ok": true, "katex_ok": true}
+{"omml_sha1": "3bcff14e3d8df9eb20250ef086919e9eb26c2621", "latex": "NaHCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3cb471025d9c10a9f368c21a2e37d59da4d60571", "latex": "CaGeO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3ccfd76f6e2c27acff1c7e88d349d6ab72d0b02b", "latex": "2Fe^{2+}+2Br^{−}+2Cl_{2}=2Fe^{3+}+Br_{2}+4Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d104197867eb3e97febf53c8518be5378fc6799", "latex": "D", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d10a3e2ff1d136b40ddb5bab549acb9f4a20067", "latex": "2SO_{2}+O_{2}\\overset{催化剂}{ }2SO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d1b5873dca9289ce70ca25ff56ee2e5ed9743d4", "latex": "H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d20abe968b053c783cc21e1773c150db8b6a1af", "latex": "\\left[Cd\\left(CN\\right)_{2}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d33ef39e9613f2acf25ff17e2d56b56f2228334", "latex": "As", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d42e8279632d0da26fa55ac8ee9b0ccd04827db", "latex": "③", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d6ac4638e58d474168314bc62b83a4418a6e1b7", "latex": "\\begin{array}{c}\\overline{\\overline{  △  }}\\\\\\end{array}2NO\\uparrow +3H_{2}PdCl_{4}+4H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d818679d7609affe97599a103877629bc887601", "latex": "SiO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3d896dc14d3a001541bbb2af3143d24a96f73f77", "latex": "CH_{4}\\left(g\\right)+NH_{3}\\left(g\\right)⇌HCN\\left(g\\right)+3H_{2}\\left(g\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "3dd5a243c5b0dbbe6271622c03f6383da2709f4c", "latex": "Fe_{3}O_{4}(s)+4CO(g)⇌3Fe(s)+4CO_{2}(g)+Q_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3dd9aea6e8021ac8768e588d04722329ba06b583", "latex": "K=\\frac{c^{4}(C_{3}H_{6})}{c^{3}(C_{4}H_{8})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3dde52b97e88c38bf76c760aac7722337a6b8cba", "latex": "HCOOH\\begin{array}{c}\\overline{\\overline{催化剂}}\\\\\\end{array}CO_{2}\\uparrow +H_{2}\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "3e62657b215cbb37d33eedce0cb0eb46e59082cb", "latex": "K=", "ok": true, "katex_ok": true}
+{"omml_sha1": "3e7c0e8d837fa314f0ab1f94aaf03699c5a4689d", "latex": "c(CN^{-})=\\frac{K_{a}\\left(HCN\\right)}{c(H^{+})}=\\frac{10^{-10}}{10^{-7}}=10^{-3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3ea763f63ee6c55fa54ca50193c3169b419e4196", "latex": "c_{0}(M)/c_{0}(L)=a", "ok": true, "katex_ok": true}
+{"omml_sha1": "3ed47bacb9d127f7a490bc3e5a3edc6ee6f826f5", "latex": "As_{4}S_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3ee9cf62a51f13994967c7e17b4d719b2e57ef73", "latex": "\\frac{0.029}{0.060}×100\\%≈48\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "3f37616b1e115ddbfa65d36eb1083eb9bd56f46f", "latex": "As_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3fa5c5e776a093bb2004e2efe56c4f032dfdbfcc", "latex": "\\frac{\\left(45.0\\%+1.50\\%+1.00\\%\\right)×x mol}{1mol}×100\\%=\\frac{\\left(45.0\\%+1.50\\%+1.00\\%\\right)×\\frac{1}{47.5\\%}mol}{1mol}×100\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "3fb9b3df8a8c0ff4a6dc28d43debffa458e4a61d", "latex": "4", "ok": true, "katex_ok": true}
+{"omml_sha1": "3fe8cb73d55da61a85d6123767e2d65b9e14d7f4", "latex": "\\frac{c(HPO_{4}^{2−})c(H^{+})}{c(H_{2}PO_{4}^{−})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "3ff149127b1233ea49e010e3f0f92e04ebf18d08", "latex": "\\frac{2.01×10^{-3}mol×56g/mol}{1.20g}×100\\%=9.38\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "3ffee3845ba316df1b13464b0d02e817f3af897b", "latex": "20.000gPCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "402e49b2bcfefd60e15849e500b60920a01bc607", "latex": "FeO", "ok": true, "katex_ok": true}
+{"omml_sha1": "40375d2e4fed45cb6ccf1c57196b13c32d7957be", "latex": "CH_{3}CH_{2}CH_{2}CH_{2}CH_{2}CH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "40b18d620117a3a0869acf7c724cd01752c489fb", "latex": "(1)①K(s)+\\frac{1}{2}Cl_{2}(g)=KCl(s)+437kJ", "ok": true, "katex_ok": true}
+{"omml_sha1": "40dbbc969dfb5c06a62aa4e6fac8cde4fc722200", "latex": "\\frac{c\\left\\{\\left[Cu\\left(H_{2}O\\right)_{4}\\right]^{2+}\\right\\}}{c\\left\\{\\left[CuCl_{4}\\right]^{2-}\\right\\}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "412382030c304a16e6a0f746db8152d2ffaf4d30", "latex": "MnCl_{2}⋅6NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "412d9faff3220f99db213e96a317dd8e558f1c6b", "latex": "SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4157dba538e68eaac975807f7da17dd198c1e952", "latex": "2=2", "ok": true, "katex_ok": true}
+{"omml_sha1": "4162c7c884fe3eb5d4210812449756c888aceb58", "latex": "As_{4}S_{4}+7O_{2}\\overset{}{=}2As_{2}O_{3}+4SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "417829cb0ce661c785b7dbb137ef32bd6252f290", "latex": "2CO(g)+SO_{2}(g)\\begin{array}{c}\\overline{\\overline{催化剂}}\\\\\\end{array}S(s)+2CO_{2}(g) ΔH=-270kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "419edb8ed138e4713d531bb615dcfa938f1500f0", "latex": "d", "ok": true, "katex_ok": true}
+{"omml_sha1": "41a57d58faa859624f60d187d2d6156c1926d896", "latex": "Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "41ac6bb9778491c120989e7273bd74a7c6acb07c", "latex": "570℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "41db75cb4fd30837f4f46d6319851d7716066088", "latex": "POCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4249131ea5698978050ff1c0fbdce5c2283fb254", "latex": "144", "ok": true, "katex_ok": true}
+{"omml_sha1": "42a13e907cccd5dbe103d08d639a698d0166ff44", "latex": "0.1000mol⋅L^{-1}NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "42abfaddda3bb388cb5e2b5464853a67ef428d5e", "latex": "CO(g)+H_{2}O(g)\\overset{}{\\underset{}{⇌}}CO_{2}(g)+H_{2}(g)ΔH_{2}=-41.0kJ⋅mol^{-1}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "42c8fa42f665e4971f11009513ff29cf1f6ad14e", "latex": "H_{2}SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "42f339291d3dc646be61cc0f61ce9091083124f8", "latex": "=", "ok": true, "katex_ok": true}
+{"omml_sha1": "430017fe0c74afa1339a7be90ace8056a43cc230", "latex": "\\overset{R_{3}Cl}{\\underset{CH_{3}ONa}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "4389cdeffe0854c8532ce399733df08e84cd6e2f", "latex": "100\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "441aa3e41b7cb3f498a2a18406768f89d82040b8", "latex": "\\frac{c\\left\\{\\left[Cu\\left(H_{2}O\\right)_{4}\\right]^{2+}\\right\\}}{c\\left\\{\\left[CuCl_{4}\\right]^{2-}\\right\\}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "441bd5faa7aba0dec59b2740ae51bcfca326f275", "latex": "NH_{4}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4425ef882a6d0de7545371093f5aff9bbe97fa50", "latex": "10^{-18.8}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4432de82dc7530f6e2cd2dfc2edaf29c453df111", "latex": "\\left[Cu\\left(NH_{3}\\right)_{4}\\right]SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4444c60cb04a857892aa59f632e762c63343e21a", "latex": "(4)", "ok": true, "katex_ok": true}
+{"omml_sha1": "44795d946a92fb90f71e359ab7583144a34bc062", "latex": "b", "ok": true, "katex_ok": true}
+{"omml_sha1": "4486d2b7eaef824214522793cf0145e875e8f964", "latex": "K_{sp}\\left(MnS\\right)＞K_{sp}\\left(Ag_{2}S\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "44e6fd6d359cb88d9f36d1f62c8823aae5b59c43", "latex": "ΔH<0", "ok": true, "katex_ok": true}
+{"omml_sha1": "451dd941ce61807aa18da80813ecd25b389284b9", "latex": "CO_{3}^{2−}+2H^{+}=H_{2}O+CO_{2}\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "452674de2860ee30e60f63eba137077dbcb3540a", "latex": "K^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "453248ffabe97f29db050a70c9e82f0e316851f5", "latex": "\\frac{5+3−2×2}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "453c4d56dbeb20d93e57d9bc83a33289f9383c49", "latex": "CuSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "45c19313488d41b83d49149c13983e3baeaa9715", "latex": "2v_{正}(H_{2}S)=v_{逆}(CS_{2})", "ok": true, "katex_ok": true}
+{"omml_sha1": "45c48cf9dc96eefc27d77363f863d6e3429aa776", "latex": "CH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "45fecd410097e80f69140d2747f0541943ccd9ed", "latex": "4NH_{3}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "46081cb44d69723148c57fa8a7bca3c98cb75f22", "latex": "(As_{2}O_{3})", "ok": true, "katex_ok": true}
+{"omml_sha1": "460bbda05919c7b124ade30864cee9260f29ab2e", "latex": "C−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "460defaa8a1b36bd73dba366a730fc5a9c4d526f", "latex": "ZnSO_{3}+SO_{2}+H_{2}O=Zn^{2+}+2HSO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "469ec5389f076b624d50fc5b98e7671f5ff7aef4", "latex": "\\left[AgCl_{2}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "46a7482305fbd10cc369dce17c453763dadbc2ed", "latex": "\\left[Zn\\left(OH\\right)_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "46c38c29ac4995746c3139a168d1e6f592c5fdd6", "latex": "SnCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "46da7b5cf55ef83680d02adde80c55b98fe01b01", "latex": "c_{0}(M)/c_{0}(L)=b", "ok": true, "katex_ok": true}
+{"omml_sha1": "46dc681b6d627513584aedc5ab49de14ca08a2d4", "latex": "CaSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4711b6513db186128786d922ad147c91100322c8", "latex": "ZnS", "ok": true, "katex_ok": true}
+{"omml_sha1": "472544bfaa1d883cfecdf184b3d618b1d442de5f", "latex": "c_{0}( L)=0.02 mol⋅L^{-1}、M", "ok": true, "katex_ok": true}
+{"omml_sha1": "47a868fb3b38e04349e7983faf08c11cc4d6528a", "latex": "K_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "47be5cf7727b5afbc2ee1bc0ed093bf8896b4932", "latex": "12g NaHSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "480d22250f10c4f2b9279a5f24ba792c17a4e3da", "latex": "0.01moLBaSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "48103692408987ee7cf39127078fa64c03bb3e50", "latex": "\\%(", "ok": true, "katex_ok": true}
+{"omml_sha1": "4824f59e31156ed18635938191db248c740ec0ca", "latex": "(1)A", "ok": true, "katex_ok": true}
+{"omml_sha1": "4840f9daf24e25c48cc6b2a763b1fb32cca74f9d", "latex": "SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "485b0c8e53f1812e41e87323cfd8e5329e85cbe8", "latex": "Cl^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "48811bb6a5b705fbd59984058059bef3903e2e5e", "latex": "c(OH^{−})−c(H^{+})=c(HCO_{3}^{−})+2c(H_{2}CO_{3})", "ok": true, "katex_ok": true}
+{"omml_sha1": "48c201a478e1c3453fcd410dea1b65a797001e20", "latex": "AsO_{3}^{3−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "48c2a9178baa408660b1a512601ea30b9c393608", "latex": "\\frac{\\sqrt{2}a}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4910912eb25ec50a109f2d3813a91ddcc106256e", "latex": "CH_{4}\\overset{高温}{\\rightarrow }C+2H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4910ab7941324b06cce0f27f71faea4b27041e71", "latex": "OHCCH_{2}CHBrCHO", "ok": true, "katex_ok": true}
+{"omml_sha1": "491d24a42adeee6dd0040ee81ce982e9e5998184", "latex": "CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "49c8df41cfb07f8f5fdf3aa0297ca0da18df9963", "latex": "3N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "49ccb2a0685257570d10521a7a9b8c339526a4b4", "latex": "CH_{3}CH=CHCH(CH_{3})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4a1877cd35afb1e66bce4c0ee1d867f1c6866d40", "latex": "SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4a3294cb6c5ac78654e1d559c1e23ac695ee51ca", "latex": "NaCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "4a4241e3ca18501216b41708ef2ca52f2d2e8b72", "latex": "\\left[Cu\\left(NH_{3}\\right)_{4}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4a62cd7d82c0f6ee835d8ac9d045807d680034e4", "latex": "K", "ok": true, "katex_ok": true}
+{"omml_sha1": "4a83737258bd25f35bb42e7c7a20c422b9b1ed50", "latex": "0.200mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4b3c02d6b62e7e6cbd148fc396411dfbfd61ca68", "latex": "K_{sp}\\left[Ge(OH)_{4}\\right]=4×10^{-46}K_{sp}\\left[Fe(OH)_{3}\\right]=4×10^{-38}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4bae7631be0c592f20202f1befe9f867e436d6a7", "latex": "\\frac{1.02×10^{−2}mol×133.5g/mol}{1.4g}=97.3\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "4bafc52744446367f0bf6cfba503c67b36ca9a9b", "latex": "K=\\frac{c^{4}\\left(NH_{3}\\right)}{c\\left(S^{2-}\\right)c\\left\\{\\left[Zn\\left(NH_{3}\\right)_{4}\\right]^{2+}\\right\\}}=\\frac{c^{4}\\left(NH_{3}\\right)c\\left(Zn^{2+}\\right)}{c\\left(S^{2-}\\right)c\\left\\{\\left[Zn\\left(NH_{3}\\right)_{4}\\right]^{2+}\\right\\}c\\left(Zn^{2+}\\right)}=", "ok": true, "katex_ok": true}
+{"omml_sha1": "4bd710340ab1d5965f03a2b2e9bb2e66a278c075", "latex": "12.00mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "4bf55ff33fd35a1cc66727e39dad0ac7831ded81", "latex": "Na_{2}S_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4bfdfe4ca697527ef30706e8e63c7df155513f67", "latex": "ΔH_{4}=−337 kJ⋅mol^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4c18ea6189cfaca53e480d6f51d41df93d3f7336", "latex": "\\frac{0.425}{a^{2}b}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4c370d01faf5e2128300b286e64ea462613556e1", "latex": "c\\left\\{\\left[Cu\\left(H_{2}O\\right)_{4}\\right]^{2+}\\right\\}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4c4de5a4e169427f3aa1d9d0092b3326d02807a0", "latex": "H_{2}PO_{4}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4cc856c3d72604585c13c86f65cb716afd79c96d", "latex": "4×\\frac{1}{2}+4×\\frac{1}{4}=3", "ok": true, "katex_ok": true}
+{"omml_sha1": "4ccbaba1ebdbbc7ff53411e590dd8d34823792ac", "latex": "A.SiO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4d219dc983ea1c30fc0be6c487ed49e4d39b6a0a", "latex": "CH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4d6e013ae1e1201235a492241cd6771253233e01", "latex": "n(SO_{2})+n(H_{2})=0.8mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "4d89703a0812db08ec418637da3066a971991060", "latex": "NaHSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4dd0689a841119674c538b1ff5cfeac91cd70a39", "latex": "NH_{4}Cl", "ok": true, "katex_ok": true}
+{"omml_sha1": "4dd43c7b9351e33ecd1967b8d36b7771928f6a71", "latex": "O_{2}>SO_{2}>TeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4ddb5b72a550639c746b8bed2fefd9add66130d3", "latex": "\\left[Cu\\left(NH_{3}\\right)_{2}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4e12e3585cece14fa9262bb0d19a3ec0b83cdfdb", "latex": "c\\left(\\left[CuCl_{4}\\right]^{2-}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "4e262cd02b8e67aefc0d3d126b539d5594ec510b", "latex": "\\sqrt{2a^{2}+b^{2}}pm", "ok": true, "katex_ok": true}
+{"omml_sha1": "4e374e501b02f8ba7eb507790c281b35fec8d647", "latex": "1×4=4", "ok": true, "katex_ok": true}
+{"omml_sha1": "4e76e7aed2bfe42b5c1d63c71ae9bd9674c7d7b2", "latex": "Si-Si", "ok": true, "katex_ok": true}
+{"omml_sha1": "4e933d498f10f1f1395b90e9652fb5f95e59b176", "latex": "H^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4eea466368ae099625f607a8dee31a7a5bdc2439", "latex": "b", "ok": true, "katex_ok": true}
+{"omml_sha1": "4f0e8acea5f4ef02f4a36c4f1df5ea77ba3445b3", "latex": "A.Cu", "ok": true, "katex_ok": true}
+{"omml_sha1": "4f3b3f3dbb73335c8d31ccde54721e5671b3bdbe", "latex": "2Fe^{2+}+Cl_{2}=2Fe^{3+}+2Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4f7fa09d25e275b5bbed4a792485d7b5ac5d7ff8", "latex": "PCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4f8f7eedfe66dbcc88ddc604e001ce29933ecb95", "latex": "2 mol N\\left(g\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "4f9e3462b37a1c87c297283bb7601755e0f8d7f7", "latex": "\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "4fa907bd6dd42d05590585c2bcffc415ef6ed8bd", "latex": "PCL", "ok": true, "katex_ok": true}
+{"omml_sha1": "4fb786f4108e6d98bfda257b5681150260bcb2d6", "latex": "(MLA)", "ok": true, "katex_ok": true}
+{"omml_sha1": "50215dd3721d2c93a9b85a05e4c720850cbeb2c5", "latex": "c_{0}\\left(HCN\\right)=1mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "50501c9e4e0aa8f50a6bf0a16a242cd36943e8cc", "latex": "FeCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "50859cd24d29dfdb46b1399b067e50a3f2a4a866", "latex": "[n(CH_{4})", "ok": true, "katex_ok": true}
+{"omml_sha1": "50b948ee8c4dd2e37bd0b6316296b1f1f3a437cc", "latex": "NO_{3}^{-}+2\\left[FeR_{3}\\right]^{2+}+3H^{+}⇌", "ok": true, "katex_ok": true}
+{"omml_sha1": "512e681593087261efc136bcd9b4e6f08cfdeae9", "latex": "Cu\\left(NO_{3}\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5148f1000650397404c5e4058b18885215a1ae14", "latex": "-\\frac{1}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "515c4093972475b94502e31532060f4c1b3d7c99", "latex": "c_{平}\\left(ML_{2}\\right):c_{平}(ML)=", "ok": true, "katex_ok": true}
+{"omml_sha1": "516b23dc017517dae8ce4eaf58cac3e557f39c0f", "latex": "\\frac{c_{平}(RCl^{-})}{c_{0}(Cl^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "51b488fa83159f17a90e3a630eec611a8ed74fa2", "latex": "Al_{2}S_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "51c7142ece06ff3110c3ada34444281410a07f86", "latex": "pH=4.8", "ok": true, "katex_ok": true}
+{"omml_sha1": "5200bf571915b10539ad0bfd1391f7d06f3fef57", "latex": "C_{5}H_{11}O_{5}CHO+Br_{2}+H_{2}O=C_{5}H_{11}O_{5}COOH+2HBr", "ok": true, "katex_ok": true}
+{"omml_sha1": "521d90ec331c5678fedfe5ba752283163031ac34", "latex": "Q>K", "ok": true, "katex_ok": true}
+{"omml_sha1": "5238e6b748bba28ccb7bae126267f43e09ddb87b", "latex": "K_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "524400cfcdc241e6dcac82fd53dd36cc84e88ff6", "latex": "HOOCCH_{2}CH(OH)COOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "52471f1ad3c8da8bab99f1b214453126ae71a180", "latex": "FeSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "527a9d5e521659efc63e3d6125618a29ad3dcaf3", "latex": "\\frac{c^{4}\\left(P\\right)⋅c^{2}\\left(Q\\right)}{c^{3}\\left(M\\right)⋅c^{2}\\left(N\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "52ab06f55aa66187a577b40818c33abd27c925e0", "latex": "2CH_{4}\\left(g\\right)+3O_{2}\\left(g\\right)+2NH_{3}\\left(g\\right)⇌2HCN\\left(g\\right)+6H_{2}O\\left(g\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "5306bc4b1391e3296e3ecd796c996e19eca3bbf1", "latex": "K_{sp}", "ok": true, "katex_ok": true}
+{"omml_sha1": "531dba0ae56bb2bd4935e9027c8d31a9ef477411", "latex": "c", "ok": true, "katex_ok": true}
+{"omml_sha1": "5343233db3a35fc0c418f5db8854f85c0eb54f92", "latex": "HNO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5356ab30ef2ec2b3a46fec074b3f1a273ae369cc", "latex": "_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5368d6489c0e5da8ca9b5d7b662f43c43e58c0a5", "latex": "B", "ok": true, "katex_ok": true}
+{"omml_sha1": "53795da338e54a8a3136863c5c31cc160a2fa454", "latex": "22.4mL(", "ok": true, "katex_ok": true}
+{"omml_sha1": "539a755484ccaba584d56f6d1489f68b6b2a2a05", "latex": "Mg", "ok": true, "katex_ok": true}
+{"omml_sha1": "53e4383b17aa74b2f68ce22d9175e2d8dbe2d857", "latex": "NiSO_{4}⋅7H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "540b00bd29f0dc5d5586a45c5782bdcf212649ff", "latex": "[Cu(EDTA)]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "541b15d655db50ad452d861ca09b4f2d9ddbaaf9", "latex": "α_{III}>α_{II}>α_{I}", "ok": true, "katex_ok": true}
+{"omml_sha1": "54393811899fdd3974fc6490d36db24acc00f71a", "latex": "Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "545b820b4be84e4baf6d1fc1683dbd95b1ddd539", "latex": "(", "ok": true, "katex_ok": true}
+{"omml_sha1": "545b96ecf1429e11f5bf21643928c664f32f725c", "latex": "1mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "546f292446ef7ed1d140058c0096f4fdfff8da21", "latex": "c(H^{+})=1×10^{−10}mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "54b4c9ee8ce31890dd955f19abb5b388cc9c81ee", "latex": "MnS+2H^{+}=Mn^{2+}+H_{2}S\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "551cf025cd9d15748026a98d7c077a8e28399f61", "latex": "v_{正}", "ok": true, "katex_ok": true}
+{"omml_sha1": "552807feba5a1d24bc3d7f9135583be4dc0cd1f1", "latex": "\\left[Cd\\left(CN\\right)\\right]^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "55378cd832d82c15d70342f01a5daad1ecdd3baf", "latex": "NO_{2}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "55578d9aa33b3d4f581fc5b952a11e65f19a6078", "latex": "b", "ok": true, "katex_ok": true}
+{"omml_sha1": "55ab67c8b9192a06f7473b0f8531203389abbcba", "latex": "\\frac{c_{0}(R)}{c_{0}(Cl^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "55b410f2398b2ee7c89e94d81a68f73ca7e49be8", "latex": "C_{6}H_{12}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "55b580d7b64c61e55518a6237f17bdf9fdea3af7", "latex": "8×\\frac{1}{8}+4×\\frac{1}{2}+1=4", "ok": true, "katex_ok": true}
+{"omml_sha1": "55d3bab90099145237f7f01b5824264dd4fb524d", "latex": "28mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "55d4dc108ff6038b328df1af071a5b8c3cec7823", "latex": "Fe^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "55f282268ffac10b9e381b08b1235b6505d44b9f", "latex": "2n(SO_{2})+n(H_{2})=0.1L×18mol⋅L^{−1}−\\frac{1}{2}×xmol/L×0.4L=(1.8−0.2x)mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "5619e1e4a525948f55c413f55b62fa03a14b1f7a", "latex": "(SiH_{4},Si", "ok": true, "katex_ok": true}
+{"omml_sha1": "5625d78bb0b4a53dd256d3425b28882926896b9e", "latex": "\\frac{K_{w}}{c(H^{+})}=\\frac{10^{−14}}{10^{−12.7}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "56651a410c7ac5aa22b1f3f756ead3d96851f382", "latex": "NH_{4}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "569147e5a8d74029458973f02f55de524ca338da", "latex": "c", "ok": true, "katex_ok": true}
+{"omml_sha1": "56a5f08bb974620cc35cbe1388ec8d43fbf37bb7", "latex": "K=\\frac{c(CO_{2})}{c(CO)}=\\frac{1−20\\%}{20\\%}=4", "ok": true, "katex_ok": true}
+{"omml_sha1": "56b8021fa82ee6ae8c53b0ea134fe4a255687059", "latex": "AgCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "56c7672c216c04c0bcf263d4ba2487bbb64174a9", "latex": "K_{3}\\left[Fe\\left(CN\\right)_{6}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "56d9655bb02ea69d44ee8624caf6d3210806fb59", "latex": "+4H_{2}O(l) ΔH>0", "ok": true, "katex_ok": true}
+{"omml_sha1": "56db4efa49e11736c7a3c7a51569675b56639f13", "latex": "Na_{2}CO_{3 }", "ok": true, "katex_ok": true}
+{"omml_sha1": "5781eb4752c136ccace4b5e210f6fdbc77b722a6", "latex": "V_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5783f13ba167ddb55ee06bbe215d3fd268dbfa62", "latex": "2Fe+3Cl_{2}≜2FeCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "57d658756120c9cccd2087e745451cad816fc42b", "latex": "\\left[Cd\\left(CN\\right)_{2}\\right]+CN^{-}=\\left[Cd\\left(CN\\right)_{3}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "57dd7153843feecf9839b5271e56ee0255060548", "latex": "SiO_{2}+2OH^{-}===SiO_{3}^{2-}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "57dfd1c18e55e55357030e06eb25fb987fc477b7", "latex": "V_{0}mL0.5mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "58241d948e02ce679f571cc4d6bff55413a43345", "latex": "48.0g", "ok": true, "katex_ok": true}
+{"omml_sha1": "58246798bf198c41a2fd58525af2cbee61dbf6a7", "latex": "ΔH>0", "ok": true, "katex_ok": true}
+{"omml_sha1": "583f7a1b7a5586152872e6882f2e36228eecfc76", "latex": "(3)", "ok": true, "katex_ok": true}
+{"omml_sha1": "585cff1c024cc25d74c01690f1b242fffe729a74", "latex": "Al(OH)_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5887e37bbb83d7ee2fa0b612d0ad5f2fe056192a", "latex": "NO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "588ae8005a7206c5815cd13de6ce547c55a86209", "latex": "GeCl_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "58b127541816e7fa7c751d5184c3c9b7b8cc1da3", "latex": "Ca(ClO)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "58b6407ed802ac9cdde672160c088e0ebb9b66e7", "latex": "NH_{4}Cl", "ok": true, "katex_ok": true}
+{"omml_sha1": "58e24db913a576ed283c40ae4beb988da0e97d90", "latex": "CaSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "59770c8f5388cf7b76e5c20d68d2af8a45b2723a", "latex": "HI", "ok": true, "katex_ok": true}
+{"omml_sha1": "59a9bf26a89ad7eea103954fbb825c2c8dbe8dd9", "latex": "Mg^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "59b0f430419d860448326ee30cb7af0f0445ff1c", "latex": "4+\\frac{5-4×1-1}{2}=4", "ok": true, "katex_ok": true}
+{"omml_sha1": "5a241f8ccd36dff68f04ef21756a6e011d52bbd1", "latex": "b.O−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "5a3af29be285490d4339b72caff1e9114d0f4ea2", "latex": " ^{24}Mg", "ok": true, "katex_ok": true}
+{"omml_sha1": "5a53ffe49df6da27ff9f13b2b31ccc6848ae47bb", "latex": "NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5a7f42a4a677d139a29d036ad73668175e051c37", "latex": "lg\\left[c\\left(Ge^{4+}\\right):c\\left(Fe^{3+}\\right)\\right]=", "ok": true, "katex_ok": true}
+{"omml_sha1": "5ae7054c23fb07154f7c28f4912b49854604c425", "latex": "(", "ok": true, "katex_ok": true}
+{"omml_sha1": "5b271247459488890578da690b58d2c763db8fdc", "latex": "SiO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5b3a2f2da50984451cf3a6be67c0aff2cf925143", "latex": "\\left[Fe\\left(H_{2}O\\right)_{5-n}(OH)_{n}\\right]^{3-n}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5b4173101532bec71f80980442a058b682a29f3f", "latex": "lgK_{2}=5.1", "ok": true, "katex_ok": true}
+{"omml_sha1": "5b4f3dc5b332dadf4473065218a2de29e66f1c86", "latex": "2.24L(", "ok": true, "katex_ok": true}
+{"omml_sha1": "5b728dc77439b4cbfba9be4d869fb9b92ef1110d", "latex": "c(Na^{+})=c(CN^{-})+c(HCN)", "ok": true, "katex_ok": true}
+{"omml_sha1": "5b99b3d78c1fc53084eb3a0c4c4fdde3fc0f5b0e", "latex": "a", "ok": true, "katex_ok": true}
+{"omml_sha1": "5bba1f710d15df3767bc50632ea8fadd85d5b46f", "latex": "NO_{3}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5bd249a12b57d3e40bd7d937cf11119d21eddfc6", "latex": "CuO", "ok": true, "katex_ok": true}
+{"omml_sha1": "5bf2af1bb3dc5eb73cd70a8e1ff386bd2ac4dba1", "latex": "储氢能力=\\frac{储氢后氢气的密度}{标准状况下氢气的密度}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5bf2ff02c250c97ab25dc016d1984fa613a6151f", "latex": "HBr", "ok": true, "katex_ok": true}
+{"omml_sha1": "5bf6e03d0f61fc5ed959d06d6d7134ccb83893a4", "latex": "Ce^{4+}+Fe^{2+}=Ce^{3+}+Fe^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5c1556b9d169ebedef561e128bb2c33dd41879b1", "latex": "Fe^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5c2e77c53b35828582718cb340c4a9c9344688c6", "latex": "Fe\\left(NO_{3}\\right)_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5c413e1531a9dd6bc161c6e336bd23c4854beafa", "latex": "K(25℃)=2.24×10^{−12}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5c6fc55ac3f069bf7b3630d03c4a67997130a30a", "latex": "K_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5cbe85a51212d26a268c20cf794c043e67bcb489", "latex": "\\overset{}{⇌}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5cd67c1feb062e408b78bcbedc71ba10c750c827", "latex": "+3", "ok": true, "katex_ok": true}
+{"omml_sha1": "5cdbe37606f3ec79674201379460c68104e87519", "latex": "ZnCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5d40422b8d9e2af6f7cd4ca682675ebd62ee7ef4", "latex": "Ba\\left(OH\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5d53b36a6bbaef2ab70fbdc3f08a0d48bbe75be1", "latex": "Q_{X}=nF", "ok": true, "katex_ok": true}
+{"omml_sha1": "5d899f7ea366cf67de2a2c07ecc0e4b53f0769c8", "latex": "c>b>a", "ok": true, "katex_ok": true}
+{"omml_sha1": "5de238dfaba4e9074e066d26ff4b81a6fd494365", "latex": "t_{III}<t_{II}<t_{I}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5df9283c3b2b0ef9e69d7a909210902e9c17bd80", "latex": "c_{0}\\left(Cu^{2+}\\right)=0.60×0.10mol⋅L^{-1}=0.060mol⋅L^{-1},c_{平}\\left(CuR_{2}\\right)=0.11×0.10mol⋅L^{-1}=0.011mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5e294adc703aa538317a7c8ace6a9b835ebf4829", "latex": "<0.01", "ok": true, "katex_ok": true}
+{"omml_sha1": "5e5904e09b2b00d942c6805ef9cec08340e98903", "latex": "25mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "5e598f172f51220a070bfe8b5f8a33fb93e94fd7", "latex": "0～60s", "ok": true, "katex_ok": true}
+{"omml_sha1": "5e61ff81cda137365246cb42e59e7f2dd09f51e2", "latex": "c(H_{2}AsO_{3}^{−})>c(AsO_{3}^{3−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "5e719cafb969db6876b12817067000d52fd96245", "latex": "<", "ok": true, "katex_ok": true}
+{"omml_sha1": "5e9e8462e37cfee6aeec538b2349af49821096c2", "latex": "+", "ok": true, "katex_ok": true}
+{"omml_sha1": "5eaaceda5fd6caef0ff992a6f978390e71618d5b", "latex": ">", "ok": true, "katex_ok": true}
+{"omml_sha1": "5eff0e7f0729eff7c78e719f5b900db45fa05364", "latex": "SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5f06b34760fefd11799cd85875684316be45ccb6", "latex": "①CH_{4}(g)+2H_{2}S(g)⇌CS_{2}(g)+4H_{2}(g)+Q(Q<0)", "ok": true, "katex_ok": true}
+{"omml_sha1": "5f1719b328addb050bb7553664090f7dc965f33b", "latex": ".v_{正}=v_{逆}(", "ok": true, "katex_ok": true}
+{"omml_sha1": "5f4810f6f7d9b91fa4e8c5b97b9b37791dad81cc", "latex": "AgNO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "5f513ea8c84912a03b478766d448313a382e920f", "latex": "Zn+H_{2}SO_{4}(", "ok": true, "katex_ok": true}
+{"omml_sha1": "5f87772e1d7a0ae2695d8af30eb47e5964c93aab", "latex": "K(25℃)", "ok": true, "katex_ok": true}
+{"omml_sha1": "5fa6369e6988b9f248a03fecb37cb923ee518e89", "latex": "NH_{3}⋅H_{2}O+H^{+}=NH_{4}^{+}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "5fb80adbdf69bfa090167e60411e9555f626cd18", "latex": "c(Na^{+})>c(CO_{3}^{2−})>c(HCO_{3}^{−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "600495349645c5e9848f427373eed026c66c1270", "latex": "K_{Ⅰ}", "ok": true, "katex_ok": true}
+{"omml_sha1": "605a2f24cbb8b06161dc0fd5fd7a1f2c8e962f70", "latex": "Ca^{2+}+3ClO^{-}+SO_{2}+H_{2}O=CaSO_{4}\\downarrow +2HClO+Cl^{-}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "61035cc29ad69ccece955985f2e8d7a5c22322e6", "latex": "π_{m}^{n}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6103dbc78b1acfc7bf1776c7f8a76e46f3bf8311", "latex": "As_{4}S_{4}(", "ok": true, "katex_ok": true}
+{"omml_sha1": "61bbc7436da7e53925d0451f049eea7f7f6c8bb3", "latex": "8", "ok": true, "katex_ok": true}
+{"omml_sha1": "626070e57318f93a5ec995f5d329eee62f159700", "latex": "CH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "626f2be8e05769dbe4c9f8b089eacda45f250aa3", "latex": "pH=1", "ok": true, "katex_ok": true}
+{"omml_sha1": "62728b74461a6ce1edc1ff0cfa2781772a834ea7", "latex": "Fe_{2}\\left(SO_{4}\\right)_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6284a36e6fd730553536e79cb0c2aef11fe5d0b3", "latex": "c_{0}\\left(M\\right)=0.51c_{0}\\left(L\\right)=5.1×10^{-6}mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "628c2e7d39649117fbcce70d4b4d6513d11c224b", "latex": "3Pd+2HNO_{3}+12HCl=3H_{2}PdCl_{4}+2NO\\uparrow +4H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "6302faa877c3b194b7c93bbb1d1f1a4de9184f7d", "latex": "1 LpH=10", "ok": true, "katex_ok": true}
+{"omml_sha1": "630442de63f7a41170472988e95c84689da93088", "latex": "Fe_{3}O_{4}(s)+CO(g)⇌3FeO(s)+CO_{2}(g)+Q_{1}(Q_{1}<0)", "ok": true, "katex_ok": true}
+{"omml_sha1": "632eacfa1af1ab079562d42433decb007358cc82", "latex": "EDTA", "ok": true, "katex_ok": true}
+{"omml_sha1": "6344c23066fc91eb642d94993ba06e1a0e1c2222", "latex": "3.60mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "636be6e24b16e301dbbc5af5db9dea07c95c6928", "latex": "BaSO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "63876edebb8c317ae6c1d40ebde695c271d65213", "latex": "6H^{+}+3Ge^{2+}+IO_{3}^{-}=3Ge^{4+}+I^{-}+3H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "63b00face8c0fc0ff61363fdfea053af6176f8b7", "latex": "<", "ok": true, "katex_ok": true}
+{"omml_sha1": "641aee33b4ebb07e757e9444a944604a55718bc0", "latex": "\\frac{7×1+23×3+11×4+16×1}{N_{A}}g=\\frac{136}{N_{A}}g", "ok": true, "katex_ok": true}
+{"omml_sha1": "64537a443669c34e9d0af4dbb898ae5090e7a991", "latex": ")(", "ok": true, "katex_ok": true}
+{"omml_sha1": "64826593fe2a01cb8312e3b83e2e15b3ea7c8b06", "latex": "(6)", "ok": true, "katex_ok": true}
+{"omml_sha1": "64cae015f05cdd1090898d07fcbc4a3b50bb715d", "latex": "K_{1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "64d633580c5a35248b2c49fe5f682b28a6fb96dc", "latex": "BD", "ok": true, "katex_ok": true}
+{"omml_sha1": "64f685d14b3d9f0881674d776adab2531301758e", "latex": "2CO(g)\\overset{}{\\underset{}{⇌}}C(s)+CO_{2}(g) ΔH=-172kJ⋅mol^{-1}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "6543aa1ab48acc1e7d5da0d441b25459946cb754", "latex": "AlO_{2}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6576cb3ffe5cb141c87d62578696ebdb58b0ea20", "latex": "X", "ok": true, "katex_ok": true}
+{"omml_sha1": "65a5c8a2305e2c1d91a274ab1c9809ed25897eee", "latex": "②", "ok": true, "katex_ok": true}
+{"omml_sha1": "65b05c9b8e4768363e35b4213feac4786bcf06a2", "latex": "62．1℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "65d131ee63aace3f8ef2d1f79d36c5fa7b7d0e2f", "latex": "O−H", "ok": true, "katex_ok": true}
+{"omml_sha1": "661c8ef7ead5439a8fe18d366e00d276f747a3ab", "latex": "L、ML、ML_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "662dd5c785962f08328e7ccf04bcfc72bbd33328", "latex": "en", "ok": true, "katex_ok": true}
+{"omml_sha1": "668808818d9a05a019e7d19857d44d19cea20dbe", "latex": "1L1mol⋅L^{−1}FeBr_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "66c009c6e2606359fcdba6e6ddf57eb2e02dcac3", "latex": "\\frac{1mol×106g⋅mol^{-1}}{12.0g⋅cm^{-3}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6738de090834120dae4c7a11dae43a57d2de5b74", "latex": "HCO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6783650d68db286fab2ff604d5ce586937085b1f", "latex": "z", "ok": true, "katex_ok": true}
+{"omml_sha1": "679188315fe823065335cf5e0d40d446280847cf", "latex": "+2", "ok": true, "katex_ok": true}
+{"omml_sha1": "67a3239875cc29926784c42a0d8637b5c1728a2c", "latex": "\\left[CuCl_{2}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "67d6d58ac9afd98a15c9738e59f74d9c58b941db", "latex": "0.5MPa", "ok": true, "katex_ok": true}
+{"omml_sha1": "67f8f369a7f2489a9638163be9ff20aad5752afb", "latex": "BaCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6825047b592c8e30f605fb50e23d12113601b8cb", "latex": "c(OH^{−})=1×10^{−7}mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "683483f44ba5c52170802037f870efc5c68a0ceb", "latex": "(mol) a−x", "ok": true, "katex_ok": true}
+{"omml_sha1": "683da08eca8c3f83dea6a8a205f28c5d663ca699", "latex": "\\left[CuCl_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "685b9605f6efcda109a8cba4066c852b90f5fc68", "latex": "Ca^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "68f1deb2bcbf6838785efdf1723698d79a5855b6", "latex": "\\left(H-N=C=S\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "69075d00bc3493c71dba112d43828f63a5cc39e8", "latex": "FeS_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "692cfe119f284a332e811222f0207cc71c6de891", "latex": "a\\rightarrow b", "ok": true, "katex_ok": true}
+{"omml_sha1": "698337305101dfc8cea374b3b932284eb8245394", "latex": "H_{2}+O_{2}\\overset{}{=}H_{2}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "69916fb6ff7135c61dca0d9222e431ba1243042b", "latex": "c\\left(H^{+}\\right)=10^{−13}mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "69b22757a2bef43d7cf030aa24acac735b30e833", "latex": "\\frac{c_{平}(RCl_{2}^{2-})}{c_{0}(Cl^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6a1e629c163a357fad6849f9b44fc7e06d4857e0", "latex": "6", "ok": true, "katex_ok": true}
+{"omml_sha1": "6a512e9edf5fb5f363ef1b28f45751994519a303", "latex": "④", "ok": true, "katex_ok": true}
+{"omml_sha1": "6a78093268005a430c69ec63eb56f027b2e798b6", "latex": "(2)As_{2}S_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6ad513a516f4a7e2a85151d5d9d18a01847d8bea", "latex": "OH^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6ae9254a922f7439a00f8560985b2fa960919ad2", "latex": "65～70℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "6b26c54c0e52505de87daf4a4104649110f569a8", "latex": "K=", "ok": true, "katex_ok": true}
+{"omml_sha1": "6b911f8bd9d831d64a0818f46c075d6eb354405a", "latex": "K_{sp}(CuCl)=1.2×10^{-6}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6bcc13fdeae37a75d8b68d0fa3f814d98fa6ad41", "latex": "CaCl_{2}⋅6H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "6c1fc2cade6b343e439b54caf8dad6cb9a78aa31", "latex": "NaHSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6c4b354d39ff83440a4e27386248496a287efd9c", "latex": "3C_{4}H_{8}⇌4C_{3}H_{6}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6c557d86168b854f787b26f48d1987f1506219ca", "latex": "1s^{2}2s^{2}2p^{6}3s^{2}3p^{6}3d^{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6c841130d0e3d5ef784f8e42122ab8aa5152bba8", "latex": "S\\left(ML_{2}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "6c9348960894c6922ccd91581f98446056753bcc", "latex": "Zn(OH)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6ceffb8b756c33cb7058c152e66d598d32b4b6cb", "latex": "v(H_{2}O_{2})=\\frac{\\frac{0.2mol}{5L}}{60s}≈0.0067mol⋅L^{−1}⋅s^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6cffe4b967f737743b970a59dedaaeaa67b7b612", "latex": "\\left[Cu(en)_{2}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6d9332bb80bdb637f6fb7bf1acc37e5706674d7c", "latex": "sp^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6d9438af89b4b31ee83ab3a8edf1e2e539db9261", "latex": "Cu^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6dac7f287e25aec770359df4b881ae54be9956fb", "latex": "HNO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6dc3b9c18e6dc08726e899297a709faddb430874", "latex": "HOCH_{2}CH_{2}OH", "ok": true, "katex_ok": true}
+{"omml_sha1": "6dd5850a2ced988f9dfee929a449223cc7b2c2da", "latex": "H_{2}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6e1a539bfb19c02233c204435fd2453abd36cd8e", "latex": "4x", "ok": true, "katex_ok": true}
+{"omml_sha1": "6e29b60917b0679948df3d0bcf8b526047304995", "latex": "Q_{2}>0", "ok": true, "katex_ok": true}
+{"omml_sha1": "6e5a64de499fbece1436a7aa5caf6883c3549a8b", "latex": "Ce\\left(SO_{4}\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6e62bebf330f3dee777f933ec02e8885a04832b8", "latex": "=4[Cu(NH_{3})_{4}]^{2+}+", "ok": true, "katex_ok": true}
+{"omml_sha1": "6f1cdf719aca9af9e3c4319d3ce11674c04ffa62", "latex": "H_{3}O^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6f5aabd7118aa52a095b7da1547b9483a0378142", "latex": "Na\\left[CuCl_{2}\\right],c\\left\\{\\left[CuCl_{2}\\right]^{-}\\right\\}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6f66dccebb9431f7592b0deae9794f5d7208d692", "latex": "\\left(C_{5}H_{11}O_{5}COO\\right)_{2}Fe⋅2H_{2}O,M_{r}=482", "ok": true, "katex_ok": true}
+{"omml_sha1": "6f692cee7341d354a8a8e1cba44c60e3f82941a2", "latex": "NaHCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "6fc505d1a8650e954fbbc7d6d16fd0e515c46619", "latex": "HCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "707e4d26126a6e6db8b2147f33ab6a538bc4dc6e", "latex": "Mn^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "70aaa48463d77ed54a4a94bf2d750240ada2fa03", "latex": "\\frac{0.1mol}{2mol}=0.95g", "ok": true, "katex_ok": true}
+{"omml_sha1": "70f7c2497d286755bb2ea180f6b38282eaf6c614", "latex": "\\vec{n}", "ok": true, "katex_ok": true}
+{"omml_sha1": "70fbb691fcd5ae0b28faad658a21064969cf827a", "latex": "2KHCO_{3}\\overset{Δ}{=}K_{2}CO_{3}+CO_{2}\\uparrow +H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "71062adfeac8a19aa958bdf7f506692f2396c81d", "latex": "C_{4}H_{8}(g)\\overset{}{\\underset{}{⇌}}2C_{2}H_{4}(g)起始0变化0.05mol0.1mol平衡0.1mol", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "713e1330fa08f72a7de8862028b3a5d5a84bbcb3", "latex": "②K(s)+\\frac{1}{2}Cl_{2}(g)+\\frac{3}{2}O_{2}=KClO_{3}(s)+398kJ", "ok": true, "katex_ok": true}
+{"omml_sha1": "715843948624366f66db5bf3ca89126fca0c554a", "latex": "HCOOH\\begin{array}{c}\\overline{\\overline{催化剂}}\\\\\\end{array}CO_{2}\\uparrow +H_{2}\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "716d093c784de49c590b0e11b2aa7081a87ca946", "latex": "Na_{2}SO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "727004528d7ffcf9907898f2bb773622336e5ef2", "latex": "Na_{3}AsO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "727bee7d7b10add4e4c37a810b468aab454c842e", "latex": "NH_{3}−CaSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "72a56419e9a9b05ab1eafbbee4adccd1878525f1", "latex": "1", "ok": true, "katex_ok": true}
+{"omml_sha1": "72b025acd19c04cf3954f6bc5946ac2bd0204fe6", "latex": "\\overset{NaOH/H_{2}O}{\\underset{Δ}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "7309b24f4ed4ed66ff872e314b4e7555aaa507b3", "latex": "\\left[Cd\\left(CN\\right)_{2}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "731e9aab5fb9cc8f83478284966d63c691cc1051", "latex": "K_{a1}\\left(H_{2}SO_{3}\\right)=1.54×10^{-2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "73657cc3edaddd6285eececf584a85cc80b5398b", "latex": "N", "ok": true, "katex_ok": true}
+{"omml_sha1": "737ac0d8f2b07eeb2e9942ff42eb2122b6807e2e", "latex": "100℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "73984d190e5fdfa0ce292f5feeec0e271a2d47d0", "latex": "1", "ok": true, "katex_ok": true}
+{"omml_sha1": "739caccfc48ed5ce207fbc5f2e5e1c432d062d1f", "latex": "\\vec{高温}", "ok": true, "katex_ok": true}
+{"omml_sha1": "73a51352f5098f0167e223b433b637c3279bfc97", "latex": "Ag_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "73d073e9c2c372713d3f6669b3754ee1ab5fab91", "latex": "\\left[CuCl_{2}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "740a493504500fd5e4ac6b31403e34744cb1e9ee", "latex": "b\\rightarrow c", "ok": true, "katex_ok": true}
+{"omml_sha1": "74198abed1e829a6ece9d18a84bccc77c3a6bf47", "latex": "NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "74887da06dac6e9d4e5025d783d8da89b3ce6f19", "latex": "Rlnk=-\\frac{E_{a}}{T}+C", "ok": true, "katex_ok": true}
+{"omml_sha1": "74a5bc7ed9139c0a9a107c0ef1c3125f07c0a0a2", "latex": "\\frac{2-x}{2-x+2-x+x+3x}×100\\%=30\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "74b6734cb92e561ac107d66f712a8edb71d9e6bf", "latex": "(b)", "ok": true, "katex_ok": true}
+{"omml_sha1": "74dbf8ad5631776e1b748f02b6bae2dab3843076", "latex": "c．", "ok": true, "katex_ok": true}
+{"omml_sha1": "74e3c726ca90f5dd757f759f474a9de3b1847db5", "latex": "ΔH_{1}=-475kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "74e513a12e4a1e6bf35aa5d556c96d01c48e2223", "latex": "1molZn", "ok": true, "katex_ok": true}
+{"omml_sha1": "74e5fad9d25d3595a86e35c13ad22d54a153204b", "latex": "NaCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "74ed8372630b993d1bc9945e41ba247931ddf80c", "latex": "", "ok": true, "katex_ok": true}
+{"omml_sha1": "75212272e0ebccfedabe0d2127ceb798b25cff26", "latex": "\\overset{}{\\underset{}{⇌}}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "7542794f32230b33f53915aa814855cda866496b", "latex": "H^{+}+SO_{4}^{2-}+Ba^{2+}+OH^{-}=BaSO_{4}\\downarrow +H_{2}O", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "7545ceb6a0795b459ea0dd1fa269064251558c24", "latex": "CuCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "754b3dcd8d5201260f1115c4662771a1c5616eb7", "latex": "O_{2}>TeO_{2}>SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "75920b7c41aa42f38e17a09c9dd002c4ce167e24", "latex": "4mol⋅L^{−1}NaOH(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "7598100042ef97fff997a1e70d8301ace7298afd", "latex": "K^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "75af5aef73fe7a89c524c191b8912c4d3465233d", "latex": "c(H_{2}AsO_{3}^{−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "75b135724ebd7ef023c9f859e482c9cbb6fe470a", "latex": "24N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "75c843a9ddc0dc6475974d6c0235bc1ae0c57c5b", "latex": "⇌", "ok": true, "katex_ok": true}
+{"omml_sha1": "762d3cdd38b6fbe7d1f746d986d74fef622d4a37", "latex": "Ag^{+}+SCN^{-}=AgSCN\\downarrow", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "762e0d3e739594ce87fbf59049f0fec8c27afe25", "latex": "6", "ok": true, "katex_ok": true}
+{"omml_sha1": "76346869bc9bb68a0c587b263b20da624dd3f04d", "latex": "N_{2}H_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "766a2c149015d34ad496e849aa7452e7244ebd14", "latex": "KMnO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7676f2c00f87ef04748f8effde555ec3167fe666", "latex": "CS_{2}(g)", "ok": true, "katex_ok": true}
+{"omml_sha1": "768cd232affad7f89c8ebfc342f8ea700f09d948", "latex": "HPO_{4}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "76b81308d9828aa9057e39c76bd95b7fbf825dbf", "latex": "Si_{3}N_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "76fe330f249f91e8aa068376db8e47ce7a0b44fb", "latex": "400mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "777b00c979c6e91e0a9443b1492b71ae9eadf822", "latex": "6Zn+As_{2}O_{3}+12HCl=6ZnCl_{2}+2AsH_{3}\\uparrow +3H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "7781f888e84f0405866e68fe1069b02839f1785f", "latex": "\\frac{n(C_{2}H_{4})}{n(HCOO^{-})}=\\frac{24\\%×2}{8\\%×12}=\\frac{1}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "778b95bbc9abb945673cb80b119269c4ad213e6a", "latex": "PO_{4}^{3-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "77b22738777c419fe604b701a8a0695f513b8fee", "latex": "0.1000mol/LNH_{4}SCN", "ok": true, "katex_ok": true}
+{"omml_sha1": "77f85aeac9230c97ff3087959c2d8b61f95438c0", "latex": "NaH_{2}PO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7817206a8a83043f52776e7783df260bb9657254", "latex": "\\frac{(1.5-1.0)×10^{-4}mol⋅L^{-1}}{1min}=5×10^{-5}mol/(L⋅min)", "ok": true, "katex_ok": true}
+{"omml_sha1": "7838d9a85f11c320dae969b691754410a186c4f5", "latex": "\\frac{6+2-2×3}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "786b911c7da7a7632dfdb6885e0109d1e15f28b6", "latex": "3C_{4}H_{8}(g)\\overset{}{\\underset{}{⇌}}4C_{3}H_{6}(g)起始0变化0.75amola平衡a", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "787cc6b8ada57647eebabfd305711b8828f1e498", "latex": "7molO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "78a29c26b325dff41cf0d7a7ad8c241757b25658", "latex": "FeCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "78b853fdbd6472aa07ab7859ea6eb07fda64f0d8", "latex": "c\\left(NH_{3}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "7908452d6262c66ed06f6919c7d73320b22ca1e0", "latex": "CO_{2}<SiO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "79516f6df93d28ba47c87620aad681b6da62919d", "latex": "HCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "7962a13805fe66bf100e76e73e0aa5b272001972", "latex": "NH_{4}Cl", "ok": true, "katex_ok": true}
+{"omml_sha1": "7988858ebcc3193a05d7268b98e9f34da156cbf0", "latex": "I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "799b706b0cc7a39d9749813469612936f8585c94", "latex": "\\frac{1}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "79a1418e4b2ff9959199c1de2bb6812e4e7fe0ee", "latex": "\\left[Cu(en)_{2}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "79a6feabf28fb2c597e8c44bece05aa6ee046c1c", "latex": "2Br^{-}-2e^{-}=Br_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "79d080e2336c65c9c56e9904663598b0b438a821", "latex": "Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "79e9b0e14494522a33e0934760633de9ef20a251", "latex": "MgCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "79edeaf8899b256c9df246f3a2d15a0d5b646545", "latex": "c_{平}\\left(ML\\right)=c_{平}\\left(L\\right)=0.4c_{0}\\left(L\\right)=4.0×10^{-6}mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7a1ae84684a4b81dfedfe724f907a362e72c6428", "latex": "K=\\frac{1.5^{3}×0.5}{1.5×1.5}=0.75", "ok": true, "katex_ok": true}
+{"omml_sha1": "7a6eec650f234677f99462fb598850334b76d25d", "latex": "e．", "ok": true, "katex_ok": true}
+{"omml_sha1": "7adb13fd4da3ee32fe0bbb94b7883ec86cdd0371", "latex": "8mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "7b124f2bd548238d0a9c4801f66b59d31ee45f9b", "latex": "H\\left[CuCl_{2}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "7b534cd6d681865db19abd2629ff568d1707c843", "latex": "\\left[R^{+}\\right]>\\left[CH_{3}COO^{-}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "7b7fa15171b3b19adeab43d414c8081f08ff4d19", "latex": "2Fe+3Cl_{2}≜2FeCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7b993b7f41cdcdc2dee08aead6c733c76a71dce6", "latex": "CH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7b9bf8b1e7362f67e2b57d0bd66341e928efd54b", "latex": "\\pm \\frac{1}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7bf3b69b964168b23331c2c6409f17f65899575d", "latex": "+4", "ok": true, "katex_ok": true}
+{"omml_sha1": "7c261b30dca76e3c281372c484f93a9b68ace457", "latex": "Sn", "ok": true, "katex_ok": true}
+{"omml_sha1": "7c304ef724f6a22943cc06c8e28f9d09a920c3b2", "latex": "ρ g⋅cm^{-3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7cb6bfbe7c0f0537be463f49dd84f9712726f548", "latex": "HOCH_{2}CH_{2}CHBrCH_{2}OH", "ok": true, "katex_ok": true}
+{"omml_sha1": "7cbd37b1d25170f5e1454fd370b9c91f9ad04444", "latex": "(3)M", "ok": true, "katex_ok": true}
+{"omml_sha1": "7d2453a116e969bf3e13a32920f8556c998e6430", "latex": "α-GeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7d873cdd9a3e3c91d4f12a589a028a14a5f7f7d0", "latex": "⑤", "ok": true, "katex_ok": true}
+{"omml_sha1": "7daebbe83c33622782c77d55b6780e52fcac9c6e", "latex": "\\overset{}{\\underset{}{⇌}}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "7dda78b4ee7fa4b04198729aca958ddde5e2bb51", "latex": "\\frac{68×10^{30}}{a^{3}⋅N_{A}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7df204fdefa663cb5e4d4f3e3db9832302b4adc8", "latex": "c\\left(OH^{-}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "7e0f23131f176d3f407b96f57c301b3bf597ca44", "latex": "6molH_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7e222c317dc0cbc725842fd7813c58a11fba73a0", "latex": "NO_{3}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7e257b29562a23df97e775dbc96f5013944f4c69", "latex": "S\\left(ML_{2}\\right)+S\\left(ML\\right)+S\\left(L\\right)=1", "ok": true, "katex_ok": true}
+{"omml_sha1": "7e74e18977e88889b0132290ffe1245b5008b697", "latex": "K_{a}\\left(HCN\\right)=10^{-10}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7e981547f023864f8d3d2a14c7f2c31d2425143c", "latex": "HCO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7ed9dc30e0457f4a9df92e78f6e0a983ad89a3fc", "latex": "H_{2}O(l)=H_{2}O(g) ΔH_{3}=+44kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7ee8b50e4f87320ed8e3bab9fa9e85c87f1b73e5", "latex": "sp^{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7f1fff25236aa26ba906c89ea18cf8cd53410e3d", "latex": "Fe_{3}O_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7f6dd4c41c6b0d053d59d100013bae95010339ec", "latex": "\\frac{c(H_{2}PO_{4}^{−})c(H^{+})}{c(H_{3}PO_{4})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7f878022d228ca3f20420a901507ac52aa48050b", "latex": "Na^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "7fb6ab7bcc7f92548fb7bb03c653b93943b5decc", "latex": "①", "ok": true, "katex_ok": true}
+{"omml_sha1": "7fd728048cacb64ddad739ea4bba621c70ba8132", "latex": "pH=2", "ok": true, "katex_ok": true}
+{"omml_sha1": "7ffd8c2fc87b8e2e735f0ebcd7b4e0d2931d8ac9", "latex": "0.01mol Fe_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "809c7f24ddce880f18f28ff314aabc7ac8413ed8", "latex": "n", "ok": true, "katex_ok": true}
+{"omml_sha1": "80a3185ee1ccb6f0d16ba64ed6b1f77cd56fde2f", "latex": "Ba(NO_{3})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "80d2207d3fd83f895e5894b4b2a3c17fa680ffdc", "latex": "Lv", "ok": true, "katex_ok": true}
+{"omml_sha1": "80e9938701b44953de1881abf910a4fa7f927a65", "latex": "Fe_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "80eba8a0a70fac80f178b0f4adfda0fb901afc81", "latex": "③K(s)+\\frac{1}{2}Cl_{2}(g)+2O_{2}=KClO_{4}(s)+433kJ", "ok": true, "katex_ok": true}
+{"omml_sha1": "8119ae8181b22b9c748d1c8956215d66d58b6f5a", "latex": "H_{2}(g)", "ok": true, "katex_ok": true}
+{"omml_sha1": "812ab63ac7ab6cb6ee1a4a4774fe548487142b46", "latex": "I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "812af3c4acb680af4720c989daa3777038a80866", "latex": "1s^{2}2s^{2}2p^{6}3s^{2}3p^{6}4s^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8162eebe7d535370ad49514d145072f66bdb2c2f", "latex": "E", "ok": true, "katex_ok": true}
+{"omml_sha1": "8183e4e70cc338a362d868fb08a23fe5cf44643b", "latex": "pH", "ok": true, "katex_ok": true}
+{"omml_sha1": "81a81c4f49fe171e4b3ea15704d0a9352b6d3a97", "latex": "\\frac{FE\\%(C_{2}H_{4})}{FE\\%(HCOO^{-})}=\\frac{24\\%}{8\\%}", "ok": true, "katex_ok": true}
+{"omml_sha1": "81d3d6527925d4cf7ca2f1126a36c887cbb32f9d", "latex": "Al_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "81d8efff4834b582e17391755c72f7109299a86c", "latex": "CuR^{+}+R^{-}⇌CuR_{2},CuR_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "81e44e604d1a1e5c34df6e32767390304719d87e", "latex": "0.1MPa", "ok": true, "katex_ok": true}
+{"omml_sha1": "82359a1b5c8d00fac210afd7701040f796429b22", "latex": "CuMn_{2}O_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "823746cb591181af881b6683de552886c05f8990", "latex": "HO_{2}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "824ac3133e71b0b444476a9e47f89dee702266ad", "latex": "CN^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8254bb4d5a71ef0f82e2068f62b165dfddd3674b", "latex": "\\frac{c(Na^{+})-c(HCN)}{c(HCN)c(OH^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "82cb7aca1145780545f283441ec4110b3e2bbe1b", "latex": "\\overset{CH_{3}MgBr/乙醚}{\\underset{H_{3}O^{+}}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "82e947f43872e3c89d21a7a397bd9d4660a41589", "latex": "FE\\%=\\frac{Q_{X}\\left(生成还原产物X所需要的电量\\right)}{Q_{总}\\left(电解过程中通过的总电量\\right)}×100\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "832612f0ffc8537421fd4d1c0992d9f344a8a9c3", "latex": "OH^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8333e8543c644602a97fda76f8e18088d7cfafa5", "latex": "Na_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "838e40966cbeda48acec98f8110a915d71b5ee33", "latex": "\\left[Cu\\left(H_{2}O\\right)_{4}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "83b0abbdacf2286b0053ca9da817b865877ae87f", "latex": "\\frac{K_{a1}\\left(H_{2}SO_{3}\\right)}{c\\left(H^{+}\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "83e67f67d918bf33a5b53d834519aa56c5a9752e", "latex": "K_{sp}(CdCO_{3})=5.2×10^{−12}", "ok": true, "katex_ok": true}
+{"omml_sha1": "83ffe43b48b632a05c184384c9beb18d9530b500", "latex": "\\left[n\\left(HNO_{3}\\right):n\\left(HCl\\right)=1:3\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "8414db7d49369146838263832eacc06eab0cbc2a", "latex": "mL⋅g^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8416086297bb465ca55d6977e0f50e1bb4b0e3ba", "latex": "Cl_{2}+2KI=2KCl+I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8434dccb59a334e4774393e09918d52b0097a2b1", "latex": "CO", "ok": true, "katex_ok": true}
+{"omml_sha1": "8489b9cba80dbd2331d4adf1a8c187252d3460d5", "latex": "\\left[Co\\left(NH_{3}\\right)_{5}H_{2}O\\right]Cl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "84bceb85c46fa1b630e30ba5609f0b9e7394081a", "latex": "\\frac{c\\left\\{\\left[Cu\\left(H_{2}O\\right)_{4}\\right]^{2+}\\right\\}}{c\\left\\{\\left[CuCl_{4}\\right]^{2-}\\right\\}}=\\frac{1}{K_{Ⅲ}⋅c^{4}\\left(Cl^{-}\\right)},c\\left(Cl^{-}\\right )", "ok": true, "katex_ok": true}
+{"omml_sha1": "84dd104b0331857231b482c8b4e13c8088e2a5e7", "latex": "<（2分）", "ok": true, "katex_ok": true}
+{"omml_sha1": "850f41b4547f5c3c88cc0a8db9b01431417b3fdf", "latex": "_{y}^{n−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "853550256c1d18bf0dce8af2ffdcf6a703091923", "latex": " ^{18}Mg", "ok": true, "katex_ok": true}
+{"omml_sha1": "854cf6c2e948153b62ec619b6a84dc1b8dc6ce69", "latex": "\\frac{1g}{12.0g⋅cm^{-3}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8553f9bdf047d9a0d0592b7e070ee8e84bcb3544", "latex": "kJ", "ok": true, "katex_ok": true}
+{"omml_sha1": "85a7fd52179118bb44046227696bc4dfe4fd402e", "latex": "Ag\\left(NH_{3}\\right)_{2}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "85b74d15125de0c8ee1e0c6cc113521e19a98c52", "latex": "H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "85c7f250f44dbd9c120070616c4eeb859cf0a4db", "latex": "H_{2}SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "85e8ba43608a25132e54761fcb3d30181f92cb43", "latex": "H>Si", "ok": true, "katex_ok": true}
+{"omml_sha1": "8642bd39a4777f908eab36b56aed9ec7f976db2c", "latex": "Rlnk=-\\frac{E_{a}}{T}+C", "ok": true, "katex_ok": true}
+{"omml_sha1": "86aa282c8df81293896a3b530085ddefba701f36", "latex": "1s^{2}2s^{2}2p^{6}3s^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "86b47b98bcf5a977c11fbca6d1a5aab2dacc8dc0", "latex": "\\frac{0.0105mol×132g/mol}{1.5g}×100\\%=92.4\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "86bd933d772697c4a47c772e981d05501e1f5108", "latex": "A.a", "ok": true, "katex_ok": true}
+{"omml_sha1": "86e21b3f3d5b83d7a8c244f7f86de759ebc0c261", "latex": "FeCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "86e9ab9599119423347b5cbf14f95e895d41035c", "latex": "\\begin{matrix}&Cu^{2+}&+&R^{-}&⇌&CuR^{+}\\\\起始\\left(mol⋅L^{-1}\\right)&0.060&&0.10&&0\\\\转化\\left(mol⋅L^{-1}\\right)&x&&x&&x\\\\平衡\\left(mol⋅L^{-1}\\right)&0.060-x&&0.1-x&&x\\end{matrix}", "ok": true, "katex_ok": true}
+{"omml_sha1": "86f307689ef4440cc512b207fa0d2081291ec25c", "latex": "0.1N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "87439e2c4601d61d4c64a95a5992bcc6147483d9", "latex": "NaR", "ok": true, "katex_ok": true}
+{"omml_sha1": "878a59e93ac91cbced9191c347685a438912eccc", "latex": "\\frac{K_{a2}\\left(H_{2}SO_{3}\\right)}{c\\left(H^{+}\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "87a20b196c8a1fe346d9947bbea6aa0e8f978fb9", "latex": "CO_{2}<SiO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "87ac7576b357b591fcd9171579fe5d38cae8c2c2", "latex": "\\left[Co\\left(NH_{3}\\right)_{4}Cl_{2}\\right]Cl", "ok": true, "katex_ok": true}
+{"omml_sha1": "88019eb0228ba9f0157eef0e021cd19593760e18", "latex": "c\\left\\{\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}\\right\\}>c\\left\\{\\left[Cd\\left(CN\\right)_{3}\\right]^{-}\\right\\}>c\\left\\{\\left[Cd\\left(CN\\right)_{2}\\right]\\right\\}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8820b8cf4c0cbb7fea25e03da665c61a246983db", "latex": "PCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "88350898b62b35869332fd8927165f6e4c11f0f2", "latex": "NH_{4}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "883d4405bc0d4979699154350d87486bd527de02", "latex": "AlO_{2}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "88852a3e23a68563fb2972caf972f7f2031fe051", "latex": "K=\\frac{c^{2}\\left(H^{+}\\right)}{c\\left(H_{2}C_{2}O_{4}\\right)c\\left(Co^{2+}\\right)}=\\frac{c^{2}\\left(H^{+}\\right)c\\left(C_{2}O_{4}^{2-}\\right)}{c\\left(H_{2}C_{2}O_{4}\\right)c\\left(Co^{2+}\\right)c\\left(C_{2}O_{4}^{2-}\\right)}=\\frac{K_{a1}×K_{a2}}{K_{sp}}=\\frac{5.6×10^{-2}×1.5×10^{-4}}{10^{-8.48}}=8.4×10^{2.48}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8893386f9e324689557f42e8f40f3d8ae713b151", "latex": "BF_{4}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "88ac7047a8899a4aca64c0a55af563d16fd51319", "latex": "NaOH(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "88b3c74bbedbf4b84b1f4c33b3e022cf48104ea7", "latex": ".", "ok": true, "katex_ok": true}
+{"omml_sha1": "892b23dcddb30d8742870b892d6e0bde7aaf28f1", "latex": "Cl_{2}+2Br^{−}=Br_{2}+2Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8938a0c09054b9a8eec974886f5801cdb6c80a2a", "latex": "Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "894addad1300ba7ddafe1b067f5b497e3e3dbde8", "latex": "FeSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8979dc4bbbf5dfd1cf704b22ede356dc1ebae917", "latex": "0.1mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "8980859cd119bae6cdfc7fe3c3345b31a9a4c946", "latex": "ΔH_{2}=+484kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "89c9bf4632561259d57dfa6dbfb1e99cc949954a", "latex": "\\left[Pb\\left(NH_{3}\\right)_{2}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8a4081a52e8dc9f0516fe48c630c2e0f3ad8bcab", "latex": "Cl_{2}+2I^{−}=I_{2}+2Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8a76def13cfb1c520560be4aa570f2e6d47e3de5", "latex": "8LiCoO_{2}+S_{2}O_{3}^{2-}+22H^{+}=8Li^{+}+8Co^{2+}+2SO_{4}^{2-}+11H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "8a7fa457de2f3aea4e03c590f507b213f46f223d", "latex": "Na_{2}CO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8aa71b2421a231fca1c6da10b520c934fedfd5df", "latex": "1.6 mol P\\left(s\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "8af5eb84a9f2f1df708bbbe255bd03505faf7bd2", "latex": "CaCl₂", "ok": true, "katex_ok": true}
+{"omml_sha1": "8b156974c6842795c9bb447348fc0ca0847a80cf", "latex": "MgO", "ok": true, "katex_ok": true}
+{"omml_sha1": "8b6a9624a6d2ca5bfd4c9969fc7be4c639e0cd9d", "latex": "Cu−2e^{−}=Cu^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8baaa1ade38f1a143c589906cb721cadb11b1750", "latex": "90.6\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "8c5268ac96a115f642eae0f13bb7284fa271c8a3", "latex": "25.00mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "8c64c9388e4ba3e21e397a014762c304f5ebff18", "latex": "CuS", "ok": true, "katex_ok": true}
+{"omml_sha1": "8c6843f29355d65e4d095c3f0f567cb94d6fa127", "latex": "2CO_{2}+3OH^{−}=CO_{3}^{2−}+HCO_{3}^{−}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "8ca4bdc881707a24a1b365484e4718bac568a395", "latex": "c(CN^{-})", "ok": true, "katex_ok": true}
+{"omml_sha1": "8cd4fd6b6b317519556f6a699488c33ed74c7c98", "latex": "c\\{\\left[Cd\\left(CN\\right)_{3}\\right]^{-}\\}=c\\{\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}\\}=10c\\{\\left[Cd\\left(CN\\right)_{2}\\right]\\}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8cd9ac3be8eafac02275d8c63d06c2d728fb0081", "latex": "C−C<Si−Si", "ok": true, "katex_ok": true}
+{"omml_sha1": "8d0bde44658800932bed05feea383feb44d7f58a", "latex": "3", "ok": true, "katex_ok": true}
+{"omml_sha1": "8d174d3b837867245f3b0a900ce0ef4c4c7b8b8d", "latex": "K_{sp}(CuS)=6.4×10^{-36}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8d2f2846916778bf85ae402381951068367f0d67", "latex": "(65g-2×23g)×", "ok": true, "katex_ok": true}
+{"omml_sha1": "8d3c1f01a02655a7b16194628971bacfbb767a33", "latex": "\\left[FeR_{3}\\right]^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8d69c5bb9e2daeac1710c8af94b525cd1ded2181", "latex": "800℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "8d6cc565e0d7b6629c7b158a458858863a5259b1", "latex": "lg2=0.3", "ok": true, "katex_ok": true}
+{"omml_sha1": "8dbe08e779f5dccf81f7a53cca5c3128642d1efb", "latex": "SO_{3}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8e58d5efa264c5f751de52eeef30d553d0d8a038", "latex": "\\frac{2.56}{a^{2}b×6.02}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8e868611718b8651c2ac8eb7bf2e49c08c2d5f93", "latex": "+2\\left[FeR_{3}\\right]^{3+}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "8ea1f2ebb78eab9b87b25f6fc23e979434bbb48f", "latex": "Na_{2}GeO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8ec7d91034e2eebf899ddcabd5badfa96223b1af", "latex": "<0.01", "ok": true, "katex_ok": true}
+{"omml_sha1": "8ecb8b4740ac1b796ef4aee8c37fb2ded697397b", "latex": "Cd^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8f2ca93599ea3afb7ec72addeb724c9f326b0c4c", "latex": "v=kc\\left(CO\\right)⋅c^{3}\\left(H_{2}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "8f2dbe37ccdae2e6f1154cc1dc5d6c8ac5fb5e97", "latex": "Zn+40H^{-}-2e^{-}=\\left[Zn(OH)_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "8f3a31ecb859b6933ba3f92c373e86b862b7ea75", "latex": "SO_{2}+H_{2}O+ClO^{−}=HSO_{3}^{−}+HClO", "ok": true, "katex_ok": true}
+{"omml_sha1": "8f76e8bab5ea0f3ac2c22bac67e22cfa8e0d7246", "latex": "Ag_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "8f89fef237ebc4ed5df7e4810c74784f03d55a80", "latex": "IIA", "ok": true, "katex_ok": true}
+{"omml_sha1": "8fb524b69fe4b537e512d930fc71ef88edd8045b", "latex": "Br\\left(4s^{2}4p^{5}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "8ff95f8ff05b94ab59c4e916b08a0cedfe9aeb99", "latex": "3+\\frac{1}{2}(4+2-2×3)=3", "ok": true, "katex_ok": true}
+{"omml_sha1": "9040815e9507df11b079501a995f6a62b478d385", "latex": "\\frac{c_{0}\\left(Cu^{2+}\\right)}{c_{0}\\left(R^{-}\\right)}=0.30", "ok": true, "katex_ok": true}
+{"omml_sha1": "904ac8b7499ca069c86f38a565d7521c595f99f7", "latex": "C−C", "ok": true, "katex_ok": true}
+{"omml_sha1": "905a70aae164f487537b531defc1b651282e8b81", "latex": "D", "ok": true, "katex_ok": true}
+{"omml_sha1": "9077fd5a3bc182be48af9b2800712e091b030c8e", "latex": "0.0067mol⋅L^{−1}⋅s^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "908d66eea1f772b67bda352e5e302c5b7112a6a1", "latex": "CaGeO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "90e52ecac787101eb2c94721787a84e48053375e", "latex": "1s^{2}2s^{2}2p^{6}3s^{2}3p^{6}3d^{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "91009e86cbf8407814ffb92af6ca599ac689d1bd", "latex": "CH_{3}CH_{2}CH=CHCH_{2}CH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "91298b78df9f128a60a551d102548c3779288c02", "latex": "\\frac{1.02×10^{-7}}{1×10^{-7}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "914902a5ffb5339e69f1801d1896e6ac0c7e90c0", "latex": "SO_{4}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9156df83195055f7742c98ec52f4b8c87df2f303", "latex": "_{4}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "91611d885ca2b087c462c85f24534d21ef692a4b", "latex": "+\\frac{1}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9198ffd014df364a9a607fd173ff766715c01f98", "latex": "0.8mol×2=1.6mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "919c12a5f27b2edcdf84f5c84fc07952b79edb46", "latex": "0.8mol×22.4L/mol=17.92L", "ok": true, "katex_ok": true}
+{"omml_sha1": "91a3087b544872785218c9c642e28d7cb45388e8", "latex": "0.1mol⋅L^{−1}NaHCO_{3}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "91bd1eb3a5873640d1123f1e723360c73d4216ac", "latex": "K_{sp}\\left[Ge(OH)_{4}\\right]=4×10^{-46}", "ok": true, "katex_ok": true}
+{"omml_sha1": "91bd8bc54c055570be02e56a40fef31a2f752e9c", "latex": "=\\frac{n\\left(转化为CH_{3}OH的CO_{2}\\right)}{n\\left(消耗的CO_{2}\\right)}×100\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "9274c35ed3bfcb2fd0c9d2762181685a72a7595f", "latex": "CH_{3}OH", "ok": true, "katex_ok": true}
+{"omml_sha1": "9294fb163efb47e546bd309ea8252a36c04e46be", "latex": "\\frac{c(SO_{3}^{2-})}{c(HSO_{3}^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9295887d27f05c00e38440e423a2cb6f130f80d1", "latex": "\\left[Cu\\left(H_{2}O\\right)_{4}\\right]^{2+}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "92a381d0988dc1d8ce96f6cb1b750aa677366bda", "latex": "2HSO_{3}^{-}+O_{2}=2SO_{4}^{2-}+2H^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "92b265e98473f18a02f0d2510cf41866a227036f", "latex": "NO_{3}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "92fe744c55ebe599f0c07c2f72f08b1b842179f8", "latex": "S(ML)", "ok": true, "katex_ok": true}
+{"omml_sha1": "932dc3ed2ebae09d2e7754912d24cd4dad02826e", "latex": "N−H", "ok": true, "katex_ok": true}
+{"omml_sha1": "933ddae3ec76826778d7210976ff7f824a0bda2d", "latex": "−55℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "93616278061582f64134321a6bada156c7706451", "latex": "0.0125mol×2−0.02L×0.2mol=0.021mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "93bb853071bfb792d253c9188ffcf3fbd97da356", "latex": "AgNO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "93c7273f3d3eb79e944856e92cbbb79c7cf3e6d3", "latex": "N>H", "ok": true, "katex_ok": true}
+{"omml_sha1": "93e21a1938f0207a56bf1c649ab2b182efb4802a", "latex": "+\\left[CuCl_{2}\\right]^{-}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "93facfff0b9a9cbec16497f27e6c65502ce30346", "latex": "NaClO", "ok": true, "katex_ok": true}
+{"omml_sha1": "94c322ac08759836e089934805228d443aba66f7", "latex": "4 mol M\\left(g\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "95086a5ba39b25692f0420611f7146755578e716", "latex": "10mL0.1mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "952c8011d8164fd3676bb6b4d2f4b8daf4d7af25", "latex": "D\\rightarrow PCL", "ok": true, "katex_ok": true}
+{"omml_sha1": "95c89981e8292d1c8a0005fbdd273d1ab0601104", "latex": "PCl_{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "95d6710f298a923f903e3ca711e3f4d8ca2b38ff", "latex": "AlCl_{4}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "96046b30a812fbaf4e9fff4afe28ec339c7bec77", "latex": "sp^{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "961cb5e73cdc13009cf247d740f3d66e5ac65942", "latex": "MnO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9626d155829ad18dd2822068bcc18c3185472b65", "latex": "\\frac{c_{0}\\left(Cu^{2+}\\right)}{c_{0}\\left(R^{-}\\right)}=0.30", "ok": true, "katex_ok": true}
+{"omml_sha1": "966364961bdd6921cebb814c07ead2f4c266a45a", "latex": "\\overset{}{\\rightarrow }", "ok": true, "katex_ok": true}
+{"omml_sha1": "96769716b2afe103366c7b78a70593f99264971c", "latex": "C_{13}H_{16}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "967b249aeb29792cf5bf8477a4f75894d7ad2f02", "latex": "CO\\left(g\\right)+2H_{2}\\left(g\\right)=CH_{3}OH\\left(g\\right)   ΔH_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9690ef83de5f43001053cd6a080f14bfb5221442", "latex": "C_{13}H_{18}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "96b68c7d321e7d24368ebb4c6ee2cc989fc4d82f", "latex": "Sc\\left(3d^{1}4s^{2}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "96e95624fed5ae4b0f22f75b7890a44b77ac3a72", "latex": "_{2}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "970a2bf02970df05987b2fe86377381d341bf7ad", "latex": "VSEPR", "ok": true, "katex_ok": true}
+{"omml_sha1": "970bc99576ed7cb60a28feba62fa8eb459bf9a96", "latex": "(CH_{3})_{2}C=C(CH_{3})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "973942635a574e32622bb522613a3afd1dc8c8a4", "latex": "3mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "97e5f332bca694b6a245d319b7aa22ea8f8acc8f", "latex": "Ca(OH)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "97ef7562f0634a3e0dc3f2501ff8f7d9903fd7d2", "latex": "NH_{4}SCN+AgNO_{3}=AgSCN\\downarrow +NH_{4}NO_{3}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "985a6f6c5d279427a0957ef416aedb034e8f5a74", "latex": "C=O<C−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "9882531e7c3bd077c90e1b24e271bc810841610f", "latex": "\\overset{反应试剂}{\\underset{反应条件}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "9894263c685d6ec77bda9886ef0aeac1ebac9688", "latex": "Fe(OH)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "98ce0e5d313d99ddbf6d59e0289ff75c5d462007", "latex": "H_{2}S+Cu^{2+}=CuS\\downarrow +2H^{+}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "98d012ad27ce5b23577d7448f3556d4d87800417", "latex": "[Cu(EDTA)]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "98e80979fc0996ca8630880504ef16543b12ae90", "latex": "\\left[Cd\\left(CN\\right)_{3}\\right]^{-}+CN^{-}=\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9922985926ec79ec2ad63e57def908182bedf40f", "latex": "3Pd+12HCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "994d935a77b89ae4118a13e47265e026189f9f0f", "latex": "L_{1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9966e58b9e8be1ac0556785cf3b2f1255a2fdd5d", "latex": "Zn^{2+}(aq)+4NH_{3}(aq)⇌\\left[Zn\\left(NH_{3}\\right)_{4}\\right]^{2+}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "99b0d136b742696656dcd61d1ee633fbc28091c8", "latex": "Na^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "99f286fc79f90899f52f4a4fcd13cca46eadd315", "latex": "\\overset{P_{2}O_{5}}{\\underset{NH_{3}⋅H_{2}O，CuSO_{4}}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "99f5923202f07721614d8c62fbe35ac8b31f63fd", "latex": "2x", "ok": true, "katex_ok": true}
+{"omml_sha1": "9a056f7f235a6c020ec1d9d83cb5e796ca2826e4", "latex": "NO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9a75ba58c3aca2944198309165efcb7fb48cec17", "latex": "Mn^{2+}+2NH_{3}⋅H_{2}O+H_{2}O_{2}=MnO_{2}\\downarrow +2NH_{4}^{+}+2H_{2}O", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "9a903234049fc34ebe6564d5d719aa64d1e94e52", "latex": "Al^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9a956e4f28811e094598be57ed73b94ca4ac17b8", "latex": "\\frac{4×64}{N_{A}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9a992c274cac6247305a793cebd56821b93471f7", "latex": "β-GeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9adbefdf876396b7c10d0bc643b16a7b4543e28b", "latex": "+1", "ok": true, "katex_ok": true}
+{"omml_sha1": "9ae79ff154548f5298c5915cf9fde05e59920e19", "latex": "+4", "ok": true, "katex_ok": true}
+{"omml_sha1": "9b1885d2dea4fe1c5c7be1a2b853266ebebb75f1", "latex": "(1)O", "ok": true, "katex_ok": true}
+{"omml_sha1": "9b216ac528a4df533654c8db9c7d91cb7cb0eb59", "latex": "\\overset{一定条件}{\\rightarrow }", "ok": true, "katex_ok": true}
+{"omml_sha1": "9b39ca207b9518b354f6895115694cf624c21fc2", "latex": "FeSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9b3a4726017b9ecf5c5211016643e2f06b7be02a", "latex": "15mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "9b3cfdfb83f18ee2511809d58efb1f91e76a25f7", "latex": "0.1mol H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9bb58d20221167f58d938149bee63ee90535a3d4", "latex": "−COOCH_{2}CH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9c0ccdde86ec8fea3e85f1ae4814e0cea5b8642b", "latex": "1\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "9c11c41476cd533e16247dfea358b48c86ee759c", "latex": "\\overset{Cu/O_{2}}{\\underset{Δ}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "9c353e10e228f496d763943a0954e77396d8d91c", "latex": "Ca\\left(ClO\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9c6f380a1d19bb648b9dca82ee00407fdb39545f", "latex": "FeBr_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9c878736ba001fcaf31acb03282745088b293119", "latex": "Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9ccdc032e20fa6bd9429cc6465afc5c6c1808ccf", "latex": "c(OH^{−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "9cfe3bde1fd46bd8a364d7dd52509d22dd20eafe", "latex": "PCl_{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9d0181040e8bb524d4d8624a48f0a59a46e7ff52", "latex": "O−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "9d01fea8add9199ebc5236f24965d81824f21ed3", "latex": "(2)B", "ok": true, "katex_ok": true}
+{"omml_sha1": "9d0e4f42cb1bb865ac27063908394a3b7c2ae4a7", "latex": "H", "ok": true, "katex_ok": true}
+{"omml_sha1": "9d21bdc71c11cc90c40a5b0a9fe19e87f0bbd5bd", "latex": "\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "9d2363a3461f1ab49ca4ac3a2d8d6fe10821345c", "latex": "N-N", "ok": true, "katex_ok": true}
+{"omml_sha1": "9d25edeff9b16b1e193c42264b25f21a9f3f9b80", "latex": "SO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9d4f8299651cf024c0a30cd4cef037a033d9767e", "latex": "CaCO_{3}⋅MgCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9db5d7ee10c2960798da1e63f6072dd1111c55c6", "latex": "SiO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9dc3c2acc63f3ed9441c1d26c1e544d846b700fe", "latex": "(2n-1)HCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "9dc5f28e7b7a083ce403ac281efdcc315fc2c3d9", "latex": "CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9ddd8a083801285abb0f0c296027129bb436512b", "latex": "\\left(NH_{4}\\right)_{2}SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9dfd38d23ef0460993cf1ddeba6dec86514529dd", "latex": "Fe(OH)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9e025652e2b1e552469b94b04f89d500ebe392dd", "latex": "(2)", "ok": true, "katex_ok": true}
+{"omml_sha1": "9e1fe49ddc51d5052feef5d5f97221799be17eb2", "latex": "\\left[Zn\\left(NH_{3}\\right)_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9e2ada803df8c19ffe160a5213b972ded50b5e35", "latex": "H_{3}AsO_{3}+OH^{−}=H_{2}AsO_{3}^{−}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "9e561bd2a8ba23a9e49b4fb9bcebc154cb43239f", "latex": "N", "ok": true, "katex_ok": true}
+{"omml_sha1": "9e5f3d9c22df42bcfc3aa5fe0db2ff6a2aa4678e", "latex": "\\left(NH_{4}\\right)_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "9e693a9e315e17175cdc39ccd8e3cadd6f9ece57", "latex": "I_{2}+AsO_{3}^{3−}+2OH^{−}⇌2I^{−}+AsO_{4}^{3−}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "9e95d7d625ed4a8fa500925774f8ef7893887be5", "latex": "PO_{4}^{3-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9ec42ecdf9babf3f77565555c84440985e6c5dbc", "latex": "N_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9efbb1e321ed87815a11415912bdbc152d7789ab", "latex": "Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9f320db977f098da4089f0380e7d1cb56629eb29", "latex": "115℃～125℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "9f51e443669b9f913e555d7eedae3d3e2f5f7515", "latex": "BaCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "9fa5e58af11535609ac37a039fcc4cb6abc8f2f1", "latex": "NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a00b2e355ef070169002bf6e790fb9736e77cebc", "latex": "K=\\frac{生成物平衡浓度幂次方乘积}{反应物平衡浓度幂次方乘积}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a00f6e78542615ca5c0d90b0057560f2b18fb1aa", "latex": "Ag\\left(NH_{3}\\right)_{2}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a05f1319eb2b9bfe6f6406fce1cc2d42ad7589e0", "latex": "\\overset{HCHO}{\\underset{碱}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "a062d3d1500f5fce49c3f56283b7170cb6ffb67f", "latex": "n(SO_{2})=(1−0.2x)mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "a065791acb3fb3febe4d17493e6217b946c6d26a", "latex": "CuCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "a09fedb8f18193ce36fb332e45860bad10c53498", "latex": "n(NH_{4}^{+})=n(NH_{3})=\\frac{0.448L}{22.4L/mol}=0.02mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "a0cfcf4be963ce633b338a71c5859a0f3cf5a76d", "latex": "3−", "ok": true, "katex_ok": true}
+{"omml_sha1": "a0f9166a3ac73ba3ab78614475052612d40eaeab", "latex": "20.00 mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "a109246b5838356d196cd868d2a383b6404a45d9", "latex": "v(H_{2}O_{2})=", "ok": true, "katex_ok": true}
+{"omml_sha1": "a126cb89914e38687bbb71cb2796163c596af3dd", "latex": "0.1mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "a12a99c753bc60b89288d916364112bde217ccf4", "latex": "PCl_{5}\\left(g\\right)⇌PCl_{3}\\left(g\\right)+Cl_{2}\\left(g\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "a14764617e5bfa6878179a974beb9ac36b575534", "latex": "\\overset{反应试剂}{\\underset{反应条件}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "a1c9b6cf074e8e074981e6650bd823a73da2da4b", "latex": "\\frac{1}{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a213f90f647a8fe2c34e4a01914e79f0298efa42", "latex": "Si<N", "ok": true, "katex_ok": true}
+{"omml_sha1": "a240e82a12a131f8c7d5c65989284924239ffb8c", "latex": "NH_{4}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a24e13115fd2970035197b8297fb0d1ceac08c87", "latex": "NH_{3}⋅H_{2}O+H^{+}+Cl=NH_{4}Cl+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "a2629fdb97de378beca2e429656dc26035401a6c", "latex": "\\frac{△n}{Vt}=\\frac{0.6mol}{10×5min}=0.012mol/(L·min)", "ok": true, "katex_ok": true}
+{"omml_sha1": "a30602b2c4bf71d0d418aaaa91dfd678c0d39450", "latex": "x=6", "ok": true, "katex_ok": true}
+{"omml_sha1": "a37793ff4776546b20aee13191d7a9aca2ad7757", "latex": "CH_{4}>SiH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a3939c58a2c05fd83e4c34b48ae2547476d285f7", "latex": "1mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a3a054e3c5fbf4fe063ed0287ba83bbb462d344d", "latex": "H^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a3e51ddc9c891e6ccd2df90800d6b6ca1b983eed", "latex": "FeCl_{3}⋅6H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "a3f38ce4db3e1caeb0e68e0aa67c38c376d48df5", "latex": "SiO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a443416fdc2beb0c4940a4617e6562669d91cf8e", "latex": "c(CN^{-})=10^{-3.6}mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "a44f2323381176fb2b41ab6a8d0df8820546f57b", "latex": "x=0.5mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "a47c1913e3cc09233c6fdddb60f1d86d564165af", "latex": "CH_{4}(g)+2H_{2}S(g)⇌CS_{2}(g)+4H_{2}(g)", "ok": true, "katex_ok": true}
+{"omml_sha1": "a493641f6b480da70384569a818321d20f208785", "latex": "0\\~1 min", "ok": true, "katex_ok": true}
+{"omml_sha1": "a4969baf4924635c1af17b8794239b96c3b5fd7f", "latex": "0.5000mol/LKIO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a4f5134e7dc6082df60449b06ca2472e047fd7e2", "latex": "SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a52dee530d6508fab383fed92804d0ba18bcd401", "latex": "Mg\\rightarrow MgCl_{2}\\rightarrow Mg(OH)_{2}\\rightarrow MgSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a53614e66be7cbc95be6eaba1aacc69ecfdd885d", "latex": "\\overset{¯}{n}=\\frac{c(ML)+2c(ML_{2})+3c(ML_{3})+⋅⋅⋅+nc(ML_{n})}{c(M)+c(ML)+c(ML_{2})+c(ML_{3})+⋅⋅⋅+c(MN_{n})}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "a5396d6cfe74c4b573ce17047592c5fb8d600c8c", "latex": "O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a555d9536f8ce32d135554c5f11e8cbc41e9fa5b", "latex": "ΔH_{2}<0", "ok": true, "katex_ok": true}
+{"omml_sha1": "a59767c517b1a8bf6eeb092c18265494054b0657", "latex": "Ba^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a59addf322a4bdb842ae0eb8ee4131bab286b9ab", "latex": "pH=1", "ok": true, "katex_ok": true}
+{"omml_sha1": "a5b9b310ced60028b5f430536d9fd6e9f72d24a1", "latex": "\\overset{NaOH溶液}{\\underset{Δ}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "a5d83f403bf2d77dac8578859af612574bbf8a37", "latex": "》", "ok": true, "katex_ok": true}
+{"omml_sha1": "a60a3498c2a2912896585a7ee8e1958a8dc0a448", "latex": "K_{b}(NH_{3}⋅H_{2}O)=1.8×10^{−5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a612e4d1ac0f12916c02192aaa986cac931ab1db", "latex": "BrCH_{2}CH_{2}CH_{2}CHO", "ok": true, "katex_ok": true}
+{"omml_sha1": "a621c3fe132698c2bc5e549363408e4ef223b4b7", "latex": "Cr^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a6422d1bb7f4ae06c9f7775f5a5e7d5ba954d847", "latex": "d．", "ok": true, "katex_ok": true}
+{"omml_sha1": "a69c0e3962178778c38b5442a046fce65e7c131d", "latex": "8g", "ok": true, "katex_ok": true}
+{"omml_sha1": "a6cfebe5c48e9840946d5afd1509c6ddc5089b89", "latex": "Fe_{2}(SO_{4})_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a6ed5d08f88901fe4019d3abc27766c760f0feba", "latex": "SCN^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a6ee771e26027c61f5c746da3b371783983d4f6d", "latex": "lgK_{4}=3.6", "ok": true, "katex_ok": true}
+{"omml_sha1": "a710269858103a383c08747375e21a1271853d01", "latex": "\\left(H_{3}PO_{2}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "a713bddd899760d103656a617d1ffdbf15b2c680", "latex": "\\left[Cd\\left(CN\\right)_{3}\\right]^{-}+CN^{-}=\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a7a9829e47aa658b0c51fef128d6b935d7507715", "latex": "A.", "ok": true, "katex_ok": true}
+{"omml_sha1": "a8510e5841b5869944656b5f5fe8bca1b7552d64", "latex": "\\frac{c_{平}(Cl^{-})}{c_{0}(Cl^{-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a87ab2923a653d85010aeeab3d7dffdd7109233a", "latex": "GeO_{3}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a8add6b28a62f27055a0e9e4c4001b0d812cfd98", "latex": "\\left[Cd\\left(CN\\right)_{3}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a8c63ec00c3b1ec592fa05e1d1eaa5093c8926d4", "latex": "V_{1}<V_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a93e8fc30f7cd37d88b0e1ebb5fc32fd1217705e", "latex": "HCO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a94e4ef16d38311667b72708ca03b5f53ea7e2dd", "latex": "\\left[Pd\\left(NH_{3}\\right)_{4}\\right]Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a94edd139144fb083bb262b4f56ad21b4cd979c7", "latex": "HCO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a95c5801c6af2a25b6d9718f39982efecf1f75cb", "latex": "_{7}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "a9cf59382d5543b7ae35f784bf16eeb95ef35495", "latex": "I_{2}～2Na_{2}S_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "aa1b09bdf5686b7a4dffa22238b09ddac9ce4012", "latex": "K_{a}=1.6×10^{-5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "aa3ba5fc5ee90a1760ca038a87aed304f08e833b", "latex": "Cd^{2+}+CN^{-}=\\left[Cd\\left(CN\\right)\\right]^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "aa4993a0f806e3380bcacc2d42b246aff32b2147", "latex": "Na_{2}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "aa8a43f7db1d0371c972991b886a0c0a9e06d557", "latex": "=\\frac{1 mol 储氢材料理论储氢最大质量}{1 mol 储氢材料质量}", "ok": true, "katex_ok": true}
+{"omml_sha1": "aaa40ae66d373643f8b59fdbcf471e14212374bf", "latex": "Na_{0.6-x}MnO_{2}+xNa^{+}+xe^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab35897bf49730031fe037ed98943d882ce8727e", "latex": "v_{正}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab4ee453fc7f15dd13a89928657db98ccebf6466", "latex": "2s^{2}2p^{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab70d70bb9608ca41f21428005dfa133b41720fd", "latex": "Δ", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab7b457a84834cf8c4a7e4ee2a013f04b85c5e64", "latex": "+488.5kJ⋅mol^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab7da8fe985b40b4388462724b4d70b9a3722f7c", "latex": "FE\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab83d7ddc8ca83ac068d33fe8cb25e025a98a5a0", "latex": "NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab8cacd0c33a76d5f49d8a372975c87d08f465e6", "latex": "NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "ab92ced7615859b3876309f4643844b8334eb0f2", "latex": "I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "aba91fd36e21084d7de447664069a587d876813e", "latex": "\\overset{H^{+}/H_{2}O}{\\underset{}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "abf9eac61adc9f915c94e664478f875f13f23268", "latex": "2×\\frac{1}{2}=1", "ok": true, "katex_ok": true}
+{"omml_sha1": "ac1bbfc498f22118a302aa06c035b76214539876", "latex": "K", "ok": true, "katex_ok": true}
+{"omml_sha1": "ac8cc67370ccb49f4e7809f8861bdc0dca404675", "latex": "(C_{6}H_{5}CH_{2}Cl)", "ok": true, "katex_ok": true}
+{"omml_sha1": "ac9eae8c5959ff3bb3ca0475f992e57b6386c078", "latex": "NH_{4}^{+}+2Fe_{2}O_{3}+8SO_{4}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "acb993a43540e60f2b09e88827b7d3f8d897b596", "latex": "c(Na^{+})=2c(CO_{3}^{2−})+c(HCO_{3}^{−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "ad6958c01da365de6be316bf27955a36f9524b4a", "latex": "t_{III}>t_{II}>t_{I}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ad7a221b60a4b793ea99da4ba293188eaf20bcf9", "latex": "3", "ok": true, "katex_ok": true}
+{"omml_sha1": "ad7b924dd71a689bf3a1e3046549f78ddf5bfac0", "latex": "Na", "ok": true, "katex_ok": true}
+{"omml_sha1": "adefe63c98c45189027dd3917ccedbea4a7db05e", "latex": "=", "ok": true, "katex_ok": true}
+{"omml_sha1": "ae170add10120edb65d618df9415f1eb7de345ff", "latex": "I", "ok": true, "katex_ok": true}
+{"omml_sha1": "ae3e72c9e579baea010c397669fa52c07c22ded3", "latex": ")=ZnSO_{4}+H_{2}\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "ae51ab1d5fcf1ff156cf48d30e9849186d8e8f93", "latex": "c_{平}\\left(R^{-}\\right)=0.60×0.10mol⋅L^{-1}=0.060mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ae8e3e3b3141d69a5bd0a053b833971a8dfead9a", "latex": "SO_{4}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ae974d677e567b101a2e341acb5df18d15deaeed", "latex": "K\\left(4s^{1}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "aec15d9125d44a89e024777af65b4c8e22455427", "latex": "lg\\frac{V}{V_{0}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "aec6d834ec7b56edad6f138f638d858bdbb20121", "latex": "HOOCC(CH_{3})OHCOOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "aed223d717e88e4e7f67954cf3a64c636daf687a", "latex": "c", "ok": true, "katex_ok": true}
+{"omml_sha1": "af05a4c64308a9ee1f5e990137cbed12469965c4", "latex": "\\frac{c(Na^{+})-c(HCN)}{c(HCN)c(OH^{-})}=\\frac{c(CN^{-})+c(HCN)-c(HCN)}{c(HCN)c(OH^{-})}=\\frac{c(CN^{-})c(H^{+})}{c(HCN)c(OH^{-})c(H^{+})}=\\frac{K_{a}\\left(HCN\\right)}{K_{w}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "af402d2a6b374b2f482bf79dc085a7a5a052fd75", "latex": "Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "af68433f52c86a0a0b404efde716bf7ed084f297", "latex": "K_{a}\\left(HCN\\right)=10^{-10}", "ok": true, "katex_ok": true}
+{"omml_sha1": "af8c4f48ecc0441da902213f178752c9057fb881", "latex": "8×10^{6}Pa", "ok": true, "katex_ok": true}
+{"omml_sha1": "af9415361e95d0f6e5027a59e2fd2de34357d464", "latex": "GeS_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "afae58f0a23a8c707634ea1024c33b46221462b4", "latex": "c.H−O−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "afb31767ad57d39e99b7f3c83f2d76147837c3ff", "latex": "\\frac{c^{2}(CO_{2})}{c^{2}(CO)⋅c(SO_{2})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "afe82aefd604a9654f03870f4347cd2450606f63", "latex": "0.1mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b00a64ebb5ffd1b32a4f23631bd2f41362247184", "latex": "+3", "ok": true, "katex_ok": true}
+{"omml_sha1": "b049b1f6937d1f6a6a814eb112584eb38b1f53f8", "latex": "\\left[Mn\\left(NH_{3}\\right)_{6}\\right]Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b07f7cd9b868769621a000c1f6046c44f1168e11", "latex": "n(H_{2}S)=1", "ok": true, "katex_ok": true}
+{"omml_sha1": "b0ae8d6b5983bb0067d0f43302e93dc7353b4c50", "latex": "pH=7", "ok": true, "katex_ok": true}
+{"omml_sha1": "b0badfce7ec4d42d93843b5a86947b47ce1be24b", "latex": "0.2N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b0c003e3f044d6aa2801dc3d718f906706e4ed02", "latex": "(c)", "ok": true, "katex_ok": true}
+{"omml_sha1": "b0c9eea93b4c2f2feed31a9196d7e80999b2ed6c", "latex": "SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b0cec12a42d9a870dc684ca5052d5e96d4461ab7", "latex": "20.00mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "b0e26f28a966f3f5592a258c71dac3007b89196a", "latex": "\\frac{0.5mol⋅L^{-1}}{10min}=0.05mol⋅L^{-1}⋅min^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b11fdcd24bed16c26736d1205879e4dc1176ea14", "latex": "Cu^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b12962e6ab6be548d3b43a191d3099d5652afffe", "latex": "HCO_{3}^{-}+8e^{-}+6H_{2}O=CH_{4}\\uparrow +9OH^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b13855708796a4b3ab2519e54c7b266f55f991f1", "latex": "HOOCCH_{2}CHBrCOOH+3NaOH\\overset{}{\\underset{}{→}}NaOOCCH_{2}CH(OH)COONa+NaBr+2H_{2}O", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "b1671a30e5cfc552ce13275e50737811a06ca0f2", "latex": "_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b209426a9790863d236622de48eede4abc5e02d2", "latex": "CO(g)+3H_{2}(g)\\overset{}{\\underset{}{⇌}}CH_{4}(g)+H_{2}O(g)ΔH_{1}=-206.2kJ⋅mol^{-1}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "b222227cf38b8719a76f385444bc9b06733508d2", "latex": "\\frac{FE\\%(C_{2}H_{4})}{FE\\%(HCOO^{-})}=\\frac{12n(C_{2}H_{4})}{2n(HCOO^{-})}=\\frac{24\\%}{8\\%}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b23ea9cbf5633e748a5b710c468cf2a3d3354b3b", "latex": "+", "ok": true, "katex_ok": true}
+{"omml_sha1": "b23f9ebc67d3eb227b1319508d1a85f075e1b0fc", "latex": "CaCO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b31ea579d17b83c137527c181ec290b58c69b75a", "latex": "98.3\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "b3a58d3ecc73982bae12f088c919651ad90d01b0", "latex": "n(H_{2}S)]", "ok": true, "katex_ok": true}
+{"omml_sha1": "b3c314d813472424600736a11d852e8718d59ffb", "latex": "Zn", "ok": true, "katex_ok": true}
+{"omml_sha1": "b3f383b8d4f95a456b9c5577a841af62a33b94cc", "latex": "c_{0}(M)/c_{0}(L)=a", "ok": true, "katex_ok": true}
+{"omml_sha1": "b40fa2eeb52281aa95dbeaeeb1136e849fefa1dd", "latex": "4s^{2}4p^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b4111d0ab9c2fdb36ec2d02d8e3bbfadca825cf5", "latex": "O_{2}+4e^{−}+2H_{2}O=4OH^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b425a43a5264da64b092d7d5a675b38445fc3c89", "latex": "n(CH_{4})", "ok": true, "katex_ok": true}
+{"omml_sha1": "b42f015fb4c7e7fa34a4de8eb35c9cc60ab25157", "latex": "\\frac{c(X)}{c\\left(H_{3}PO_{4}\\right)+c\\left(H_{2}PO_{4}^{-}\\right)+c(HPO_{4}^{2-})+c(PO_{4}^{3-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b430aa329dfa290ab1bdef08137ebc6d582f7654", "latex": "v_{正}\\left(NH_{3}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "b43de770f7d0b15a70df90808a6c8386de0847a7", "latex": "Co", "ok": true, "katex_ok": true}
+{"omml_sha1": "b462303540590f602f1a1154a16ce607f2e2fb0e", "latex": "K=\\frac{c_{平}\\left(CuR_{2}\\right)}{c_{平}\\left(CuR^{+}\\right)⋅c_{平}\\left(R^{-}\\right)}=\\frac{0.0075}{0.010×0.075}=10", "ok": true, "katex_ok": true}
+{"omml_sha1": "b4790d505f23378686e0e380afbd463d8f3624cf", "latex": "\\frac{V}{V_{0}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b48a5f249fe978ecc2b8098446b5d9af003c5ce8", "latex": "CH_{3}OH", "ok": true, "katex_ok": true}
+{"omml_sha1": "b4c31fa6bfb05bbf5f078edc332b4116602a8f68", "latex": "1.0mol PCl_{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b4e207b1d14f272898040dc04876d6b60d5d4b84", "latex": "−2", "ok": true, "katex_ok": true}
+{"omml_sha1": "b4f5fb816953a4dcb405c6b56870101b8c20bc24", "latex": "K_{a}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b5371e55cc78af5258b4470435b9f5190b5e7de4", "latex": "SO_{2}+Ca^{2+}+3ClO^{−}+H_{2}O=CaSO_{4}+2HClO+Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b5445ab2c4762d1652d70968db353055ab5e5f19", "latex": "(3)2H_{2}O_{2}(l)⇌2H_{2}O(l)+O_{2}(g)+Q(Q>0)", "ok": true, "katex_ok": true}
+{"omml_sha1": "b5c4684358b56a993ed7a93c69df46881005f66d", "latex": "1.00mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "b5c9c5ec03343e1a0d1c7dd17dcb323407a1a729", "latex": "SO_{2}+H_{2}O+Ca^{2+}+2ClO^{-}=CaSO_{3}\\downarrow +2HClO", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "b600342d654a37de0e4f9a2edc894b44dbc8337a", "latex": "α_{III}>α_{II}>α_{I}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b605e05be4f942c307eefe58df8cbaf090a35d05", "latex": "④", "ok": true, "katex_ok": true}
+{"omml_sha1": "b6657da1e0e6ef81d5f02c2ae07f3b7c074c20f5", "latex": "\\left[Zn\\left(NH_{3}\\right)_{4}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b6705b531d693a656c2403480d0b652c39da5bae", "latex": "H_{2}SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b6dfa7fc207ffbcb7fc021e40ae1da22f968fab0", "latex": "(6)1", "ok": true, "katex_ok": true}
+{"omml_sha1": "b7540dbb4ee0a96b5aacaf98c04725e9d8be71fa", "latex": "20^{∘}C", "ok": true, "katex_ok": true}
+{"omml_sha1": "b7827907ea5fbdfc01bb0545b7c0936e4401958e", "latex": "I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b78a14448174a5e798f228b756d01c4feeb0cfb1", "latex": "K=2.5×10^{9}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b7b4bf3a6e45489b1d5a53a840da7a6b20002c02", "latex": "HCO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b7d1114388762d622eb9c334df5600b6447d8dd3", "latex": "3N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b7e6dad4497d98eefcb33802e0a7564a59dcc04f", "latex": "4mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "b7eadaa5313a81985852cf3d70286fa6e423e2e5", "latex": "L_{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b7f94ef106bee962350aff34f40fb67dbc665861", "latex": "\\left[Co\\left(NH_{3}\\right)_{x}Cl_{y}\\right]Cl_{z}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b81184ef2ab2584a7ab4b0e3f94868dec2a73413", "latex": "Cu_{2}Te)", "ok": true, "katex_ok": true}
+{"omml_sha1": "b81189b9c62455b11b0dab279fcc8b14572c3ac9", "latex": "S", "ok": true, "katex_ok": true}
+{"omml_sha1": "b825222ee9a0c5d9d509e52e7c19f9bd63147811", "latex": "\\left[Cu\\left(NH_{3}\\right)_{4}\\left(H_{2}O\\right)_{2}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b8552c2124be0bc051b37aab007074eb5b260f7d", "latex": "v_{正}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b87c818032fba8305dab7e4e639fad824e3dc322", "latex": "Ge^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b8ad316771217b2ba9bb00f82f16b589159707fe", "latex": "R^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b8b3225e108fc0da765a8183e5ce29854e1e5da4", "latex": "C", "ok": true, "katex_ok": true}
+{"omml_sha1": "b8b54480084b9b2ef8c1494335f69c61cf7a87c9", "latex": "SO_{4}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b91d5ca5fe93443eb86020dd7ba3257e6996a222", "latex": "30.00mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "b95b33e6b3f326fed291aeba7babb2b141db3229", "latex": "a−x=4x", "ok": true, "katex_ok": true}
+{"omml_sha1": "b9681230ed5830a1dcb546e7ef08c84d103d0b48", "latex": "HOOCCH_{2}CHBrCOOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "b97fad8b466af26e9030dbc14ef605613e42aba7", "latex": "Ni^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "b9999c620062b40bf87f1e88879c6fef709da6f4", "latex": "20.10mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "b9aebde4af183b51e32558f1c91517b406a2794d", "latex": "2s^{2}2p^{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ba1e0c07a363a5f1e5ac4aa79fe973e295ab1da3", "latex": "F", "ok": true, "katex_ok": true}
+{"omml_sha1": "ba2b8b247abcda1b04826f7ee31278f03a93bb7e", "latex": "B(", "ok": true, "katex_ok": true}
+{"omml_sha1": "ba3f34e0df350e05aa4b13ad21d5c9d16ab392da", "latex": "K_{sp}\\left(AgSCN\\right)=1.0×10^{-12}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ba601458e77b75148d0e1f29670fbee660b46bfc", "latex": "2H_{2}O - 4e^{−}=O_{2}+ 4H^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "bae4f23bbc042f38401fb019fc58bf71e4fb9643", "latex": "_{4}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "baed06f640f39d31f4f5ff8ee08c3965447dc084", "latex": "\\overset{NaOH溶液}{\\underset{Δ}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "bb1dadcf55b4925683c550ee1601d3f1f213b6f3", "latex": "Ca(OH)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "bb6c860c32cbf85d101f30ba8f3dc9878cfd56a4", "latex": "\\frac{Δc}{Δt}=\\frac{0.6mol}{2L×45s}=0.0067mol/(L⋅s)", "ok": true, "katex_ok": true}
+{"omml_sha1": "bbb1ebed28e35781596864c602ecfdfa75804f90", "latex": "2n(SO_{3}^{2−})+2n(SO_{4}^{2−})=2×0.01mol+2×0.01mol=0.04mol>n(NH_{4}^{+})", "ok": true, "katex_ok": true}
+{"omml_sha1": "bc94cc079b5c2fa24c4db6307f0195bc170f7fec", "latex": "Te", "ok": true, "katex_ok": true}
+{"omml_sha1": "bca82da8ef6ebe4ff84e2d69e5cf4b67d96e3391", "latex": "Na_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "bd199298e289045a394d4e5c0f038185abc1efc0", "latex": "O", "ok": true, "katex_ok": true}
+{"omml_sha1": "bd5942de123c0d552988429204c4e6aa3799dd36", "latex": "2I^{−}+2H^{+}+H_{2}O_{2}=I_{2}+2H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "bd99529f271cfad530021567f15b49690fb36abb", "latex": "\\frac{0.15mol}{0.20mol}×100\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "bdbd852a026da2971b58bc8ecbd614ae646b2d14", "latex": "M(H_{2})=2 g⋅mol^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "bdcee7845cb3688cad1b7eb7e889adcee0e3c175", "latex": "c", "ok": true, "katex_ok": true}
+{"omml_sha1": "bdfe37b7dc5df9c8b3616b17915b1ab64b1ebeed", "latex": "\\frac{0.6×\\frac{1}{2}}{0.4}=\\frac{3}{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "be27bcb9c14f2807b6c4c67287a3aa7b35993af2", "latex": "Si", "ok": true, "katex_ok": true}
+{"omml_sha1": "beab2adc0848597c12cfe07dadd932027232934f", "latex": "K_{sp}(ZnS)=1.6×10^{-24}", "ok": true, "katex_ok": true}
+{"omml_sha1": "beab63cab4b180a43fae7cc69e10ccdc108e0200", "latex": "K>4", "ok": true, "katex_ok": true}
+{"omml_sha1": "bebdcb4ed39468f97d982bd47c5e37dc89f0a4a5", "latex": "\\left[Cd\\left(CN\\right)_{3}\\right]^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "bf8b3386b59290ebd26d0af758335dfc39f2a6d2", "latex": "c_{0}(M)/c_{0}(L)", "ok": true, "katex_ok": true}
+{"omml_sha1": "bf8f8fd983eac50cb905a544fda0ad48074ca169", "latex": "SO_{4}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0068900c255750a86df04aef64233d62fa154cf", "latex": "ΔH_{2}=582 kJ⋅mol^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c03f9bca2394e3e748462d832c04c699eba5609c", "latex": "_{2}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c04cc531d0c630ac67c262b873e85eb9ca44bd52", "latex": "0.02molBaSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0587f6cc028ce9e631810f6e78f19399efc7092", "latex": "NaHSO_{4   }", "ok": true, "katex_ok": true}
+{"omml_sha1": "c07f53c931d850206963e5a577025bb1aebfbee8", "latex": "100mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "c08460fc8da9fc4f1297097d30f580758088d099", "latex": "\\left(H_{2}PdCl_{4}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0a2e4f120c61cd79e9d67475fb58fd4883c4f71", "latex": "L_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0a4929d97363f090176b1180eb6850cf52ac967", "latex": "b．", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0ba20ec67267afd033d7084635195041cd7fb2d", "latex": "1s^{2}2s^{2}2p^{6}3s^{2}3p^{6}3d^{10}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0cb2a8560ccbc9bc5383539366717281af5f8ca", "latex": "(4)", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0cc344e44f93823032f4e2549b5b3f8a0abefd6", "latex": "HAsO_{3}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c0e309d18829dfbc9759710ee2cddf55a40d09ec", "latex": "120°", "ok": true, "katex_ok": true}
+{"omml_sha1": "c1140645faca39569498fd631fd14eb5ca8450af", "latex": "H_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "c1250b7f5ef3d36313537e3e5d89557cec2ba58e", "latex": "c_{0}(M)/c_{0}(L)=0.51", "ok": true, "katex_ok": true}
+{"omml_sha1": "c19d2c56b20c2ec47530e4c1b000aefffd0a941a", "latex": "\\begin{matrix}&2N_{2}O_{5}\\left(g\\right)&⇌&4NO_{2}\\left(g\\right)&+&O_{2}\\left(g\\right)&&\\\\初始\\left(mol/L\\right)&4&&0&&0&&\\\\转化\\left(mol/L\\right)&2&&4&&1&&\\\\平衡\\left(mol/L\\right)&2&&4&&1&&\\end{matrix}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c1cb9eab9a7e195dffdf643c05d912fa3fde4027", "latex": "_{4}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c1ce4d631df62f31d5cc99857dc17aaa352acb03", "latex": "pH=11", "ok": true, "katex_ok": true}
+{"omml_sha1": "c1db7777c5184fa63bb30e2c315874e63ef168d3", "latex": "Zn+2H_{2}SO_{4}(", "ok": true, "katex_ok": true}
+{"omml_sha1": "c1f09b595601bb966bfbcebe4dd15614e0ab52dd", "latex": "Na_{2}HAsO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c1ff84f06dbac22fa02e33dac4b563bea8d518a4", "latex": "\\left[FeR_{3}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c20372fa5463f3f2e4db36821f817867f8ac8a3d", "latex": "c_{平}\\left(CuR_{2}\\right)=0.075×0.10mol⋅L^{-1}=0.0075mol⋅L^{-1},c_{平}\\left(CuR^{+}\\right)=0.10×0.10mol⋅L^{-1}=0.010mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c23d6e8afe1fa74115cd2ed6b6adc44e331af76a", "latex": "Na-Zn", "ok": true, "katex_ok": true}
+{"omml_sha1": "c23d9fc8ea7775e6b00fc59b2296fb6573e35bb8", "latex": "c(Cu^{2+})", "ok": true, "katex_ok": true}
+{"omml_sha1": "c24680b2248fd47552044f1789e43d786e2865e7", "latex": "CO\\left(g\\right)+3H_{2}\\left(g\\right)=CH_{3}OH\\left(g\\right)+H_{2}O\\left(g\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "c24f37ef02ba39f19d218f30be8807c4a4e4cd82", "latex": "25°C", "ok": true, "katex_ok": true}
+{"omml_sha1": "c2ae271a6c2261fc3851e90562dbc1ca55f364ce", "latex": "Cl_{2 }", "ok": true, "katex_ok": true}
+{"omml_sha1": "c2bf1a0be0d8b159d6d84d9354832ff4fcd0ff95", "latex": "NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c2d257d59eb3b4d002224f3dbc0dc91927d942aa", "latex": "xmol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c2e8ce51ef75929446ae2685270cce915e987a4f", "latex": "C=O<C−O", "ok": true, "katex_ok": true}
+{"omml_sha1": "c2fd4f4ed2bcaad3df07f9213d4bcafbe514d9e4", "latex": "NaCl+NH_{3}+CO_{2}+H_{2}O=NaHCO_{3}\\downarrow +NH_{4}Cl", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "c34475f826cc619aad70fb52f7e4791a0c1fef6a", "latex": "Ca^{2+}+2ClO^{-}+SO_{2}+H_{2}O=CaSO_{3}\\downarrow +2HClO", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "c34ad0f14f683abf3ce8d1eec16c8083c8c5b027", "latex": "Ⅲ=\\frac{Ⅰ+3×Ⅱ}{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c40e69e756f62b02a427b51654e7c800b644e3f5", "latex": "CO_{2}\\left(g\\right)+H_{2}\\left(g\\right)=CO\\left(g\\right)+H_{2}O\\left(g\\right)   ΔH_{1}=41.2kJ/mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "c414dc038a96e61b189b201427abd5611fdebcb0", "latex": "NO", "ok": true, "katex_ok": true}
+{"omml_sha1": "c41d8b3e85c18c874383107b1efaeee520a540fd", "latex": "π_{6}^{6}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c4616814811a149eee7a58621729c3aa7a22e025", "latex": "n(SO_{3}^{2−})=n(BaSO_{3})=\\frac{4.50g−2.33g}{217g/mol}=0.01mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "c4750c9511fad15e37a2ad8119ad95c1f5f12976", "latex": "1.6mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "c476bba94714b59eb0e6ea32adbba0e5b2d4dd75", "latex": "25.00mL0.1000mol⋅L^{−1}AgNO_{3}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "c4807398d992092fb3b9c2a62a9dd45cfd62d58d", "latex": "_{3}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c4873e0b633ea271739972372697e3e59c5a1ce9", "latex": "Cu^{+}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "c503b222d91778862adb90bc60fc82a79d4be40f", "latex": "7", "ok": true, "katex_ok": true}
+{"omml_sha1": "c548829fe1b97a1a01acd02d9a02704719223817", "latex": "Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c59a056260bbd1d8b9e8f3d2ac2650949f7e9e5d", "latex": "\\frac{c\\left(\\left[FeR_{3}\\right]^{2+}\\right)}{c\\left(\\left[FeR_{3}\\right]^{3+}\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c5c3c63e2a3f5cfd35d5946a0f3d6c89973c032d", "latex": "\\left[Fe\\left(H_{2}O\\right)_{6}\\right]^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c602eb3af7c0b0be8218646a9b8c6a1eeae26e80", "latex": "\\frac{1}{1.6×10^{-24}×2.5×10^{9}}=2.5×10^{14}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c609b1a577482b65a681f54e6be31817618f8be6", "latex": "Ca(HCO_{3})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c61561e80936b5e4f2e1c2962724eceb92b5957f", "latex": "\\vec{n}=\\frac{4×10+3×10+2×1}{10+10+1}=3.4", "ok": true, "katex_ok": true}
+{"omml_sha1": "c634edddb32b42363a85fa661da86b613e7a0265", "latex": "CaCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c63720acc1001c4f088b17dc053ee379cdc0ef5d", "latex": "K_{1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c6a58f7196c842f2772c5df529953e4ec9477ca9", "latex": "O", "ok": true, "katex_ok": true}
+{"omml_sha1": "c6a78a51f8d740ef5d1d341ffe3dc96b290050ff", "latex": "CO_{2}.", "ok": true, "katex_ok": true}
+{"omml_sha1": "c6c1e3e1fda971b249445b7371c4399af1b25f12", "latex": "0.1000 mol/L", "ok": true, "katex_ok": true}
+{"omml_sha1": "c70cbb4f8a713eb9505a1fd40b47a1d3b61b9471", "latex": "c_{0}(L)=1.0×10^{-5}mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c73689f516a3803a6006b0e6be1002ef3bb9368e", "latex": "H_{2}PO_{4}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c73cee45ab163941ff3076e504c91e126e3f88a7", "latex": "c(H^{+})=xmol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c741ba5207c46990344ee54a33e7894e7e61d579", "latex": "\\frac{5+3}{2}=4", "ok": true, "katex_ok": true}
+{"omml_sha1": "c76dbacfe64e8f5f719dc4da18830514058cd743", "latex": "\\frac{175}{1+2}=\\frac{175-140}{x}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c774fb875abd3e5cb645499166d16e24abe884c6", "latex": "Cu_{2}Te", "ok": true, "katex_ok": true}
+{"omml_sha1": "c7a3bc3158b3fd867b998499608bf8b1e095c607", "latex": "0.10mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c7be9fceff250b366959f56f27aa04fb70c8e6d9", "latex": "0.1mol I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c7c0582379911827e5224f4b59fdeb4b59db4d32", "latex": "_{3}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c84690d070529f88cb3f9c511c00d4325b0a8f91", "latex": "NO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c8a45a42b019c027e7eb509a3bd76b8c75a85feb", "latex": "1．20g", "ok": true, "katex_ok": true}
+{"omml_sha1": "c911fe31f85c7ec858a9a1277e7876031f36f430", "latex": "a．", "ok": true, "katex_ok": true}
+{"omml_sha1": "c92545fad552b4339ad83378507a78f968064b41", "latex": "90.6\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "c9959b36f302399504bd18f9db49eaf3efeae596", "latex": "(CH_{3})_{2}CHCH(CH_{3})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c9a13e00bfbe8e0627c91812e5e4d9fc72d5d73e", "latex": "mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c9a698cd7056233dc89a3418fc4ad4882baa412b", "latex": "AlO_{2}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "c9b308ea7aa7abfd4491aa185e3c246b57bd28dc", "latex": "17.92L(STP)", "ok": true, "katex_ok": true}
+{"omml_sha1": "c9d2405e0120c32d17840f4cc9320c2e6b2d0123", "latex": "426℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "c9df24b4aad4f570f5c3de40b9dbd5a064715745", "latex": "lg\\left[c\\left(Ge^{4+}\\right):c\\left(Fe^{3+}\\right)\\right]=1.2", "ok": true, "katex_ok": true}
+{"omml_sha1": "c9eeefb52a17802221a506af2bacd4edb8e073dd", "latex": "\\frac{c(HPO_{4}^{2−})}{c(H_{2}PO_{4}^{−})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ca020210c51e41ec161ac8b546a5890b92090ed4", "latex": "Cu^{2+}+EDTA=[Cu(EDTA)]^{2+} K_{I}=6.3×10^{18}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ca31914e06f881e9d9ef819913c77fcc2212d128", "latex": "Ba^{2+}+OH^{-}+HCO_{3}^{-}=BaCO_{3}\\downarrow +H_{2}O", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "ca5bf8b7e6dc2e8a3be6b28dd2af773272514155", "latex": "249℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "ca5ecfd6a95b0c0541b17ac4292ffde18d7b84e3", "latex": "c\\left(Cu^{2+}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "ca6dd288688c29f913a3d943ce2b29904a9cb8d0", "latex": "\\frac{4^{4}×1}{2^{2}}=64", "ok": true, "katex_ok": true}
+{"omml_sha1": "ca782b0f9c14d4a27cbc31af82a3097af739287d", "latex": "CH_{2}=CH−CH=CH_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ca8d67b93cbc61f03bc84084a8f48c04f0a35947", "latex": "H_{2}PdCl_{4}\\rightarrow Pd(NH_{3})_{4}·PdCl_{4}\\rightarrow \\left[Pd(NH_{3})_{4}\\right]Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "caa64741611cee551bc9bec401d1e4ba8645a6fc", "latex": "(5)", "ok": true, "katex_ok": true}
+{"omml_sha1": "cab288630594041594629570b86ad64145a48ba5", "latex": "4SO_{2}+2Na_{2}S+Na_{2}CO_{3}=3Na_{2}S_{2}O_{3}+CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cacce24384b36c6e31809cf02907fc3c60cd0d0d", "latex": "O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cafecd854c5688061235d198fda2538110fa8cb9", "latex": "\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}=Cd^{2+}+4CN^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cb038bc403921a24bbd7e774a97515f2d8c8b933", "latex": "1:1:2:2:2:3", "ok": true, "katex_ok": true}
+{"omml_sha1": "cb19c14f2982e6a89f513103feb41aff61682555", "latex": "\\frac{c_{平}}{c_{0}\\left(R^{-}\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cb552b9026b6665b94d2a81562940f203784a341", "latex": "−1", "ok": true, "katex_ok": true}
+{"omml_sha1": "cb823d48cf3178b672179a4888a02ce58c8c89d3", "latex": "Ca^{2+}+ClO^{-}+SO_{2}+H_{2}O=CaSO_{4}\\downarrow +Cl^{-}+2H^{+}", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "cba36168fc3c530ebfaa128b2659aca1b5527dae", "latex": "\\overset{TEA}{\\underset{}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "cba79d7cc3c2b5134fd0f8466fae5a2a4a5a169f", "latex": ")", "ok": true, "katex_ok": true}
+{"omml_sha1": "cbbbd69a4f811edb2dd2ca59018587864d1870b6", "latex": "c\\left(Ge^{4+}\\right):c\\left(Fe^{3+}\\right)=\\frac{\\frac{K_{sp}\\left[Ge(OH)_{4}\\right]}{c^{4}\\left(OH^{-}\\right)}}{\\frac{K_{sp}\\left[Fe(OH)_{3}\\right]}{c^{3}\\left(OH^{-}\\right)}}=\\frac{\\frac{4×10^{-46}}{\\left(10^{-9.2}\\right)^{4}}}{\\frac{4×10^{-38}}{\\left(10^{-9.2}\\right)^{3}}}=10", "ok": true, "katex_ok": true}
+{"omml_sha1": "cbec78704e1ff719923be781b67f53ec6e237c9e", "latex": "Mg", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc054ec2b4abdba7cae765bf45a956e4336b5371", "latex": "v_{逆}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc274d8576228b5a674dbcc73f4300ebc257a1b9", "latex": "FeF_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc29ff1edf875d7a9d2a4673d8de5a49d41010b0", "latex": "CO_{3}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc391b8a493d203e1d99b8b9a5f0e354f2e8c474", "latex": "55\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc65573327698c35bc20966708f2ca2245725345", "latex": "2Fe^{3+}+Fe=3Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc6d186920f4d1768d9bfb6ca2d3bad112c11439", "latex": "SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc7ebc5e022cdb98e7a17ba019c5636f6a11240a", "latex": "A.Na", "ok": true, "katex_ok": true}
+{"omml_sha1": "cc996433a0aa5afa7af0ce7d36684d1bb77060e6", "latex": "30°C", "ok": true, "katex_ok": true}
+{"omml_sha1": "ccc204c6ded82feb41655f77acd4bb2104f75a31", "latex": "Fe^{3+}、Mn^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cce11516a086632cd394806f2d0606990574bf40", "latex": "Ni^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ccf6100d7ef00f1d20c1cee9e96b0055bf502f17", "latex": "2Fe^{3+}+Ag_{2}S+4Cl^{-}⇌2Fe^{2+}+2\\left[AgCl_{2}\\right]^{-}+S", "ok": true, "katex_ok": true}
+{"omml_sha1": "cd73fff8ca8a9bc7dab342f07b1a55e928d671e4", "latex": "NO_{3}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cd86774ea76f945eb9f305159771d606590c421f", "latex": "c_{平}/c_{0}(L)", "ok": true, "katex_ok": true}
+{"omml_sha1": "cdd0943dd0259322e66fb56d78ace8e475b45198", "latex": "Cu", "ok": true, "katex_ok": true}
+{"omml_sha1": "cdf444e1c44bcccf8a3ca85180682723a1fa043c", "latex": "SO_{4}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ce5917964de5d41c377472176e2a27f00bbdd5d0", "latex": "C−H>Si−H", "ok": true, "katex_ok": true}
+{"omml_sha1": "ce8d2cc17029e7897c4e2673c187920357865492", "latex": "1040℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "ce8fe3615f84c410db15f90e2a03d69662129416", "latex": "0.1000mol⋅L^{−1}NH_{4}SCN(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "cf17f209979f4942101f07dab96e5bb810daa66b", "latex": "(mol)", "ok": true, "katex_ok": true}
+{"omml_sha1": "cf268e0d17c02d7915413292763d27ca1da113fe", "latex": "CO_{3}^{2−}+H^{+}=HCO_{3}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cf4b562438023ce252db4008cc6ee3e271e7f1c5", "latex": "v=\\frac{0.2mol⋅L^{-1}}{5min}=0.04mol⋅L^{-1}⋅min^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cf529bb69b6073770f6d5460333621bc6c866671", "latex": "(3)", "ok": true, "katex_ok": true}
+{"omml_sha1": "cf7dbbc00f71c1bf37af435143fc1a0b3400dcf6", "latex": "(2)H_{2}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "cfac72060ad5dfb62c832bfbd5bf3fe65004158b", "latex": "HSO_{3}^{−}>HClO", "ok": true, "katex_ok": true}
+{"omml_sha1": "cfdda5bdbf789879287ebb051583b52a1250ab1b", "latex": "H_{2}SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d02c971aa8eb5b847158a2f0f2b7f735b9d139d7", "latex": "Sb_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d09832101bca4eab24fb7071216780791ca2fe62", "latex": "25℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "d0beabf85a240f421a2fd817f99f4981b85e446a", "latex": "1.000mol⋅L^{−1}Na_{2}S_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d0c1051c5a48b0a8426e421d552652c23005eec7", "latex": "0.0250L×0.500mol⋅L^{−1}=0.0125mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "d0e829073eaad1d90bd382120c3f8a783591bf1b", "latex": "C−H", "ok": true, "katex_ok": true}
+{"omml_sha1": "d122f96a80ca22984eccb9e883597e48e252a39f", "latex": "=\\frac{126.5g/mol×1.825×10^{−3}mol}{0.255g}×100\\%=91\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "d134baa579f9168a4ee93cb2aacbf2d31178ce39", "latex": "\\left[Pd\\left(NH_{3}\\right)_{4}\\right]Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d1cd69570ca0cd0c762f69d666676f9d62fb698f", "latex": "Zn-2Na^{+}-2e^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d1f48b1e01fafd845dcd7cf5274b53a36f605b7e", "latex": "K≈1/[H_{2}]^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d208399413fd952d506c3fbb228cf52b95372394", "latex": "A.SiH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d21a63d327bb5f15813f3146b362c5c2f48dba8e", "latex": "\\frac{c^{2}(H^{+})}{c(H_{2}C_{2}O_{4})c(Co^{2+})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d2667ae00434c430ea580b4b365e9861f448cbd4", "latex": "NO_{3}^{-}+2\\left[FeR_{3}\\right]^{2+}+3H^{+}⇌", "ok": true, "katex_ok": true}
+{"omml_sha1": "d27e3cb7cba16ac1c5470ff3bfe8ac4f00769470", "latex": "K=K_{1}×K_{2}×K_{3}×K_{4}=10^{5.5}×10^{5.1}×10^{4.6}×10^{3.6}=10^{18.8}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d283b01a9d72cfcf86f47be33e50da0922c4d41c", "latex": "Ba(OH)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d2f5046f3c4f1c846d30482c82ddd746a2a5e0e0", "latex": "HI", "ok": true, "katex_ok": true}
+{"omml_sha1": "d30d97ceb9e33e19abe669707fd75fd0765f3e05", "latex": "Na_{2}CO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d31c8af06cfe6d6d1a6eab396c0183b2cfa28a04", "latex": "A.a\\rightarrow b", "ok": true, "katex_ok": true}
+{"omml_sha1": "d31e8f85a43cbb921846dfd5f961b85d36aa698b", "latex": "c_{平}\\left(ML_{2}\\right)=\\frac{1×10^{-5}mol⋅L^{-1}-(4×10^{-6}mol⋅L^{-1}+4×10^{-6}mol⋅L^{-1})}{2}=1.0×10^{-6}mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d325d0d0a7eb825b60c0230bc43c1a0ad08e7fed", "latex": "HSO_{4}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d340d1043feb4deb035963f4c11010c903fec13a", "latex": "①c(Na^{+})+c(H^{+})=c(OH^{−})+c(HCO_{3}^{−})+2c(CO_{3}^{2−})", "ok": true, "katex_ok": true}
+{"omml_sha1": "d355888a6f8313ca86a0c889e86bbf1fa283f1c8", "latex": "ROH", "ok": true, "katex_ok": true}
+{"omml_sha1": "d3a226b75ebb31e2c6f13cbb549243df0aa1c6c8", "latex": "NiSb", "ok": true, "katex_ok": true}
+{"omml_sha1": "d3f77126ca52e4db93d9b780a8546b25c99deadf", "latex": "500mL0.3mol⋅L^{−1}NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "d40830280492e82def899384f599d6dd0834c77f", "latex": "HSO_{3}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d41897014765189dcaed73992ac79feb819c74bc", "latex": "V_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d447731340ae05b4b948662226c1142a195c1803", "latex": "Zn", "ok": true, "katex_ok": true}
+{"omml_sha1": "d49d8a97b09535ac72bdf7bdf03040ab4b50a87a", "latex": "π_{5}^{6}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d4e667c2453f1ff699bf6685f77b30a148be5bb7", "latex": "Q_{2}<0", "ok": true, "katex_ok": true}
+{"omml_sha1": "d5321e27cfba47f78cc76acbe4b5135d4c2b9105", "latex": "NH_{4}SCN(aq)6.75mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "d5351ab7f9f53fbb50d5cfdeae98007ea6079646", "latex": "Zn～SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d576fa4010babf669e885e0d86169f43ec6797e6", "latex": "PCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d57895e06783c2777191ceac597061dfaf15d960", "latex": "\\left(xZnCO_{3}⋅yZn\\left(OH\\right)_{2}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "d58626cfdea01cc33d857876baf61a11acd9c31a", "latex": "HCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "d59534dbf38210e5463007c729dbf28d50a0b5cb", "latex": "A", "ok": true, "katex_ok": true}
+{"omml_sha1": "d5b991c14578732bb7042fbfbe260c80c77804b9", "latex": "NH_{4}Fe(SO_{4})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d631d276ff9993779e714980ce38400a7132411b", "latex": "1−", "ok": true, "katex_ok": true}
+{"omml_sha1": "d66a3642cbbd393d8ffbe6def4b35988b7141066", "latex": "c_{平}\\left(R^{-}\\right)=0.75×0.10mol⋅L^{-1}=0.075mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d71e2f1eaf584073ad7e605615f5b4e38d4923e0", "latex": "\\frac{c_{平}(Cl^{-})}{c_{平}(RCl_{2}^{2-})}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d72e2a17985c24aa16ef3cce5b7ab35eeef2390c", "latex": "ZnSO_{4}⋅H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "d7d00d614c01649bb440fe6de1cf0d8619e6956e", "latex": "(1)", "ok": true, "katex_ok": true}
+{"omml_sha1": "d80e754d813c0bf6ec9ca56ec490793280fdc91c", "latex": "Fe(OH)_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d87423006a57bb46342b3f7360b61536c6fc345c", "latex": "=0.1000mol/L×6.75×10^{−3}L=6.75×10^{−4}mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "d89d2737fcd0b73ab45cae4ad5e42de033cc17ba", "latex": "a", "ok": true, "katex_ok": true}
+{"omml_sha1": "d8ab758c4cae5940cace838fb64eef8637c7e747", "latex": "0.01mol Fe_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d8cc147a7c6bc10b30370479ed31608977affc3b", "latex": "A.B", "ok": true, "katex_ok": true}
+{"omml_sha1": "d8d667ecb038f8e35bcc7af3ac535085b6824e96", "latex": "MnO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d930bb6b16d831ff7fe6d8a9d953ee7fb2363cff", "latex": "H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "d959f3c3b76a425b059ef8c89159ebc5532f7d8a", "latex": "0.500mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "d9c255400f3a93224b4e3b3134b403257ce69f52", "latex": "H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "d9db3b6c48361af9d6b9bf8f65dd6dd861d87bb0", "latex": "0.255g", "ok": true, "katex_ok": true}
+{"omml_sha1": "da0132d554ece92b9f481486d323a96b3ff9cad5", "latex": "c\\left(Cu^{+}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "da346a76bafc7187ca3b85c79ea9b58c731cc756", "latex": "\\left[FeR_{3}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "da42200568c403fef97387701c7051cc9c4a07b4", "latex": "2mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "da469270e4aa47daf1d298b92bb36007b04a72d9", "latex": "(4)H_{2}O_{2}(aq)⇌H^{+}(aq)+HO_{2}^{−}(aq)K(25℃)=2.24×10^{−12}", "ok": true, "katex_ok": true}
+{"omml_sha1": "da55ca0b9ff48f0a2fcdfe160cb1eb2afd468e4d", "latex": "H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "da769837e19056fe2f3c75412750ba68fefe1d9c", "latex": "Z", "ok": true, "katex_ok": true}
+{"omml_sha1": "da773c0f6b00e4bcbb4cee7065b655675323f695", "latex": "PCl_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "daed5ba3765f38d415f6a8535e4272f2bbc2395a", "latex": "0.5mol⋅L^{-1}CuCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "db0ad787982dad1f1b44b1917effab97ecc93f5f", "latex": "+4Cl^{-}(aq)=\\left[CuCl_{4}\\right]^{2-}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "db58bde68f4ded84abd98df92642a3ded12ea831", "latex": "CH_{2}=CHC(CH_{3})_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dbb1e42de573f65ca4e1ce08e9ababd4ef5493b7", "latex": "a", "ok": true, "katex_ok": true}
+{"omml_sha1": "dbd9862b222223e20fe140b326a7ed190c59b535", "latex": "CO_{2}+CaSO_{4}⋅2H_{2}O\\left(s\\right)+2NH_{3}\\overset{}{\\rightarrow }CaCO_{3}\\left(s\\right)+\\left(NH_{4}\\right)_{2}SO_{4}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "dc2844dfc6e39eacd9c2e1a3cf61535656ef8e9d", "latex": "\\overset{浓硫酸}{\\underset{Δ}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "dcbef53a311bf809c82bf30b7ebe21835ea40964", "latex": "NaHSO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dcd914c9b814466e7e10024a233dbcf1d1d1a836", "latex": "SiO_{2}>CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dcdb546531e0c4b0409ccb384848bf5720f44a6f", "latex": "O_{2}>TeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dcec703cfa796e7b155495bfc71bd6f7222994e9", "latex": "\\left[FeR_{3}\\right]^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dcf2e6ed453df4f885e99015cae3976a06d8224f", "latex": "H_{3}AsO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dd26d099f33a52fab5cd04c2647470dd05f5b709", "latex": "SCN^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dd48b7bb5ea9269372103633dc5d19bfebeb5e44", "latex": "GeO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dd4d97870441a1e3fb7909a2ffe8cf337b465816", "latex": "Cu^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dd54db3130d0a98cc12ecaa1c9c651ca3727d3ed", "latex": "K=", "ok": true, "katex_ok": true}
+{"omml_sha1": "dd6f9414ddf3fb49e1492a73c53471129698bdec", "latex": "Na", "ok": true, "katex_ok": true}
+{"omml_sha1": "dd864beaed5d832066febea1cae10231082be6aa", "latex": "NiSb", "ok": true, "katex_ok": true}
+{"omml_sha1": "de2b9324dd728c7b3882d1793914ce6b2ce5e89e", "latex": "0.012mol/(L·min)", "ok": true, "katex_ok": true}
+{"omml_sha1": "de77c85e4d2f129d74428eef23205505d58afab9", "latex": "CH_{2}=CH_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "de9a9d365e9e4be655bb12c8b4724d4b65b632ea", "latex": "Fe", "ok": true, "katex_ok": true}
+{"omml_sha1": "decc82c4a23251a015e3f371674c5e078f3341fb", "latex": "pH(H_{2}O)(", "ok": true, "katex_ok": true}
+{"omml_sha1": "ded3a8bacbe5bbe08d1d5ea64cf6b0179b200a43", "latex": "\\frac{c\\left(\\left[FeR_{3}\\right]^{2+}\\right)}{c\\left(\\left[FeR_{3}\\right]^{3+}\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "df1545ee103b88343fd9383ca1767abf3a852a90", "latex": "5mLH_{2}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "df1f5685073580456a0fa35de03217da4ecd8796", "latex": "C−C>Si−Si", "ok": true, "katex_ok": true}
+{"omml_sha1": "df69534e4269903bd6f63962341455d5da0331e8", "latex": "CO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "dfdcfce94e7b075615421ea7e079e80a91a87cb3", "latex": "\\frac{0.0375mol×105g/mol}{4g}×100\\%=98.44\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "e09029547f906f2ebf949f8c418a1de867bafc85", "latex": "n(H_{2}S)=12", "ok": true, "katex_ok": true}
+{"omml_sha1": "e099526249d48cb7fed9298ef7f734613556881c", "latex": "0.2N_{A}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e0c4650f608a7a9f4e5a6a8a4efd634a1a4517cb", "latex": "FeCl_{3}、HCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "e0cf1a58c572a917778fa8029c6caf29dc709c15", "latex": "Na_{0.6-x}MnO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e0ddb462ded126d5289d61ceae208037f0a036ac", "latex": "NH_{4}^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e0e8cf1aba7d9bb6b5624d52c2defc8e211905d4", "latex": "xZnCO_{3}⋅yZn\\left(OH\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e11c343ffb94d80e0e25f39510540b05642dcc26", "latex": "pH=4.6", "ok": true, "katex_ok": true}
+{"omml_sha1": "e147b7e610b03677270c7fc956803a70a503abaf", "latex": "BrCH_{2}CH_{2}CH_{2}CH_{2}OH", "ok": true, "katex_ok": true}
+{"omml_sha1": "e1784bd685ae2d25d36d164515e580c55687a50f", "latex": "NaOOCCH_{2}CH(OH)COONa", "ok": true, "katex_ok": true}
+{"omml_sha1": "e1b68a901ec97bc7ea52e911a664a6eece6c2a2d", "latex": "v_{正}(H_{2}S)=2v_{逆}(CS_{2})", "ok": true, "katex_ok": true}
+{"omml_sha1": "e1cb64112f5e346471ced8015ccc8db2a0506818", "latex": "KClO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e1dddc547c7db0c2a9bd88e87367d2fcbb4a7ac4", "latex": "ds", "ok": true, "katex_ok": true}
+{"omml_sha1": "e1e145290f2b927edf64349f84bf3e8c5908a865", "latex": "(2)", "ok": true, "katex_ok": true}
+{"omml_sha1": "e23051126979af95f4f3288e64e8f20b4338b33f", "latex": "I^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e23675f8d09da15f4925da41c57dc0bb08371d9c", "latex": "Fe^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e2460bf41f7ca234c4dc95f8d1fd98ab730bf873", "latex": "H_{2}PO_{4}^{-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e26c5c58056e0d2b653f27a3d2028ef991f1f17c", "latex": "0.8mol×65g/mol=52g", "ok": true, "katex_ok": true}
+{"omml_sha1": "e2851fe7979bfb081323d8ede74749bed7e6ef25", "latex": "Al^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e2894cd6e8355de4ca6e7d40120fa48e3a9fd836", "latex": "ZnFe_{2}O_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e2adb68f8e6cb3ab0ab5d5f1974d5ebe97d1d94c", "latex": "5mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "e2d5710918f3ee01bc714d5a4f9627e152be8c16", "latex": "TeO_{2}>SO_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e412608c172156d71a1b1a146d2a59d9f5f6b735", "latex": "2.5×10^{14}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e454096ef429d0d1b7e977a4d3cb333b1923d425", "latex": "2a−2x", "ok": true, "katex_ok": true}
+{"omml_sha1": "e47fbcbc16b004cbcf1e5998c0f23df7e8a0fc54", "latex": "\\left(SCN\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e4cebadca44121e97ce6991c2c5ad0cd75c19823", "latex": "①Cu_{2}Te+2O_{2}+2H_{2}SO_{4}=2CuSO_{4}+TeO_{2}+2H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "e4d104a1b5e22f6b143ffe0d4d830c535d9396d0", "latex": "Na\\left[Al\\left(OH\\right)_{4}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "e5039363d7f4b31f7f3e302e266feb98086f4b63", "latex": "AgNO_{3}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "e587eedc5d49e9ac1f647e81e3c1a2e52c7bf29c", "latex": "MnS+2H^{+}=Mn^{2+}+H_{2}S\\uparrow ", "ok": true, "katex_ok": true}
+{"omml_sha1": "e5f8b8c6a837805b7a5e2e46a01a0e87407b251f", "latex": "\\sqrt{2a^{2}+b^{2}}×10^{-10}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e61bc34d3870d83772c2bbc250af7e32e4acc26c", "latex": "V_{1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e64bec149f6b54bcbf141a60c01bce783ddc38c2", "latex": "HPO_{4}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e682837497ba1add5840b6e71889f6f47c8e284f", "latex": "A", "ok": true, "katex_ok": true}
+{"omml_sha1": "e6e7fe9db24bd6df0d25a0100268f43eaf06e14f", "latex": "CH_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e6f9848287574945b6d40538a4309fe315af9a30", "latex": "K_{sp}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e70e23ca178b30e880e0467feffa7c832863166c", "latex": "0.01molBaSO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e73cfa111b232fa254978dcbcec1d299bce76f55", "latex": "c\\left(Fe^{2+}\\right):c\\left(Fe^{3+}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "e746b61abeb568c2085c45cd5eb5d6dad6b8bf81", "latex": "Cl^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e788ea2c2ef39f5d80c4431d17e2abf1a0ae5f0d", "latex": "HPO_{4}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e78cd8f546fd4a25487de105e3a14a8e1678e62e", "latex": "30°C", "ok": true, "katex_ok": true}
+{"omml_sha1": "e7a2b559cd111767193a356bc71c46d4ec0810ce", "latex": "\\frac{c(HSO_{3}^{-})}{c\\left(H_{2}SO_{3}\\right)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e7df1e955783fea414a68c458d235c42dd7bbc1c", "latex": "7+8=15", "ok": true, "katex_ok": true}
+{"omml_sha1": "e813965c0822bb3b0b831e1c4484b39affd931f6", "latex": "c\\left(HNO_{3}\\right)=3.0 mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e872a2b167a53839e153f0a653469b6313721ddc", "latex": "2H_{2}O\\left(g\\right)=O_{2}\\left(g\\right)+2H_{2}\\left(g\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "e8a97557edda639edb76a64315678821e81e50fa", "latex": "Cu^{2+}+2en=\\left[Cu(en)_{2}\\right]^{2+} K_{Ⅱ}=4.0×10^{19}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e8b0ea592c7c60b5a9ea7758d640b28833fa947f", "latex": "CO_{3}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e8c345057c8aa76128883724bf39d45d8efc97b8", "latex": "HPO_{4}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "e8d7c27510691d3e6400d8a4961952cfdc62346c", "latex": "3Mg^{2+}+2PO_{4}^{3-}=Mg_{3}\\left(PO_{4}\\right)_{2}\\downarrow", "ok": true, "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "e906727640e010a688f5d1d90d4531504dec7396", "latex": "v_{逆}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ea088d096b0638d808b46e30ece7663e82c04e61", "latex": "\\frac{c_{0}\\left(Cu^{2+}\\right)}{c_{0}\\left(R^{-}\\right)}=0.60", "ok": true, "katex_ok": true}
+{"omml_sha1": "eaa3443c1a12a92bde055ed840bc2d0791967d75", "latex": "CuCl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "eacba6ae6192c48cc978cd8b8bd6d02f8c7c888c", "latex": "H_{2}S", "ok": true, "katex_ok": true}
+{"omml_sha1": "eaf612deaf2b30434e0494aa067654cb675837b0", "latex": "\\overset{新制Cu(OH)_{2}}{\\underset{Δ}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "eb1598c0755fe49580eef408b32493369e32eac6", "latex": "\\frac{K_{a1}⋅K_{a2}}{K_{sp}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "eb61412fc4c929f7de787284bb42cd142b5a6d1a", "latex": "(C_{6}H_{5}CH_{3})", "ok": true, "katex_ok": true}
+{"omml_sha1": "eb64a188b8abc3cb483fdc39cb2170fd9d5cab64", "latex": "500mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "eb98727ab1bf1c438875968bc36f830713ce83d4", "latex": "4+\\frac{3+1-4×1}{2}=4", "ok": true, "katex_ok": true}
+{"omml_sha1": "ebc50aadeecba7e9476d87a83c655a21cced1b2b", "latex": "Rlnk", "ok": true, "katex_ok": true}
+{"omml_sha1": "ebd46c7190cc540e0919a38b5ade59157da080ea", "latex": "H_{2}O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ebf8326b39d7e4ad1f8efcda047fe336709104f4", "latex": "SnCl_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ec29503f8ab91c95ca9a8e75664a055f02bf555f", "latex": "3M(g)+2N(g)\\overset{}{\\underset{}{⇌}}4P(s)+2Q(g)", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "ec54be8b6b9475cee9e98fe918ff2b599e70cee6", "latex": "-lgc\\left(OH^{-}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "ec7d33cdf75eff42f6caa934f2bf6f42fc60df7b", "latex": "x=0.2a", "ok": true, "katex_ok": true}
+{"omml_sha1": "ecba5a1b177e5951402e241909b5f9ffd7c52db9", "latex": "_{3}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ecff3419985557e4394237034708554858f68ae5", "latex": "ΔH_{3}=−42 kJ⋅mol^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ed2668cda8bfc32b98c40bb60d7ca64819bc6cee", "latex": "Cu^{2+}+R^{-}⇌CuR^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ed6e397e55d7b244fdb9ca272fad028b0473cb7a", "latex": "NH_{4}Fe(SO_{4})_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ed77089e3e9f016ec41199641378a3a3a4140612", "latex": "\\frac{\\frac{1mol×106g⋅mol^{-1}}{12.0g⋅cm^{-3}}×840×10^{-3}L⋅mL^{-1}}{22.4L⋅mol^{-1}}≈0.33mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "ed77d4900aed3585b474881e21e1e934d4e86966", "latex": "①", "ok": true, "katex_ok": true}
+{"omml_sha1": "eddf0f6586655dd2e58523c68828cc7484b7e2bd", "latex": "N", "ok": true, "katex_ok": true}
+{"omml_sha1": "ee0313a2e4daa8fc551f464c1a36c3489a6b7447", "latex": "11.2L", "ok": true, "katex_ok": true}
+{"omml_sha1": "ee202e86a55c15c7f28c0ef612b28e4b957ba382", "latex": "∠H-N-H", "ok": true, "katex_ok": true}
+{"omml_sha1": "ee272380e1e8030cf030ba3159896d2b2bdedf30", "latex": "Y", "ok": true, "katex_ok": true}
+{"omml_sha1": "ee27a9732f06b76abfd81c8266f5c31a1ad03a6a", "latex": "2Ni^{2+}+Sb_{2}O_{3}+6H^{+}+5Zn=2NiSb+3H_{2}O+5Zn^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ee32e883e73385fdfce0b633fdee9cba13dbe1c0", "latex": "c\\left(\\left[FeR_{3}\\right]^{2+}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "ee5adfe1086c077519af627ce3fcbc4b38b8ff52", "latex": "C_{6}H_{5}Cl", "ok": true, "katex_ok": true}
+{"omml_sha1": "ee61839c6c1930717c78eb25299078308ae6c70d", "latex": "(3)Mg^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "eede7da016f75a3d2b383152c7fb6b528c4eb870", "latex": "Cr^{3+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ef1d99eb47a79beabf46cb29966303cbe4bb6a9b", "latex": "c_{转}\\left(M\\right)=4.0×10^{-6}mol⋅L^{-1}+1.0×10^{-6}mol⋅L^{-1}=5.0×10^{-6}mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ef966e807852e177d7afb19c17d88fda22272e38", "latex": "HOCH_{2}CH=CHCH_{2}OH", "ok": true, "katex_ok": true}
+{"omml_sha1": "efa1a37ec0b16fe69230fe63d35ada27cc16cf04", "latex": "Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "efb05aeae8e5008532b85c225b2670189b0f5ab7", "latex": "A.", "ok": true, "katex_ok": true}
+{"omml_sha1": "efb2ffedab89f48f2620cb4ad8ae07674c05b998", "latex": "Ca(ClO)_{2}(aq)", "ok": true, "katex_ok": true}
+{"omml_sha1": "efce70978bc4a799b43c61aad6206a2e5124dde1", "latex": "\\frac{29.4g}{49.0g}×100\\%=60.0\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "efd28dc02ad3b8ab3e5be4e114538c95112f2ede", "latex": "L_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f009decb191d61d4814b16db9a487d78b1f07b74", "latex": "12g NaHSO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f00c00e0b31c1f302cc228e4bbf586e8acf34d55", "latex": "0.02mol×233g/mol=4.66g", "ok": true, "katex_ok": true}
+{"omml_sha1": "f0314801b591b3c84bfc2ddb36fc84d881de5d45", "latex": "=0.1000mol/L×0.02500L−6.75×10^{−4}mol=1.825×10^{−3}mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "f054cb45dcf4e5e3c8c4d7353970adf735968a6e", "latex": ")", "ok": true, "katex_ok": true}
+{"omml_sha1": "f06af17b110fea12a4978426516988e04694e19e", "latex": "3d^{10}4s^{2}4p^{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f0702e6f01f9b4eb3ddb3d6675cb77e013ef7cf5", "latex": "K_{a2}\\left(H_{2}SO_{3}\\right)=1.02×10^{-7}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f0ec63bb6810e397797e7af7fdd23c64f4331e27", "latex": "K_{Ⅱ}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f0ff47deb9bd47c76d584a2d37a4983ccfa0ca54", "latex": "2s^{2}2p^{6}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f14ebfc21f8eaff7f54a9ef3775407d31f438d51", "latex": "=\\frac{三氯化磷的质量}{样品的质量}×100\\%", "ok": true, "katex_ok": true}
+{"omml_sha1": "f1522efae924b6d489f568fbcecfa66ecd1cb120", "latex": "OH^{−}+HCO_{3}^{−}=CO_{3}^{2−}+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "f19cfaf9bd6bcfa7428d7ca709604007ef08c429", "latex": "(V)", "ok": true, "katex_ok": true}
+{"omml_sha1": "f1b632bd8b30a2d570c0f5867a54d6cee30aebf0", "latex": "x=", "ok": true, "katex_ok": true}
+{"omml_sha1": "f1cce42dda70592aea3ee39cdf2f3b25e665c5b0", "latex": "\\left[\\frac{m\\left(C_{3}H_{6}\\right)}{m\\left(C_{2}H_{4}\\right)}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "f207bc8f194cebcc5fc57196f9a67fffdf3fa77e", "latex": "500℃", "ok": true, "katex_ok": true}
+{"omml_sha1": "f20ed7e11fe1fe7f564ff286192b94603337fff4", "latex": "Na^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f2459b8846e5aebeffdca035d6ddd52f0f7c196a", "latex": "RCHO+H_{2}O\\overset{H^{+}}{⇌}RCH\\left(OH\\right)_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f2c4756d929f6230c0f8a96cf6c55f9ecaefab97", "latex": "V_{2}O_{5}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f31ac0c9ada38370f54c1f7b027bc7de8db95b0d", "latex": "\\frac{4×64}{a^{2}b×(10^{-7})^{3}×N_{A}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f37b2b94e3c02a0fcd114ead730843429d927127", "latex": ")=ZnSO_{4}+SO_{2}\\uparrow +2H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "f386a86a48dd82452b7cd5806703b120b1d12cf8", "latex": "H_{2}+\\left(NH_{4}\\right)_{2}PdCl_{4}=Pd+2NH_{4}Cl+2HCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "f3ac8e1cc4716f5cfec149908ece96975ca09cce", "latex": "4.66g", "ok": true, "katex_ok": true}
+{"omml_sha1": "f3afe4a8d9ad1333d99bc0ada9e4fe02e1222a2b", "latex": "Cl_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f41209310c44d5a89b6d67d30439da312212aaa1", "latex": "2H_{2}O_{2}(l)⇌2H_{2}O(l)+O_{2}(g)+Q(Q>0)", "ok": true, "katex_ok": true}
+{"omml_sha1": "f41a50bb7990fba4bda6e676904621b844c5a0b3", "latex": "2.0mol⋅L^{-1}、2.5mol⋅L^{-1}、3.0mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f41e0dd8fc648b78090887d05b93a9d6e5c240b7", "latex": "2a", "ok": true, "katex_ok": true}
+{"omml_sha1": "f4830d309d9bc21761b0f4548cf8f5a851285984", "latex": "CH_{4}(g)\\overset{}{\\underset{}{⇌}}C(s)+2H_{2}(g) ΔH=+75kJ⋅mol^{-1}", "ok": true, "err": "Not support lim ⇌", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "f49c16ef6c5d1147d2d1c2f57e3132a086c9d55d", "latex": "Sb_{2}O_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f4c188f967d5377f7aef9f9ed2032de767fc5d16", "latex": "c\\left\\{\\left[Cd\\left(CN\\right)_{4}\\right]^{2-}\\right\\}>c\\left\\{\\left[Cd\\left(CN\\right)_{3}\\right]^{-}\\right\\}>c\\left\\{\\left[Cd\\left(CN\\right)_{2}\\right]\\right\\}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f4fb4bd1f9cb905fe51f3a4bb97e429c30f5488b", "latex": "v_{正}\\left(NH_{3}\\right)≃c\\left(NH_{3}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "f50fc1d70f00f9904d0773acb3bb6128c2d69ad8", "latex": "c\\left(Cl^{-}\\right)", "ok": true, "katex_ok": true}
+{"omml_sha1": "f53970ada628c768845d8330ed3e11e5eac32ec4", "latex": "H_{3}PO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f55f6276dfbf226a099b1f47c276a2a5f29d76a2", "latex": "AsO_{4}^{3−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f5636be945f3605b35fd1e930c7e6f840ac87bdb", "latex": "Si", "ok": true, "katex_ok": true}
+{"omml_sha1": "f58f2fccaf4a879b020c2c60072df1ae96a7cd00", "latex": "Na\\left[CuCl_{2}\\right],c\\left\\{\\left[CuCl_{2}\\right]^{-}\\right\\}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f5da0e7281876d273a4929b09e95a03d9e2763a8", "latex": "②TeO_{2}+2SO_{2}+2H_{2}O=2H_{2}SO_{4}+Te", "ok": true, "katex_ok": true}
+{"omml_sha1": "f61175c3c2a3c9f8f80b8964f692312a099cb83f", "latex": "\\left[CuCl_{2}\\right]^{-},CuCl", "ok": true, "katex_ok": true}
+{"omml_sha1": "f6258a5599894929ef9506b1eceb5b2f767b3aaf", "latex": "⇌", "ok": true, "katex_ok": true}
+{"omml_sha1": "f64c64139f85e7f9b857aa4a65b789c6f87da725", "latex": "2NH_{3}+NaClO=N_{2}H_{4}+NaCl+H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "f652a38972c3b3d89a4647cd5b9859a74135b217", "latex": "ZnS", "ok": true, "katex_ok": true}
+{"omml_sha1": "f68200bc50d49125c976e95237b053255866f351", "latex": "lg\\frac{V}{V_{0}}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f6f74e3f130baffe6dab6008e0b41ebe7fccf6da", "latex": "SiH_{4}>NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f73a4b0b02a3082dbbaaffe03ef7e788c035a4c1", "latex": "CO_{3}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f743f3d969f6941834348cede9d0ec8e936f1ef7", "latex": "CH_{4}>SiH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f761b8d79f931c4731c7b7aeee3ef3760f4d7d29", "latex": "HBr", "ok": true, "katex_ok": true}
+{"omml_sha1": "f7703cebfba0eb329f01c68979d0814c8d586d5c", "latex": "mol⋅L^{-1}⋅min^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f78eaaf05eb9a7958da2dbc9238429dd6cdcc037", "latex": "KFe\\left[Fe\\left(CN\\right)_{6}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "f7ebf3bc3136b9da4d0debd518e85c8be9031e58", "latex": "_{3}^{−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f81ace24ce7a4694338969662fdc06b417a56e5c", "latex": "c_{0}\\left(R^{-}\\right)=0.10mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f87ad25d247006915d997f4d8f96086d6d06aa5f", "latex": "+2HNO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f886be157ab672633b442b0b65c14685071a0f52", "latex": "PO_{4}^{3-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f887ef3fdf54113b30408a51dec069587937119d", "latex": "NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f890fd4f2f11ede5414dad4edbcb3f3da891bdca", "latex": "Z\\rightarrow Y", "ok": true, "katex_ok": true}
+{"omml_sha1": "f8d1f88fe73516db0e9e1026a023f4cb01ef268c", "latex": "\\overset{}{⇌}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f9446c75704004b9b6397433fca1232629094275", "latex": "NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "f996b4a00bcff77c6000e383e6536e832e6af6e9", "latex": "PCl_{3}～H_{3}PO_{3}～I_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f9c18cfd8f51e3d8edbe1669fd4d2fe932da44b6", "latex": "8g CH_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f9cd95fb813f0297f5305dc374cfc94e2cbaa733", "latex": "c\\left(HNO_{3}\\right)=3.0 mol⋅L^{-1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "f9e3fb8bce0e1b561ea1f275021271059c88a418", "latex": "K(25℃)>K(40℃)", "ok": true, "katex_ok": true}
+{"omml_sha1": "fa06239132cb082c362eba01cf7cecc3dc07e3a9", "latex": "1molTe", "ok": true, "katex_ok": true}
+{"omml_sha1": "fa1f9f6cd0e64bd01e9a8224e7952182fad10012", "latex": "C", "ok": true, "katex_ok": true}
+{"omml_sha1": "fa23be6366e3368800eeab3982967e439067ff10", "latex": "\\left(NaH_{2}PO_{2}\\right ", "ok": true, "katex_ok": false}
+{"omml_sha1": "fa2f0849388f5026021bf2b6dbef954bf99b11b1", "latex": "\\left[Cd\\left(CN\\right)\\right]^{+}+CN^{-}=\\left[Cd\\left(CN\\right)_{2}\\right]", "ok": true, "katex_ok": true}
+{"omml_sha1": "fa4bdc5f32f7298fb64e0025ff9de80dce1ab29c", "latex": "1ℎ", "ok": true, "katex_ok": true}
+{"omml_sha1": "fa54db51585fe3158d784bce095023ef46838c94", "latex": "NH_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fa8fefa8a03aca8d56c37fb142463e5e20d29c04", "latex": "20.00mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "faa63a4acbe27c23f4903c734c77b2acf4ae32a3", "latex": "L_{6}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fab9e11087da7c001fc4022cf073494d42d60227", "latex": "\\frac{n(SO_{2})}{n(H_{2})}=\\frac{1−0.2x}{0.2(x−1)}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fad92a56f5217ba2257f624de8305cf2f37e46e3", "latex": "1s^{2}2s^{2}2p^{6}3s^{2}3p^{6}3d^{6}4s^{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fb30afdd405c4551cdf4e4a716605e981cce9bc1", "latex": "18", "ok": true, "katex_ok": true}
+{"omml_sha1": "fb3fee0c2e384db2f04f04b106b1fb59ed1a4bf8", "latex": "\\frac{1}{47.5\\%}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fb5ded804a108a262a260d4df75f5f03e190b6f0", "latex": "n(H_{2})=2(x−1)mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "fb662b29142ffd27755a7b3e16c5d605edecc10d", "latex": "MnO", "ok": true, "katex_ok": true}
+{"omml_sha1": "fb786062c45f9da3ebbfec3fd0a789721325c2e7", "latex": "Na_{2}GeO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fb9f46ca4e543f387743c954cb619c0e4c1314f8", "latex": "SO_{4}^{2−}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fbdf31c0caeb10a62ccb44b21aebf1ec5ea71f78", "latex": "3d", "ok": true, "katex_ok": true}
+{"omml_sha1": "fbe2835e1dfe11338862c184446d31041685ce44", "latex": "Cu^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fc267ffa335f4be5b6d2d1331316c8305b47a04f", "latex": "FeS", "ok": true, "katex_ok": true}
+{"omml_sha1": "fc55abff9726b43c871afbc8feaa636dac308316", "latex": "A\\overset{}{\\underset{}{→}}B⋅⋅⋅⋅⋅⋅\\overset{}{\\underset{}{→}}", "ok": true, "err": "Not support lim \\rightarrow ", "katex_ok": true, "batch10_source": "10f_omml_retry"}
+{"omml_sha1": "fc704ddde5a0bff5f23efc3393fd358549ab2437", "latex": "CaGeO_{3}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fcf2a69fd8a2b831f549ccc26c88343d86bb7fc2", "latex": "Cd^{2+}+CN^{-}=\\left[Cd\\left(CN\\right)\\right]^{+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fd14a1794fc85700bbca904ac8c157f4efaebfbd", "latex": "10mL", "ok": true, "katex_ok": true}
+{"omml_sha1": "fd231a427f2cfd2babb72aaafebf2f55b83dd270", "latex": "lg\\left[c\\left(Ge^{4+}\\right):c\\left(Fe^{3+}\\right)\\right]=1.4", "ok": true, "katex_ok": true}
+{"omml_sha1": "fd2da024e7d98ed5f41797d84c4cf17b3c8e8fe8", "latex": "O_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fd5239a29beb4bdf5f5ac6e1d9f2b6fb88193345", "latex": "2Cu+2H_{2}SO_{4}+O_{2}=2CuSO_{4}+2H_{2}O", "ok": true, "katex_ok": true}
+{"omml_sha1": "fdbd84eaa2c2b9e777acd82f90c264251179cf65", "latex": "CaO", "ok": true, "katex_ok": true}
+{"omml_sha1": "fdd0423360e43653418f8f1428f0e212c742f840", "latex": "\\frac{1}{8}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fe26843b0f9abcbec6dd1cfa3ba4e36f77cfdd5d", "latex": "12", "ok": true, "katex_ok": true}
+{"omml_sha1": "fe47f02d9dc96492c4aba044b0499d85331092dc", "latex": "0.8mol", "ok": true, "katex_ok": true}
+{"omml_sha1": "fe6f3e936bcb43f4bbd12f3815e9e4031fcb02e2", "latex": "1mol⋅L^{−1}NaOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "feaa871cab1ae20d5fa2f8e02bded33ccb506c06", "latex": "\\frac{c\\left(PCl_{3}\\right)c\\left(Cl_{2}\\right)}{c\\left(PCl_{5}\\right)}=\\frac{0.2×0.2}{0.8}=0.05", "ok": true, "katex_ok": true}
+{"omml_sha1": "febbef43edea8842d49bd719f21aeada5b3e2afb", "latex": "3SiH_{4}+4NH_{3}=Si_{3}N_{4}+12H_{2}", "ok": true, "katex_ok": true}
+{"omml_sha1": "febecf0392b3f91a0023fed34f2a99ef94017482", "latex": "\\left[Co\\left(NH_{3}\\right)_{6}\\right]^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fedb270e68309ccbd0af3f4d7ffc277176161675", "latex": "Cd^{2+}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ff42c7ad1a7dc7f9f6e60bc37aaa579473eef97d", "latex": "1s^{2}2s^{2}2p^{6}3s^{2}3p^{6}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ff4d31cbece9aecd83a840dfdf9bc1cb9eacbc57", "latex": "\\left(NH_{4}\\right)_{2}SO_{4}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ff8f6b68bb42f1721d49bb1780afa7362337525c", "latex": "CH_{3}COOH", "ok": true, "katex_ok": true}
+{"omml_sha1": "ff95fa34ce29e6ed982fb0876346ca5754620056", "latex": "K_{4}=\\frac{1}{c(CN^{-})}=3.6", "ok": true, "katex_ok": true}
+{"omml_sha1": "ffcbad118e70ecfe1b0c733f685598e9075756f1", "latex": "CO_{3}^{2-}", "ok": true, "katex_ok": true}
+{"omml_sha1": "ffe72057ec16823362282b83f0be685c7e0aad32", "latex": "c(H^{+})=1×10^{−7}mol⋅L^{−1}", "ok": true, "katex_ok": true}
+{"omml_sha1": "fff9d67ab3efc44fda81f0a543d3a9795c005d65", "latex": "(C_{6}H_{5}Cl)", "ok": true, "katex_ok": true}
+{"omml_sha1": "0450fbcf8d6b4df6d3388b605de9d02275266c78", "latex": "CaCO_{3}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "0ca318899f240d17e8295da5db92ffe412abeed6", "latex": "732^{∘}C", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "27b01b04df2184f4312267c9ff84b5a4480c66e1", "latex": "Si-Si", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "3ebc11995ac8cd8006158a8402631b9a6b19d967", "latex": "kJ⋅mol^{−1}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "409494926b23cbcebf75fbbf596b1797ffc53dc7", "latex": "n(PCl_{3})/mol", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "46feba98bad29b0b86aacd2244147298d786c353", "latex": "FeCl_{2}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "47ad9f14d5dcb9917e56c1ce2bc4559bd8728e0d", "latex": "Fe", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "5443bea5624d76f99b65dc6977f65db7419396e2", "latex": "CO_{2}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "5526fb3cd2c0bc48de62e93f77c4edb94335f00c", "latex": "480", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "5e636ac94efd2a15a54801200821757390a43587", "latex": "C−C", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "68452c16c453c57015079f94509f97fc95859a90", "latex": "C−O", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "68e498a396d4e5017370e345745b44e644849d15", "latex": "CuR_{2}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "7315811afbc140f04eabe08f56415fff079f2e49", "latex": "/℃", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "7643fe76987f96a6eabdfe79621321ab93f84d49", "latex": "CuR^{+}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "7becb7ae1ace6a0ebfdd2c41a14101fc37bcc0ab", "latex": "Si−O", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "7f0f4a0647d67245a34e495c3eb0d71bb6f38261", "latex": "390", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "858bb1f61b8abeec2cdddb7203529c23bc342b73", "latex": "S(ML_{2})", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "871cc7e85f760091d4250479d0c5555bb562e454", "latex": "75.5", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "8e8a6661a8000ef50090e6407648dfd0e8900013", "latex": "400", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "8f0a27cd0b4524f95a336981e154e483aa51d32b", "latex": "84^{∘}C", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "99f7e49682c749a3ad1ffb28db6f695845340e58", "latex": "−112", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "9b376c693b5c1fb5f550b8c1ccd531a95aaa1d0d", "latex": "t/s", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "a3efac613cb9ca8911e1c4827c70d5f38b3f1bb6", "latex": "KClO_{3}+MnO_{2}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "a581d5f995663f0681cf5f016cb32fbf1d00f8dc", "latex": "360", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "a8d64e80dc3d42f34c1bf1dd2055baed9bf48220", "latex": "KClO_{3}+Fe_{2}O_{3}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "aff37e11c3157eb078b8b3c8a279d7c987937d59", "latex": "S(L)", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "b158b45b1d00aa319806f401feaab99591fe16da", "latex": "V[NaOH(aq)]", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "b212f28a33e6a01fd29a53cb219ecc6e28affd3f", "latex": "/℃", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "b53133474f34532e2440dbd94331a6965b7b819d", "latex": "S(ML)", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "b840823ace0d221b04dbf7eb2dc5f14c87a077e2", "latex": "105.3", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "b9de9c7adf1d1db5cf61765c4f018fffed71dd5c", "latex": "Cl_{2}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "bcfd6ed1f166afd71d529112952cd96319a7b21c", "latex": "V", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "c020e10099e0fdcf928ad8535a9efb10d5aacfc8", "latex": "C=O", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "c898b2b7692169b1a94f3f355eb17ed85c08a0ce", "latex": "HCl", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "d484ebf802af464115401bb4e5f7fa45dadb30de", "latex": "C−H", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "d7d58826f950475011081b79ed84626cfc3b42a0", "latex": "316^{∘}C", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "dea0dc7acffaaa0a3b9b7b50c87d352fd3402ed1", "latex": "Na_{2}CO_{3}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "e4548a12379640de712cbabccd02e610a93b5d78", "latex": "AgCl", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "e730ed50b217a1f22b3bb1bfbcb002ec5633bd8a", "latex": "Cu(NO_{3})_{2}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "e89d8155840895d84c76b6a6463eca17f7d55fa8", "latex": "Si−H", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "ebf9dadb661c3416925ea5495be5024d9855547c", "latex": "Fe(NO_{3})_{3}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "f5ca4c00a865368e2a0a4349685b544573dcbbbb", "latex": "350", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}
+{"omml_sha1": "fbb74dbb4786f35c0efe481060a75259247c06d9", "latex": "NH_{3}", "ok": true, "katex_ok": true, "batch12_source": "12b_omml_backfill"}

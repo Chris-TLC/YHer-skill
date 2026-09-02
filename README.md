@@ -1,307 +1,135 @@
-# YHer-skill：基于 RAG 的应试 AI 化学私教
+# YHer Chemistry:Evidence-Bound Diagnostic Learning System
 
-> 模仿 B 站化学 UP 主"一化儿"（杰哥）的应试教学体系，构建以高考化学复习为目标的 RAG-based AI 私教。
->
-> **状态**：阶段 8.6 已部署 ✅ | 阶段一私教引擎层已重构（引擎/适配/后端/界面四层分离，护城河真正接入，诊断客观校验+标准解锚点+多讲法+反人机）✅ | **下一步**：Chris 搜集真题入库 + 单科托管盲测
->
-> 阶段一详见 [`docs/阶段一_引擎层实施总结_v1.md`](docs/阶段一_引擎层实施总结_v1.md)、[`docs/YHer完整愿景总蓝图_v1.md`](docs/YHer完整愿景总蓝图_v1.md)
+**信息平权:让每个学生都能得到"看得见依据"的诊断与辅导。**
+Educational information equity: every student deserves a diagnosis whose evidence they can inspect.
 
----
+YHer 是一套面向上海高中化学的**证据约束学习闭环**——用真题做动态诊断,按本次作答证据提供讲解与资源推荐,再用未见题族做独立验证,并把结果写回可重放的学生画像。整条链路的创新锚点是**诊断引擎**(belief 推断 + 信息量选题 + 独立验证),不是任何单一内容来源。
 
-## ✨ 这个项目在做什么
+当前状态是 **pre-alpha 单机 Demo**:不是已上线产品,没有真实学生留存、付费或学习效果证据,也不应直接部署给未成年人使用。
 
-- 🎯 **高考化学私教**：从 B 站化学 UP 主"一化儿"的 525 个公开教学视频出发，用 RAG 技术构建一个会"模仿杰哥讲题套路"的 AI 助教
-- 🧠 **杰哥风格**：五段式回答（开场诊断 → 思维招式 → 知识双轨 → 学习路径 → 互动鼓励）+ 八大思维招式 + 应试 meta 视角
-- 🎓 **学段适配**：自动判断高一/高二/高三难度，从基础概念到压轴题对应不同讲法
-- 📊 **私教级长期记忆**：完整记忆 always-on，季度高保真压缩（4000 tokens 档案），跨设备 Supabase 云端同步
-- 🌐 **8 家 LLM 兼容**：DeepSeek、Kimi、通义、智谱、豆包、MiniMax、Anthropic、OpenAI
-- 🧭 **阶段一学习舱**：化学单科托管闭环（诊断题 → 能力画像 → 任务队列 → AI 批改/追问 → 复盘报告）
+> 本仓库开源计划:代码 MIT;题库/知识图谱/转写表随仓库公开,另有 [Hugging Face 数据镜像](https://huggingface.co/datasets/ChrisTLC/yher-chemistry-question-bank)(Dataset Card 及字段口径)。
 
 ---
 
-## 🎬 演示
+## 为什么存在(定位)
 
-```
-你：2024年高考某题：N₂(g) + 3H₂(g) ⇌ 2NH₃(g)，K=0.5。
-    向容器中再充入 N₂，平衡如何移动？K 值如何变化？
+高考地区的教育信息分布不均:好老师、好方法、好题目,往往集中在少数资源充足的学校,而绝大多数学生只能依赖自己的摸索。YHer 的目标不是"再造一个老师",而是:
 
-🎯 杰哥：
-嗯，这题卡 K 和转化率了是吧。
+1. **把最值钱的判断做成可验证的工程**——学生到底卡在哪个知识点、是该补前置还是该练方法,用证据计算出来,而不是碰运气;
+2. **把"谁讲得好"从经验变成检索问题**——把经过质量核验的公开教学内容按学生状态排序,而不是让学生在一个个视频里自己碰;
+3. **把答案的可信度做成纪律**——所有下发给学生的标准答案都来自已核验的官方解析与标准解,AI 只能组织语言,不能创造化学事实。
 
-先诊断下：能秒判出来 K 只跟温度有关、跟浓度无关吗？...
-
-【一招讲透：K 和转化率的关系】
-
-第一轨：知识层面（懂原理）
-化学平衡常数 K，本质是"反应完成度的量尺"...
-
-第二轨：考点层面（怎么考的，怎么破）
-出题人挖的坑就一个：把"平衡正向移动"直接等价于"转化率升高"...
-
-【学习路径】
-- 【高考系统课】P56：化学平衡常数 K 的应用与三段式
-  https://www.bilibili.com/video/BV1aComYMEms?p=56
-  通关标准：随便给转化率数据，30 秒内列出三段式
-
-试一道再反馈。
-
-💰 本次：¥0.0100 | 输入：2264 (1280 缓存命中) | 输出：1481
-```
+这三点合起来是"教育信息平权"的一种工程实现:不是把所有信息免费堆给学生,而是**让每个学生都能得到信息筛选与诊断判断的平等机会**。
 
 ---
 
-## 🏗️ 技术架构
+## 一次 canonical session(完整闭环)
 
-```
-            ┌─── 525 BV / 1090 SRT (B 站公开字幕)
-            ↓
-[阶段 1-3] 数据采集 → ASR 错词纠正 (98.1%) → MinHash 去重 → Unicode 规范化
-            ↓
-[阶段 4]   LLM 标签化 (23,843 chunks)
-            ↓
-[阶段 5-6] 知识图谱 (65 节点) + 题型库 (13 父 + 19 子)
-            ↓
-[阶段 7]   BGE-M3 向量索引 + BM25 + RRF 融合 (FAISS)
-            ↓
-[阶段 8]   杰哥 system_prompt (五段式 + 八大招式)
-            ↓
-[阶段 8.5] 多 API 抽象层 + 季度压缩长期记忆 (Supabase)
-            ↓
-[阶段 8.6] 部署 polish (本仓库当前状态) ✅
-            ↓
-[阶段 9]   30 题盲测 + 论文 (进行中)
-            ↓
-[阶段 11]  iOS App (高考后)
-```
+1. 从 R5 白名单和可信映射中冻结诊断、练习、held-out **三个互不重叠的题族集合**;
+2. **服务端判分**;提交前不向浏览器下发答案、rubric、item ID 或 family ID(fail-closed);
+3. 用**四状态 belief(已掌握/前置缺失/思路不稳/未掌握)**与**期望信息增益(EIG)**递进选题,必要时下探前置知识;
+4. 诊断结束后进入显式 learning checkpoint:展示与真实作答、已验证标准解绑定的讲解;
+5. **推荐已签字视频资源**(证据签字的轨道),记录推荐、观看代理与已见视频段;
+6. 用两个**未见题族**做 held-out 独立验证,生成只针对本 session 的报告、FSRS 稳定度与 7 日复习提示。
 
-**关键技术栈**：
-- 检索：BGE-M3 (1024 维) + FAISS IndexFlatIP + BM25 三通道 + RRF 融合
-- LLM：DeepSeek V4-Pro (1M context, 充分利用 13%)
-- 数据库：Supabase (PostgreSQL with RLS)
-- 框架：Python 3.10+, sentence-transformers, faiss-cpu, supabase-py
+首页默认推荐"氧化还原反应";当前只有满足"至少 5 个独立、可确定判分、答案验证通过的题族"的节点才开放。
 
----
+## 快速开始
 
-## 🚀 快速上手
-
-### 前置依赖
-
-- Python 3.10+
-- 至少 8GB 内存（BGE-M3 模型加载需要）
-- Supabase 账号（免费）
-- DeepSeek API Key（或其他 7 家之一）
-
-### 1. 克隆 + 安装
+### 方式一:Docker(推荐)
 
 ```bash
-git clone https://github.com/Chris-TLC/YHer-skill.git
-cd YHer-skill
-
-pip install -r requirements.txt
+docker build -t yher-demo .
+docker run -p 8700:8700 yher-demo            # 默认:有凭据走付费 LLM 讲解
+docker run -p 8700:8700 -e YHER_ENABLE_PAID_LLM=0 yher-demo   # 零付费确定性模式
 ```
 
-### 2. 下载 embeddings 数据
+打开 [http://127.0.0.1:8700](http://127.0.0.1:8700)。
 
-embeddings 索引文件（约 154 MB）托管在 ModelScope（国内访问最快）：
+### 方式二:本地自举(要求 Python 3.11+)
 
 ```bash
-# 方式 A：ModelScope CLI（推荐，国内访问最快）
-pip install modelscope
-modelscope download --dataset ChrisTLC/YHer-skill-embeddings --local_dir ./data/embeddings
-
-# 方式 B：使用 modelscope SDK
-python3 -c "from modelscope.hub.snapshot_download import snapshot_download; snapshot_download('ChrisTLC/YHer-skill-embeddings', repo_type='dataset', cache_dir='./data/embeddings')"
-
-# Dataset 主页：
-# https://www.modelscope.cn/datasets/ChrisTLC/YHer-skill-embeddings
+cd yihuier-chemistry-skill
+YHER_ENABLE_PAID_LLM=0 ./deploy/run_demo.sh   # 自举 .venv-demo,监听 127.0.0.1:8700
 ```
 
-### 3. 配置 .env
+健康检查:
 
 ```bash
-cp .env.example .env
-# 编辑 .env，填入你的 API Key
+curl -fsS http://127.0.0.1:8700/health | python3 -m json.tool
 ```
+
+凭据可选项:`DEEPSEEK_API_KEY`(默认)或其他 provider key 配置在 `.env`。缺少凭据、显式关闭付费通道、超时或输出不合格时,系统**保留确定性主链并诚实降级**。不要把密钥写入代码、日志、截图或报告。
+
+## 架构
+
+```text
+apps/web/index.html + app.js
+            |
+            | same-origin /api/demo/*
+            v
+apps/demo_api.py (FastAPI, localhost, one worker)
+            |
+            v
+core/learning/session_service.py
+   |          |          |          |
+   |          |          |          +-- curriculum.py -> signed video map
+   |          |          +------------- explanations.py / grading.py
+   |          +------------------------ ItemCatalog -> v4 + R5
+   +----------------------------------- mastery / selector / planner
+            |
+            v
+adapters/store/local_json.py
+  append-only events + session snapshots + projected profile
+```
+
+五个引擎的职责边界:
+
+| 引擎 | 职责 |
+|---|---|
+| `engine/mastery.py` | M/P/C/U 四状态 belief、证据更新、FSRS 衰减 |
+| `engine/selector.py` | EIG 选题、前置竞争、收敛判据、已见题排除 |
+| `engine/planner.py` | 30/60/120/180 分钟预算与诚实耗尽策略 |
+| `engine/recommender.py` | 签字轨道、预算、已见段与 propensity 快照(向量检索/重排层) |
+| `engine/memory.py` | 高价值事件与受限召回(画像只进表达类触点) |
+
+**诊断是本项目的核心创新,推荐器只是它的下游**:视频资源层本质是"内容质量核验 + 向量检索 + 状态适配重排",其价值由诊断质量决定,不作为本项目独立主张。
+
+浏览器不直接信任模型输出:公开讲解中的化学步骤只投影自 `answer_verification=passed` 的服务端标准解;LLM 只能有限选择与组织,不能创造新的标准答案事实。
+
+## 数据与数据集
+
+- 全量数据(3,329 条结构化题目、1,202 条 R5 服务白名单、6,005 条图形转写、135 节点知识图谱)随仓库发布,字段口径见 [`data/README.md`](data/README.md);
+- 55 题可读样例:`data/samples/`(确定性抽取,可复现);
+- **Hugging Face 数据集镜像**:`ChrisTLC/yher-chemistry-question-bank`(分片:题目 `items_v4` / 图谱 `knowledge_graph`,含 Dataset Card 与构建脚本 `scripts/make_hf_dataset.py`)。
+
+## 测试与验证
 
 ```bash
-# .env 内容
-DEEPSEEK_API_KEY=sk-xxxxxxxx
-SUPABASE_URL=https://xxxxxxxx.supabase.co
-SUPABASE_KEY=eyJxxxxxxxx
+python3 -m venv .venv-pub
+.venv-pub/bin/pip install -r requirements-dev.txt   # 完整测试依赖(faiss 可选)
+.venv-pub/bin/python -m pytest -q
 ```
 
-### 4. 初始化 Supabase
+- 仓库离线套件与引擎契约测试全绿基线见 CI/本地运行;
+- QA 证据与合成场景(`SYNTHETIC_DEMO` 标识)是工程验证,**不是学生证据**。
 
-在 Supabase 后台 SQL Editor 跑 `deploy/init_supabase.sql`（仓库已附）。
+## 诚实边界
 
-### 5. 开跑
+- 这是 localhost pre-alpha:无登录、租户隔离、监护人同意、删除策略或生产运维;
+- 现有浏览器旅程 / API QA / 合成场景都是**工程验证,不是实证研究**;
+- belief 表示当前证据下的模型状态,不等于分数、长期掌握或因果学习增益;
+- R5 是服务白名单,不等于全量人工 gold;关键判定位只使用真题与可信标准解;
+- AI 生成题验证是历史供给实验;canonical 首测与 held-out 不使用生成题;
+- 视频资源由原平台托管,链接可用性、版权与内容变更不受本仓库控制;
+- 公网部署、凭据轮换、发布与未成年人数据流程均未完成。
 
-```bash
-# 命令行版
-python3 apps/chat.py
+## 进一步阅读
 
-# Web 版（Streamlit）
-streamlit run apps/app.py
+- [白皮书(英文,发布版)](docs/writeup/WHITEPAPER.md)
+- [审计档案](docs/audit-history/README.md)(三轮系统级审计,含架构终裁)
+- [技术报告 v2 初稿](docs/YHer_技术报告_v2_draft.md)
+- [两分钟 Demo 分镜](docs/demo_walkthrough_script.md)
+- [数据说明](data/README.md)
 
-# 阶段一 Demo：化学私教学习舱
-streamlit run apps/stage1_demo.py
-```
-
----
-
-## 📁 目录结构
-
-```
-YHer-skill/
-├── README.md                  # 本文件
-├── LICENSE                    # MIT
-├── requirements.txt
-├── config.example.yaml
-├── .env.example
-│
-├── system_prompt.md           # 杰哥人设 + 五段式规则 (~3K 字符)
-│
-├── core/                      # 核心引擎
-│   ├── retrieve.py            # RAG 检索（向量+BM25+RRF）
-│   ├── diagnose.py            # 知识点诊断
-│   ├── format_answer.py       # 回答格式化器
-│   ├── private_tutor.py       # 阶段一私教编排（画像/诊断/任务队列）
-│   └── tutor_prompts.py       # 阶段一教学动作提示词
-│
-├── adapters/                  # 抽象层
-│   ├── llm_client.py          # 8 家 LLM 兼容
-│   └── memory.py              # 长期记忆（Supabase）
-│
-├── apps/
-│   ├── chat.py                # 命令行版
-│   ├── app.py                 # Streamlit Web 版
-│   ├── stage1_demo.py         # 阶段一：单科 AI 私教学习舱
-│   └── api_server.py          # FastAPI（占位）
-│
-├── tests/                     # 测试
-├── deploy/
-│   ├── init_supabase.sql      # 表 + RLS policy
-│   ├── Dockerfile
-│   ├── install.sh
-│   └── huggingface_spaces_guide.md
-└── docs/                      # 设计文档
-```
-
----
-
-## 🧭 阶段一 Demo：单科 AI 私教学习舱
-
-阶段一不再把 AI 定位为"问答助手"，而是定位为一节课的执行型私教：
-
-1. 输入学生画像、本次目标和托管时长
-2. 自动生成诊断题、初始能力假设和任务队列
-3. 使用 LLM 批改诊断题，定位真实错因
-4. 按任务节点执行教学：追问、微讲解、例题、流程训练、变式、复盘
-5. 结束时生成学生画像更新和下一次学习计划
-
-数据库草案见 `deploy/init_stage1_tutor.sql`，用于后续把 Demo 状态迁移到 Supabase。
-
----
-
-## 🎓 核心创新点（论文方向）
-
-1. **教学者认知 vs 考纲分类的颗粒度选择**
-   - 题型库做了 13 父 + 19 子的二级颗粒度，不是滥竽充数地缩减，而是细分后让 LLM 具体情况具体分析时更全面从容
-
-2. **缓存友好的 prompt 结构（前缀稳定 → 后缀变化）**
-   - USER_PROFILE 移到 system_prompt 末尾（每天更新 1 次），DeepSeek prompt cache 命中率从 0 升至 1280-1664 tokens 稳定区间
-
-3. **LLM hallucination 的特征签名与防御**
-   - 通过 `source_chunk_count` 字段检测知识图谱的"无数据虚构"现象
-   - RAG + system_prompt 双层防御：知识边界外的问题会被自动拒绝并重定向到真实存在的内容
-
-4. **多 API 统一抽象（OpenAI 兼容 + Anthropic 独立 SDK）**
-   - 7 家用 OpenAI SDK，1 家（Anthropic）用独立 SDK
-   - 模型降级检测（防 DeepSeek API 把 reasoner 路由到 chat 的静默降级）
-
-5. **充分利用 1M context 的私教级长期记忆**
-   - 完整记忆 always-on，24 个月堆积只用 1M context 的 13%
-   - 季度压缩（90 天/4000 tokens 高保真档案）
-
----
-
-## 💰 成本
-
-- **开发期总成本**：¥219.24（数据处理 + 知识图谱构建）
-- **运行期 24 月预估**：¥124（按每天 1.5 题 × ¥0.01）
-- **prompt caching 节省**：120 倍（input miss ¥3.13/M vs hit ¥0.026/M）
-
----
-
-## ⚖️ 版权与免责声明
-
-### 关于源数据
-
-本项目使用的训练数据来自 B 站 UP 主"一化儿"的**公开发布教学视频字幕**。
-- 项目用途：**非营利的教育研究 + 个人学习工具 + 研究性学习论文**
-- 不发行视频原内容，不替代原视频访问
-- 推荐视频时附带原视频 URL，引导用户回到 B 站观看
-
-如果一化儿（杰哥）本人或法定代理人对本项目有任何意见，请通过 Issues 联系，我会立即响应。
-
-### 关于代码 License
-
-代码部分采用 **MIT License**（见 LICENSE 文件）。
-
-但请注意：
-- ✅ 你可以自由 fork、修改、商用代码框架
-- ❌ 不要直接复用本项目里的 system_prompt.md 或杰哥风格 prompt 用于商业产品（这是一化儿教学体系的衍生表达）
-- ✅ 你可以借鉴架构，自己构建针对其他教育内容创作者的类似工具
-
-### 关于 AI 生成内容
-
-本项目的 AI 回答由 LLM 生成，可能包含错误。**不能替代专业教师**。请把它当作"复习辅助工具"而非"权威答案"。高考前的备考请以学校教师指导为准。
-
----
-
-## 🤝 贡献
-
-欢迎 Issues 和 PR：
-- 数据增强：发现 ASR 识别错的化学术语
-- prompt 工程：改进杰哥语调或思维招式
-- 多模型适配：测试新的 LLM 提供商
-- 部署文档：iOS App、HuggingFace Spaces、Docker
-
----
-
-## 📚 致谢
-
-- **一化儿（杰哥）**：高质量的化学应试教学体系是本项目的源泉
-- **DeepSeek 团队**：V4-Pro 1M context + prompt caching 让长期记忆经济可行
-- **BGE 团队（北京智源）**：BGE-M3 中文 embedding
-- **Anthropic**：Claude（架构设计、prompt 工程指导）
-- **Supabase**：免费 PostgreSQL + Auth 生态
-
----
-
-## 👤 作者
-
-- **Chris**（高二学生 / 化学教育 AI 爱好者）
-- 联系：通过 GitHub Issues
-
----
-
-## 📜 引用
-
-如果本项目对你的研究有帮助，欢迎引用：
-
-```bibtex
-@misc{yher2026,
-  author = {Chris},
-  title = {YHer-skill: A RAG-based AI Chemistry Tutor Mimicking a Real Educator's Teaching Methodology},
-  year = {2026},
-  publisher = {GitHub},
-  howpublished = {\url{https://github.com/Chris-TLC/YHer-skill}}
-}
-```
-
-研究性学习论文（中文版）：完成后链接添加到此处。
-
----
-
-**本仓库于 2026-05-06 首次发布。** 阶段 1-8.6 完成，阶段 9（评估 + 论文）进行中。
+代码采用 [MIT License](LICENSE)。题目、试卷、字幕与外部视频各自保留原权利归属;MIT 许可不自动覆盖内容资产。

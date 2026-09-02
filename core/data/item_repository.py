@@ -15,14 +15,19 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
+from core.data.item_quality import ItemQualityGate, Purpose
+
 ITEM_BANK_DIR = Path(__file__).parent.parent.parent / "data" / "item_bank"
+QUALITY_MANIFEST = Path(__file__).parent.parent.parent / "data" / "quality" / "item_quality_manifest.jsonl"
 
 
 class ItemRepository:
     """读取真题库。允许题库为空（阶段一初期还没真题，引擎退化到 KG 判据）。"""
 
-    def __init__(self, bank_dir: Optional[Path] = None):
+    def __init__(self, bank_dir: Optional[Path] = None, quality_manifest_path: Optional[Path] = None):
         self.bank_dir = Path(bank_dir) if bank_dir else ITEM_BANK_DIR
+        self.quality_manifest_path = Path(quality_manifest_path) if quality_manifest_path else QUALITY_MANIFEST
+        self.quality_gate = ItemQualityGate(self.quality_manifest_path)
         self._items: Dict[str, Dict[str, Any]] = {}
         self._loaded = False
 
@@ -30,7 +35,12 @@ class ItemRepository:
         if self._loaded:
             return
         if self.bank_dir.exists():
-            for f in self.bank_dir.glob("*.jsonl"):
+            files = sorted(self.bank_dir.glob("*.jsonl"))
+            if self.bank_dir.resolve() == ITEM_BANK_DIR.resolve():
+                canonical = sorted(self.bank_dir.glob("chemistry_v3_*.jsonl"))
+                if canonical:
+                    files = canonical
+            for f in files:
                 with open(f, encoding="utf-8") as fp:
                     for line in fp:
                         if not line.strip():
@@ -59,6 +69,7 @@ class ItemRepository:
         region: Optional[str] = None,
         exclude_ids: Optional[Set[str]] = None,
         limit: int = 3,
+        purpose: Purpose = "diagnosis",
     ) -> List[Dict[str, Any]]:
         """按知识点/题型/难度/卷别筛选真题。"""
         self._ensure_loaded()
@@ -75,6 +86,10 @@ class ItemRepository:
                 continue
             if region and item.get("region") != region:
                 continue
+            if purpose != "debug_all":
+                decision = self.quality_gate.evaluate(item, purpose=purpose)
+                if not decision.allowed:
+                    continue
             out.append(item)
             if len(out) >= limit:
                 break

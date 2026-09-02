@@ -106,7 +106,11 @@ class LLMClient:
         sdk = self.config['sdk']
         if sdk in ('openai', 'openai_compat'):
             from openai import OpenAI
-            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                max_retries=0,
+            )
         elif sdk == 'anthropic':
             from anthropic import Anthropic
             self.client = Anthropic(api_key=self.api_key)
@@ -154,6 +158,7 @@ class LLMClient:
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
+                timeout=18.0,
             )
         except Exception as e:
             error_str = str(e).lower()
@@ -247,9 +252,10 @@ class LLMClient:
     def _validate_model(self, returned_model: str):
         """DeepSeek 静默降级保护"""
         if self.provider == 'deepseek':
-            if 'v4-pro' not in returned_model.lower():
+            # 只检查 pro 模型，flash 不需要检查
+            if 'pro' in self.model.lower() and 'v4-pro' not in returned_model.lower():
                 raise ValueError(
-                    f"模型降级！请求 deepseek-v4-pro，"
+                    f"模型降级！请求 {self.model}，"
                     f"实际返回 {returned_model}"
                 )
 

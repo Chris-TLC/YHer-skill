@@ -1,0 +1,3 @@
+# Generated simulation artifacts are provenance-bound and must not be committed.
+*
+!.gitignore

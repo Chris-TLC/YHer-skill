@@ -1,0 +1,28 @@
+{
+  "schema_version": "yher.synthetic_scenario.v1",
+  "synthetic": true,
+  "scenario_id": "SD08",
+  "label": "SYNTHETIC_DEMO",
+  "title": "同分异构体：首题后离开",
+  "budget_tier": "30min",
+  "outcome": "paused",
+  "student": {
+    "user_id": "SYNTHETIC_DEMO_SD08",
+    "grade": "高二",
+    "learning_purpose": "exam"
+  },
+  "sessions": [
+    {
+      "synthetic": true,
+      "episode_id": "SD08-E1",
+      "node": "同分异构体",
+      "expected_availability": "open",
+      "watch": "skip"
+    }
+  ],
+  "expected": {
+    "scenario_outcome": "paused",
+    "profile_continuity": false,
+    "real_student_evidence": false
+  }
+}

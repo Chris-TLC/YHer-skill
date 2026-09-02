@@ -1,0 +1,5 @@
+
+# Release 打包排除:大 JSONL 数据体(仓库本体保留全部,打包件仅含样例)
+data/item_bank/**/*.jsonl export-ignore
+data/raw_papers/*.jsonl export-ignore
+data/knowledge_graph_150*.jsonl export-ignore

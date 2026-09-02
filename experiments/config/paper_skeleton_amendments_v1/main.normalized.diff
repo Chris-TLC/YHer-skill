@@ -1,0 +1,58 @@
+--- frozen-original/main.md
++++ current/main.md
+@@ -314,4 +314,8 @@
+-seeds, engine and input hashes, and a truthful run-start timestamp. It refuses data
+-execution unless bytecode writes were disabled from process start. A shard becomes
+-resumable only after a protected-filesystem guard attests that student stores, study
+-logs, profile snapshots, and repository caches were unchanged.
++seeds, engine and input hashes, and a truthful run-start timestamp. Data execution
++requires bytecode writes to be disabled from process start. A shard becomes resumable
++only after a protected-filesystem guard attests that designated paths were unchanged
++during that computation window. These per-shard attestations do not establish global
++byte identity across the full wall-clock run: a concurrent test wrote `.pytest_cache`
++between batches. The isolation evidence therefore supports no protected-path writes
++during each guarded computation window, not continuous zero-write across the entire
++interval.
+@@ -325 +329 @@
+-## 7. Discussion Framework
++## 7. Discussion
+@@ -336,4 +340,8 @@
+-chemistry, defined the diagnostic-versus-recommendation boundary, selected the
+-research question, approved the state and probe-policy framing, set honesty and
+-quality gates, made go/no-go decisions, and owns interpretation of results. Dated
+-evidence is indexed in [`decision_log.md`](decision_log.md).
++chemistry, defined the diagnostic-versus-recommendation boundary, requested a re-review
++with academic value as the priority, and commissioned the frozen v2 route. The
++decision-layer synthesis proposed the finite-budget state and probe-policy framing;
++the student approved that route and set the pre-outcome honesty and quality gates.
++Dated evidence is indexed in
++[`decision_log.md`](decision_log.md), especially D11, with repository-local anchors in
++the [`2026-07-13 18:01` overview entry](../../../PROJECT_HANDOFF/YHER_PROJECT_OVERVIEW.md)
++and the [frozen v2 brief](../../../PROJECT_HANDOFF/codex_briefs/2026-07-13_仿真评估实验与论文总攻.md).
+@@ -342,4 +350,6 @@
+-code and automation, drafted analyses and prose, generated tests, and performed
+-adversarial reviews. Those outputs were constrained by written briefs, frozen
+-contracts, deterministic tests, source-data gates, and post-implementation review.
+-AI assistance is not represented as independent student authorship.
++code and automation, executed the simulation and analysis, drafted the current result
++interpretation and prose, generated tests, and performed adversarial reviews. Those
++outputs were constrained by written briefs, frozen contracts, deterministic tests,
++source-data gates, and post-implementation review. Final interpretation and any
++submission decision remain pending student review; AI assistance is not represented as
++independent student authorship.
+@@ -390,6 +400,9 @@
+-Before any outcome run, the controller must commit the reviewed runner, create an
+-annotated experiment tag at that exact HEAD, and use a truthful UTC run-start value.
+-Execution requires `python -B` or `PYTHONDONTWRITEBYTECODE=1`. Raw simulation artifacts
+-remain under `data/sim_store/confirmatory/<run_id>/`; they never enter real student
+-stores. S3 must regenerate all paper values and figures from raw artifacts in one
+-command and populate only [`results_contract.md`](results_contract.md).
++For the completed programmatic run, the controller committed the reviewed runner,
++created an annotated experiment tag at that exact HEAD, and bound a truthful UTC
++run-start value. Execution required `python -B` or `PYTHONDONTWRITEBYTECODE=1`. Raw
++simulation artifacts remain under `data/sim_store/confirmatory/<run_id>/`; they never
++enter real student stores. S3 regenerated the programmatic estimates and figures from
++raw artifacts and populated only [`results_contract.md`](results_contract.md). The H5
++collection is complete but was excluded pre-outcome because the frozen explicit
++misconception-to-option mapping gate could not be satisfied. Zero providers qualified,
++and no supported/partially-supported/not-supported H5 outcome decision was made.

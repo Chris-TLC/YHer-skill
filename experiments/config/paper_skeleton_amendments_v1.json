@@ -1,0 +1,75 @@
+{
+  "amendments": [
+    {
+      "affected_sections": [
+        "5.7 Isolation and provenance",
+        "7. Discussion",
+        "8. Contribution Statement and AI Use",
+        "10. Reproducibility"
+      ],
+      "amendment_id": "2026-07-14-main-honesty-and-lifecycle",
+      "classification": "non_outcome_editorial_audit_correction",
+      "evidence_anchors": [
+        {
+          "locator": "Question And Scope and Honest Reporting And Stopping",
+          "path": "experiments/analysis_plan.md",
+          "sha256": "662e6844dfbabf8942d787d6b7c2ef37d92c995f22e5968563fa0d9861317fd5"
+        },
+        {
+          "locator": "D10-D13 and pending-student-review preamble",
+          "path": "docs/paper/decision_log.md",
+          "sha256": "7fb88e69b85970a0880f1a5e4e297c584ce5d36af64c09f465eaffcb78be831a"
+        },
+        {
+          "locator": "aggregate_isolation_assertions",
+          "path": "experiments/confirmatory/provenance.py",
+          "sha256": "a55629a5a021322f80749ed01578f4b85069b1c013a6c8fcf576d3cee22fc98d"
+        }
+      ],
+      "from_skeleton_sha256": "751a719870a18b4fb2699815240401db88c74f3580d3a3e60154d5a520e7e5ff",
+      "generated_outcome_regions_unchanged": true,
+      "manuscript": "main.md",
+      "normalized_diff_path": "paper_skeleton_amendments_v1/main.normalized.diff",
+      "normalized_diff_sha256": "ad14f90972c63c7f3517a4a27bf49ca1efbae8dafb7c1c4a2de0fe64e6aaeea3",
+      "outcome_knowledge_status": "post_collection_non_outcome_only",
+      "rationale": "Narrow the H-A claim to guarded computation windows, correct decision-layer and student attribution, replace stale future tense, disclose the final H5 pre-outcome exclusion, and mark final interpretation as pending student review.",
+      "recorded_at_utc": "2026-07-14T00:29:45Z",
+      "review_status": "ai_draft_pending_user_or_claude_review",
+      "reviewer": null,
+      "to_skeleton_sha256": "ade54e4145be2a708a741eff5a557fd8c02aa554908d3cdd9aff0b0a43da2359"
+    },
+    {
+      "affected_sections": [
+        "2. What Is New and What Is Prior Art",
+        "6. Responsibility, Limitations, and Reproducibility"
+      ],
+      "amendment_id": "2026-07-14-yau-citation-and-authorship",
+      "classification": "non_outcome_editorial_audit_correction",
+      "evidence_anchors": [
+        {
+          "locator": "D10-D13 and pending-student-review preamble",
+          "path": "docs/paper/decision_log.md",
+          "sha256": "7fb88e69b85970a0880f1a5e4e297c584ce5d36af64c09f465eaffcb78be831a"
+        },
+        {
+          "locator": "Question And Scope",
+          "path": "experiments/analysis_plan.md",
+          "sha256": "662e6844dfbabf8942d787d6b7c2ef37d92c995f22e5968563fa0d9861317fd5"
+        }
+      ],
+      "from_skeleton_sha256": "1afff22d5f8ca706bafe61ba73588a44175cf0b10e7f992b20e74f2fe2eb6045",
+      "generated_outcome_regions_unchanged": true,
+      "manuscript": "yau_award_4page.md",
+      "normalized_diff_path": "paper_skeleton_amendments_v1/yau_award_4page.normalized.diff",
+      "normalized_diff_sha256": "bcf086b38c9046d5a9072be65bb92a72a4f5e99f9afe00d99a2fc42a7f5d79f8",
+      "outcome_knowledge_status": "post_collection_non_outcome_only",
+      "rationale": "Narrow an unsupported expected-information literature attribution, attach simulated-student citations to prior-work validation rather than the internal H5 design, and state that AI drafted the current result interpretation while final interpretation remains pending student review.",
+      "recorded_at_utc": "2026-07-14T00:29:45Z",
+      "review_status": "ai_draft_pending_user_or_claude_review",
+      "reviewer": null,
+      "to_skeleton_sha256": "57d10d13cf836626972da9619c294b9d5419b539c53a76b010290ad790b5410e"
+    }
+  ],
+  "policy": "post_collection_non_outcome_editorial_only",
+  "schema_version": "yher.paper-skeleton-amendments.v1"
+}
