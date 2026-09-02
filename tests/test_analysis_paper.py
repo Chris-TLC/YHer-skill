@@ -2040,8 +2040,8 @@ def test_binder_rejects_machine_local_session_evidence_anchor(
         evidence_anchors=[
             {
                 "path": (
-                    "/Users/mac/.codex/sessions/2026/07/14/"
-                    "machine-local-session.jsonl"
+                    str(pathlib.Path(__file__).resolve().parents[1])
+                    + "/no-such-session.jsonl"
                 ),
                 "sha256": "1" * 64,
                 "locator": "machine-local evidence",

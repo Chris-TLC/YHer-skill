@@ -18,6 +18,7 @@ Phase 0 重写：视觉模型 PDF 提取管道（四轮验证 → 99%+ 准确率
 
 import json, re, sys, time, os, hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict
@@ -28,7 +29,7 @@ from adapters.vision_client import VisionClient
 from adapters.llm_client import LLMClient
 
 # ── 配置 ─────────────────────────────────────────────
-PAPERS_DIR = Path("/Users/mac/Desktop/项目文件夹/Tools/上海化学卷合集")
+PAPERS_DIR = Path(os.environ.get("YHER_PAPERS_DIR", str(Path(__file__).resolve().parents[2] / "上海化学卷合集")))
 OUTPUT_DIR = Path(__file__).parent.parent / "data/from_pdf"
 IMAGE_CACHE_DIR = Path(__file__).parent.parent / "data/page_images"
 

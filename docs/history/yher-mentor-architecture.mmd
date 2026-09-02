@@ -1,0 +1,31 @@
+%%{init: {"flowchart": {"nodeSpacing": 24, "rankSpacing": 28}}}%%
+graph TD
+    A["1 数据与质量治理<br/>DOCX-native v4 3329 → R5 1202<br/>973 trusted / 963 families<br/>400 deterministic / 27 open nodes"]
+    B["2 Web + FastAPI + SessionService<br/>same-origin / localhost:8700 / 1 worker<br/>服务端私有 item / family / key<br/>冻结 diagnostic / practice / held-out"]
+    C["3 自适应诊断<br/>判分 → likelihood → 后验 → EIG → 下一题<br/>非法自由证据 deferred<br/>M / P / C / U Bayes + FSRS<br/>coverage + budget；gap 0.45 / direct 3"]
+    D["4 证据约束讲解与推荐<br/>verified solution only<br/>状态处方 x 轨道 x 匹配 x 预算<br/>30 active / 345 video bindings<br/>efficacy 当前为 1.0"]
+    E["5 独立验证<br/>practice + 2 held-out families<br/>两个 held-out 全对才 verified"]
+    F["6 append-once 事件重放<br/>answer / rec / watch / pause / complete<br/>画像 + FSRS + seen segments<br/>session 报告 + 下一次基线"]
+    R["研究仿真，不是学生效果<br/>32400 intended / 30800 valid<br/>复用 Bayes / EIG / stopping<br/>当前结论：需 redesign"]
+    X["尚未成立<br/>无真人构念效度或视频因果增益<br/>无公网认证、同意、删除和监控<br/>不能外推长期学习效果"]
+
+    A -->|"trusted item / family"| B
+    B -->|"private assignment"| C
+    C -->|"收敛或预算耗尽"| D
+    D -->|"显式 learning ack"| E
+    E --> F
+    C -."算法实验".-> R
+    D -."不能外推推荐疗效或长期增益".-> X
+
+    classDef data fill:#e8f2ff,stroke:#2369a1,color:#102a43
+    classDef runtime fill:#edf7ed,stroke:#2e7d32,color:#17351a
+    classDef diagnosis fill:#fff4db,stroke:#a86700,color:#422b00
+    classDef learning fill:#f3edff,stroke:#6b4ca5,color:#2e1d4c
+    classDef evidence fill:#e8f7f4,stroke:#147d70,color:#123b35
+    classDef caution fill:#fff0f0,stroke:#b44444,color:#511b1b
+    class A data
+    class B runtime
+    class C diagnosis
+    class D learning
+    class E,F evidence
+    class R,X caution

@@ -1,42 +1,65 @@
-# YHer Chemistry Demo
+# YHer Chemistry:Evidence-Bound Diagnostic Learning System
 
-YHer 是一个面向上海高中化学的证据约束学习闭环：用真题做动态诊断，按本次作答证据提供讲解和视频资源，再用未见题族独立验证，并把结果写回可重放的学生画像。
+**信息平权:让每个学生都能得到"看得见依据"的诊断与辅导。**
+Educational information equity: every student deserves a diagnosis whose evidence they can inspect.
 
-当前状态是 **pre-alpha 单机 Demo**。它不是已上线产品，没有真实学生留存、付费或学习效果证据，也不应直接部署给未成年人使用。
+YHer 是一套面向上海高中化学的**证据约束学习闭环**——用真题做动态诊断,按本次作答证据提供讲解与资源推荐,再用未见题族做独立验证,并把结果写回可重放的学生画像。整条链路的创新锚点是**诊断引擎**(belief 推断 + 信息量选题 + 独立验证),不是任何单一内容来源。
 
-## 当前能做什么
+当前状态是 **pre-alpha 单机 Demo**:不是已上线产品,没有真实学生留存、付费或学习效果证据,也不应直接部署给未成年人使用。
 
-一次 canonical session 由同一套服务端状态机完成：
+> 本仓库开源计划:代码 MIT;题库/知识图谱/转写表随仓库公开,另有 [Hugging Face 数据镜像](https://huggingface.co/datasets/ChrisTLC/yher-chemistry-question-bank)(Dataset Card 及字段口径)。
 
-1. 从当前 R5 白名单和可信映射中冻结诊断、练习、held-out 三个互不重叠的题族集合。
-2. 服务端判分；提交前不向浏览器下发答案、rubric、item ID 或 family ID。
-3. 用四状态 belief 和 EIG 递进选题，必要时下探前置知识。
-4. 诊断结束后进入显式 learning checkpoint，展示与真实作答和已验证标准解绑定的讲解。
-5. 推荐有证据签字的视频资源；记录推荐、观看代理和已见视频段。
-6. 用两个未见题族做 held-out 验证，生成只针对本 session 的报告、FSRS 稳定度和 7 日复习提示。
+---
 
-首页默认推荐“氧化还原反应”。当前只有满足“至少 5 个独立、可确定判分、答案验证通过的题族”的节点才开放。
+## 为什么存在(定位)
 
-## 本地运行
+高考地区的教育信息分布不均:好老师、好方法、好题目,往往集中在少数资源充足的学校,而绝大多数学生只能依赖自己的摸索。YHer 的目标不是"再造一个老师",而是:
 
-要求 Python 3.11 或更新版本。启动脚本会在仓库内自举 `.venv-demo`，安装 [requirements-demo.txt](requirements-demo.txt) 中固定版本的最小依赖，并以单 worker 监听本机回环地址。
+1. **把最值钱的判断做成可验证的工程**——学生到底卡在哪个知识点、是该补前置还是该练方法,用证据计算出来,而不是碰运气;
+2. **把"谁讲得好"从经验变成检索问题**——把经过质量核验的公开教学内容按学生状态排序,而不是让学生在一个个视频里自己碰;
+3. **把答案的可信度做成纪律**——所有下发给学生的标准答案都来自已核验的官方解析与标准解,AI 只能组织语言,不能创造化学事实。
 
-`run_demo.sh` 默认允许已配置的付费 LLM 通道。要做零 provider LLM 调用、零付费的确定性复现，必须显式关闭：
+这三点合起来是"教育信息平权"的一种工程实现:不是把所有信息免费堆给学生,而是**让每个学生都能得到信息筛选与诊断判断的平等机会**。
+
+---
+
+## 一次 canonical session(完整闭环)
+
+1. 从 R5 白名单和可信映射中冻结诊断、练习、held-out **三个互不重叠的题族集合**;
+2. **服务端判分**;提交前不向浏览器下发答案、rubric、item ID 或 family ID(fail-closed);
+3. 用**四状态 belief(已掌握/前置缺失/思路不稳/未掌握)**与**期望信息增益(EIG)**递进选题,必要时下探前置知识;
+4. 诊断结束后进入显式 learning checkpoint:展示与真实作答、已验证标准解绑定的讲解;
+5. **推荐已签字视频资源**(证据签字的轨道),记录推荐、观看代理与已见视频段;
+6. 用两个**未见题族**做 held-out 独立验证,生成只针对本 session 的报告、FSRS 稳定度与 7 日复习提示。
+
+首页默认推荐"氧化还原反应";当前只有满足"至少 5 个独立、可确定判分、答案验证通过的题族"的节点才开放。
+
+## 快速开始
+
+### 方式一:Docker(推荐)
+
+```bash
+docker build -t yher-demo .
+docker run -p 8700:8700 yher-demo            # 默认:有凭据走付费 LLM 讲解
+docker run -p 8700:8700 -e YHER_ENABLE_PAID_LLM=0 yher-demo   # 零付费确定性模式
+```
+
+打开 [http://127.0.0.1:8700](http://127.0.0.1:8700)。
+
+### 方式二:本地自举(要求 Python 3.11+)
 
 ```bash
 cd yihuier-chemistry-skill
-YHER_ENABLE_PAID_LLM=0 ./deploy/run_demo.sh
+YHER_ENABLE_PAID_LLM=0 ./deploy/run_demo.sh   # 自举 .venv-demo,监听 127.0.0.1:8700
 ```
 
-首次启动若缺少依赖，脚本可能通过 `pip` 联网安装；只有已准备好 `.venv-demo` 或本地依赖缓存时，上述运行流程才同时满足外网隔离。
-
-打开 [http://127.0.0.1:8700](http://127.0.0.1:8700)。健康检查：
+健康检查:
 
 ```bash
 curl -fsS http://127.0.0.1:8700/health | python3 -m json.tool
 ```
 
-默认启动在存在 DeepSeek 凭据时，讲解和少量自由作答可使用 provider；凭据缺失、显式设置 `YHER_ENABLE_PAID_LLM=0`、超时或输出不合格时，系统保留确定性主链并诚实降级。不要把密钥写入代码、日志、截图或报告。
+凭据可选项:`DEEPSEEK_API_KEY`(默认)或其他 provider key 配置在 `.env`。缺少凭据、显式关闭付费通道、超时或输出不合格时,系统**保留确定性主链并诚实降级**。不要把密钥写入代码、日志、截图或报告。
 
 ## 架构
 
@@ -60,99 +83,53 @@ adapters/store/local_json.py
   append-only events + session snapshots + projected profile
 ```
 
-五个引擎的职责边界：
+五个引擎的职责边界:
 
-- `engine/mastery.py`：M/P/C/U 四状态 belief、证据更新和 FSRS 衰减。
-- `engine/selector.py`：EIG 选题、前置竞争、收敛和已见题排除。
-- `engine/planner.py`：30/60/120/180 分钟预算与诚实耗尽策略。
-- `engine/recommender.py`：签字轨道、预算、已见段和 propensity 快照。
-- `engine/memory.py`：可进入画像的高价值事件和受限召回。
+| 引擎 | 职责 |
+|---|---|
+| `engine/mastery.py` | M/P/C/U 四状态 belief、证据更新、FSRS 衰减 |
+| `engine/selector.py` | EIG 选题、前置竞争、收敛判据、已见题排除 |
+| `engine/planner.py` | 30/60/120/180 分钟预算与诚实耗尽策略 |
+| `engine/recommender.py` | 签字轨道、预算、已见段与 propensity 快照(向量检索/重排层) |
+| `engine/memory.py` | 高价值事件与受限召回(画像只进表达类触点) |
 
-浏览器不直接信任模型输出。公开讲解中的化学步骤只投影自 `answer_verification=passed` 的服务端标准解；LLM 可以做有限的选择和组织，不能创造新的标准答案事实。
+**诊断是本项目的核心创新,推荐器只是它的下游**:视频资源层本质是"内容质量核验 + 向量检索 + 状态适配重排",其价值由诊断质量决定,不作为本项目独立主张。
 
-## 2026-07-13 数据快照
+浏览器不直接信任模型输出:公开讲解中的化学步骤只投影自 `answer_verification=passed` 的服务端标准解;LLM 只能有限选择与组织,不能创造新的标准答案事实。
 
-以下数字来自已审计实现 SHA `d62aad4` 的 `/health`、正式数据文件和签字配置。它们描述的是本机快照，不是用户规模；后续纯文档提交不改变这组运行时事实。
+## 数据与数据集
 
-| 资产/门 | 当前事实 | 权威路径 |
-|---|---:|---|
-| v4 主库 | 3,329 行 | `data/item_bank/v4/chemistry_v4_1_3329.jsonl` |
-| R5 决策台账 | 2,526 行 | `data/item_bank/v4/usability_r5_v1.jsonl` |
-| `r5_serve=true` | 1,202 | `/health` + R5 台账 |
-| canonical trusted | 973 | `/health` |
-| canonical rejected | 229 | `/health` |
-| 独立内容题族 | 963 | `/health` |
-| 可确定判分题 | 400 | M6 catalog audit |
-| 当前开放节点 | 27 | `/api/demo/nodes` |
-| 知识图谱 | 135 行 | `data/knowledge_graph_150_enriched.jsonl` |
-| 历史 v3 题库 | 6,438 行，不进入 canonical 学生题源 | `data/item_bank/chemistry_v3_6695.jsonl` |
+- 全量数据(3,329 条结构化题目、1,202 条 R5 服务白名单、6,005 条图形转写、135 节点知识图谱)随仓库发布,字段口径见 [`data/README.md`](data/README.md);
+- 55 题可读样例:`data/samples/`(确定性抽取,可复现);
+- **Hugging Face 数据集镜像**:`ChrisTLC/yher-chemistry-question-bank`(分片:题目 `items_v4` / 图谱 `knowledge_graph`,含 Dataset Card 与构建脚本 `scripts/make_hf_dataset.py`)。
 
-答案信任门在 M6 将 9 条 `needs_review` 的“看似可判”记录改为 fail-closed，因此开放节点从先前快照的 28 降为 27；“化学反应速率”当前低于五题族开放门。这是正确的能力收缩，不用旧数字掩盖。
-
-## 视频资源
-
-频道目录包含 551 个 BV、1,136 个分 P，其中 842 个 `(bv, p)` 与现有语料相交。43 个轨道实体经过证据核对：
-
-- 30 个实体签字启用；
-- 13 个因标题证据不足保持 neutral；
-- runtime 含 148 个路由键和 345 个候选段，这里的 148 不是新增 KG 节点；
-- 只有 8 个有机段带真实时间锚，覆盖 6 个路由键；其他资源只给视频级链接，不编造时间戳。
-
-配置和可审计证据在 `config/curriculum/track_map_v1.yaml` 与 `core/learning/assets/curriculum_runtime_v1.json`。
-
-## 测试与 QA
-
-本次收官快照的 fresh 证据：
-
-- 仓库离线套件：569/569；
-- 根五引擎契约：119/119；
-- 自动化桌面 1280×800 与手机 390×844 浏览器旅程：12/12，`failures=[]`；独立 final `computer-use` 人工矩阵也完成 12/12，桌面/手机 6/6，保留 `cu_final_j01..j12` 的 learning/report 共 24 张截图；
-- API fresh run `20260712T224150Z`（服务 SHA `ce0700f`）中，确定性接口 p95 为 6.704 ms，低于 500 ms 门；LLM 全文最大 16.497 s，低于 20 s 门；
-- 提交前响应泄漏扫描未发现答案、模型名或凭据字段；
-- 12 个 final session JSON 的 `item_overlap=[]`、`family_overlap=[]`、`out_of_r5=[]`；手机 DevTools 清除 filter 后 console 为 0 messages；唯一 `/.well-known/appspecific/...` 404 是 Chrome DevTools 探针，不是应用请求失败；
-- 第 12 条使用隔离的 8701 `offline_fallback`，practice 诚实 deferred，provider 成本为 0。连同最终全错补证旅程，全夜累计 205 个付费事件，365,380 input tokens、123,706 output tokens、CNY 1.115468720。
-
-post-fix 内容审查在 authoritative projection 范围内为 PASS：无 key-insight 残句；strong 轨迹只有难度支架而无错误支架；错误轨迹显示服务端真实错题数，并且在同一高难 anchor 上严格长于全对轨迹；步骤与答案只来自 verified standard solution，未使用比喻。这里签的是 evidence-bound 目标，不宣称模型可自由生成可靠化学事实，也不声称非流式端点达到首 token 门。
-
-创建同一套 runtime/dev 虚拟环境后可运行：
+## 测试与验证
 
 ```bash
-python3 -m venv .venv-demo
-.venv-demo/bin/python -m pip install -r requirements-demo.txt -r requirements-dev.txt
-.venv-demo/bin/python -m pytest tests -q
-.venv-demo/bin/python -m pytest tests/test_synthetic_scenarios.py -q
+python3 -m venv .venv-pub
+.venv-pub/bin/pip install -r requirements-dev.txt   # 完整测试依赖(faiss 可选)
+.venv-pub/bin/python -m pytest -q
 ```
 
-完整 QA 证据保存在本机交付目录 `/tmp/yher_demo_overnight/`，该目录不是仓库运行依赖。
-
-## SYNTHETIC_DEMO
-
-`demo/synthetic_scenarios/` 包含 24 个明确标注的合成学生场景，形成 32 个 episode。它们在 30/60/120 分钟与四种结局上做平衡覆盖，只用于重放、回归和录屏准备。
-
-场景计划覆盖 28 个专题，但当前可实际启动的只有上述 27 个；“化学反应速率”被重放器验证为预期关闭。合成重放使用独立 `/tmp` store、零网络、零付费调用，绝不与真实或 QA 事件混写。
-
-```bash
-.venv-demo/bin/python -m demo.synthetic_scenarios.validate
-.venv-demo/bin/python -m demo.synthetic_scenarios.replay \
-  --output /tmp/yher_synthetic_demo_replays/readme_run
-```
-
-任何带 `SYNTHETIC_DEMO` 标识的会话都不是学生证据。
+- 仓库离线套件与引擎契约测试全绿基线见 CI/本地运行;
+- QA 证据与合成场景(`SYNTHETIC_DEMO` 标识)是工程验证,**不是学生证据**。
 
 ## 诚实边界
 
-- 这是 localhost pre-alpha，没有登录、租户隔离、监护人同意、删除策略或生产运维。
-- 现有 12 条浏览器旅程、API QA 和 24 个合成场景都是工程验证，不是实证研究。
-- belief 表示当前证据下的模型状态，不等于分数、长期掌握或因果学习增益。
-- R5 是服务白名单，不等于全量人工 gold；关键判定位只使用真题和可信标准解。
-- AI 生成题验证是历史供给实验；canonical 首测和 held-out 不使用生成题。
-- 外部视频仍由原平台托管，链接可用性、版权和内容变更不受本仓库控制。
-- 公网部署、凭据轮换、发布和未成年人数据流程均未完成。
+- 这是 localhost pre-alpha:无登录、租户隔离、监护人同意、删除策略或生产运维;
+- 现有浏览器旅程 / API QA / 合成场景都是**工程验证,不是实证研究**;
+- belief 表示当前证据下的模型状态,不等于分数、长期掌握或因果学习增益;
+- R5 是服务白名单,不等于全量人工 gold;关键判定位只使用真题与可信标准解;
+- AI 生成题验证是历史供给实验;canonical 首测与 held-out 不使用生成题;
+- 视频资源由原平台托管,链接可用性、版权与内容变更不受本仓库控制;
+- 公网部署、凭据轮换、发布与未成年人数据流程均未完成。
 
 ## 进一步阅读
 
+- [白皮书(英文,发布版)](docs/writeup/WHITEPAPER.md)
+- [审计档案](docs/audit-history/README.md)(三轮系统级审计,含架构终裁)
 - [技术报告 v2 初稿](docs/YHer_技术报告_v2_draft.md)
 - [两分钟 Demo 分镜](docs/demo_walkthrough_script.md)
-- `PROJECT_HANDOFF/` 中的数据治理、视觉管线和内化验证审计属于工作区项目记录，不是本仓库 README 的上线声明。
+- [数据说明](data/README.md)
 
-代码采用 [MIT License](LICENSE)。题目、试卷、字幕和外部视频各自保留原权利归属；MIT 许可不自动覆盖这些内容资产。
+代码采用 [MIT License](LICENSE)。题目、试卷、字幕与外部视频各自保留原权利归属;MIT 许可不自动覆盖内容资产。

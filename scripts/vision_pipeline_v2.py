@@ -45,6 +45,7 @@
 
 import json, re, sys, time, os, hashlib, argparse, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict, Counter
@@ -61,7 +62,7 @@ from adapters.vision_client import VisionClient, VISION_CONFIGS
 from adapters.llm_client import LLMClient
 
 # ── 路径配置 ─────────────────────────────────────────
-PAPERS_DIR = Path("/Users/mac/Desktop/项目文件夹/Tools/上海化学卷合集")
+PAPERS_DIR = Path(os.environ.get("YHER_PAPERS_DIR", str(Path(__file__).resolve().parents[2] / "上海化学卷合集")))
 OUTPUT_DIR = SKILL_DIR / "data" / "from_pdf"
 PAGE_IMG_DIR = SKILL_DIR / "data" / "page_images_v2"
 DOC_PDF_CACHE = SKILL_DIR / "data" / ".doc_to_pdf_cache"

@@ -22,8 +22,8 @@ from typing import Any, Dict, Iterable, List, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DEFAULT = Path("/tmp/yher_batch9_ws4")
 EXPECTED_DEGRADE = ROOT / "data/ws4_render_baseline_20260704/expected_degrade_items.json"
-BUNDLED_NODE = Path("/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node")
-BUNDLED_NODE_MODULES = Path("/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules")
+BUNDLED_NODE = Path(os.environ.get("YHER_NODE_BIN", str(Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node")))
+BUNDLED_NODE_MODULES = Path(os.environ.get("YHER_NODE_MODULES", str(Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules")))
 
 sys.path.insert(0, str(ROOT))
 

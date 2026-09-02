@@ -17,7 +17,7 @@ from modelscope.hub.api import HubApi
 # ─── 配置 ───
 USERNAME = "ChrisTLC"
 DATASET_NAME = "YHer-skill-embeddings"
-LOCAL_EMBEDDINGS_PATH = "/Users/mac/Desktop/Tools/embeddings"
+LOCAL_EMBEDDINGS_PATH = str(Path(__file__).resolve().parents[1] / "embeddings")
 COMMIT_MESSAGE = "Initial upload: FAISS + BM25 indices (~154MB) for YHer-skill RAG"
 
 

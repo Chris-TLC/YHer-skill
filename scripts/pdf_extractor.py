@@ -5,13 +5,14 @@ PDF/DOC 原始卷子提取管道
 """
 import json, os, re, sys, subprocess, time, tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from adapters.llm_client import LLMClient
 
 API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-PAPERS_DIR = Path("/Users/mac/Desktop/项目文件夹/Tools/上海化学卷合集")
+PAPERS_DIR = Path(os.environ.get("YHER_PAPERS_DIR", str(Path(__file__).resolve().parents[2] / "上海化学卷合集")))
 OUTPUT_DIR = Path(__file__).parent.parent / "data/from_pdf"
 MAX_WORKERS = 6
 SOFFICE = "/opt/homebrew/bin/soffice"

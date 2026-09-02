@@ -775,7 +775,7 @@ def validate_latex_katex(latex: str, node_path: Path | None = None, node_modules
         return static
     if node_modules is None:
         node_modules = default_node_modules(OUT_ROOT)
-    node = node_path or Path("/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node")
+    node = node_path or Path(os.environ.get("YHER_NODE_BIN", str(Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node")))
     if not node.exists():
         node = Path(shutil.which("node") or "")
     if not node or not node.exists():

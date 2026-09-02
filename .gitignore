@@ -132,3 +132,8 @@ data/_archive_old_itembank/
 
 # 临时文件
 data/split_progress.json
+
+# 发布测试环境
+.venv-pub/
+.venv-demo/
+.venv-pipeline/

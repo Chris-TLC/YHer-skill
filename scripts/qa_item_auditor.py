@@ -32,8 +32,8 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tupl
 ROOT = Path(__file__).resolve().parents[1]
 OUT_ROOT = Path("/tmp/yher_batch11_qa2")
 CALIBRATION_INPUT = OUT_ROOT / "calibration_120" / "calibration_120.jsonl"
-BUNDLED_NODE = Path("/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node")
-BUNDLED_NODE_MODULES = Path("/Users/mac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules")
+BUNDLED_NODE = Path(os.environ.get("YHER_NODE_BIN", str(Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node")))
+BUNDLED_NODE_MODULES = Path(os.environ.get("YHER_NODE_MODULES", str(Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules")))
 
 sys.path.insert(0, str(ROOT))
 
