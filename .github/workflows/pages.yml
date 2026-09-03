@@ -19,6 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Copy report PDF into pages directory
+        run: |
+          mkdir -p docs/pages/paper
+          cp docs/paper/YHer_Engineering_Evidence_Report.pdf docs/pages/paper/
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
