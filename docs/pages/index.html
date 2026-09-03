@@ -1,90 +1,266 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YHer — An Evidence-Bound Diagnostic Learning System</title>
-<style>
-  :root { --ink:#1a1d21; --muted:#5b6470; --accent:#0b6bcb; --bg:#fbfbfa; --card:#ffffff; --line:#e5e7eb; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:var(--ink); background:var(--bg); line-height:1.6; }
-  header { background:linear-gradient(160deg,#0b6bcb 0%,#0a4f96 100%); color:#fff; padding:4.5rem 1.5rem 3.5rem; }
-  .wrap { max-width:860px; margin:0 auto; padding:0 1.5rem; }
-  h1 { font-size:2.1rem; margin:0 0 .6rem; line-height:1.25; }
-  .subtitle { font-size:1.15rem; opacity:.92; max-width:640px; margin:0; }
-  main { padding:2.5rem 0 4rem; }
-  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.6rem 1.8rem; margin-bottom:1.4rem; }
-  h2 { font-size:1.25rem; margin:0 0 .7rem; }
-  p { margin:.5rem 0; }
-  .lead { font-size:1.05rem; }
-  .muted { color:var(--muted); }
-  ul { margin:.5rem 0; padding-left:1.3rem; }
-  li { margin:.35rem 0; }
-  .stats { display:flex; flex-wrap:wrap; gap:1rem; margin:1.2rem 0 .4rem; }
-  .stat { flex:1 1 150px; background:#f4f7fb; border:1px solid var(--line); border-radius:10px; padding:1rem; text-align:center; }
-  .stat b { display:block; font-size:1.35rem; }
-  .stat span { font-size:.85rem; color:var(--muted); }
-  a { color:var(--accent); text-decoration:none; }
-  a:hover { text-decoration:underline; }
-  .buttons { display:flex; flex-wrap:wrap; gap:.8rem; margin-top:1.2rem; }
-  .btn { display:inline-block; padding:.6rem 1.2rem; border-radius:8px; font-weight:600; }
-  .btn-primary { background:var(--accent); color:#fff; }
-  .btn-plain { border:1px solid var(--line); color:var(--ink); }
-  footer { text-align:center; color:var(--muted); font-size:.85rem; padding:1.5rem; }
-  .boundary { border-left:4px solid #d97706; background:#fffbf3; }
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="YHer is an open engineering project that shows why a learning diagnosis was made and tests each conclusion with the next question.">
+  <title>YHer - Making student thinking visible</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <h1>YHer — An Evidence-Bound Diagnostic Learning System</h1>
-    <p class="subtitle">A high-school chemistry tutor whose every conclusion is traceable: every diagnosis to the exact answer behind it, every solution to a verified source, every recommendation to a signed evidence trail.</p>
-  </div>
-</header>
-<main class="wrap">
-  <section>
-    <h2>The problem</h2>
-    <p class="lead">In the gaokao system, the scarcest resource is not content — it is <b>judgment</b>. Good teachers can always answer the follow-up question: “which of my answers made you say that?” Most students never get that.</p>
-    <p>AI tutoring in 2026 is generation-first: a model produces a diagnosis or a hint directly from its weights. Even when it is right, it cannot show its work — its statements are not linked, by construction, to any particular student response or source document.</p>
-  </section>
-  <section>
-    <h2>The design bet</h2>
-    <p class="lead">Not “make the model smarter.” Instead: <b>make every answer a student sees traceable to something that cannot be invented.</b></p>
-    <ul>
-      <li>Standard solutions are shown only if they passed verification against official answer keys.</li>
-      <li>The item bank is recovered from original exam Word documents — never model-generated.</li>
-      <li>The browser fails closed: answers, rubrics, and item IDs never reach it before a response is locked in.</li>
-      <li>The AI layer only selects and phrases verified content. It cannot invent chemistry facts.</li>
-    </ul>
-    <div class="stats">
-      <div class="stat"><b>3,329</b><span>structured exam items, from source documents</span></div>
-      <div class="stat"><b>1,202</b><span>serviceable items after a 10-batch usability audit</span></div>
-      <div class="stat"><b>21</b><span>engine components adjudicated in a 3-round architecture audit</span></div>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="hero" id="top">
+    <div class="wrap">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="#top">YHER / OPEN RESEARCH</a>
+        <div class="nav-links">
+          <a href="#loop">The loop</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#open">Open source</a>
+        </div>
+      </nav>
+
+      <div class="hero-grid">
+        <div>
+          <h1>YHer<br> <span>makes student thinking visible.</span></h1>
+          <p class="hero-copy">Education does not lack content. What is scarce is the judgment to notice where a student's thinking breaks down and know what to ask next.</p>
+          <p class="hero-note">YHer is an open attempt to build that judgment into a Shanghai high-school chemistry system: every diagnosis points to evidence, and every next step can be tested. <a href="https://huggingface.co/datasets/Chris-TLC/yher-chemistry-question-bank">I cleaned and released the chemistry dataset on Hugging Face.</a></p>
+          <div class="hero-actions">
+            <a class="button button-solid" href="#architecture">See how it works</a>
+            <a class="button" href="https://github.com/Chris-TLC/YHer-skill">Repository</a>
+            <a class="button" href="https://huggingface.co/datasets/Chris-TLC/yher-chemistry-question-bank">Dataset</a>
+          </div>
+          <div class="hero-facts" aria-label="Project facts">
+            <span>one knowledge point at a time</span>
+            <span>one trace for every conclusion</span>
+            <span>one next action to verify</span>
+          </div>
+        </div>
+
+        <div class="trace-visual" aria-label="A student's answer becomes an evidence trace and a next action">
+          <svg viewBox="0 0 760 154" role="img" aria-labelledby="trace-title trace-desc">
+            <title id="trace-title">From answer to next action</title>
+            <desc id="trace-desc">A submitted answer is checked against evidence, turned into a cautious reasoning hypothesis, and followed by a testable next action.</desc>
+            <defs>
+              <marker id="trace-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="m0 0 10 5-10 5z" fill="#929895"/>
+              </marker>
+            </defs>
+            <rect x=".5" y=".5" width="759" height="153" rx="2" fill="#1d2022" stroke="#4b5151"/>
+            <rect x="18" y="26" width="224" height="100" rx="2" fill="#25292a" stroke="#4b5151"/>
+            <rect x="268" y="26" width="224" height="100" rx="2" fill="#25292a" stroke="#4b5151"/>
+            <rect x="518" y="26" width="224" height="100" rx="2" fill="#25292a" stroke="#4b5151"/>
+            <circle cx="38" cy="46" r="6" fill="#bd8b3e"/><circle cx="288" cy="46" r="6" fill="#c85b3d"/><circle cx="538" cy="46" r="6" fill="#28766d"/>
+            <text x="52" y="51" fill="#f7f6f2" font-size="15" font-family="ui-sans-serif,system-ui">Student answer</text>
+            <text x="302" y="51" fill="#f7f6f2" font-size="15" font-family="ui-sans-serif,system-ui">Evidence</text>
+            <text x="552" y="51" fill="#f7f6f2" font-size="15" font-family="ui-sans-serif,system-ui">Next step</text>
+            <text x="38" y="84" fill="#d3d5d0" font-size="13" font-family="ui-sans-serif,system-ui">answer submitted</text>
+            <text x="38" y="105" fill="#d3d5d0" font-size="13" font-family="ui-sans-serif,system-ui">reasoning on the page</text>
+            <text x="288" y="84" fill="#d3d5d0" font-size="13" font-family="ui-sans-serif,system-ui">source + response</text>
+            <text x="288" y="105" fill="#d66c4d" font-size="13" font-family="ui-monospace,monospace">possible gap</text>
+            <text x="538" y="84" fill="#d3d5d0" font-size="13" font-family="ui-sans-serif,system-ui">unseen question</text>
+            <text x="538" y="105" fill="#d3d5d0" font-size="13" font-family="ui-sans-serif,system-ui">profile update</text>
+            <path d="M242 76h26M492 76h26" stroke="#929895" marker-end="url(#trace-arrow)"/>
+          </svg>
+          <div class="trace-caption"><span>answer → evidence → next action</span></div>
+        </div>
+      </div>
     </div>
-  </section>
-  <section>
-    <h2>What was measured</h2>
-    <ul>
-      <li><b>The data funnel:</b> 6,083 raw slices → 1,202 serviceable items, a 19.8% end-to-end yield — the price of requiring every answer to be verifiable and every figure renderable.</li>
-      <li><b>The generation boundary:</b> in five blind rounds (¥13.87 total), judges distinguished AI-generated questions from real ones 87% of the time from scratch and 65% overall after style transfer (60% under fair conditions). Generated items therefore never enter the diagnostic path.</li>
-      <li><b>The architecture audit:</b> 4 keep / 10 modify / 5 replace / 2 downgrade across 21 engine components. The hardest finding: every hand-set constant in the engine lacked calibration evidence. Three fixes are already implemented and tested.</li>
-      <li><b>Governance incidents as evidence:</b> an agent-loop runaway and a printed-answer leak became the design rules that followed.</li>
-    </ul>
-  </section>
-  <section class="boundary">
-    <h2>What it does not claim</h2>
-    <p>No real-student trials. No retention or learning-effect evidence. Every conclusion is simulation-, audit-, or engineer-derived — and the report says so in every section, in the same sentence as the claim. That honesty is the product’s central design principle, applied to its own documentation.</p>
-  </section>
-  <section>
-    <h2>Read more</h2>
-    <div class="buttons">
-      <a class="btn btn-primary" href="paper/YHer_Engineering_Evidence_Report.pdf">Full report (PDF, 16 pages)</a>
-      <a class="btn btn-plain" href="https://github.com/Chris-TLC/YHer-skill">Source repository</a>
-      <a class="btn btn-plain" href="https://huggingface.co/datasets/Chris-TLC/yher-chemistry-question-bank">Question-bank dataset</a>
-    </div>
-    <p class="muted">LaTeX source and the audit trail behind every number are in the repository under <code>docs/paper/</code> and <code>docs/audit-history/</code>.</p>
-  </section>
-</main>
-<footer>YHer · pre-alpha research artifact · 2026 · Author: Licheng Tu</footer>
+  </header>
+
+  <main id="main">
+    <section id="why">
+      <div class="wrap">
+        <div class="section-heading">
+          <span class="section-index">01 / Why this exists</span>
+          <h2>A good teacher does more than explain the answer.</h2>
+        </div>
+        <div class="intro-grid">
+          <p class="intro-lead">In a one-to-one lesson, the valuable moment is often not the explanation. It is the teacher noticing the exact step where a student's thinking went off course.</p>
+          <div class="intro-copy">
+            <p>Was the prerequisite missing? Was the concept understood but the reasoning chain unstable? Was it a careless slip, or simply not enough evidence yet? A good teacher asks the next question that separates those possibilities, then chooses the right explanation and checks again.</p>
+            <p>Most learning products make content abundant. They do not make that judgment available. YHer asks a practical question: <strong>can AI show what it noticed in a student's work, explain why it matters, and test its judgment with the next question?</strong></p>
+            <p class="callout">The goal is not to make AI sound like a teacher. It is to make every judgment answer a simple question: "What in this student's work supports it?"</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="loop">
+      <div class="wrap">
+        <div class="section-heading">
+          <span class="section-index">02 / The learning loop</span>
+          <h2>Every conclusion points back to evidence.</h2>
+        </div>
+        <div class="loop" aria-label="Six stages of the YHer learning loop">
+          <article class="loop-step"><strong>01 / SOURCE</strong><h3>Start with real work</h3><p>Public Shanghai examination papers and the answer sources that accompany them, not invented training examples.</p></article>
+          <article class="loop-step"><strong>02 / STRUCTURE</strong><h3>Keep the document intact</h3><p>Recover text, formulas, tables, figures, and answer blocks as linked objects.</p></article>
+          <article class="loop-step"><strong>03 / DIAGNOSE</strong><h3>Ask the next useful question</h3><p>Score on the server, update a four-state belief, and ask what will reduce uncertainty most.</p></article>
+          <article class="loop-step"><strong>04 / TEACH</strong><h3>Give a grounded next step</h3><p>Show a source-checked solution when available, then route the student to a traceable video or practice resource.</p></article>
+          <article class="loop-step"><strong>05 / VERIFY</strong><h3>Check transfer, not recall</h3><p>Use practice and unseen question families to test whether the reasoning actually moved.</p></article>
+          <article class="loop-step"><strong>06 / REMEMBER</strong><h3>Leave a replayable trace</h3><p>Append events, update the profile, and keep the next session accountable to this one.</p></article>
+        </div>
+        <p class="loop-foot">The loop is intentionally narrow: one knowledge point, one session, one evidence trail. A smaller claim is easier to verify.</p>
+      </div>
+    </section>
+
+    <section class="data-section" id="data">
+      <div class="wrap">
+        <div class="section-heading">
+          <span class="section-index">03 / The data foundation</span>
+          <h2>The dataset is a chain of decisions, not a pile of text.</h2>
+        </div>
+        <div class="data-grid">
+          <div class="data-copy">
+            <p>The item bank comes from original Word documents. The pipeline preserves text, formulas, tables, figures, and source records, then removes items that cannot support a reliable diagnosis.</p>
+            <p>Each drop in the count records a decision: if we could not check the answer, render the question clearly, or trace it to a source, we left it out.</p>
+            <p>The code is MIT-licensed. The chemistry dataset is open on <a href="https://huggingface.co/datasets/Chris-TLC/yher-chemistry-question-bank">Hugging Face</a> under CC BY-NC 4.0, with field semantics and rejection rules included.</p>
+          </div>
+          <div class="funnel" role="img" aria-label="Data pipeline from 155 examination papers through 6,083 raw slices to 1,202 serviceable items">
+            <div class="funnel-row funnel-source"><span>source papers</span><div class="funnel-source-line">native files + keys</div><b>155</b></div>
+            <div class="funnel-row"><span>raw slices</span><div class="funnel-bar" style="--retained:100%"></div><b>6,083</b></div>
+            <div class="funnel-row"><span>structured v4</span><div class="funnel-bar" style="--retained:54.7%"></div><b>3,329</b></div>
+            <div class="funnel-row"><span>reviewed pool</span><div class="funnel-bar" style="--retained:41.5%"></div><b>2,526</b></div>
+            <div class="funnel-row"><span>serviceable</span><div class="funnel-bar" style="--retained:19.8%"></div><b>1,202</b></div>
+            <p class="funnel-note">Bars show the share retained from 6,083 raw slices.</p>
+          </div>
+        </div>
+        <div class="data-stats" aria-label="Dataset inventory">
+          <div class="data-stat"><strong>10,102</strong><span>asset transcript rows</span></div>
+          <div class="data-stat"><strong>13,171</strong><span>media-reference rows</span></div>
+          <div class="data-stat"><strong>135</strong><span>knowledge-graph nodes</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="architecture" id="architecture">
+      <div class="wrap">
+        <div class="section-heading">
+          <span class="section-index">04 / The architecture</span>
+          <h2>A diagnosis engine, not a chatbot with a score.</h2>
+        </div>
+        <div class="architecture-map">
+          <svg viewBox="0 0 1120 300" role="img" aria-labelledby="map-title map-desc">
+            <title id="map-title">YHer evidence-bound architecture</title>
+            <desc id="map-desc">Source data feeds a server-side session engine. The engine produces a diagnosis, a grounded next action, and a replayable profile.</desc>
+            <defs><marker id="map-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="m0 0 10 5-10 5z" fill="#687078"/></marker></defs>
+            <rect x="20" y="44" width="235" height="205" fill="#ebeae5" stroke="#c9c9c3"/>
+            <rect x="302" y="24" width="500" height="245" fill="#151719" stroke="#151719"/>
+            <rect x="849" y="44" width="250" height="205" fill="#e9eee7" stroke="#c9c9c3"/>
+            <text x="43" y="78" fill="#a9442f" font-size="11" font-family="ui-monospace,monospace" letter-spacing="0">EVIDENCE IN</text>
+            <text x="43" y="112" fill="#151719" font-size="19" font-family="ui-sans-serif,system-ui">Papers + keys</text>
+            <text x="43" y="142" fill="#5b636a" font-size="14" font-family="ui-sans-serif,system-ui">structured items</text>
+            <text x="43" y="164" fill="#5b636a" font-size="14" font-family="ui-sans-serif,system-ui">knowledge graph</text>
+            <text x="43" y="186" fill="#5b636a" font-size="14" font-family="ui-sans-serif,system-ui">traceable resources</text>
+            <text x="328" y="61" fill="#bd8b3e" font-size="11" font-family="ui-monospace,monospace" letter-spacing="0">SERVER-SIDE SESSION ENGINE</text>
+            <text x="328" y="103" fill="#f7f6f2" font-size="20" font-family="ui-sans-serif,system-ui">score - belief - next question</text>
+            <text x="328" y="142" fill="#c7cbc6" font-size="14" font-family="ui-sans-serif,system-ui">four possible states, updated after each answer</text>
+            <text x="328" y="166" fill="#c7cbc6" font-size="14" font-family="ui-sans-serif,system-ui">choose by uncertainty reduction</text>
+            <text x="328" y="190" fill="#c7cbc6" font-size="14" font-family="ui-sans-serif,system-ui">keep verification families unseen</text>
+            <text x="328" y="228" fill="#929895" font-size="13" font-family="ui-monospace,monospace">no answer key or rubric leak before submit</text>
+            <text x="875" y="78" fill="#28766d" font-size="11" font-family="ui-monospace,monospace" letter-spacing="0">EVIDENCE OUT</text>
+            <text x="875" y="112" fill="#151719" font-size="19" font-family="ui-sans-serif,system-ui">A useful next move</text>
+            <text x="875" y="142" fill="#5b636a" font-size="14" font-family="ui-sans-serif,system-ui">grounded explanation</text>
+            <text x="875" y="164" fill="#5b636a" font-size="14" font-family="ui-sans-serif,system-ui">resource recommendation</text>
+            <text x="875" y="186" fill="#5b636a" font-size="14" font-family="ui-sans-serif,system-ui">verification + profile</text>
+            <path d="M255 146h44M802 146h44" stroke="#687078" marker-end="url(#map-arrow)" stroke-width="1.5"/>
+            <text x="20" y="285" fill="#687078" font-size="11" font-family="ui-monospace,monospace">facts remain linked to their source</text>
+            <text x="849" y="285" fill="#687078" font-size="11" font-family="ui-monospace,monospace">events can be replayed later</text>
+          </svg>
+          <div class="architecture-mobile" aria-label="YHer evidence-bound architecture">
+            <div class="mobile-stage mobile-in">
+              <span>Evidence in</span>
+              <strong>Papers + keys</strong>
+              <p>Structured items, a knowledge graph, and traceable resources.</p>
+            </div>
+            <div class="mobile-arrow" aria-hidden="true">&#8595;</div>
+            <div class="mobile-stage mobile-core">
+              <span>Session engine</span>
+              <strong>Score, update belief, choose the next question</strong>
+              <p>Four possible states, uncertainty reduction, and unseen verification families keep the path inspectable.</p>
+            </div>
+            <div class="mobile-arrow" aria-hidden="true">&#8595;</div>
+            <div class="mobile-stage mobile-out">
+              <span>Evidence out</span>
+              <strong>A useful next move</strong>
+              <p>Grounded explanation, resource recommendation, verification, and a replayable profile.</p>
+            </div>
+          </div>
+          <p class="map-caption">A language model can help organize the response; each claim still has to lead back to a source and a student's work.</p>
+        </div>
+        <div class="engines" aria-label="The five YHer engine modules">
+          <article class="engine">
+            <span class="engine-code">01 / mastery.py</span>
+            <svg class="engine-viz" viewBox="0 0 180 72" aria-hidden="true"><path d="M8 62h164"/><rect x="18" y="18" width="22" height="44"/><rect x="57" y="37" width="22" height="25"/><rect x="96" y="27" width="22" height="35"/><rect x="135" y="49" width="22" height="13"/><text x="23" y="12">M</text><text x="62" y="31">P</text><text x="101" y="21">C</text><text x="140" y="43">U</text></svg>
+            <h3>Belief: what might be happening?</h3><p>Tracks four possibilities: mastered, prerequisite gap, unstable reasoning, or simply not enough evidence yet.</p><p class="engine-principle"><b>Algorithm:</b> Bayesian updating + time decay (FSRS).</p>
+          </article>
+          <article class="engine">
+            <span class="engine-code">02 / selector.py</span>
+            <svg class="engine-viz" viewBox="0 0 180 72" aria-hidden="true"><path d="M8 62h164"/><rect x="19" y="45" width="24" height="17"/><rect x="59" y="31" width="24" height="31"/><rect class="viz-accent" x="99" y="12" width="24" height="50"/><rect x="139" y="40" width="24" height="22"/><path class="viz-mark" d="m104 7 7 4 7-4"/></svg>
+            <h3>Choice: which question will tell us most?</h3><p>Chooses the next item by how much uncertainty it is expected to remove, while keeping seen items and verification families out.</p><p class="engine-principle"><b>Algorithm:</b> expected information gain.</p>
+          </article>
+          <article class="engine">
+            <span class="engine-code">03 / planner.py</span>
+            <svg class="engine-viz" viewBox="0 0 180 72" aria-hidden="true"><path d="M10 38h150"/><circle cx="28" cy="38" r="5"/><circle cx="67" cy="38" r="5"/><circle cx="108" cy="38" r="5"/><circle class="viz-accent" cx="156" cy="38" r="6"/><text x="18" y="61">30</text><text x="57" y="61">60</text><text x="95" y="61">120</text><text x="143" y="61">180</text></svg>
+            <h3>Time: what fits this session?</h3><p>Turns 30, 60, 120, and 180-minute sessions into explicit work budgets, then stops when the evidence runs out.</p><p class="engine-principle"><b>Rule:</b> bounded work beats false certainty.</p>
+          </article>
+          <article class="engine">
+            <span class="engine-code">04 / recommender.py</span>
+            <svg class="engine-viz engine-rank" viewBox="0 0 180 72" aria-hidden="true"><text x="8" y="18">01</text><rect class="viz-accent" x="34" y="7" width="132" height="13"/><text x="8" y="42">02</text><rect x="34" y="31" width="96" height="13"/><text x="8" y="66">03</text><rect x="34" y="55" width="61" height="13"/></svg>
+            <h3>Action: what should come next?</h3><p>Ranks traceable video resources after diagnosis, with track, time-budget, and seen-segment controls.</p><p class="engine-principle"><b>Rule:</b> recommendation follows judgment.</p>
+          </article>
+          <article class="engine">
+            <span class="engine-code">05 / memory.py</span>
+            <svg class="engine-viz" viewBox="0 0 180 72" aria-hidden="true"><path d="M13 36h154"/><circle cx="24" cy="36" r="6"/><circle cx="66" cy="36" r="6"/><circle cx="108" cy="36" r="6"/><circle class="viz-accent" cx="156" cy="36" r="8"/><path class="viz-mark" d="m151 36 4 4 7-9"/></svg>
+            <h3>Continuity: what carries forward?</h3><p>Retrieves useful past events for the next explanation without letting memory rewrite the diagnosis.</p><p class="engine-principle"><b>Model:</b> replay the trace, do not invent it.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="findings">
+      <div class="wrap">
+        <div class="section-heading">
+          <span class="section-index">05 / A necessary boundary</span>
+          <h2>AI can organize context. It cannot yet be the one-to-one teacher.</h2>
+        </div>
+        <p class="boundary-intro">This project is an engineering attempt, not a substitute for a teacher. It can make a judgment easier to inspect, but it still sees only a partial record of a student's thinking.</p>
+        <div class="finding-grid">
+          <article class="finding"><span class="finding-label">The engineering limit</span><h3>A structured trace is still a partial view.</h3><p>The system can connect an answer to a source, a cautious hypothesis, and a follow-up test. It still depends on a narrow set of deterministically gradable questions and carefully recovered figures; it does not reproduce a teacher's full conversational read.</p></article>
+          <article class="finding"><span class="finding-label">The model limit</span><h3>A long prompt is not long-term attention.</h3><p>Current LLMs can retrieve supplied context, but they do not maintain a teacher's selective attention across weeks. Dense figures, formulas, and earlier misunderstandings can still be misread or lost.</p></article>
+          <article class="finding"><span class="finding-label">The human question</span><h3>AI should extend teaching, not impersonate it.</h3><p>AI can make careful questions and useful resources more available. The teacher still holds the long view, the relationship, and responsibility for what happens next.</p></article>
+        </div>
+        <p class="boundary-note">My position is simple: make careful judgment more available, keep uncertainty visible, and never confuse a convincing answer with understanding.</p>
+      </div>
+    </section>
+
+    <section class="open" id="open">
+      <div class="wrap">
+        <div class="section-heading">
+          <span class="section-index">06 / Open by design</span>
+          <h2>Leave the work in a form others can build on.</h2>
+        </div>
+        <div class="open-grid">
+          <div class="open-copy">
+            <p>I published more than a demo. The repository includes the code, data schemas, rejection rules, audit history, and the report behind every number.</p>
+            <p>Open work lets other people begin with what this project has already learned. They can inspect the assumptions, reuse the pipeline, and push the research further.</p>
+          </div>
+          <div class="open-links">
+            <a class="open-link" href="https://github.com/Chris-TLC/YHer-skill"><span>GitHub repository</span><small>code + audit trail &#8599;</small></a>
+            <a class="open-link" href="https://huggingface.co/datasets/Chris-TLC/yher-chemistry-question-bank"><span>Hugging Face dataset</span><small>open data card &#8599;</small></a>
+            <a class="open-link" href="https://chris-tlc.github.io/YHer-skill/paper/YHer_Engineering_Evidence_Report.pdf"><span>Engineering evidence report</span><small>PDF / 16 pages &#8599;</small></a>
+            <a class="open-link" href="https://github.com/Chris-TLC/YHer-skill/blob/main/docs/writeup/WHITEPAPER.md"><span>Release whitepaper</span><small>plain-text edition &#8599;</small></a>
+          </div>
+        </div>
+        <p class="license">Code: MIT. Dataset: CC BY-NC 4.0. Examination papers, subtitles, and external videos retain their original rights.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-row"><span>YHer / an open engineering project / 2026</span><span>Author: Licheng Tu</span></div>
+  </footer>
 </body>
 </html>
