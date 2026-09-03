@@ -1,37 +1,37 @@
-# 一化儿 AI 化学助手 - 配置文件 v3
+# YHer AI chemistry assistant - config template
 
 llm:
-  # 选一个：deepseek / kimi / tongyi / zhipu / doubao / minimax / anthropic / openai
+  # Pick one: deepseek / kimi / tongyi / zhipu / doubao / minimax / anthropic / openai
   provider: deepseek
 
-  # 模型名（每家不同，详见 adapters/llm_client.py 的 PROVIDER_CONFIGS）
+  # Model name (see PROVIDER_CONFIGS in adapters/llm_client.py)
   model: deepseek-v4-pro
 
-  # API key 从环境变量读取（推荐）
+  # API key read from the environment (recommended)
   api_key_env: DEEPSEEK_API_KEY
 
-  # 高级配置
+  # Advanced settings
   max_tokens: 2000
   temperature: 0.3
   enable_caching: true
 
 memory:
-  # 完整记忆 always-on（用户决策 v3）
+  # Full memory always-on (user decision v3)
   enabled: true
   user_id: chris_2026
 
-  # Supabase 配置（从环境变量读）
+  # Supabase config (read from environment)
   supabase_url_env: SUPABASE_URL
   supabase_key_env: SUPABASE_KEY
 
-  # 季度高保真压缩（v3 关键）
+  # Quarterly high-fidelity compression (v3 key)
   compression:
     enabled: true
-    threshold_days: 90              # 季度（90 天），非月度
-    max_summary_tokens: 4000        # 高保真（4000），非 500
+    threshold_days: 90              # quarterly (90 days), not monthly
+    max_summary_tokens: 4000        # high fidelity (4000), not 500
     auto_run_on_startup: true
 
-  # 成本预警
+  # Cost alert
   cost_alert:
     monthly_budget: 30
     alert_at_pct: 80

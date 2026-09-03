@@ -166,7 +166,7 @@ def test_06_missing_entity_falls_back_foundation():
     warns = []
     t = rec.resolve_track(seg("BV_UNKNOWN"), tm(), warns)
     assert t == "foundation"
-    assert any("回退" in w for w in warns)
+    assert any("foundation fallback" in w for w in warns)
 
 
 def test_07_budget_hard_cap():
@@ -267,7 +267,7 @@ def test_11_fallback_audience_zero_upgraded():
     out = _run("高三", "review", B_U, [seg("SC1", seg_type="concept_intro")])
     assert out["status"] == "ok"
     assert out["recommendations"][0]["track_id"] == "scene"
-    assert any(w for w in out["warnings"] if "升轨" in w or "兜底" in w)
+    assert any(w for w in out["warnings"] if "upgraded" in w or "fallback" in w)
 
 
 def test_12_same_track_unlock_then_gate():

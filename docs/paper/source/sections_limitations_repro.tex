@@ -1,0 +1,27 @@
+\section{Limitations}
+\label{sec:limitations}
+
+This manuscript is an engineering-evidence report; the following limitations are therefore not afterthoughts but the frame in which every claim should be read.
+
+\begin{enumerate}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}\setlength{\parsep}{0pt}
+\item \textbf{No real students.} All conclusions are simulation-, audit-, or engineer-derived. There is no retention, learning-effect, or usability evidence from actual learners. The system's learning loop is \emph{designed}, not \emph{validated}.
+\item \textbf{Simulated counterexamples rest on synthetic parameters and hand-set constants.} Directional conclusions are robust; point estimates are not calibrated. Where a red-team number says ``54--69\% classification ceiling,'' it is a property of the simulation's assumptions, not a property of students.
+\item \textbf{The chemistry line is frozen.} The engine is a design audited but not modified per verdicts---the 10 modify / 5 replace items are each documented with a specific fix, but not yet applied (except the 2026-09 drop-in changes: FSRS-4.5 damping, P(top1) stopping, provenance field, each with regression tests).
+\item \textbf{Document-level provenance gaps.} 926 of 3,329 items (27.8\%) lack an \texttt{answer\_source\_path}; those items' answers rest on the single document's answer block, not on a separately sourced answer key.
+\item \textbf{Item-bank copyright boundary.} Items come from public examination papers; this is a mechanical restructuring of exam content, not original creation. The repository's data layers are released under CC BY-NC to make the boundary explicit (code: MIT).
+\item \textbf{Chinese-language assessment literature unreachable.} CNKI/Wanfang were blocked during the review; the Chinese assessment tradition is represented at metadata level only.
+\item \textbf{Supplier survivor bias.} In an earlier exploratory persona-collection exercise, three of six LLM providers failed collection and were excluded (documented); any conclusions drawn from the remaining three are subject to survivor bias.
+\item \textbf{The system was built and audited by a small team with AI assistance.} This is disclosed fully in the back matter; it is a strength in engineering discipline and a limitation in independence.
+\end{enumerate}
+
+\section{Reproducibility}
+\label{sec:repro}
+
+\begin{itemize}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}\setlength{\parsep}{0pt}
+\item \textbf{Artifacts}: \path{github.com/Chris-TLC/YHer-skill} (public), plus an HF dataset mirror \path{Chris-TLC/yher-chemistry-question-bank} with a deterministic builder (\path{scripts/make\_hf\_dataset.py}).
+\item \textbf{Data}: \texttt{data/README.md} documents schema, R5 definition, and license.
+\item \textbf{Session reconstruction}: single-node deterministic path (\texttt{YHER\_ENABLE\_PAID\_LLM=0}), synthetic-replay corpus under \texttt{SYNTHETIC\_DEMO}, no cross-contamination with real or QA events.
+\item \textbf{Audits}: every number in this paper is traceable to \texttt{docs/audit-}\texttt{history/}, which records exact commands, input hashes, and verdict tables.
+\end{itemize}
+
+Reproduction instructions at the command level are provided in Appendix~\ref{app:commands}; they have been run in a clean checkout as part of the audit workflow reported here.

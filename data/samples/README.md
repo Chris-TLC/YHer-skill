@@ -1,6 +1,7 @@
 # Sample (55 items)
 
-从 R5 白名单(1202 题)抽取的可读样例,每个 item 完整包含题面/解析/答案/评分细则/KG 节点关联。
-抽取规则固定:`yher-public-v1|item_id` 的 sha256 前两位十六进制为偶数;50% 命中率直到满 55。
+A readable sample drawn from the R5 whitelist (1,202 items). Each item carries the complete stem, solution, answer, scoring rubric, and knowledge-graph links.
 
-字段口径:data/README.md。全量数据见本仓库 `data/item_bank/` 与 Hugging Face 数据集镜像。
+Selection rule (deterministic): the first two hex digits of `sha256("yher-public-v1|item_id")` must be even; items are taken until the sample reaches 55.
+
+Field semantics: `data/README.md`. Full data: `data/item_bank/` in this repository and the Hugging Face dataset mirror.

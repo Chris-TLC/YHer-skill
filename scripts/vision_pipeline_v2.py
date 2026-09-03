@@ -1,46 +1,46 @@
 #!/usr/bin/env python3
 """
-视觉PDF提取管道 v2.0 —— 分离关注点架构（99%+ 准确率目标）
+Vision PDF extraction pipeline v2.0 — separation-of-concerns architecture (99%+ accuracy target)
 
-架构（根治旧管道三个致命问题）:
-  旧: 视觉模型一次推理同时做"读图+切题+匹配答案+检测跨页+填元数据" → 注意力分散
-  新: 三步分离，每步只做一件事:
+Architecture (fixes the old pipeline's three fatal problems at the root):
+  Old: the vision model did "read image + split items + match answers + detect cross-page + fill metadata" in one inference pass → attention diluted
+  New: three separated steps, each doing exactly one thing:
 
-  Phase 1 — 视觉忠实转录: 每页截图 → qwen3-vl-plus → 只看图，逐字转录成 Markdown
-           （方程式/结构式/装置图/晶胞图/有机路线 → 文字描述）
-  Phase 2 — 文本智能切题: 整卷完整 Markdown → DeepSeek文本模型
-           → 切题 + 配对答案 + 知识点标注 + 难度分级 + 选项结构化
-           （因为看到全文，跨页题自然解决）
-  Phase 3 — 双重质量验证:
-           3a. 视觉回查: 随机抽10%页面，视觉模型对比原图与提取结果
-           3b. 化学校验: DeepSeek验证化学方程式/性质/答案正确性
-           3c. 每道题输出置信度评分 (0-1)
+  Phase 1 — faithful visual transcription: screenshot each page → qwen3-vl-plus → look at the image only, transcribe verbatim into Markdown
+           (equations/structural formulas/apparatus diagrams/unit-cell diagrams/organic routes → textual descriptions)
+  Phase 2 — smart text item-splitting: the full paper's complete Markdown → DeepSeek text model
+           → split into items + pair answers + knowledge-point tagging + difficulty grading + option structuring
+           (cross-page items resolve naturally because the full text is visible)
+  Phase 3 — dual quality verification:
+           3a. visual re-check: randomly sample 10% of pages; the vision model compares the original image with the extraction
+           3b. chemistry check: DeepSeek verifies the chemical equations/properties/answers
+           3c. every item gets a confidence score (0-1)
 
-根治的问题:
-  ✅ 扫描版PDF (12%) → 视觉模型天然OCR，不再需PyMuPDF读文字
-  ✅ 化学图/方程式/结构式 → 视觉模型直接"看"图 → 转录成文字
-  ✅ 跨页题目 → 文本模型看到整卷全文，自动拼接
-  ✅ 答案碎片混入 → 文本模型区分题目vs解析，正确配对
-  ✅ 选项不全/题干截断 → 视觉转录逐字忠实，不概括
+Problems fixed at the root:
+  ✅ scanned PDFs (12%) → the vision model is a natural OCR; no need for PyMuPDF text extraction
+  ✅ chemistry figures/equations/structural formulas → the vision model directly "sees" the image → transcribes to text
+  ✅ cross-page items → the text model sees the whole paper and joins them automatically
+  ✅ answer fragments mixed in → the text model distinguishes items vs solutions and pairs them correctly
+  ✅ incomplete options/truncated stems → the visual transcription is verbatim-faithful, never summarized
 
-用法:
-  # 测试单份卷子（推荐先跑）
+Usage:
+  # Test a single paper (recommended to run first)
   python3 scripts/vision_pipeline_v2.py --test "2022年上海高考化学真题（解析卷）.pdf"
 
-  # 全量运行
+  # Full run
   python3 scripts/vision_pipeline_v2.py
 
-  # 只处理前N份
+  # Only process the first N files
   python3 scripts/vision_pipeline_v2.py --max-files 5
 
-  # 恢复上次中断的进度
+  # Resume from the last interrupted progress
   python3 scripts/vision_pipeline_v2.py --resume
 
-依赖:
-  - DASHSCOPE_API_KEY（通义千问视觉模型，在 .env 中）
-  - DeepSeek API Key（文本模型，硬编码在脚本中）
-  - PyMuPDF (fitz)，pdf2image（先装: pip install pdf2image）
-  - LibreOffice (brew install --cask libreoffice)，用于 DOC→PDF 转换
+Dependencies:
+  - DASHSCOPE_API_KEY (Tongyi Qianwen vision model, in .env)
+  - DeepSeek API key (text model, hardcoded in the script)
+  - PyMuPDF (fitz), pdf2image (install first: pip install pdf2image)
+  - LibreOffice (brew install --cask libreoffice), for DOC→PDF conversion
 """
 
 import json, re, sys, time, os, hashlib, argparse, subprocess, tempfile
@@ -51,7 +51,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 
-# ── 项目路径 ─────────────────────────────────────────
+# ── Project paths ─────────────────────────────────────
 SKILL_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(SKILL_DIR))
 
@@ -61,34 +61,34 @@ load_dotenv(SKILL_DIR / ".env")
 from adapters.vision_client import VisionClient, VISION_CONFIGS
 from adapters.llm_client import LLMClient
 
-# ── 路径配置 ─────────────────────────────────────────
+# ── Path configuration ────────────────────────────────
 PAPERS_DIR = Path(os.environ.get("YHER_PAPERS_DIR", str(Path(__file__).resolve().parents[2] / "上海化学卷合集")))
 OUTPUT_DIR = SKILL_DIR / "data" / "from_pdf"
 PAGE_IMG_DIR = SKILL_DIR / "data" / "page_images_v2"
 DOC_PDF_CACHE = SKILL_DIR / "data" / ".doc_to_pdf_cache"
 PROGRESS_FILE = OUTPUT_DIR / "pipeline_v2_progress.json"
-FULL_MD_DIR = OUTPUT_DIR / "full_markdown"  # Phase 1 中间产物（调试用）
+FULL_MD_DIR = OUTPUT_DIR / "full_markdown"  # Phase 1 intermediate output (for debugging)
 
-# ── API 配置 ─────────────────────────────────────────
+# ── API configuration ─────────────────────────────────
 VISION_PROVIDER = "qwen-vl"
 VISION_MODEL = "qwen3-vl-plus"
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 LLM_MODEL = "deepseek-chat"
 
-# ── 渲染配置 ─────────────────────────────────────────
-PAGE_DPI = 300          # 清晰度：300 DPI 足够识别化学式上下标
+# ── Rendering configuration ───────────────────────────
+PAGE_DPI = 300          # clarity: 300 DPI suffices for chemistry sub/superscripts
 JPG_QUALITY = 92
-VISION_WORKERS = 3      # 通义视觉API并发限制
-TEXT_WORKERS = 6        # DeepSeek可以更高
+VISION_WORKERS = 3      # Tongyi vision API concurrency limit
+TEXT_WORKERS = 6        # DeepSeek can go higher
 SOFFICE_BIN = "/opt/homebrew/bin/soffice"
 
-# ── 成本参考 ─────────────────────────────────────────
-# qwen3-vl-plus: ¥3/M in, ¥9/M out（视觉token更贵，单页约¥0.015-0.03）
+# ── Cost reference ────────────────────────────────────
+# qwen3-vl-plus: ¥3/M in, ¥9/M out (vision tokens cost more; ~¥0.015-0.03 per page)
 # deepseek-chat:  ¥3.13/M in, ¥6.26/M out
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 1: 视觉忠实转录
+# Phase 1: faithful visual transcription
 # ═══════════════════════════════════════════════════════
 
 TRANSCRIBE_SYSTEM = """你是化学试卷数字化转录专家。你的唯一任务：看着试卷页面图片，把看到的所有内容逐字转录成 Markdown。
@@ -114,7 +114,7 @@ TRANSCRIBE_USER = "请逐字转录这张化学试卷页面。把所有可见的�
 
 def render_page_to_jpg(pdf_path: Path, page_num: int,
                        output_dir: Path) -> Optional[Path]:
-    """将PDF一页渲染为300 DPI高清JPG"""
+    """Render one PDF page into a 300 DPI high-res JPG."""
     import fitz
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -141,7 +141,7 @@ def render_page_to_jpg(pdf_path: Path, page_num: int,
 
 
 def classify_page(pdf_path: Path, page_num: int) -> str:
-    """快速预分类：区分题目页/答案页/广告页/空白页"""
+    """Quick pre-classification: distinguish question pages / answer pages / ad pages / blank pages."""
     import fitz
     try:
         doc = fitz.open(pdf_path)
@@ -152,13 +152,13 @@ def classify_page(pdf_path: Path, page_num: int) -> str:
         doc.close()
 
         if not text or len(text) < 30:
-            return "likely_scanned"  # 可能扫描版，仍需视觉处理
+            return "likely_scanned"  # possibly a scanned page; still needs vision processing
 
-        # 纯广告/家教页
+        # Pure ad / tutoring-page
         if ("家教" in text or "扫码" in text or "加微信" in text) and len(text) < 500:
             return "ad"
 
-        # 纯答案页特征：多行"题号 答案"格式无题干
+        # Pure answer-key page signature: many "question number answer" lines with no stem
         lines = [l.strip() for l in text.splitlines() if l.strip()]
         ans_pattern_lines = sum(1 for l in lines if re.match(r'^\d+[\.\s、]+\w{1,3}\s*$', l))
         if ans_pattern_lines > len(lines) * 0.5 and len(lines) > 5:
@@ -171,7 +171,7 @@ def classify_page(pdf_path: Path, page_num: int) -> str:
 
 def transcribe_page(image_path: Path, client: VisionClient,
                     page_label: str = "") -> Dict[str, Any]:
-    """视觉模型转录一页 → Markdown"""
+    """Transcribe one page via the vision model → Markdown."""
     prompt = TRANSCRIBE_USER
     if page_label:
         prompt = f"【{page_label}】\n\n" + prompt
@@ -191,7 +191,7 @@ def transcribe_page(image_path: Path, client: VisionClient,
 
 
 def convert_doc_to_pdf(doc_path: Path, cache_dir: Path) -> Optional[Path]:
-    """DOC/DOCX → PDF（通过 LibreOffice）"""
+    """DOC/DOCX → PDF (via LibreOffice)."""
     cache_dir.mkdir(parents=True, exist_ok=True)
     doc_hash = hashlib.sha256(str(doc_path.resolve()).encode()).hexdigest()[:12]
     pdf_path = cache_dir / f"{doc_hash}.pdf"
@@ -208,7 +208,7 @@ def convert_doc_to_pdf(doc_path: Path, cache_dir: Path) -> Optional[Path]:
             )
             pdfs = list(Path(tmp).glob("*.pdf"))
             if pdfs:
-                # 复制到缓存
+                # Copy into the cache
                 import shutil
                 shutil.copy2(pdfs[0], pdf_path)
                 return pdf_path
@@ -218,7 +218,7 @@ def convert_doc_to_pdf(doc_path: Path, cache_dir: Path) -> Optional[Path]:
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 2: 文本智能切题
+# Phase 2: smart text item-splitting
 # ═══════════════════════════════════════════════════════
 
 STRUCTURE_SYSTEM = """你是上海高考化学试卷结构化专家。你收到的是整张试卷的完整文字转录（含题干、选项、图表描述、答案、解析），要把它切成一道道独立的题目。
@@ -259,7 +259,7 @@ STRUCTURE_SYSTEM = """你是上海高考化学试卷结构化专家。你收到�
 
 
 def build_structure_prompt(paper_markdown: str, source_name: str) -> str:
-    """构建切题 Prompt（截断过长文本到 100K 字符）"""
+    """Build the item-splitting prompt (truncates overly long text to 100K chars)."""
     if len(paper_markdown) > 100000:
         paper_markdown = paper_markdown[:100000] + "\n\n[... 文本过长，已截断 ...]"
 
@@ -278,7 +278,7 @@ def build_structure_prompt(paper_markdown: str, source_name: str) -> str:
 
 def structure_paper(paper_markdown: str, source_name: str,
                     client: LLMClient) -> Tuple[List[Dict], Dict]:
-    """文本模型将整卷转录切为结构化题目"""
+    """Split the whole-paper transcription into structured items via the text model."""
     messages = [
         {"role": "system", "content": STRUCTURE_SYSTEM},
         {"role": "user", "content": build_structure_prompt(paper_markdown, source_name)}
@@ -287,7 +287,7 @@ def structure_paper(paper_markdown: str, source_name: str,
     result = client.chat(messages, max_tokens=12000, temperature=0.1)
     content = result['content'].strip()
 
-    # 解析输出
+    # Parse the output
     questions = []
     if '```' in content:
         parts = content.split('```')
@@ -320,7 +320,7 @@ def structure_paper(paper_markdown: str, source_name: str,
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 3a: 视觉回查验证
+# Phase 3a: visual re-check verification
 # ═══════════════════════════════════════════════════════
 
 VERIFY_SYSTEM = """你是试卷数字化的质量审核员。对比原始试卷图片和已提取的题目，逐题检查是否有错误或遗漏。
@@ -353,7 +353,7 @@ def build_verify_prompt(questions_json: str, page_num: int) -> str:
 
 def verify_page(image_path: Path, questions_on_page: List[Dict],
                 client: VisionClient) -> List[Dict]:
-    """视觉模型回查一页的提取结果"""
+    """Visually re-check one page's extraction results via the vision model."""
     if not questions_on_page:
         return []
 
@@ -380,7 +380,7 @@ def verify_page(image_path: Path, questions_on_page: List[Dict],
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 3b: 化学正确性校验
+# Phase 3b: chemical-correctness check
 # ═══════════════════════════════════════════════════════
 
 CHEM_SYSTEM = """你是上海高考化学命题专家。验证以下题目的化学科学正确性。
@@ -409,11 +409,11 @@ def build_chem_prompt(questions: List[Dict]) -> str:
 
 
 def validate_chemistry(questions: List[Dict], client: LLMClient) -> List[Dict]:
-    """文本模型验证化学正确性"""
+    """Verify chemical correctness via the text model."""
     if not questions:
         return []
 
-    # 分批（每批25题）
+    # Batch up (25 items per batch)
     all_validations = []
     for batch_start in range(0, len(questions), 25):
         batch = questions[batch_start:batch_start + 25]
@@ -442,17 +442,17 @@ def validate_chemistry(questions: List[Dict], client: LLMClient) -> List[Dict]:
 
 
 # ═══════════════════════════════════════════════════════
-# 评分与合并
+# Scoring and merging
 # ═══════════════════════════════════════════════════════
 
 def compute_confidence(q: Dict, verifications: List[Dict],
                        chem_validations: List[Dict]) -> float:
-    """计算单题置信度"""
-    confidence = 0.90  # 基础分（视觉转录+文本结构化）
+    """Compute the per-item confidence score."""
+    confidence = 0.90  # base score (visual transcription + text structuring)
 
     q_num = q.get('q_num', '')
 
-    # 基础质量检查
+    # Basic quality checks
     stem = q.get('stem', '')
     if not stem or len(stem) < 10:
         return 0.0
@@ -461,19 +461,19 @@ def compute_confidence(q: Dict, verifications: List[Dict],
     if q.get('stem') == '题干文字':
         return 0.0
 
-    # 验证结果调整
+    # Adjust by verification results
     v = next((v for v in verifications if v.get('q_num') == q_num), {})
     if v:
         if v.get('overall_pass') is True:
             confidence += min(0.05, 1.0 - confidence)
         elif v.get('overall_pass') is False:
             confidence -= 0.15
-            # 应用修正
+            # Apply corrections
             if v.get('corrections', {}).get('stem'):
                 q['stem'] = v['corrections']['stem']
             q['_verify_issues'] = v.get('issues', [])
 
-    # 化学验证调整
+    # Adjust by the chemistry check
     c = next((c for c in chem_validations if c.get('q_num') == q_num), {})
     if c:
         if c.get('overall_pass') is True:
@@ -482,12 +482,12 @@ def compute_confidence(q: Dict, verifications: List[Dict],
             confidence -= 0.20
             q['_chem_issues'] = c.get('issues', [])
 
-    # 选项完整性检查（选择题）
+    # Option-completeness check (multiple-choice items)
     if q.get('question_type') == '选择题' or q.get('options'):
         opts = q.get('options', {})
         if not opts or len(opts) < 3:
             confidence -= 0.10
-        # 检查是否有选项文字
+        # Check whether any option text exists
         has_content = any(v and len(v.strip()) > 0 for v in opts.values())
         if not has_content:
             confidence -= 0.10
@@ -496,11 +496,11 @@ def compute_confidence(q: Dict, verifications: List[Dict],
 
 
 # ═══════════════════════════════════════════════════════
-# 文件收集
+# File collection
 # ═══════════════════════════════════════════════════════
 
 def collect_files() -> List[Tuple[str, Path]]:
-    """收集所有待处理的文件，去重，优先解析卷"""
+    """Collect all files to process, deduplicated, preferring annotated papers."""
     files = []
     seen = {}
 
@@ -508,11 +508,11 @@ def collect_files() -> List[Tuple[str, Path]]:
         for f in PAPERS_DIR.rglob(ext):
             if f.name.startswith('.'):
                 continue
-            # 去重：同名文件保留解析卷优先
+            # Dedup: for same-named files, prefer keeping the annotated paper
             key = re.sub(r'[（(](空白卷|解析卷|原卷版|解析版|考试版|参考答案|含解析)[）)]', '', f.stem)
             key = re.sub(r'\s+', '', key)
             if key in seen:
-                # 保留优先级：解析 > 其他
+                # Keep priority: annotated > others
                 if '解析' in f.name or '答案' in f.name:
                     seen[key] = f
             else:
@@ -533,7 +533,7 @@ def collect_files() -> List[Tuple[str, Path]]:
 
 
 # ═══════════════════════════════════════════════════════
-# 主管道：处理单个文件
+# Main pipeline: process a single file
 # ═══════════════════════════════════════════════════════
 
 @dataclass
@@ -553,7 +553,7 @@ class PaperResult:
 def process_one_paper(filepath: Path, tag: str,
                       vision_client: VisionClient,
                       llm_client: LLMClient) -> PaperResult:
-    """处理单份试卷：转录 → 切题 → 验证"""
+    """Process a single paper: transcribe → split items → verify."""
     result = PaperResult(source_file=filepath.name, tag=tag)
 
     # Step 0: DOC/DOCX → PDF
@@ -561,23 +561,23 @@ def process_one_paper(filepath: Path, tag: str,
     if filepath.suffix.lower() in ('.doc', '.docx'):
         pdf_path = convert_doc_to_pdf(filepath, DOC_PDF_CACHE)
         if not pdf_path:
-            result.errors.append("DOC→PDF转换失败")
+            result.errors.append("DOC→PDF conversion failed")
             return result
         working_path = pdf_path
 
-    # Step 1: 获取页数 + 页分类
+    # Step 1: get the page count + page classification
     try:
         import fitz
         doc = fitz.open(working_path)
         total_pages = len(doc)
         doc.close()
     except Exception as e:
-        result.errors.append(f"无法打开文件: {e}")
+        result.errors.append(f"cannot open file: {e}")
         return result
 
     result.total_pages = total_pages
 
-    # 逐页分类
+    # Classify page by page
     page_tasks = []  # (page_num, page_type)
     for pn in range(total_pages):
         ptype = classify_page(working_path, pn)
@@ -587,17 +587,17 @@ def process_one_paper(filepath: Path, tag: str,
         page_tasks.append((pn, ptype))
 
     if not page_tasks:
-        result.errors.append("无有效页面（全部为广告/空白）")
+        result.errors.append("no valid pages (all ads/blank)")
         return result
 
-    # ── Phase 1: 逐页视觉转录 ──
+    # ── Phase 1: page-by-page visual transcription ──
     page_markdowns = {}  # page_num → markdown
 
-    # 渲染 + 转录（用线程池并行加快）
+    # Render + transcribe (parallelized with a thread pool for speed)
     def transcribe_task(pn, ptype):
         img_path = render_page_to_jpg(working_path, pn, PAGE_IMG_DIR)
         if not img_path:
-            return pn, None, f"第{pn+1}页渲染失败"
+            return pn, None, f"page {pn+1} render failed"
 
         try:
             mr = transcribe_page(
@@ -606,7 +606,7 @@ def process_one_paper(filepath: Path, tag: str,
             )
             return pn, mr, None
         except Exception as e:
-            return pn, None, f"第{pn+1}页转录失败: {e}"
+            return pn, None, f"page {pn+1} transcription failed: {e}"
 
     with ThreadPoolExecutor(max_workers=VISION_WORKERS) as ex:
         futs = {ex.submit(transcribe_task, pn, pt): pn for pn, pt in page_tasks}
@@ -620,10 +620,10 @@ def process_one_paper(filepath: Path, tag: str,
                 result.transcribed_pages += 1
 
     if not page_markdowns:
-        result.errors.append("所有页面转录失败")
+        result.errors.append("all pages failed transcription")
         return result
 
-    # 按页码排序拼接（修复并行导致的乱序bug）
+    # Join in page order (fixes the out-of-order bug caused by parallelism)
     sorted_pages = sorted(page_markdowns.keys())
     full_markdown_parts = []
     for pn in sorted_pages:
@@ -632,7 +632,7 @@ def process_one_paper(filepath: Path, tag: str,
         )
     full_markdown = "\n".join(full_markdown_parts)
 
-    # 保存完整转录（调试用）
+    # Save the full transcript (for debugging)
     md_file = FULL_MD_DIR / f"{filepath.stem[:60]}_transcript.md"
     md_file.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -640,21 +640,21 @@ def process_one_paper(filepath: Path, tag: str,
     except Exception:
         pass
 
-    # ── Phase 2: 文本智能切题 ──
+    # ── Phase 2: smart text item-splitting ──
     try:
         questions, struct_info = structure_paper(
             full_markdown, filepath.name, llm_client
         )
         result.cost_llm += struct_info.get('cost_yuan', 0)
     except Exception as e:
-        result.errors.append(f"切题失败: {e}")
+        result.errors.append(f"item-splitting failed: {e}")
         return result
 
     if not questions:
-        result.errors.append("未提取到任何题目")
+        result.errors.append("no items extracted")
         return result
 
-    # ── Phase 3a: 视觉回查 (抽样10%，最少3页) ──
+    # ── Phase 3a: visual re-check (10% sample, at least 3 pages) ──
     sample_size = max(3, int(len(page_markdowns) * 0.10))
     sample_pages = list(page_markdowns.keys())
     if len(sample_pages) > sample_size:
@@ -667,30 +667,30 @@ def process_one_paper(filepath: Path, tag: str,
         img_path = render_page_to_jpg(working_path, pn, PAGE_IMG_DIR)
         if not img_path:
             continue
-        # 找出该页的题目（按page分配）
+        # Find the items on this page (allocated by page)
         page_qs = [q for q in questions if q.get('_page', 0) == pn + 1]
         if not page_qs:
-            # 回退：取全部题目中前10个给视觉模型检查
+            # Fallback: give the vision model the first 10 of all items to check
             page_qs = questions[:min(10, len(questions))]
 
         try:
             vers = verify_page(img_path, page_qs, vision_client)
             all_verifications.extend(vers)
-            # 估算成本
-            result.cost_vision += 0.015  # 每页验证约¥0.015
+            # Cost estimate
+            result.cost_vision += 0.015  # ~¥0.015 per page verification
         except Exception as e:
-            result.errors.append(f"第{pn+1}页验证失败: {e}")
+            result.errors.append(f"page {pn+1} verification failed: {e}")
 
-    # ── Phase 3b: 化学正确性校验 ──
+    # ── Phase 3b: chemical-correctness check ──
     try:
         chem_validations = validate_chemistry(questions, llm_client)
-        # 估算成本
-        result.cost_llm += len(questions) * 0.002  # 每条约¥0.002
+        # Cost estimate
+        result.cost_llm += len(questions) * 0.002  # ~¥0.002 per item
     except Exception as e:
-        result.errors.append(f"化学校验失败: {e}")
+        result.errors.append(f"chemistry check failed: {e}")
         chem_validations = []
 
-    # ── 评分与合并 ──
+    # ── Scoring and merging ──
     final_questions = []
     for q in questions:
         conf = compute_confidence(q, all_verifications, chem_validations)
@@ -709,7 +709,7 @@ def process_one_paper(filepath: Path, tag: str,
 
     result.questions = final_questions
 
-    # 统计
+    # Statistics
     passed = sum(1 for q in final_questions if q.get('verification_status') == 'passed')
     needs_review = sum(1 for q in final_questions if q.get('verification_status') == 'needs_review')
     result.stats = {
@@ -727,11 +727,11 @@ def process_one_paper(filepath: Path, tag: str,
 
 
 # ═══════════════════════════════════════════════════════
-# 进度管理
+# Progress management
 # ═══════════════════════════════════════════════════════
 
 def load_progress() -> Dict:
-    """加载进度"""
+    """Load progress."""
     if PROGRESS_FILE.exists():
         try:
             return json.loads(PROGRESS_FILE.read_text(encoding='utf-8'))
@@ -742,24 +742,24 @@ def load_progress() -> Dict:
 
 
 def save_progress(progress: Dict):
-    """保存进度"""
+    """Save progress."""
     PROGRESS_FILE.parent.mkdir(parents=True, exist_ok=True)
     PROGRESS_FILE.write_text(json.dumps(progress, ensure_ascii=False, indent=2),
                              encoding='utf-8')
 
 
 # ═══════════════════════════════════════════════════════
-# 全量运行
+# Full run
 # ═══════════════════════════════════════════════════════
 
 def run_full(max_files: int = None, resume: bool = False):
-    """全量运行管道"""
-    # 初始化
+    """Run the pipeline at full scale."""
+    # Initialization
     vision_key = os.environ.get("DASHSCOPE_API_KEY", "")
     if not vision_key:
-        print("❌ 缺少 DASHSCOPE_API_KEY 环境变量")
-        print("   获取: https://dashscope.console.aliyun.com/apiKey")
-        print("   设置: export DASHSCOPE_API_KEY=sk-xxxx")
+        print("❌ missing DASHSCOPE_API_KEY environment variable")
+        print("   get one at: https://dashscope.console.aliyun.com/apiKey")
+        print("   set it via: export DASHSCOPE_API_KEY=sk-xxxx")
         sys.exit(1)
 
     vision_client = VisionClient(provider=VISION_PROVIDER, model=VISION_MODEL,
@@ -770,35 +770,35 @@ def run_full(max_files: int = None, resume: bool = False):
     PAGE_IMG_DIR.mkdir(parents=True, exist_ok=True)
     FULL_MD_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 收集文件
+    # Collect files
     all_files = collect_files()
     print(f"\n{'='*65}")
-    print(f"视觉提取管道 v2.0 — 分离关注点架构")
+    print(f"Vision extraction pipeline v2.0 — separation-of-concerns architecture")
     print(f"{'='*65}")
-    print(f"视觉模型: {VISION_MODEL} (转录+抽查)")
-    print(f"文本模型: {LLM_MODEL} (切题+校验)")
-    print(f"渲染DPI: {PAGE_DPI}")
-    print(f"总文件: {len(all_files)} 份（去重后）")
+    print(f"vision model: {VISION_MODEL} (transcription + spot-check)")
+    print(f"text model: {LLM_MODEL} (item-splitting + verification)")
+    print(f"render DPI: {PAGE_DPI}")
+    print(f"total files: {len(all_files)} (after dedup)")
     print(f"{'='*65}\n")
 
-    # 进度恢复
+    # Resume progress
     progress = load_progress()
     done_files = set(progress.get("done_files", []))
     out_file = OUTPUT_DIR / "all_from_pdf_v2.jsonl"
 
     if resume and done_files:
-        print(f"续跑：已完成 {len(done_files)} 个文件\n")
+        print(f"resuming: {len(done_files)} files already done\n")
 
     pending = [(tag, f) for tag, f in all_files if f.name not in done_files]
     if max_files:
         pending = pending[:max_files]
 
-    print(f"待处理: {len(pending)} 个文件\n")
+    print(f"to process: {len(pending)} files\n")
     if not pending:
-        print("✅ 全部完成")
+        print("✅ all done")
         return
 
-    # 主循环
+    # Main loop
     done = 0
     total_qs = progress.get("total_questions", 0)
     total_cost_v = progress.get("total_cost_vision", 0.0)
@@ -813,7 +813,7 @@ def run_full(max_files: int = None, resume: bool = False):
             try:
                 result = process_one_paper(fp, tag, vision_client, llm_client)
 
-                # 写入
+                # Write out
                 for q in result.questions:
                     fout.write(json.dumps(q, ensure_ascii=False) + '\n')
                 fout.flush()
@@ -822,19 +822,19 @@ def run_full(max_files: int = None, resume: bool = False):
                 total_cost_v += result.cost_vision
                 total_cost_l += result.cost_llm
 
-                # 状态图标
+                # Status icon
                 rate = result.stats.get('passed_rate', 0)
                 icon = "✅" if rate >= 0.90 else ("⚠️" if rate >= 0.75 else "❌")
-                print(f"{icon} {len(result.questions)}题 "
-                      f"(通过{result.stats.get('passed_verification',0)}/{len(result.questions)}, "
-                      f"通过率{rate:.0%}) "
+                print(f"{icon} {len(result.questions)} items "
+                      f"(passed {result.stats.get('passed_verification',0)}/{len(result.questions)}, "
+                      f"pass rate {rate:.0%}) "
                       f"¥{result.cost_vision + result.cost_llm:.3f}")
 
                 if result.errors:
                     for e in result.errors[:2]:
                         print(f"    ⚠️ {e}")
 
-                # 更新进度
+                # Update progress
                 done_files.add(fp.name)
                 progress.update({
                     "done_files": list(done_files),
@@ -846,25 +846,25 @@ def run_full(max_files: int = None, resume: bool = False):
                 save_progress(progress)
 
             except Exception as e:
-                print(f"❌ 失败: {e}")
+                print(f"❌ failed: {e}")
                 import traceback
                 traceback.print_exc()
 
     elapsed = time.time() - t0
 
-    # 汇总
+    # Summary
     print(f"\n{'='*65}")
-    print(f"全部完成！")
-    print(f"  处理文件: {len(progress.get('done_files', []))}")
-    print(f"  总题目数: {total_qs}")
-    print(f"  总耗时: {elapsed:.0f}s ({elapsed/3600:.1f}h)")
-    print(f"  视觉成本: ¥{total_cost_v:.2f}")
-    print(f"  文本成本: ¥{total_cost_l:.2f}")
-    print(f"  总成本: ¥{total_cost_v + total_cost_l:.2f}")
+    print(f"all done!")
+    print(f"  files processed: {len(progress.get('done_files', []))}")
+    print(f"  total items: {total_qs}")
+    print(f"  total elapsed: {elapsed:.0f}s ({elapsed/3600:.1f}h)")
+    print(f"  vision cost: ¥{total_cost_v:.2f}")
+    print(f"  text cost: ¥{total_cost_l:.2f}")
+    print(f"  total cost: ¥{total_cost_v + total_cost_l:.2f}")
     print(f"{'='*65}")
 
-    # 质量统计
-    print("\n质量统计:")
+    # Quality statistics
+    print("\nquality stats:")
     all_qs = []
     if out_file.exists():
         for line in out_file.open(encoding='utf-8'):
@@ -880,27 +880,27 @@ def run_full(max_files: int = None, resume: bool = False):
         mid = sum(1 for c in confidences if 0.85 <= c < 0.95)
         low = sum(1 for c in confidences if 0.60 <= c < 0.85)
 
-        print(f"  总题目: {len(all_qs)}")
-        print(f"  平均置信度: {avg_conf:.3f}")
-        print(f"  高置信(≥0.95): {high} ({high/len(all_qs)*100:.1f}%)")
-        print(f"  中置信(0.85-0.95): {mid} ({mid/len(all_qs)*100:.1f}%)")
-        print(f"  低置信(0.60-0.85): {low} ({low/len(all_qs)*100:.1f}%)")
-        print(f"  合格率(≥0.85): {(high+mid)/len(all_qs)*100:.1f}%")
+        print(f"  total items: {len(all_qs)}")
+        print(f"  average confidence: {avg_conf:.3f}")
+        print(f"  high confidence (≥0.95): {high} ({high/len(all_qs)*100:.1f}%)")
+        print(f"  mid confidence (0.85-0.95): {mid} ({mid/len(all_qs)*100:.1f}%)")
+        print(f"  low confidence (0.60-0.85): {low} ({low/len(all_qs)*100:.1f}%)")
+        print(f"  qualified rate (≥0.85): {(high+mid)/len(all_qs)*100:.1f}%")
 
-        # 问题分布
+        # Problem distribution
         rejected = sum(1 for q in all_qs if q.get('verification_status') == 'rejected')
         needs_review = sum(1 for q in all_qs if q.get('verification_status') == 'needs_review')
-        print(f"  状态: passed={len(all_qs)-rejected-needs_review}, "
+        print(f"  status: passed={len(all_qs)-rejected-needs_review}, "
               f"needs_review={needs_review}, rejected={rejected}")
 
 
 # ═══════════════════════════════════════════════════════
-# 测试模式：单卷详细输出
+# Test mode: detailed single-paper output
 # ═══════════════════════════════════════════════════════
 
 def test_single_paper(filename: str):
-    """测试单份试卷，输出详细结果供人工检查"""
-    # 查找文件
+    """Test a single paper and print detailed results for manual inspection."""
+    # Find the file
     target = None
     for tag, fp in collect_files():
         if filename.lower() in fp.name.lower():
@@ -908,25 +908,25 @@ def test_single_paper(filename: str):
             break
 
     if not target:
-        # 尝试完整路径
+        # Try the full path
         fp = Path(filename)
         if fp.exists():
             target = ("测试", fp)
         else:
-            print(f"❌ 找不到文件: {filename}")
-            print(f"   可用文件（部分）:")
+            print(f"❌ file not found: {filename}")
+            print(f"   available files (partial):")
             for tag, fp in collect_files()[:20]:
                 print(f"     {fp.name}")
             return
 
     tag, fp = target
     print(f"\n{'='*65}")
-    print(f"测试模式: {fp.name}")
+    print(f"test mode: {fp.name}")
     print(f"{'='*65}")
 
     vision_key = os.environ.get("DASHSCOPE_API_KEY", "")
     if not vision_key:
-        print("❌ 缺少 DASHSCOPE_API_KEY")
+        print("❌ missing DASHSCOPE_API_KEY")
         sys.exit(1)
 
     vision_client = VisionClient(provider=VISION_PROVIDER, model=VISION_MODEL,
@@ -937,68 +937,68 @@ def test_single_paper(filename: str):
     PAGE_IMG_DIR.mkdir(parents=True, exist_ok=True)
     FULL_MD_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"开始处理...")
+    print(f"starting...")
     result = process_one_paper(fp, tag, vision_client, llm_client)
 
-    # ── 输出详细结果 ──
+    # ── Print detailed results ──
     print(f"\n{'─'*50}")
-    print(f"处理结果: {fp.name}")
+    print(f"processing result: {fp.name}")
     print(f"{'─'*50}")
-    print(f"  总页数: {result.total_pages}")
-    print(f"  转录页数: {result.transcribed_pages}")
-    print(f"  跳过页数: {result.skipped_pages}")
-    print(f"  提取题数: {len(result.questions)}")
-    print(f"  视觉成本: ¥{result.cost_vision:.4f}")
-    print(f"  文本成本: ¥{result.cost_llm:.4f}")
-    print(f"  错误: {result.errors}")
-    print(f"  统计: {json.dumps(result.stats, ensure_ascii=False, indent=2)}")
+    print(f"  total pages: {result.total_pages}")
+    print(f"  transcribed pages: {result.transcribed_pages}")
+    print(f"  skipped pages: {result.skipped_pages}")
+    print(f"  extracted items: {len(result.questions)}")
+    print(f"  vision cost: ¥{result.cost_vision:.4f}")
+    print(f"  text cost: ¥{result.cost_llm:.4f}")
+    print(f"  errors: {result.errors}")
+    print(f"  stats: {json.dumps(result.stats, ensure_ascii=False, indent=2)}")
 
-    # 输出前10题供人工检查
+    # Print the first 10 items for manual inspection
     print(f"\n{'─'*50}")
-    print(f"前10题详情:")
+    print(f"first 10 items in detail:")
     print(f"{'─'*50}")
 
     for i, q in enumerate(result.questions[:10]):
-        print(f"\n题{q.get('q_num', '?')} "
+        print(f"\nQ{q.get('q_num', '?')} "
               f"[{q.get('question_type','?')}] "
               f"[{q.get('difficulty','?')}] "
-              f"置信度: {q.get('confidence', 0):.2f}")
-        print(f"  题干: {q.get('stem', '')[:200]}")
+              f"confidence: {q.get('confidence', 0):.2f}")
+        print(f"  stem: {q.get('stem', '')[:200]}")
         opts = q.get('options', {})
         if opts:
-            print(f"  选项: {json.dumps(opts, ensure_ascii=False)}")
-        print(f"  答案: {q.get('answer', '?')}")
-        print(f"  解析: {q.get('explanation', '')[:120]}")
-        print(f"  知识点: {q.get('knowledge_points', [])}")
+            print(f"  options: {json.dumps(opts, ensure_ascii=False)}")
+        print(f"  answer: {q.get('answer', '?')}")
+        print(f"  explanation: {q.get('explanation', '')[:120]}")
+        print(f"  knowledge points: {q.get('knowledge_points', [])}")
         if q.get('diagram_description'):
-            print(f"  图表: {q['diagram_description'][:120]}")
+            print(f"  diagram: {q['diagram_description'][:120]}")
         if q.get('_verify_issues'):
-            print(f"  ⚠️ 视觉问题: {q['_verify_issues']}")
+            print(f"  ⚠️ vision issues: {q['_verify_issues']}")
         if q.get('_chem_issues'):
-            print(f"  ⚠️ 化学问题: {q['_chem_issues']}")
+            print(f"  ⚠️ chemistry issues: {q['_chem_issues']}")
 
-    # 完整转录文件位置
+    # Full transcript file location
     md_path = FULL_MD_DIR / f"{fp.stem[:60]}_transcript.md"
     if md_path.exists():
-        print(f"\n📄 完整转录: {md_path}")
+        print(f"\n📄 full transcript: {md_path}")
 
-    print(f"\n✅ 测试完成")
+    print(f"\n✅ test done")
 
 
 # ═══════════════════════════════════════════════════════
-# 入口
+# Entry point
 # ═══════════════════════════════════════════════════════
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="视觉提取管道 v2.0 — 分离关注点架构（99%+ 准确率目标）"
+        description="Vision extraction pipeline v2.0 — separation-of-concerns architecture (99%+ accuracy target)"
     )
     parser.add_argument('--test', type=str, metavar='FILENAME',
-                        help='测试单份试卷（模糊匹配文件名）')
+                        help='test a single paper (fuzzy filename match)')
     parser.add_argument('--max-files', type=int, metavar='N',
-                        help='最多处理 N 个文件')
+                        help='process at most N files')
     parser.add_argument('--resume', action='store_true',
-                        help='从上次中断处继续')
+                        help='continue from where it last stopped')
     args = parser.parse_args()
 
     if args.test:

@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-一化儿 SKILL 回答格式化器
-根据诊断结果和复杂度，生成符合产品魂的回答 prompt
+Answer formatter for the yihuier SKILL.
+
+Builds answer prompts that match the product's voice, based on the
+diagnosis result and query complexity.
 """
 
 import random
 from typing import Dict, List
 
 
-# ── 杰哥开场库（≤ 15 字）─────────────────────────
+# ── Jie-ge opening library (≤ 15 chars) ──────────
 OPENING_PHRASES = {
     'simple': ['嗯，这题', '明白', '这考的是', '直接说'],
     'normal': ['这题杰哥讲过', '老经典考点了', '看到这题先想'],
@@ -16,7 +18,7 @@ OPENING_PHRASES = {
     'diagnostic': ['卡这是吧', '错点不在题', '常见漏洞', '来诊断下'],
 }
 
-# ── 杰哥互动库（≤ 20 字）─────────────────────────
+# ── Jie-ge interaction library (≤ 20 chars) ──────
 CLOSING_PHRASES = [
     '搞清楚了吗？',
     '懂了告诉杰哥一声',
@@ -28,7 +30,7 @@ CLOSING_PHRASES = [
 
 
 def _format_chunks_for_prompt(chunks: list) -> str:
-    """把 chunks 格式化成 prompt 可读的形式"""
+    """Format chunks into a prompt-readable form."""
     formatted = []
     for c in chunks[:5]:
         cid = c.get('chunk_id', '')[:40]
@@ -38,7 +40,7 @@ def _format_chunks_for_prompt(chunks: list) -> str:
 
 
 def _format_videos_for_prompt(videos: list) -> str:
-    """格式化推荐视频列表"""
+    """Format the recommended-video list."""
     if not videos:
         return '(无推荐视频)'
     lines = []
@@ -48,7 +50,7 @@ def _format_videos_for_prompt(videos: list) -> str:
         collection = v.get('collection', '其他视频')
         short_title = v.get('short_title') or v.get('video_title', '')[:50]
         preview = v.get('text_preview', '')[:60]
-        # bv 已自带 BV 前缀，不要再拼 BV
+        # bv already carries the BV prefix, don't prepend BV again
         url = f"https://www.bilibili.com/video/{bv}?p={pn}"
         lines.append(
             f"  - 【{collection}】P{pn}：{short_title}\n"
@@ -61,12 +63,12 @@ def _format_videos_for_prompt(videos: list) -> str:
 def build_response_prompt(query: str, diagnosis: Dict,
                           style: str = 'auto') -> str:
     """
-    生成给 Claude 的指令，让它按一化儿风格回答
+    Build the instruction for Claude to answer in the yihuier style.
 
     style:
-      - 'concise': 三段式（开场 + 直答 + 互动）
-      - 'full': 五段式（开场 + 诊断 + 双轨 + 路径 + 互动）
-      - 'auto': 根据 complexity 自动选
+      - 'concise': three-part answer (opening + direct answer + interaction)
+      - 'full': five-part answer (opening + diagnosis + dual-track + path + interaction)
+      - 'auto': chosen automatically from complexity
     """
     if style == 'auto':
         if diagnosis['complexity'] in ('simple',):
@@ -74,7 +76,7 @@ def build_response_prompt(query: str, diagnosis: Dict,
         else:
             style = 'full'
 
-    # 提取诊断材料
+    # Gather diagnosis materials
     chunks_summary = _format_chunks_for_prompt(diagnosis['chunks'])
     videos_str = _format_videos_for_prompt(diagnosis.get('recommended_videos', []))
     missing_prereqs_str = ', '.join(diagnosis['missing_prereqs']) or '无明显缺漏'
@@ -107,7 +109,7 @@ def build_response_prompt(query: str, diagnosis: Dict,
 - 自称用"杰哥"（约 30% 概率）
 - 不要照抄 chunks，用杰哥自己的话重新组织"""
 
-    # full 模式
+    # full mode
     opening = random.choice(OPENING_PHRASES.get(
         diagnosis['complexity'], OPENING_PHRASES['normal']))
     closing = random.choice(CLOSING_PHRASES)
@@ -164,7 +166,7 @@ Section 5（互动，≤ 20 字）:
 
 
 def format_retrieval_for_prompt(diagnosis: Dict) -> str:
-    """v3 新增：把 diagnosis 格式化成 [RETRIEVAL_RESULTS] 部分"""
+    """Added in v3: format a diagnosis into the [RETRIEVAL_RESULTS] section."""
     parts = []
 
     nodes = ', '.join(diagnosis.get('related_nodes', [])[:5])
@@ -195,7 +197,7 @@ def format_retrieval_for_prompt(diagnosis: Dict) -> str:
             chunk_lines.append(f"  - [{bv}#P{pn}] {text}...")
         parts.append(f"reference_chunks:\n" + '\n'.join(chunk_lines))
 
-    # videos（v3.1 视频引用规范：合集名 + 标题 + URL）
+    # videos (v3.1 video citation spec: collection name + title + URL)
     videos = diagnosis.get('recommended_videos', [])[:3]
     if videos:
         vid_lines = []
@@ -215,21 +217,21 @@ def format_retrieval_for_prompt(diagnosis: Dict) -> str:
 
 
 def validate_answer_constraints(answer: str, style: str = 'full') -> Dict:
-    """验证回答是否满足硬约束"""
+    """Check whether an answer satisfies the hard constraints."""
     lines = [l for l in answer.split('\n') if l.strip()]
     issues = []
 
-    # 检查开场（第一句非空行）
+    # Check the opening (first non-empty line)
     first_line = lines[0] if lines else ''
     if len(first_line) > 15:
         issues.append(f"开场 {len(first_line)} 字 > 15: '{first_line[:30]}...'")
 
-    # 检查结尾（最后一句话）
+    # Check the ending (last line)
     last_line = lines[-1] if lines else ''
     if len(last_line) > 20:
         issues.append(f"结尾 {len(last_line)} 字 > 20: '{last_line[:30]}...'")
 
-    # 检查总字数
+    # Check the total character count
     total_chars = len(answer)
     if total_chars > 1500:
         issues.append(f"总字数 {total_chars} > 1500")

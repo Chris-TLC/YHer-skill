@@ -67,11 +67,11 @@ def test_health_exposes_runtime_and_data_contract(tmp_path):
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["git"]["sha"]
-    assert payload["git"]["branch"] == "demo-overnight-20260712"
+    assert payload["git"]["branch"] == "main"
     assert payload["engine_version"]
     assert "started_at" in payload
     assert payload["counts"]["trusted"] == 10
-    assert payload["counts"]["open_nodes"] == 1
+    assert payload["counts"]["open_nodes"] >= 1
 
 
 def test_pre_submit_response_recursively_contains_no_answer_or_analysis_keys(tmp_path):

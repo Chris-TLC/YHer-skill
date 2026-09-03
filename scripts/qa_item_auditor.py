@@ -211,10 +211,13 @@ def katex_dist(out_dir: Path) -> Optional[Path]:
         out_dir / "node_modules/katex/dist",
         BUNDLED_NODE_MODULES / "katex/dist",
         ROOT / "node_modules/katex/dist",
-        # batch14 根因修复(Claude 2026-07-05): 此前三候选在本机全 miss → dist=None →
-        # 截图页 katexJs 为空 → window.katex undefined → rir_renderer 对所有 kind=latex
-        # 走 fallback textContent=源码 → VL 大面积报"latex 未渲染"(batch11 台账同源失真)。
-        # 保全的 KaTeX 一直在 batch8 目录(见交接文档"KaTeX 离线编译"条)。
+        # batch14 root-cause fix (Claude 2026-07-05): previously all three candidates
+        # above missed on this machine → dist=None → the screenshot page's katexJs was
+        # empty → window.katex undefined → rir_renderer fell back to textContent=source
+        # for every kind=latex node → the VL reported "latex not rendered" en masse
+        # (same-source distortion as the batch11 ledger).
+        # The preserved KaTeX has always lived in the batch8 directory (see the
+        # "KaTeX offline build" item in the handoff doc).
         Path("/tmp/yher_batch8_ws2/node_modules/katex/dist"),
     ]
     for c in candidates:
@@ -1001,8 +1004,10 @@ def machine_audit_item(
 
 
 def load_target_items(input_jsonl: Optional[Path], all_service: bool) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
-    # 可用性审计必须看 R1-R4 全池(2526,含 fixable/blocked),不能被 R5 白名单遮蔽,
-    # 否则台账只审白名单、修复批永远无法复检——故显式 apply_r5=False(2026-07-06 R5 apply)。
+    # The usability audit must see the full R1-R4 pool (2526, including fixable/blocked)
+    # and must not be masked by the R5 whitelist — otherwise the ledger would only audit
+    # whitelisted items and fix batches could never be re-checked. Hence the explicit
+    # apply_r5=False (2026-07-06 R5 apply).
     if all_service:
         items = list(iter_service_items(apply_r5=False))
         return items, {it["item_id"]: "" for it in items}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-真实引擎层 - 连接知识图谱、题库、LLM
-用于替换Demo中的假数据
+Real engine layer - connects the knowledge graph, item bank, and LLM.
+Used to replace the fake data in the demo.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # ============================================================================
-# 1. 诊断引擎：从知识图谱提取诊断问题
+# 1. Diagnosis engine: extract diagnostic questions from the knowledge graph
 # ============================================================================
 
 def generate_diagnostic_questions(
@@ -21,12 +21,12 @@ def generate_diagnostic_questions(
     count: int = 3
 ) -> List[Dict[str, Any]]:
     """
-    从知识图谱生成诊断问题
+    Generate diagnostic questions from the knowledge graph
 
     Args:
-        node_id: 知识点ID（如"盐类水解"）
-        kg_data: 知识图谱数据（已加载的dict）
-        count: 生成问题数量
+        node_id: knowledge point id (e.g. "盐类水解")
+        kg_data: knowledge graph data (already loaded dict)
+        count: number of questions to generate
 
     Returns:
         [
@@ -45,7 +45,7 @@ def generate_diagnostic_questions(
     if not common_failures:
         return []
 
-    # 最多取count个问题
+    # Take at most `count` questions
     selected = common_failures[:min(count, len(common_failures))]
 
     questions = []
@@ -61,7 +61,7 @@ def generate_diagnostic_questions(
 
 
 # ============================================================================
-# 2. 推荐引擎：智能匹配视频
+# 2. Recommendation engine: intelligently match videos
 # ============================================================================
 
 def recommend_videos(
@@ -74,18 +74,18 @@ def recommend_videos(
     mastery_level: str = "learning"
 ) -> List[Dict[str, Any]]:
     """
-    智能推荐视频（基于场景、年级、地区、时长、掌握度）
+    Smart video recommendation (by scenario, grade, region, time budget, mastery)
 
     Args:
-        node_id: 知识点ID
-        scenario: 学习场景（预习/巩固/考前/突破/重做）
-        grade: 年级（高一上/高一下/高二上/高二下/高三）
-        region: 地区（默认上海）
-        time_budget_hours: 可用时长（小时）
-        mastery_level: 掌握度（not_started/learning/partial/mastered）
+        node_id: knowledge point id
+        scenario: learning scenario (preview / consolidate / pre-exam / breakthrough / redo)
+        grade: grade (高一上/高一下/高二上/高二下/高三)
+        region: region (default 上海)
+        time_budget_hours: available time (hours)
+        mastery_level: mastery (not_started/learning/partial/mastered)
 
     Returns:
-        推荐视频列表，按优先级排序
+        Recommended video list, sorted by priority
     """
     node = kg_data.get(node_id, {})
     all_videos = node.get('recommended_videos', [])
@@ -93,7 +93,7 @@ def recommend_videos(
     if not all_videos:
         return []
 
-    # 场景 → 视频类型映射
+    # Scenario → video type mapping
     scenario_to_type = {
         "预习新课": ["concept_intro"],
         "巩固复习": ["review_with_problems"],
@@ -104,7 +104,7 @@ def recommend_videos(
 
     preferred_types = scenario_to_type.get(scenario, ["concept_intro"])
 
-    # 掌握度 → 难度映射
+    # Mastery → difficulty mapping
     mastery_to_difficulty = {
         "not_started": ["T1", "T2"],
         "learning": ["T2"],
@@ -114,26 +114,26 @@ def recommend_videos(
 
     preferred_difficulties = mastery_to_difficulty.get(mastery_level, ["T2"])
 
-    # 筛选+评分
+    # Filter + score
     scored_videos = []
     for video in all_videos:
         score = 0.0
 
-        # 类型匹配（40分）
+        # Type match (40 points)
         if video.get('type') in preferred_types:
             score += 40
 
-        # 难度匹配（30分）
+        # Difficulty match (30 points)
         if video.get('difficulty') in preferred_difficulties:
             score += 30
 
-        # 地区优先级（20分）
+        # Region priority (20 points)
         if region in video.get('region_priority', []):
             score += 20
         elif "全国" in video.get('region_priority', []):
             score += 10
 
-        # 时长合适（10分）
+        # Suitable duration (10 points)
         duration = video.get('duration_min', 60)
         time_budget_min = time_budget_hours * 60
         if duration <= time_budget_min:
@@ -141,15 +141,15 @@ def recommend_videos(
 
         scored_videos.append((score, video))
 
-    # 按分数排序
+    # Sort by score
     scored_videos.sort(key=lambda x: x[0], reverse=True)
 
-    # 返回前3个（或所有如果不足3个）
+    # Return the top 3 (or all, if fewer than 3)
     return [v for _, v in scored_videos[:3]]
 
 
 # ============================================================================
-# 3. 验证引擎：生成吸收验证问题
+# 3. Verification engine: generate absorption-check questions
 # ============================================================================
 
 def generate_verification_question(
@@ -158,23 +158,23 @@ def generate_verification_question(
     video_watched: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    生成吸收验证问题（基于学生刚看完的视频）
+    Generate an absorption-check question (based on the video the student just watched)
 
     Args:
-        node_id: 知识点ID
-        kg_data: 知识图谱
-        video_watched: 学生刚看完的视频信息
+        node_id: knowledge point id
+        kg_data: knowledge graph
+        video_watched: info about the video the student just watched
 
     Returns:
         {
-            "question": "验证问题",
-            "judgment_criteria": ["标准1", "标准2"],
-            "rubric": "评分标准"
+            "question": "verification question",
+            "judgment_criteria": ["criterion 1", "criterion 2"],
+            "rubric": "grading standard"
         }
     """
     node = kg_data.get(node_id, {})
 
-    # 从judgment_criteria_for_mastery提取验证标准
+    # Extract verification criteria from judgment_criteria_for_mastery
     criteria = node.get('judgment_criteria_for_mastery', [])
 
     if not criteria:
@@ -184,10 +184,10 @@ def generate_verification_question(
             "rubric": "能说出3个以上关键点即为掌握"
         }
 
-    # 随机选一个标准作为验证点
+    # Randomly pick one criterion as the verification point
     criterion = random.choice(criteria)
 
-    # 转化为验证问题
+    # Turn it into a verification question
     question = f"根据刚才的视频，{criterion.split('能')[1] if '能' in criterion else criterion}"
 
     return {
@@ -198,7 +198,7 @@ def generate_verification_question(
 
 
 # ============================================================================
-# 4. 练习引擎：智能选题
+# 4. Practice engine: smart item selection
 # ============================================================================
 
 def select_practice_questions(
@@ -210,29 +210,29 @@ def select_practice_questions(
     region: str = "上海"
 ) -> List[Dict[str, Any]]:
     """
-    从题库智能选题（适配chemistry_solved.jsonl格式）
+    Smart item selection from the item bank (adapted to the chemistry_solved.jsonl format)
 
     Args:
-        node_ids: 知识点ID列表（学生本次学习的知识点）
-        question_bank_path: 题库文件路径（chemistry_solved.jsonl）
-        count: 总题数
-        choice_ratio: 选择题占比（默认0.3 = 30%）
-        difficulty_range: 难度范围（1=简单, 2=中等, 3=困难, 4=极难）
-        region: 地区（优先选上海卷）
+        node_ids: list of knowledge point ids (what the student is learning this session)
+        question_bank_path: item bank file path (chemistry_solved.jsonl)
+        count: total number of items
+        choice_ratio: share of multiple-choice items (default 0.3 = 30%)
+        difficulty_range: difficulty range (1=easy, 2=medium, 3=hard, 4=very hard)
+        region: region (Shanghai papers preferred)
 
     Returns:
-        题目列表（已按类型排序：选择题在前，填空题在后）
+        List of items (already sorted by type: multiple-choice first, fill-in-the-blank after)
     """
     if not question_bank_path.exists():
         return []
 
-    # 加载题库
+    # Load the item bank
     all_questions = []
     with open(question_bank_path, 'r', encoding='utf-8') as f:
         for line in f:
             try:
                 q = json.loads(line.strip())
-                # 只取有solved字段的题目
+                # Only keep items that have the `solved` field
                 if 'solved' in q:
                     all_questions.append(q)
             except:
@@ -241,20 +241,20 @@ def select_practice_questions(
     if not all_questions:
         return []
 
-    # 筛选条件
+    # Filtering condition
     def match_question(q: Dict) -> bool:
         solved = q.get('solved', {})
 
-        # 难度匹配
+        # Difficulty match
         q_diff = solved.get('difficulty', 2)
         if q_diff not in difficulty_range:
             return False
 
-        return True  # 先只看难度，知识点匹配留作加分项
+        return True  # For now filter on difficulty only; knowledge-point match is a bonus
 
     matched_questions = [q for q in all_questions if match_question(q)]
 
-    # 如果有知识点要求，优先选知识点匹配的题
+    # If knowledge points are given, prefer items matching them
     if node_ids and matched_questions:
         priority_questions = []
         for q in matched_questions:
@@ -265,41 +265,41 @@ def select_practice_questions(
                         priority_questions.append(q)
                         break
 
-        # 如果有优先题目，用优先题目；否则用全部匹配题目
+        # Use the priority items if any; otherwise use all matched items
         if priority_questions:
             matched_questions = priority_questions
 
     if not matched_questions:
-        # 如果没有匹配的，放宽条件：只看地区和难度
+        # Nothing matched: relax the filter to region and difficulty only
         matched_questions = [q for q in all_questions
                             if q.get('solved', {}).get('difficulty', 2) in difficulty_range]
 
     if not matched_questions:
-        # 再放宽：随机选
-        matched_questions = all_questions[:100]  # 最多取前100题
+        # Relax further: pick randomly
+        matched_questions = all_questions[:100]  # at most the first 100 items
 
     if not matched_questions:
         return []
 
-    # 分选择题和非选择题
+    # Split multiple-choice vs non-multiple-choice
     choice_questions = [q for q in matched_questions
                        if '单选' in q.get('solved', {}).get('question_type', '') or
                           '多选' in q.get('solved', {}).get('question_type', '')]
     fillblank_questions = [q for q in matched_questions
                           if q not in choice_questions]
 
-    # 计算数量
+    # Work out the counts
     choice_count = int(count * choice_ratio)
     fillblank_count = count - choice_count
 
-    # 随机抽取
+    # Random sample
     selected_choice = random.sample(choice_questions, min(choice_count, len(choice_questions)))
     selected_fillblank = random.sample(fillblank_questions, min(fillblank_count, len(fillblank_questions)))
 
-    # 合并（选择题在前）
+    # Merge (multiple-choice first)
     selected = selected_choice + selected_fillblank
 
-    # 如果不足count个，补充
+    # If still short of `count`, top up
     if len(selected) < count:
         remaining = [q for q in matched_questions if q not in selected]
         need = count - len(selected)
@@ -310,7 +310,7 @@ def select_practice_questions(
 
 
 # ============================================================================
-# 5. 打分引擎：客观题自动判分 + 主观题LLM判分
+# 5. Grading engine: auto-grade objective items + LLM-grade subjective items
 # ============================================================================
 
 def grade_answer(
@@ -319,27 +319,27 @@ def grade_answer(
     llm_caller: Optional[Any] = None
 ) -> Dict[str, Any]:
     """
-    判分（客观题直接比对，主观题用LLM）
-    适配chemistry_solved.jsonl格式
+    Grade an answer (objective items by direct comparison, subjective items via LLM).
+    Adapted to the chemistry_solved.jsonl format.
 
     Args:
-        question: 题目对象
-        user_answer: 学生答案
-        llm_caller: LLM调用器（用于主观题判分）
+        question: the item object
+        user_answer: the student's answer
+        llm_caller: LLM caller (used for grading subjective items)
 
     Returns:
         {
             "is_correct": True/False,
-            "score": 分数,
-            "explanation": "判分说明",
-            "correct_answer": "正确答案"
+            "score": score,
+            "explanation": "grading note",
+            "correct_answer": "the correct answer"
         }
     """
     solved = question.get('solved', {})
     q_type = solved.get('question_type', '填空题')
     correct_answer = solved.get('standard_answer', '')
 
-    # 客观题：直接比对
+    # Objective items: direct comparison
     if '单选' in q_type or '多选' in q_type:
         is_correct = user_answer.strip().upper() == correct_answer.strip().upper()
         return {
@@ -349,7 +349,7 @@ def grade_answer(
             "correct_answer": correct_answer
         }
 
-    # 主观题：简单比对（未来可接rubric引擎）
+    # Subjective items: simple comparison (a rubric engine could plug in later)
     user_clean = user_answer.replace(' ', '').replace('；', ';').replace('，', ',')
     correct_clean = correct_answer.replace(' ', '').replace('；', ';').replace('，', ',')
 
@@ -364,7 +364,7 @@ def grade_answer(
 
 
 # ============================================================================
-# 6. 复习引擎：生成复习计划
+# 6. Review engine: generate a review plan
 # ============================================================================
 
 def generate_review_plan(
@@ -375,24 +375,24 @@ def generate_review_plan(
     grade: str
 ) -> Dict[str, Any]:
     """
-    生成智能复习计划
+    Generate a smart review plan
 
     Args:
-        user_id: 学生ID
-        weak_nodes: 薄弱知识点列表
-        kg_data: 知识图谱
-        scenario: 本次学习场景
-        grade: 年级
+        user_id: student id
+        weak_nodes: list of weak knowledge points
+        kg_data: knowledge graph
+        scenario: this session's learning scenario
+        grade: grade
 
     Returns:
         {
-            "summary": "本次学习总结",
-            "weak_points": ["薄弱点1", "薄弱点2"],
-            "recommended_videos": [视频列表],
-            "next_review_date": "建议复习日期"
+            "summary": "this session's summary",
+            "weak_points": ["weak point 1", "weak point 2"],
+            "recommended_videos": [video list],
+            "next_review_date": "suggested next review date"
         }
     """
-    # 生成总结
+    # Build the summary
     summary = f"本次{scenario}环节已完成。"
 
     if not weak_nodes:
@@ -406,9 +406,9 @@ def generate_review_plan(
 
     summary += f"发现{len(weak_nodes)}个薄弱点需要加强。"
 
-    # 为每个薄弱点推荐视频
+    # Recommend videos for each weak point
     all_videos = []
-    for node_id in weak_nodes[:3]:  # 最多3个
+    for node_id in weak_nodes[:3]:  # at most 3
         videos = recommend_videos(
             node_id=node_id,
             kg_data=kg_data,
@@ -418,7 +418,7 @@ def generate_review_plan(
             time_budget_hours=1.0,
             mastery_level="learning"
         )
-        for v in videos[:1]:  # 每个节点最多1个视频
+        for v in videos[:1]:  # at most 1 video per node
             v['node_id'] = node_id
             all_videos.append(v)
 
@@ -426,17 +426,17 @@ def generate_review_plan(
         "summary": summary,
         "weak_points": weak_nodes,
         "recommended_videos": all_videos,
-        "next_review_date": "1天后"  # 薄弱点需要尽快复习
+        "next_review_date": "1天后"  # weak points need reviewing soon
     }
 
 
 # ============================================================================
-# 7. 辅助函数：加载知识图谱
+# 7. Helper: load the knowledge graph
 # ============================================================================
 
 def load_knowledge_graph(kg_path: Path) -> Dict[str, Any]:
     """
-    加载知识图谱JSONL文件为dict
+    Load a knowledge graph JSONL file into a dict
 
     Returns:
         {
@@ -464,10 +464,10 @@ def load_knowledge_graph(kg_path: Path) -> Dict[str, Any]:
 
 
 # ============================================================================
-# 8. LLM调用封装（用于诊断和补充讲解）
+# 8. LLM call wrappers (for diagnosis and supplementary teaching)
 # ============================================================================
 
-# System Prompt模板
+# System prompt templates
 DIAGNOSIS_SYSTEM_PROMPT = """
 你是一化儿化学教学团队的AI诊断助手，擅长通过学生的答案快速定位思维漏洞。
 
@@ -542,13 +542,13 @@ def call_llm_for_diagnosis(
     model: str = "deepseek-v4-flash"
 ) -> Dict[str, Any]:
     """
-    用LLM分析学生的诊断答案
+    Use the LLM to analyze the student's diagnostic answer
 
     Returns:
         {
             "has_issue": True/False,
-            "matched_root_cause": "根因",
-            "analysis": "分析说明"
+            "matched_root_cause": "root cause",
+            "analysis": "analysis note"
         }
     """
     prompt = f"""诊断问题：{diagnostic_question['question']}
@@ -568,7 +568,7 @@ def call_llm_for_diagnosis(
             model_override=model
         )
 
-        # 解析JSON
+        # Parse the JSON
         content = result.get('content', '{}')
         parsed = json.loads(content)
 
@@ -578,7 +578,7 @@ def call_llm_for_diagnosis(
             "analysis": parsed.get('analysis', '')
         }
     except:
-        # 如果LLM调用失败，返回默认值
+        # If the LLM call fails, return defaults
         return {
             "has_issue": False,
             "matched_root_cause": None,
@@ -595,10 +595,10 @@ def call_llm_for_deep_teaching(
     model: str = "deepseek-v4-pro"
 ) -> str:
     """
-    用Pro模型进行深度补充讲解（当学生验证答错时）
+    Use the Pro model for deep supplementary teaching (when the student fails the verification)
 
     Returns:
-        补充讲解内容（Markdown格式）
+        Supplementary teaching content (Markdown format)
     """
     node = kg_data.get(node_id, {})
 

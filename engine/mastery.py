@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 """
-engine/mastery.py — 病因信念引擎（诊断引擎设计文档块 1，2026-07-08）
+engine/mastery.py — cause-of-error belief engine (diagnosis-engine design doc
+block 1, 2026-07-08)
 ===================================================================
-四状态信念 {M 已掌握 / P 前置缺失 / C 思维链不稳 / U 完全不会} 的贝叶斯更新、
-按题型 slip/guess、干扰项两段分解、层级先验、FSRS 单向衰减投影。
+Bayesian updates over a four-state belief {M mastered / P prerequisite gap /
+C unstable reasoning chain / U completely lost}, per-item-type slip/guess,
+two-stage distractor decomposition, hierarchical priors, and FSRS one-way
+decay projection.
 
-规格源：mac-unknown-design-20260707-230853.md（行号在注释里标注）。
-范围：本模块是信念内核。EIG 选题器在 selector.py（阶段 1，待 T0 拍板 gap 阈值）。
+Spec source: mac-unknown-design-20260707-230853.md (line numbers noted in comments).
+Scope: this module is the belief kernel. The EIG selector lives in selector.py
+(stage 1, pending a T0 decision on the gap threshold).
 
-红线（设计文档第 152 行）：
-  · 衰减公式只存在于 _project_decay，get_belief 是唯一读入口——禁止旁路直读 node.b。
-  · 单向投影只重分配 M→C，不碰 P/U。
-  · 存储态 b 永不含衰减；更新先验＝投影后的 b；同段时间遗忘只发生一次。
+Red lines (design doc line 152):
+  · The decay formula lives only in _project_decay; get_belief is the sole read
+    entry — reading node.b directly, bypassing it, is forbidden.
+  · The one-way projection only redistributes M→C and never touches P/U.
+  · The stored state b never contains decay; the update prior = the projected b;
+    forgetting for a given time span happens exactly once.
 """
 from __future__ import annotations
 
@@ -20,133 +26,135 @@ from typing import Optional
 
 import numpy as np
 
-# ── 状态索引（全模块固定顺序）─────────────────────────────────────────
+# ── State indices (fixed order for the whole module) ────────────────────
 M, P, C, U = 0, 1, 2, 3
 STATES = ("M", "P", "C", "U")
 UNIFORM = np.full(4, 0.25)
 
-# ── 观测参数（设计文档第 86-87 行，模块常量＋注释；升级触发器见第 86 行）──
-EPS = 0.10                        # slip 粗心，各题型共用
-GAMMA = {"mcq": 0.25, "numeric": 0.03}   # guess：四选一 / 纯数值短填
-DELTA_P = 0.10                    # δ_p，前置缺但本步可能半会
+# ── Observation parameters (design doc lines 86-87, module constants + comments; upgrade trigger at line 86) ──
+EPS = 0.10                        # slip / carelessness, shared across item types
+GAMMA = {"mcq": 0.25, "numeric": 0.03}   # guess: four-choice MCQ / plain numeric short-answer
+DELTA_P = 0.10                    # δ_p, missing prerequisite but may half-know this step
 
-# ── 跨节点似然（第 88 行）──
-PREREQ_CORRECT_C = 0.80           # P(对前置|C)：思路不稳者前置通常在
-PREREQ_U_DEFAULT = 0.75           # P(对前置|U)：无前置信念数据时缺省（session 快照冻结）
+# ── Cross-node likelihoods (line 88) ──
+PREREQ_CORRECT_C = 0.80           # P(correct on prerequisite|C): those with unstable reasoning usually still have the prerequisite
+PREREQ_U_DEFAULT = 0.75           # P(correct on prerequisite|U): default when no prerequisite belief data exists (frozen at session snapshot)
 
-# ── 层级先验（第 119-122 行）──
-LAMBDA_PRIOR = 0.6                # b_k(0)=λ·板块后验+(1−λ)·全局先验
-ETA_PREREQ = 0.4                  # 前置传播幅度
+# ── Hierarchical priors (lines 119-122) ──
+LAMBDA_PRIOR = 0.6                # b_k(0) = λ·block posterior + (1−λ)·global prior
+ETA_PREREQ = 0.4                  # prerequisite propagation strength
 
-# ── FSRS 衰减 + 稳定性 S（第 49/150-151 行；2026-08-13 审计:旧手设×3/×2/×0.5 无阻尼 → S 膨胀 4608 天,换 4.5 公式）──
-S0 = 3.0                          # S 初值（天）
-S_FIRST_REVIEW_MULT = 3.0         # 首次复核 S×3（已巩固知识快速稳定;同 4.5 的 w0）
-S_MAX = 500.0                     # 阻尼上限（天）,对齐 FSRS 官方默认 max 稳定度
-# FSRS-4.5 稳定度增长权重（w7-w12,取自官方公开参数表;简化版只取与本项目有关的 5 项）
-_W7 = 0.9                         # 成功因子基准
-_W8 = 0.0                         # 成功因子幂次
-_W10 = 10.0                       # S 幂次分母
-_W11 = 0.72                       # 失败倍率
-_W12 = 0.90                       # 成功判定阈值
+# ── FSRS decay + stability S (lines 49/150-151; 2026-08-13 audit: old hand-set ×3/×2/×0.5 had no damping → S ballooned to 4608 days; replaced with the 4.5 formula) ──
+S0 = 3.0                          # initial S (days)
+S_FIRST_REVIEW_MULT = 3.0         # first review multiplies S by 3 (consolidated knowledge stabilizes quickly; same as 4.5's w0)
+S_MAX = 500.0                     # damping cap (days), aligned with FSRS's official default max stability
+# FSRS-4.5 stability growth weights (w7-w12, taken from the official public parameter table; the simplified version keeps only the 5 relevant to this project)
+_W7 = 0.9                         # success-factor base
+_W8 = 0.0                         # success-factor exponent
+_W10 = 10.0                       # S-exponent denominator
+_W11 = 0.72                       # failure multiplier
+_W12 = 0.90                       # success verdict threshold
 DAY_SECONDS = 86400
 
-# ── LLM 慢路径钳位（第 103 行 #8）──
-LIKELIHOOD_RATIO_CAP = 3.0        # 似然比硬封顶：一句被误读的中文最多顶一道题量级
+# ── LLM slow-path clamping (line 103, #8) ──
+LIKELIHOOD_RATIO_CAP = 3.0        # hard likelihood-ratio cap: one misread Chinese sentence is at most worth one item's worth of evidence
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 信念存储态
+# Belief stored state
 # ══════════════════════════════════════════════════════════════════════
 @dataclass
 class NodeBelief:
-    """(学生, 节点) 的信念存储态。b 永不含衰减；衰减在 get_belief 里懒投影。"""
-    b: np.ndarray                              # [P(M),P(P),P(C),P(U)]，存储态
-    S: Optional[float] = None                  # 稳定性（天），None=未初始化
-    last_review_at: Optional[float] = None     # 上次事件时间戳（秒）
-    direct_answers: int = 0                    # 本节点直接作答计数（#9 收敛门）
-    subject: str = "chemistry"                 # schema 增量清单第 7 项
+    """Stored belief state for a (student, node) pair. b never contains decay; decay is projected lazily in get_belief."""
+    b: np.ndarray                              # [P(M),P(P),P(C),P(U)], stored state
+    S: Optional[float] = None                  # stability (days), None = not initialized
+    last_review_at: Optional[float] = None     # timestamp of the last event (seconds)
+    direct_answers: int = 0                    # direct answer count on this node (#9 convergence gate)
+    subject: str = "chemistry"                 # schema increment list, item 7
 
     def __post_init__(self) -> None:
         try:
             belief = np.asarray(self.b, dtype=float)
         except (TypeError, ValueError) as exc:
-            raise ValueError("belief 必须是四维数值概率") from exc
+            raise ValueError("belief must be a 4-dimensional numeric probability") from exc
         if belief.shape != (4,):
-            raise ValueError(f"belief 必须是四维，实际 shape={belief.shape}")
+            raise ValueError(f"belief must be 4-dimensional, actual shape={belief.shape}")
         if not np.all(np.isfinite(belief)) or np.any(belief < 0):
-            raise ValueError("belief 必须为有限非负数")
+            raise ValueError("belief must be finite and non-negative")
         if not np.isclose(belief.sum(), 1.0, rtol=0.0, atol=1e-6):
-            raise ValueError("belief 概率和必须约等于 1")
+            raise ValueError("belief probabilities must sum to approximately 1")
         if self.S is not None and (not np.isfinite(self.S) or self.S <= 0):
-            raise ValueError("S 必须为有限正数或 None")
+            raise ValueError("S must be a finite positive number or None")
         if self.direct_answers < 0:
-            raise ValueError("direct_answers 不得为负")
+            raise ValueError("direct_answers must not be negative")
         self.b = belief
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 似然表（第 87-91 行）
+# Likelihood tables (lines 87-91)
 # ══════════════════════════════════════════════════════════════════════
 def local_correct_probs(d: float, item_type: str = "mcq") -> np.ndarray:
-    """本节点题各状态答对概率（第 87 行）。d∈[0,1] 归一化难度。"""
+    """Per-state probability of answering a local-node item correctly (line 87). d∈[0,1] is the normalized difficulty."""
     g = GAMMA[item_type]
     return np.array([1 - EPS, g + DELTA_P, 0.7 - 0.2 * d, g])
 
 
 def prereq_correct_probs(prereq_u_predict: float = PREREQ_U_DEFAULT,
                          item_type: str = "mcq") -> np.ndarray:
-    """前置节点题各状态答对概率（第 88 行）。
-       prereq_u_predict＝前置节点自身预测答对率，session 开始快照冻结（#12）。"""
+    """Per-state probability of answering a prerequisite-node item correctly (line 88).
+       prereq_u_predict = the prerequisite node's own predicted correct rate, frozen at the session-start snapshot (#12)."""
     g = GAMMA[item_type]
     return np.array([1 - EPS, g, PREREQ_CORRECT_C, prereq_u_predict])
 
 
 def likelihood_correct(correct_probs: np.ndarray) -> np.ndarray:
-    """观测＝答对，似然向量＝P(对|s)。"""
+    """Observation = correct; likelihood vector = P(correct|s)."""
     return np.asarray(correct_probs, dtype=float)
 
 
 def likelihood_wrong_binary(correct_probs: np.ndarray) -> np.ndarray:
-    """观测＝答错、无 distractor_map（二元退化，第 91 行）：似然＝1−P(对|s)。"""
+    """Observation = wrong, no distractor_map (binary degenerate case, line 91): likelihood = 1−P(correct|s)."""
     return 1.0 - np.asarray(correct_probs, dtype=float)
 
 
 def default_distractor_error() -> np.ndarray:
-    """P(d|错,s) 模板（第 89-90 行）：行=状态[M,P,C,U]，列=[典型误解, 其他, 其他]。
-       钉死：C 选典型误解=0.60，U/M 均匀；P 行为模板值（错因码表量产时逐题覆盖）。
-       每行归一（Σ_d P(d|错,s)=1）。"""
+    """P(d|wrong,s) template (lines 89-90): rows = states [M,P,C,U], columns = [typical misconception, other, other].
+       Pinned: C choosing the typical misconception = 0.60, U/M uniform; the P row is a template value
+       (overridden per item once the error-cause code tables ship at scale).
+       Each row is normalized (Σ_d P(d|wrong,s)=1).
+    """
     return np.array([
-        [1 / 3, 1 / 3, 1 / 3],     # M：slip 随机
-        [0.45, 0.275, 0.275],      # P：偏典型误解
-        [0.60, 0.20, 0.20],        # C：典型误解 0.60
-        [1 / 3, 1 / 3, 1 / 3],     # U：均匀
+        [1 / 3, 1 / 3, 1 / 3],     # M: random slip
+        [0.45, 0.275, 0.275],      # P: biased toward the typical misconception
+        [0.60, 0.20, 0.20],        # C: typical misconception 0.60
+        [1 / 3, 1 / 3, 1 / 3],     # U: uniform
     ])
 
 
 def likelihood_wrong_distractor(correct_probs: np.ndarray, derr: np.ndarray,
                                 chosen_idx: int) -> np.ndarray:
-    """观测＝答错且选了干扰项 chosen_idx，两段分解（第 89 行）：
-       P(选d|s) = P(错|s)·P(d|错,s) = (1−P(对|s))·derr[s, chosen_idx]。"""
+    """Observation = wrong with distractor chosen_idx picked; two-stage decomposition (line 89):
+       P(pick d|s) = P(wrong|s)·P(d|wrong,s) = (1−P(correct|s))·derr[s, chosen_idx]."""
     return (1.0 - np.asarray(correct_probs, dtype=float)) * derr[:, chosen_idx]
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 贝叶斯更新（第 95 行）
+# Bayesian update (line 95)
 # ══════════════════════════════════════════════════════════════════════
 def bayes_update(b: np.ndarray, likelihood: np.ndarray) -> np.ndarray:
-    """一行贝叶斯：b'(s) ∝ P(观测|s)·b(s)，归一化。"""
+    """One-line Bayes: b'(s) ∝ P(observation|s)·b(s), then normalized."""
     post = np.asarray(b, dtype=float) * np.asarray(likelihood, dtype=float)
     total = post.sum()
-    if total <= 0:                    # 退化保护：似然全零 → 信念不变
+    if total <= 0:                    # degenerate protection: all-zero likelihood → belief unchanged
         return np.asarray(b, dtype=float).copy()
     return post / total
 
 
 # ══════════════════════════════════════════════════════════════════════
-# LLM 慢路径似然钳位（第 103 行 #8；失败模式：幻觉非法值）
+# LLM slow-path likelihood clamping (line 103, #8; failure mode: hallucinated illegal values)
 # ══════════════════════════════════════════════════════════════════════
 def _cap_likelihood_ratio(L: np.ndarray, cap: float) -> np.ndarray:
-    """把似然比 max/min 压到 ≤ cap（对数空间线性收缩，保序）。"""
+    """Squeeze the likelihood ratio max/min down to ≤ cap (linear contraction in log space, order-preserving)."""
     L = L / L.sum()
     L = np.clip(L, 1e-12, None)
     if L.max() / L.min() <= cap:
@@ -154,17 +162,17 @@ def _cap_likelihood_ratio(L: np.ndarray, cap: float) -> np.ndarray:
     logL = np.log(L)
     logL -= logL.mean()
     span = logL.max() - logL.min()
-    logL *= np.log(cap) / span        # 压缩对数跨度到 log(cap)
+    logL *= np.log(cap) / span        # compress the log span down to log(cap)
     Lc = np.exp(logL)
     return Lc / Lc.sum()
 
 
 def sanitize_llm_likelihood(L_raw, confidence: float):
-    """追问判定器的似然向量净化（#8，第 103 行）。
-    返回 (L_clean, was_illegal)。原始 L_raw 由调用方照录日志（静默失败路径①）。
-      · 非法（形状/NaN/负/非正和）→ 均匀分布＝零信息。
-      · 幂次压平：L' = L^置信度（conf=0 → 均匀；conf=1 → 原样）。
-      · 似然比硬封顶 3:1。"""
+    """Sanitize the likelihood vector from the follow-up-question judge (#8, line 103).
+    Returns (L_clean, was_illegal). The raw L_raw is logged verbatim by the caller (silent-failure path ①).
+      · Illegal (shape/NaN/negative/non-positive sum) → uniform distribution = zero information.
+      · Power flattening: L' = L^confidence (conf=0 → uniform; conf=1 → unchanged).
+      · Hard likelihood-ratio cap at 3:1."""
     L = np.asarray(L_raw, dtype=float) if _is_numeric_seq(L_raw) else None
     if (L is None or L.shape != (4,) or not np.all(np.isfinite(L))
             or np.any(L < 0) or L.sum() <= 0):
@@ -177,7 +185,7 @@ def sanitize_llm_likelihood(L_raw, confidence: float):
         return UNIFORM.copy(), True
     L = L / L.sum()
     conf = float(np.clip(conf, 0.0, 1.0))
-    L = L ** conf                     # 幂次压平
+    L = L ** conf                     # power flattening
     L = L / L.sum()
     L = _cap_likelihood_ratio(L, LIKELIHOOD_RATIO_CAP)
     return L, False
@@ -192,76 +200,81 @@ def _is_numeric_seq(x) -> bool:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 层级先验（第 119-122 行）
+# Hierarchical priors (lines 119-122)
 # ══════════════════════════════════════════════════════════════════════
 def hierarchical_prior(block_beliefs, block_counts, global_prior: np.ndarray,
                        prereq_belief: Optional[np.ndarray] = None,
                        prereq_available: bool = False) -> np.ndarray:
-    """b_k(0) = λ·板块级后验 + (1−λ)·全局先验（第 119 行）。
-       板块级后验＝板块内各节点 b 按累计作答数加权平均（第 121 行）；
-       板块内无作答 → λ 项回退全局先验。
-       前置传播（第 122 行，#4 门控 prereq_available）：
-         P 分量 += η·max(0, P_前置(U)+P_前置(P)−0.5)，加完归一。"""
+    """b_k(0) = λ·block-level posterior + (1−λ)·global prior (line 119).
+       The block-level posterior = the weighted average of the block's node beliefs
+       b by cumulative answer counts (line 121);
+       with no answers in the block → the λ term falls back to the global prior.
+       Prerequisite propagation (line 122, #4 gated on prereq_available):
+         the P component += η·max(0, P_prereq(U)+P_prereq(P)−0.5), then renormalized."""
     global_prior = np.asarray(global_prior, dtype=float)
     counts = np.asarray(block_counts, dtype=float) if len(block_counts) else np.array([])
     if counts.size and counts.sum() > 0:
         stacked = np.stack([np.asarray(x, dtype=float) for x in block_beliefs])
         block_post = (stacked * counts[:, None]).sum(0) / counts.sum()
     else:
-        block_post = global_prior     # 板块无作答 → 回退
+        block_post = global_prior     # no answers in the block → fall back
     b0 = LAMBDA_PRIOR * block_post + (1 - LAMBDA_PRIOR) * global_prior
-    if prereq_available and prereq_belief is not None:   # #4：对齐表交付后才启用
+    if prereq_available and prereq_belief is not None:   # #4: enabled only after the alignment table is delivered
         pq = np.asarray(prereq_belief, dtype=float)
         b0 = b0.copy()
         b0[P] += ETA_PREREQ * max(0.0, pq[U] + pq[P] - 0.5)
-    return b0 / b0.sum()              # 加完归一
+    return b0 / b0.sum()              # renormalize after the addition
 
 
 # ══════════════════════════════════════════════════════════════════════
-# FSRS 衰减投影 + get_belief 唯一读入口（第 150-153 行，红线）
+# FSRS decay projection + get_belief as the sole read entry (lines 150-153, red line)
 # ══════════════════════════════════════════════════════════════════════
 def recall_probability(dt_days: float, S: float) -> float:
-    """FSRS 经典可提取性 R(t) = (1 + t/(9S))^(−1)（第 49/150 行）。"""
+    """FSRS classic retrievability R(t) = (1 + t/(9S))^(−1) (lines 49/150)."""
     return (1.0 + dt_days / (9.0 * S)) ** (-1.0)
 
 
 def _project_decay(b_stored: np.ndarray, S, last_review_at, now) -> np.ndarray:
-    """★衰减公式的唯一所在地★（第 152 行）。单向投影：M 中 (1−R) 比例流入 C，
-       P/U 不碰。幂等、不回写、存储态永不含衰减。"""
+    """★The only place the decay formula lives★ (line 152). One-way projection: the (1−R) share of M flows into C,
+       P/U untouched. Idempotent, never written back, stored state never contains decay."""
     b = np.asarray(b_stored, dtype=float).copy()
     if S is None or last_review_at is None:
-        return b                       # S 未初始化 → 无衰减
+        return b                       # S not initialized → no decay
     dt_days = max(0.0, (now - last_review_at) / DAY_SECONDS)
     R = recall_probability(dt_days, S)
-    lost = (1.0 - R) * b[M]            # M 流失的质量
+    lost = (1.0 - R) * b[M]            # mass drained from M
     b[M] = R * b[M]
-    b[C] = b[C] + lost                # 生疏 ≈ 思维链不稳的表现型（第 153 行）
-    return b                           # P/U 未动，总质量守恒仍归一
+    b[C] = b[C] + lost                # getting rusty ≈ the phenotype of an unstable reasoning chain (line 153)
+    return b                           # P/U untouched; total mass conserved, still normalized
 
 
 def get_belief(node: NodeBelief, now: float) -> np.ndarray:
-    """★唯一读入口★（第 152 行红线）。选题器/规划器/报告/记忆层一律经此读信念，
-       禁止直读 node.b。"""
+    """★The sole read entry★ (line 152, red line). The selector / planner / report /
+       memory layers must all read beliefs through this function; reading node.b
+       directly is forbidden."""
     return _project_decay(node.b, node.S, node.last_review_at, now)
 
 
 def stored_belief(node: NodeBelief) -> np.ndarray:
-    """存储态（未衰减）信念的**显式**读取。仅一个合法用途：规划器复核判据需要
-       比较『存储态 P(M)』与『投影后 P(M)』的跌幅（第 154 行）——这不是旁路，
-       是刻意要未投影值。除此之外一律用 get_belief。红线测试放行本访问器、仍拦裸 .b。"""
+    """An **explicit** read of the stored (undecayed) belief. Exactly one legitimate use:
+       the planner's review criterion needs to compare the drop from 'stored P(M)' to
+       'projected P(M)' (line 154) — this is not a bypass; the unprojected value is
+       wanted on purpose. Use get_belief for everything else. The red-line tests allow
+       this accessor but still block bare .b."""
     return np.asarray(node.b, dtype=float).copy()
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 观测更新（真实作答/再测事件）
+# Observation update (real answer / retest events)
 # ══════════════════════════════════════════════════════════════════════
 def observe(node: NodeBelief, likelihood: np.ndarray, now: float,
             is_direct: bool = True, held_out_passed: bool = False) -> NodeBelief:
-    """真实作答/再测事件（第 152 行）：先验＝投影后的 b（学生此刻真实状态），
-       更新结果写回存储态并重置 last_review_at（同段时间遗忘只发生一次）。"""
-    b_prior = get_belief(node, now)               # 投影一次（遗忘只在此发生）
-    node.b = bayes_update(b_prior, likelihood)    # 写回：此刻更新态，不含未来衰减
-    node.last_review_at = now                      # 重置 → 下次从 now 起算 Δt
+    """Real answer / retest event (line 152): the prior = the projected b (the student's true state right now);
+       the update result is written back to the stored state and last_review_at is
+       reset (forgetting for a given time span happens exactly once)."""
+    b_prior = get_belief(node, now)               # project once (forgetting happens only here)
+    node.b = bayes_update(b_prior, likelihood)    # write back: the state as of now, without future decay
+    node.last_review_at = now                      # reset → next Δt is counted from now
     if is_direct:
         node.direct_answers += 1
     maybe_init_S(node, now, held_out_passed=held_out_passed)
@@ -269,11 +282,12 @@ def observe(node: NodeBelief, likelihood: np.ndarray, now: float,
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 稳定性 S 的初始化与复核更新（第 130/150-151 行；#9）
+# Stability S initialization and review updates (lines 130/150-151; #9)
 # ══════════════════════════════════════════════════════════════════════
 def maybe_init_S(node: NodeBelief, now: float, held_out_passed: bool = False) -> None:
-    """S₀ 触发（第 130 行 #9）：P(M) 首过 0.7 且本节点直接作答 ≥2 题，或 held-out 通过。
-       纯先验推高（直接作答不足）不触发——防先验回声点燃虚假复核链。"""
+    """S₀ trigger (line 130, #9): P(M) crosses 0.7 for the first time with ≥2 direct
+       answers on this node, or a held-out pass. A pure-prior push (too few direct
+       answers) does not trigger — prevents prior echoes from igniting a fake review chain."""
     if node.S is not None:
         return
     if (node.b[M] > 0.7 and node.direct_answers >= 2) or held_out_passed:
@@ -283,13 +297,14 @@ def maybe_init_S(node: NodeBelief, now: float, held_out_passed: bool = False) ->
 
 def review_update_S(node: NodeBelief, passed: bool, now: float,
                     first_review: bool = False) -> NodeBelief:
-    """复核更新 S（第 150-151 行；2026-08-13 审计:改 FSRS-4.5 阻尼公式）：
-       通过 → 首次 ×3（w0），此后按 4.5 阻尼增长项；失败 → ×w11=0.72。
-       S 钳位 [1, S_MAX]，防无阻尼膨胀（旧公式×10 次后 S=4608 天,4.5 阻尼下 ≈73 天）。"""
+    """Review-based S update (lines 150-151; 2026-08-13 audit: switched to the FSRS-4.5 damped formula):
+       pass → first time ×3 (w0), afterwards via the 4.5 damped growth term; fail → ×w11=0.72.
+       S is clamped to [1, S_MAX] to prevent undamped inflation (the old formula reached
+       S=4608 days after ×10 iterations; under 4.5 damping it is ≈73 days)."""
     if node.S is None:
         return node
     if passed and not first_review:
-        f = _W12                                   # r=1.0 成功
+        f = _W12                                   # r=1.0 success
         growth = (1.0 + f * (node.S ** (-_W8) + _W7) * (11.0 / 9.0 - node.S / _W10))
         node.S = float(min(max(node.S * growth, 1.0), S_MAX))
     elif passed:

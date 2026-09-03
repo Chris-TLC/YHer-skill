@@ -1,113 +1,113 @@
-# YHer 两分钟 Demo 录屏分镜
+# YHer Two-Minute Demo Recording Script
 
-目标时长：2:00
-画面：1280×800 浏览器，录制本机 `http://127.0.0.1:8700`
-定位：founder engineering demo，不是真实学生案例，不声称提分或长期掌握
+Target length: 2:00
+Screen: 1280×800 browser, recording `http://127.0.0.1:8700` on this machine
+Positioning: founder engineering demo — not a real student case, no claims of score gains or long-term mastery
 
-## 录制前
+## Before recording
 
-1. 运行 `curl -fsS http://127.0.0.1:8700/health`，确认分支为 `demo-overnight-20260712`、目标 SHA 正确、开放节点为 27。
-2. 使用专用 ID，例如 `demo_recording_20260713`；不要复用真实姓名、手机号或学校信息。
-3. 选择“氧化还原反应”和 30 分钟。
-4. 预走一遍并记住要故意答错的第一题。正式录屏允许剪掉中间重复作答等待，但不能伪造页面或改写结果。
-5. 确认画面没有终端、`.env`、模型名、token、成本或其他凭据。
-6. post-fix 内容审查在 authoritative projection 范围内为 PASS。旁白必须把讲解描述为“DeepSeek 辅助、verified standard solution 权威投影”，不能说“AI 已能自由动态深讲全部题”。
+1. Run `curl -fsS http://127.0.0.1:8700/health` and confirm the branch is the intended demo branch, the target SHA is correct, and the open-node count matches expectations.
+2. Use a dedicated ID such as `demo_recording_20260713`; do not reuse real names, phone numbers, or school information.
+3. Choose "氧化还原反应" (redox) and 30 minutes.
+4. Do one dry run and memorize the first question you will deliberately answer wrong. Editing may cut out repeated answer-waiting time, but may not fake pages or rewrite results.
+5. Confirm the screen shows no terminal, no `.env`, no model names, no tokens, no costs, or other credentials.
+6. Post-fix content review passes within the authoritative-projection scope. Narration must describe explanations as "DeepSeek-assisted, with the verified standard solution as the authoritative projection" — never "the AI can now freely generate deep explanations for every question."
 
-如果录制内容来自 `demo/synthetic_scenarios/`，画面必须显示 `SYNTHETIC_DEMO`。当前默认 8700 是普通 founder QA 服务，不要仅因 user ID 带 synthetic 字样就把它说成服务端已标记的合成会话。
+If the recording uses material from `demo/synthetic_scenarios/`, the screen must show `SYNTHETIC_DEMO`. The default service on 8700 is the normal founder QA service; do not describe a session as server-marked synthetic merely because the user ID contains the word "synthetic".
 
-## 0:00-0:10｜定位
+## 0:00–0:10 — Positioning
 
-画面：YHer 首页，标题、上海高中化学、知识点和时间档同时可见。
+Screen: the YHer home page; title, Shanghai high-school chemistry, knowledge node, and time tier all visible at once.
 
-旁白：
+Narration:
 
-> 这是 YHer 的本机 pre-alpha Demo。它只做一条窄闭环：上海高中化学诊断、证据绑定讲解、独立验证和画像更新。
+> This is YHer's local pre-alpha demo. It runs one narrow loop: Shanghai high-school chemistry diagnosis, evidence-bound explanations, independent verification, and profile updates.
 
-画面动作：不要滚动，不展示营销页或旧 README。
+On-screen action: do not scroll; do not show marketing pages or the old README.
 
-## 0:10-0:24｜创建时间盒
+## 0:10–0:24 — Create the time box
 
-画面：输入专用 Demo ID，选择年级、复习、氧化还原反应、30 分钟，点击开始。
+Screen: enter the dedicated demo ID, choose grade, review mode, redox, 30 minutes, and click start.
 
-旁白：
+Narration:
 
-> 学生先给出时间预算。30 分钟只承诺快速定位，不承诺一次找完所有病因；当前只有满足确定性五题族门的 27 个节点开放。
+> The student first gives a time budget. Thirty minutes promises quick localization, not finding every cause in one go. Only nodes meeting the deterministic five-family gate are open at the moment.
 
-画面动作：让阶段标题、剩余时间和第一题完整出现。
+On-screen action: let the phase title, remaining time, and first question appear in full.
 
-## 0:24-0:44｜服务端判分与递进
+## 0:24–0:44 — Server-side scoring and progression
 
-画面：第一题故意答错，点击提交；停留在反馈，再进入下一题。第二题只展示，不必在本段完成。
+Screen: answer the first question deliberately wrong, submit; pause on the feedback, then advance. The second question only needs to be shown, not completed in this segment.
 
-旁白：
+Narration:
 
-> 答案从未提前下发，判分在服务端完成。每次作答更新 M、前置缺口、概念混淆和证据不足四种状态，下一题按信息增益递进，必要时下探前置知识。
+> Answers are never delivered in advance; scoring happens server-side. Every response updates four states — mastered, prerequisite gap, concept confusion, and insufficient evidence. The next question is chosen by information gain, descending to prerequisite knowledge when needed.
 
-字幕小字：`题目、选项和来源可见；答案、rubric、item/family ID 不下发`。
+Small caption: `Questions, options, and sources are visible; answers, rubrics, and item/family IDs are not sent down`.
 
-剪辑：可以切掉随后几道诊断题的作答时间；不能把别的学生或别的 session 报告拼接进来。
+Editing: answer time on subsequent diagnostic questions may be cut; other students' or other sessions' reports may not be spliced in.
 
-## 0:44-1:10｜讲解 checkpoint
+## 0:44–1:10 — Learning checkpoint
 
-画面：切到同一 session 的 learning checkpoint。先停在诊断摘要，再缓慢滚动到数据/条件、因果链和应试步骤。
+Screen: cut to the learning checkpoint in the same session. Pause on the diagnosis summary, then slowly scroll through data/conditions, the causal chain, and exam steps.
 
-旁白：
+Narration:
 
-> 诊断后必须经过一个显式学习 checkpoint。公开化学步骤只来自答案验证通过的标准解；DeepSeek 负责有限的选择和组织，不能把自由生成的化学事实写进学生端。
+> After diagnosis there is always an explicit learning checkpoint. Public chemistry steps come only from standard solutions that passed answer verification; DeepSeek handles limited selection and organization and cannot write freely generated chemistry facts into the student-facing side.
 
-继续旁白：
+Continued narration:
 
-> 这条边界是内容审计后的主动收缩。本轮通过的是标准解约束下的完整起点、难度与真实错题数支架，不是自由化学事实生成。
+> This boundary is a deliberate contraction after content audit. What passed this round is the full-starting-point, difficulty, and real-mistake scaffolding under standard-solution constraints — not free chemistry-fact generation.
 
-画面动作：不要展示 provider、模型名或内部 usage。
+On-screen action: do not show providers, model names, or internal usage.
 
-## 1:10-1:28｜视频推荐与观看证据
+## 1:10–1:28 — Video recommendation and watch evidence
 
-画面：展示一条推荐的标题、推荐理由和完成标准，点击“观看”后返回，点击“已看完”或相应观看记录按钮，再确认继续。
+Screen: show one recommended title, its reason, and its completion criterion; click "Watch" and return; click "Watched" or the corresponding watch-record button; confirm to continue.
 
-旁白：
+Narration:
 
-> 推荐只来自有 catalog 证据的签字轨道。43 个实体中 30 个启用、13 个保持 neutral；只有有机资源的 8 个片段有真实时间锚，其他链接不会编造时间戳。
+> Recommendations come only from signed tracks with catalog evidence. Of 43 entities, 30 are enabled and 13 stay neutral; only 8 segments of organic-chemistry resources have real time anchors — no timestamps are fabricated for other links.
 
-画面动作：外部视频只需短暂出现标题或目标页面，不播放受版权保护的长片段。
+On-screen action: external videos need only a brief title or landing page; do not play long copyrighted excerpts.
 
-## 1:28-1:45｜独立 held-out
+## 1:28–1:45 — Independent held-out
 
-画面：进入独立验证题，提交一题；若需第二题，用快速剪辑保留题目切换和最终结果。
+Screen: enter the independent verification question and submit one response; if a second question is needed, use fast cuts to keep the question transition and the final result.
 
-旁白：
+Narration:
 
-> 最后的题在 session 开始时就已冻结，并与诊断和练习在 item 和题族两个层面不重叠。通过才叫本次 verified；失败只给补强建议，不生成固定提升数字。
+> The final questions were frozen when the session began, disjoint from diagnosis and practice at both the item and family level. Passing counts as verified for this session; failing only produces reinforcement suggestions — no fixed improvement numbers are generated.
 
-画面动作：不要口头声称“这题从未被任何人见过”，只说“本 session 未见题族”。
+On-screen action: do not say "nobody has ever seen this question"; say only "a family unseen in this session".
 
-## 1:45-2:00｜报告与边界
+## 1:45–2:00 — Report and boundaries
 
-画面：报告页顶部 outcome，随后展示四状态 belief、session delta、证据数、FSRS/7 日提示；结尾停在补强建议或复习日期。
+Screen: the report page's outcome at the top, then the four-state beliefs, session delta, evidence count, FSRS/7-day hint; end on the reinforcement suggestion or review date.
 
-旁白：
+Narration:
 
-> 报告只计算本 session 可证明的变化，并保留失败原因和下一次复习时间。自动化和独立 computer-use 各 12 条旅程证明的是工程闭环，不是真实提分结论；下一步仍是教师抽查和真实、合规的小样本验证。
+> The report computes only what this session can prove has changed, and keeps the failure reason and the next review time. The 12 automation and 12 independent computer-use journeys prove the engineering loop closes — not real score gains. Next steps remain teacher spot-checks and real, compliant small-sample validation.
 
-最后一帧字幕：
+Final-frame caption:
 
 ```text
 YHer Chemistry Demo
 pre-alpha · localhost · evidence-bound
 ```
 
-## 禁止话术
+## Forbidden language
 
-- “已经上线”或“可以直接给学生大规模使用”
-- “AI 完全理解学生”
-- “看完视频掌握度提升了 X%”
-- “28 个节点当前全部开放”
-- “43 个视频轨道全部签字启用”
-- “12 条 QA 旅程证明有效提分”
-- “自由动态深讲已经全面达标”
+- "It is live" or "students can use it at scale right now"
+- "The AI fully understands the student"
+- "Mastery improved X% after watching the video"
+- "All 28 nodes are currently open"
+- "All 43 video tracks are signed and enabled"
+- "12 QA journeys prove effective score improvement"
+- "Free dynamic deep explanation has fully passed"
 
-## 备选结尾
+## Alternate ending
 
-若正式录屏时 held-out 失败，保留失败画面，不重录成全对。旁白改为：
+If the held-out fails during the real recording, keep the failure on screen; do not re-record until everything passes. Use this narration instead:
 
-> 独立验证没有全部通过，所以系统没有写“已掌握”，而是给出不同题族的补强和下一次验证计划。这是闭环诚实工作的结果。
+> Independent verification did not fully pass, so the system did not write "mastered". Instead it offers reinforcement from a different question family and a next verification plan. That is what honest loop closure looks like.

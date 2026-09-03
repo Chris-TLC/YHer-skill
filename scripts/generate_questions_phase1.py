@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 """
-Phase 1 AI出题器 —— 基于内化规律库动态生成上海卷风格新题 + 双DeepSeek对抗验证
+Phase 1 AI question generator — dynamically generates new Shanghai-style questions from the internalized pattern library + dual-DeepSeek adversarial verification.
 
-策略(Chris定稿:AI内化真题→动态出题 / 质量优先):
-  生成闭环(每题):
-    1. 加载目标子节点的出题规律(question_generation_patterns/<节点>.json)+ meta_patterns
-    2. RAG基准:从该节点真题库随机抽3-5道作"上海卷风格锚点"(同节点真题即最精准基准,无需embedding)
-    3. 生成器DeepSeek:据规律+基准生成1道新题(题干/选项/答案/解析/难度)
-    4. 对抗验证DeepSeek(挑刺审稿人):4维度打分
-         - 化学正确性(科学事实/方程式/计算)
-         - 上海卷风格符合度(题型/语言/情境/难度)
-         - 答案唯一性与正确性(答案确实对且唯一)
-         - 与真题非雷同(不是抄真题,是新题)
-       综合>7分留;否则带审稿反馈重生,最多 REGEN_MAX 次
-    5. 留存:题 + 验证分 + 验证反馈,存 generated_questions/
+Strategy (finalized by Chris: AI internalizes real items → dynamic generation / quality first):
+  Per-question generation loop:
+    1. Load the target sub-node's question-generation patterns (question_generation_patterns/<node>.json) + meta_patterns
+    2. RAG baseline: randomly sample 3-5 real items from the node's real-item bank as "Shanghai-style anchors" (same-node real items are the most precise baseline; no embedding needed)
+    3. Generator DeepSeek: generate 1 new question from patterns + baseline (stem/options/answer/explanation/difficulty)
+    4. Adversarial-verification DeepSeek (nitpicking reviewer): scores 4 dimensions
+         - chemical correctness (scientific facts/equations/calculations)
+         - Shanghai-style conformity (question type/language/context/difficulty)
+         - answer uniqueness and correctness (answer really correct and unique)
+         - non-identity with real items (not a copy of a real item; genuinely new)
+       Overall >7 → keep; otherwise regenerate with review feedback, at most REGEN_MAX times
+    5. Persist: question + verification score + verification feedback → generated_questions/
 
-  对抗验证是定稿"一个生成一个挑刺>7分重生"的兑现。质量优先:验证不通过宁可重生不将就。
+  The adversarial verification fulfills the finalized "one generates, one nitpicks; >7 to pass, otherwise regenerate" rule. Quality first: when verification fails, prefer regenerating over settling.
 
-用法:
-  python3 scripts/generate_questions_phase1.py --sample 10        # 小样验证(跨节点选10题)
-  python3 scripts/generate_questions_phase1.py --total 100        # 全量100题
+Usage:
+  python3 scripts/generate_questions_phase1.py --sample 10        # small-sample validation (10 questions across nodes)
+  python3 scripts/generate_questions_phase1.py --total 100        # full 100 questions
   python3 scripts/generate_questions_phase1.py --node 盐类水解-水解规律与溶液酸碱性 --n 3
 """
 
@@ -42,12 +42,12 @@ PROGRESS_F     = OUT_DIR / "_gen_progress.json"
 
 LLM_MODEL = "deepseek-chat"
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-RETRY_MAX = 3          # API重试
-REGEN_MAX = 3          # 验证不过的重生次数(质量优先,多给机会改硬伤)
-PASS_SCORE = 8.0       # 对抗验证通过线(>8,收紧:质量优先)
-RAG_K = 4              # 抽几道真题作基准
+RETRY_MAX = 3          # API retries
+REGEN_MAX = 3          # regen count when verification fails (quality first; extra chances to fix hard defects)
+PASS_SCORE = 8.0       # adversarial-verification pass line (>8, tightened: quality first)
+RAG_K = 4              # how many real items to sample as the baseline
 
-# 代码层无图兜底关键词:生成题命中任一即打回重生(不依赖AI判断的硬保险)
+# Code-level no-image fallback keywords: any generated question hitting one of these is bounced back for regen (a hard safeguard that doesn't rely on AI judgment)
 IMG_KEYWORDS = ['如图','下图','上图','右图','左图','图所示','图示','装置图','示意图',
                 '流程图','曲线图','坐标图','结构图','图中','图甲','图乙','图1','图2',
                 '图一','图二','图(','图（','见图','如下图','如右图','晶胞如','结构如图']
@@ -70,7 +70,7 @@ def load_pattern(node_safe):
     return json.loads(fp.read_text(encoding='utf-8')) if fp.exists() else None
 
 def load_real_questions(node_safe):
-    """该节点真题:优先150子节点库,fallback原65节点库"""
+    """Real items for this node: prefer the 150-sub-node bank, fall back to the original 65-node bank."""
     for d in (CLUSTER150_DIR, CLUSTER_DIR):
         fp = d / f"{node_safe}.jsonl"
         if fp.exists():
@@ -157,7 +157,7 @@ def call(lc, sys_p, user_p, max_tokens=2000):
     return None, 0
 
 def gen_one(lc, node, pattern, meta):
-    """生成1题并对抗验证,返回(题dict或None, 成本, 尝试记录)"""
+    """Generate 1 question and adversarially verify it; returns (question dict or None, cost, attempt log)."""
     reals = load_real_questions(node)
     cost = 0.0
     feedback = None
@@ -168,17 +168,17 @@ def gen_one(lc, node, pattern, meta):
         gen_c, c1 = call(lc, GEN_SYS, gp); cost += c1
         q = parse_json(gen_c) if gen_c else None
         if not q:
-            attempts.append({"regen":regen,"err":"生成解析失败"}); continue
-        # 代码层无图兜底:不依赖AI判断,关键词命中即打回重生(第三道保险)
+            attempts.append({"regen":regen,"err":"generation parse failed"}); continue
+        # Code-level no-image fallback: doesn't rely on AI judgment; keyword hit bounces it back for regen (third safeguard)
         blob = (q.get("stem","") + json.dumps(q.get("options",{}),ensure_ascii=False)
                 + q.get("explanation",""))
         img_hit = [kw for kw in IMG_KEYWORDS if kw in blob]
         if img_hit:
             attempts.append({"regen":regen,"score":0,"verdict":"fail",
-                             "hard_defect":True,"issues":[f"无图依赖(代码拦截):{img_hit[:3]}"]})
+                             "hard_defect":True,"issues":[f"no-image dependency (code interception): {img_hit[:3]}"]})
             feedback = f"上一题出现了依赖图的表述{img_hit[:3]},但你无法生成图。必须改成纯文字自包含、不需要任何图就能作答的题。"
             continue
-        # 对抗验证(JSON解析失败时,重试审稿一次,避免偶发解析失败误杀好题)
+        # Adversarial verification (retry the review once on JSON parse failure, so an occasional parse failure doesn't kill a good question)
         crit_input = json.dumps({k:q.get(k) for k in
             ["question_type","difficulty","stem","options","answer","explanation"]},
             ensure_ascii=False)
@@ -193,46 +193,46 @@ def gen_one(lc, node, pattern, meta):
         attempts.append({"regen":regen,"score":score,
                          "verdict":v.get("verdict") if v else "?",
                          "hard_defect":hard,
-                         "issues":v.get("issues",[]) if v else ["验证解析失败"]})
-        # 质量优先:通过线>8 且 无硬伤 且 verdict=pass,三者全满足才留
+                         "issues":v.get("issues",[]) if v else ["verification parse failed"]})
+        # Quality first: pass line >8 AND no hard defect AND verdict=pass — all three must hold to keep it
         if v and score > PASS_SCORE and not hard and v.get("verdict")=="pass":
             q["_node"]=node; q["_gen_scores"]=v; q["_regen_count"]=regen
             return q, cost, attempts
-        # 不过→带反馈重生
+        # Failed → regenerate with the feedback
         feedback = f"得分{score}(需>{PASS_SCORE}且无硬伤), 必须修正的问题: {'; '.join(v.get('issues',[])[:4]) if v else '解析失败'}"
-    return None, cost, attempts  # REGEN_MAX次仍不过→放弃该题
+    return None, cost, attempts  # still failing after REGEN_MAX regens → give up on this question
 
 def main():
     ap=argparse.ArgumentParser()
-    ap.add_argument("--sample", type=int, default=None, help="跨节点小样N题(验证)")
-    ap.add_argument("--total", type=int, default=None, help="全量生成N题")
-    ap.add_argument("--node", default=None, help="指定单节点")
-    ap.add_argument("--n", type=int, default=3, help="单节点生成几题")
+    ap.add_argument("--sample", type=int, default=None, help="small cross-node sample of N questions (validation)")
+    ap.add_argument("--total", type=int, default=None, help="generate N questions in full")
+    ap.add_argument("--node", default=None, help="a single specified node")
+    ap.add_argument("--n", type=int, default=3, help="how many questions to generate for a single node")
     args=ap.parse_args()
-    if not DEEPSEEK_KEY: print("❌ 缺 DEEPSEEK_API_KEY"); sys.exit(1)
+    if not DEEPSEEK_KEY: print("❌ missing DEEPSEEK_API_KEY"); sys.exit(1)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     meta = load_meta()
     nodes = list_pattern_nodes()
-    if not nodes: print("❌ 规律库为空,先跑Phase 0-B"); sys.exit(1)
+    if not nodes: print("❌ pattern library is empty; run Phase 0-B first"); sys.exit(1)
 
-    # 决定生成计划:[(node, 题数),...]
+    # Decide the generation plan: [(node, question count), ...]
     plan = []
     if args.node:
         plan = [(safe(args.node), args.n)]
     elif args.sample:
-        # 小样:从题量最多的节点里挑,每节点1题,跨节点
+        # Small sample: pick from the nodes with the most questions, 1 question per node, across nodes
         ranked = sorted(nodes, key=lambda n: -(load_pattern(n) or {}).get("total_questions",0))
         plan = [(n, 1) for n in ranked[:args.sample]]
     else:
         total = args.total or 100
-        # 全量:按节点题量加权分配(题多的节点多出几道),每节点至少0
+        # Full run: allocate weighted by node question counts (nodes with more questions generate a few more); at least 0 per node
         weights = {n:(load_pattern(n) or {}).get("total_questions",1) for n in nodes}
         tw = sum(weights.values())
         for n in sorted(nodes, key=lambda x:-weights[x]):
             share = max(1, round(total * weights[n]/tw))
             plan.append((n, share))
-        # 截断到total
+        # Trim to the total
         acc=0; trimmed=[]
         for n,k in plan:
             if acc>=total: break
@@ -240,7 +240,7 @@ def main():
         plan=trimmed
 
     target = sum(k for _,k in plan)
-    print(f"生成计划: {len(plan)}个节点, 目标{target}题, 通过线>{PASS_SCORE}, 重生上限{REGEN_MAX}")
+    print(f"generation plan: {len(plan)} nodes, target {target} questions, pass line >{PASS_SCORE}, regen cap {REGEN_MAX}")
 
     lc = LLMClient(provider='deepseek', model=LLM_MODEL, api_key=DEEPSEEK_KEY)
     cost=0.0; passed=0; failed=0; t0=time.time()
@@ -258,25 +258,25 @@ def main():
                         passed += 1; score_sum += q["_gen_scores"]["overall"]
                         print(f"  ✅ [{passed}/{target}] {node[:24]} "
                               f"{q['question_type']}/{q['difficulty']} "
-                              f"分{q['_gen_scores']['overall']} 重生{q['_regen_count']}次 ¥{cost:.3f}")
+                              f"score {q['_gen_scores']['overall']} {q['_regen_count']} regens ¥{cost:.3f}")
                     else:
                         failed += 1
                         last = attempts[-1] if attempts else {}
-                        print(f"  ❌ {node[:24]} 验证未过(重生{REGEN_MAX}次) "
-                              f"最后分{last.get('score','?')} {last.get('issues',[])[:1]}")
+                        print(f"  ❌ {node[:24]} verification failed ({REGEN_MAX} regens) "
+                              f"last score {last.get('score','?')} {last.get('issues',[])[:1]}")
                     PROGRESS_F.write_text(json.dumps({"passed":passed,"failed":failed,
                         "target":target,"cost":round(cost,3),
                         "avg_score":round(score_sum/max(passed,1),2),
                         "updated":time.strftime("%H:%M:%S")},ensure_ascii=False),encoding='utf-8')
     except RuntimeError as e:
         if str(e).startswith("BALANCE"):
-            print(f"\n❌ 余额不足停止: {e}\n已生成{passed}题,补钱后续跑"); sys.exit(2)
+            print(f"\n❌ stopped, insufficient balance: {e}\nalready generated {passed} questions; top up and rerun"); sys.exit(2)
         raise
 
     print(f"\n{'='*55}")
-    print(f"生成完成: 通过{passed}题 / 验证淘汰{failed}题 | 通过率{passed/max(passed+failed,1)*100:.0f}%")
-    print(f"平均验证分: {score_sum/max(passed,1):.2f} | 成本¥{cost:.3f} | {time.time()-t0:.0f}s")
-    print(f"生成题库: {OUT_FILE}")
+    print(f"generation done: {passed} passed / {failed} rejected by verification | pass rate {passed/max(passed+failed,1)*100:.0f}%")
+    print(f"average verification score: {score_sum/max(passed,1):.2f} | cost ¥{cost:.3f} | {time.time()-t0:.0f}s")
+    print(f"generated bank: {OUT_FILE}")
 
 if __name__=="__main__":
     main()

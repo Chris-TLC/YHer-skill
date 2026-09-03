@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-一化儿 AI 化学助手 - LLM 抽象层
-v3：支持 8 个主流 API 提供商，统一 OpenAI 格式接口
+Yihuier AI chemistry assistant - LLM abstraction layer
+v3: supports 8 mainstream API providers behind a unified OpenAI-format interface
 """
 
 from typing import List, Dict, Optional
 
 
 class LLMClient:
-    """统一 LLM 接口，支持 8 个主流提供商"""
+    """Unified LLM interface supporting 8 mainstream providers."""
 
     PROVIDER_CONFIGS = {
         'deepseek': {
@@ -120,13 +120,13 @@ class LLMClient:
     def chat(self, messages: list, max_tokens: int = 2000,
              temperature: float = 0.3, enable_caching: bool = True) -> dict:
         """
-        统一 chat 接口
+        Unified chat interface
 
         Args:
-            messages: OpenAI 格式 [{"role": "system", "content": "..."}, ...]
-            max_tokens: 最大输出 tokens
-            temperature: 温度参数
-            enable_caching: 是否启用 prompt caching
+            messages: OpenAI format [{"role": "system", "content": "..."}, ...]
+            max_tokens: max output tokens
+            temperature: temperature parameter
+            enable_caching: whether to enable prompt caching
 
         Returns:
             {
@@ -149,7 +149,7 @@ class LLMClient:
         else:
             raise ValueError(f"未知 SDK: {sdk}")
 
-    # ── OpenAI 兼容接口（7 家国产 + OpenAI）─────────
+    # ── OpenAI-compatible interface (7 domestic providers + OpenAI) ───
 
     def _chat_openai(self, messages, max_tokens, temperature):
         try:
@@ -201,7 +201,7 @@ class LLMClient:
             "model_returned": returned_model,
         }
 
-    # ── Anthropic 接口（独立 SDK）───────────────────
+    # ── Anthropic interface (dedicated SDK) ─────────
 
     def _chat_anthropic(self, messages, max_tokens, temperature,
                         enable_caching):
@@ -247,19 +247,19 @@ class LLMClient:
             "model_returned": response.model,
         }
 
-    # ── 模型校验 ────────────────────────────────────
+    # ── Model validation ────────────────────────────
 
     def _validate_model(self, returned_model: str):
-        """DeepSeek 静默降级保护"""
+        """DeepSeek silent-downgrade protection."""
         if self.provider == 'deepseek':
-            # 只检查 pro 模型，flash 不需要检查
+            # Only check pro models; flash doesn't need the check
             if 'pro' in self.model.lower() and 'v4-pro' not in returned_model.lower():
                 raise ValueError(
                     f"模型降级！请求 {self.model}，"
                     f"实际返回 {returned_model}"
                 )
 
-    # ── 便捷方法 ────────────────────────────────────
+    # ── Convenience methods ─────────────────────────
 
     def get_context_window(self) -> int:
         return self.config['context_window']

@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 """
-engine/planner.py — 时间预算规划器（设计文档块 4，第 187-205 行）
+engine/planner.py — time-budget planner (design doc block 4, lines 187-205)
 ================================================================
-预算约束下最大化预期掌握增益（v1 贪心+查表，不上优化器）。
-四档预算表（30min/1h/2h/3h+）；30min = 浅诊断口径（用户 2026-07-08 拍板）。
-输出 session_budget 给 selector（EIG 循环终止预算）与 recommender（约束）。
+Maximize expected mastery gain under the budget constraint (v1 greedy + table
+lookup, no optimizer). Four budget tiers (30min/1h/2h/3h+); 30min = the shallow
+diagnosis scope (user decision of 2026-07-08). Outputs session_budget to the
+selector (EIG loop termination budget) and the recommender (constraints).
 
-组件：
-  · session_budget(tier)：查表出诊断题数/目标节点数/处方段数/时长/追问次数上限。
-  · plan_reviews：复核插入（存储 P(M)>0.7 但投影跌破 0.6 → 插 2 题；#9 节流 ≥7 天、
-    每 session ≤2 节点）——衰减机器消费方。
-  · check_exhaustion：预算耗尽降级（诊断超时 ×1.5 → 未收敛标记+处方存档+不强制再测）。
-  · explain_plan：把安排与理由印给学生（用户明确要求）。
+Components:
+  · session_budget(tier): table lookup for the diagnostic item count / target node
+    count / prescription segment count / durations / follow-up question caps.
+  · plan_reviews: review insertion (stored P(M)>0.7 but projected below 0.6 →
+    insert 2 items; #9 throttling ≥7 days, ≤2 nodes per session) — the consumer
+    of the decay machine.
+  · check_exhaustion: budget-exhaustion degradation (diagnostic overruns ×1.5 →
+    mark unconverged + archive the prescription + no forced retest).
+  · explain_plan: print the schedule and its rationale to the student (explicitly
+    requested by the user).
 """
 from __future__ import annotations
 
@@ -19,8 +24,9 @@ from typing import Dict, Optional
 
 from engine import mastery as m
 
-# 四档预算表（第 192-198 行；模块常量+注释，可调不改函数形式）。
-# 30min: 用户 2026-07-08 拍板改浅诊断口径（M/非M 二分，不承诺病因收敛）。
+# Four-tier budget table (lines 192-198; module constants + comments; values tunable,
+# function shape not to be changed).
+# 30min: user decision of 2026-07-08 to switch to the shallow diagnosis scope (M/non-M split, no promise of cause convergence).
 BUDGET_TABLE = {
     "30min": {"mode": "shallow", "diagnostic_items": 9, "diagnostic_minutes": 12,
               "target_nodes": 1, "rx_segments": 1, "rx_minutes": 8,
@@ -34,64 +40,67 @@ BUDGET_TABLE = {
     "3h+":   {"mode": "full", "diagnostic_items": 25, "diagnostic_minutes": 40,
               "target_nodes": 2, "rx_segments": 4, "rx_minutes": 30,
               "retest_items": 10, "followup_max": 5, "buffer_minutes": 30,
-              "two_rounds": True},   # 两轮完整闭环；结尾不填满、诚实收手
+              "two_rounds": True},   # two complete loops; don't fill the ending, wrap up honestly
 }
 
-REVIEW_STORE_THRESHOLD = 0.7        # 存储 P(M) 高于此才考虑复核
-REVIEW_DECAY_THRESHOLD = 0.6        # 投影跌破此触发复核
-REVIEW_ITEMS = 2                    # 复核插 2 题
-REVIEW_THROTTLE_DAYS = 7            # #9：同节点复核提示间隔 ≥7 天
-REVIEW_MAX_NODES = 2               # 每 session 复核 ≤2 节点
-EXHAUSTION_MULT = 1.5               # 诊断超时 ×1.5 触发降级
+REVIEW_STORE_THRESHOLD = 0.7        # only consider a review when stored P(M) is above this
+REVIEW_DECAY_THRESHOLD = 0.6        # projection dropping below this triggers a review
+REVIEW_ITEMS = 2                    # a review inserts 2 items
+REVIEW_THROTTLE_DAYS = 7            # #9: ≥7 days between review prompts for the same node
+REVIEW_MAX_NODES = 2               # ≤2 nodes reviewed per session
+EXHAUSTION_MULT = 1.5               # diagnostic overrun ×1.5 triggers degradation
 
 
 def session_budget(tier: str) -> Dict:
-    """查表返回该档预算。未知档默认 1h。"""
+    """Table lookup for the tier's budget. Unknown tiers default to 1h."""
     return dict(BUDGET_TABLE.get(tier, BUDGET_TABLE["1h"]))
 
 
 def estimate_minutes(budget: Dict) -> float:
-    """账目估算：诊断+处方+再测+缓冲，用于验收各档 ≤ 预算×1.1。
-    再测按 ~0.6min/题（比诊断题快，纯作答无追问）。"""
+    """Accounting estimate: diagnosis + prescription + retest + buffer, used to verify
+    each tier stays ≤ budget×1.1. Retests are ~0.6 min/item (faster than diagnostic
+    items: pure answering, no follow-ups)."""
     diag = budget["diagnostic_minutes"]
     rx = budget["rx_minutes"]
     retest = budget["retest_items"] * 0.6
     buf = budget["buffer_minutes"]
     total = diag + rx + retest + buf
     if budget.get("two_rounds"):
-        total = (diag + rx + retest) * 2 + buf      # 两轮闭环
+        total = (diag + rx + retest) * 2 + buf      # two complete loops
     return total
 
 
 def plan_reviews(nodes: Dict[str, m.NodeBelief], now: float,
                  last_review_prompt: Optional[Dict[str, float]] = None) -> Dict:
-    """复核插入（衰减机器消费方，第 154 行）。
-    对每个节点：存储 P(M)>0.7 但 get_belief 投影后跌破 0.6 → 候选复核。
-    #9 节流：同节点上次提示 <7 天不重提；每 session ≤2 节点。"""
+    """Review insertion (consumer of the decay machine, line 154).
+    For each node: stored P(M)>0.7 but the get_belief projection drops below 0.6
+    → candidate for review. #9 throttling: don't re-prompt the same node if its last
+    prompt was <7 days ago; ≤2 nodes per session."""
     last_review_prompt = last_review_prompt or {}
     candidates = []
     for name, node in nodes.items():
-        stored = m.stored_belief(node)              # 显式存储态读（复核判据需未投影值）
+        stored = m.stored_belief(node)              # explicit stored-state read (the review criterion needs the unprojected value)
         if stored[m.M] <= REVIEW_STORE_THRESHOLD:
-            continue                                # 存储态本就不高，非复核对象
-        proj = m.get_belief(node, now)              # 唯一入口读投影
+            continue                                # stored state isn't high to begin with; not a review target
+        proj = m.get_belief(node, now)              # read the projection via the sole entry point
         if proj[m.M] >= REVIEW_DECAY_THRESHOLD:
-            continue                                # 没跌破，不用复核
+            continue                                # hasn't dropped below; no review needed
         last = last_review_prompt.get(name)
         if last is not None and (now - last) < REVIEW_THROTTLE_DAYS * m.DAY_SECONDS:
-            continue                                # 节流：<7 天不重提
-        drop = stored[m.M] - proj[m.M]              # 跌幅
+            continue                                # throttle: don't re-prompt within 7 days
+        drop = stored[m.M] - proj[m.M]              # the drop
         candidates.append((drop, name))
-    candidates.sort(reverse=True)                   # 跌幅大的优先
+    candidates.sort(reverse=True)                   # larger drops first
     chosen = [name for _, name in candidates[:REVIEW_MAX_NODES]]
     return {"review_nodes": chosen,
             "review_items": REVIEW_ITEMS if chosen else 0}
 
 
 def check_exhaustion(budget: Dict, elapsed_diagnostic_min: float) -> Dict:
-    """预算耗尽降级（第 203 行，静默失败路径②）。
-    诊断实际用时 > 档诊断预算 ×1.5 → 立即结束诊断（哪怕未收敛），
-    处方照开但不强制再测，状态落服务端日志下次续上。"""
+    """Budget-exhaustion degradation (line 203, silent-failure path ②).
+    Actual diagnostic time > the tier's diagnostic budget ×1.5 → end the diagnosis
+    immediately (even unconverged), still issue the prescription but don't force a
+    retest; the state goes to the server log and resumes next time."""
     threshold = budget["diagnostic_minutes"] * EXHAUSTION_MULT
     if elapsed_diagnostic_min > threshold:
         return {"force_stop": True, "force_retest": False,
@@ -100,7 +109,7 @@ def check_exhaustion(budget: Dict, elapsed_diagnostic_min: float) -> Dict:
 
 
 def explain_plan(budget: Dict) -> str:
-    """把安排与理由印给学生（第 200 行，用户明确要求）。数字实时从预算表生成。"""
+    """Print the schedule and its rationale to the student (line 200, explicitly requested by the user). Numbers are generated live from the budget table."""
     if budget["mode"] == "shallow":
         return (f"你今天有约 30 分钟：先用 {budget['diagnostic_items']} 道题快速定位"
                 f"「哪些点掌握了、哪些还没」，看 1 段视频补最弱的，再 "

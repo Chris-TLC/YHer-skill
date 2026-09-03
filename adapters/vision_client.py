@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-视觉模型客户端：读整页试卷图片，识别方程式/结构式/装置图等。
+Vision model client: reads full-page exam images and recognizes equations,
+structural formulas, apparatus diagrams, etc.
 
-根治"公式图片提取不出"问题（总蓝图第4章 L2）。
-支持国内便宜的多模态模型（OpenAI 兼容接口），统一图片+文本输入。
+Fixes the "formulas in images can't be extracted" problem (master blueprint
+chapter 4, L2). Supports cheap domestic multimodal models (OpenAI-compatible
+interface) with a unified image + text input.
 
-多 Key 轮换: 支持传入多个 API Key，按页轮换，避免限流。
+Multi-key rotation: accepts multiple API keys and rotates them per page to
+avoid rate limits.
 
-支持的视觉模型（都走 OpenAI 兼容接口）：
-- 通义 qwen-vl-max（阿里，国内快，便宜，推荐）
-- 豆包 doubao-vision（字节）
-- 智谱 glm-4v
-- OpenAI gpt-4o（海外）
+Supported vision models (all via the OpenAI-compatible interface):
+- Tongyi qwen-vl-max (Alibaba, domestic, fast and cheap, recommended)
+- Doubao doubao-vision (ByteDance)
+- Zhipu glm-4v
+- OpenAI gpt-4o (overseas)
 """
 
 from __future__ import annotations
@@ -31,7 +34,7 @@ VISION_CONFIGS = {
         "env_key": "DASHSCOPE_API_KEY",
         "label": "通义千问 qwen3-vl-plus（阿里，新一代，文档/公式识别强）",
         "key_link": "https://dashscope.console.aliyun.com/apiKey",
-        # ¥/百万token (估，视觉按token计)
+        # ¥/million tokens (estimate; vision is billed per token)
         "pricing": {"input": 3.0, "output": 9.0},
     },
     "doubao-vision": {
@@ -62,7 +65,7 @@ VISION_CONFIGS = {
 
 
 class VisionClient:
-    """统一视觉模型接口。支持多Key轮换。"""
+    """Unified vision model interface. Supports multi-key rotation."""
 
     def __init__(self, provider: str = "qwen-vl", api_key: Optional[str] = None,
                  model: Optional[str] = None, api_keys: Optional[List[str]] = None):
@@ -72,7 +75,7 @@ class VisionClient:
         self.config = VISION_CONFIGS[provider]
         self.model = model or self.config["model"]
         self.api_key = api_key or ""
-        # 多Key轮换支持
+        # Multi-key rotation support
         self.api_keys = api_keys or ([self.api_key] if self.api_key else [])
         if not self.api_keys:
             raise ValueError("未提供任何API Key")
@@ -85,19 +88,19 @@ class VisionClient:
             self._openai_sdk_available = False
             self.client = None
         else:
-            # 默认client用第一个key初始化
+            # The default client is initialized with the first key
             self.client = OpenAI(api_key=self.api_keys[0], base_url=self.config["base_url"],
                                  timeout=90.0, max_retries=2)
 
     def _get_next_key(self) -> str:
-        """轮换获取下一个API Key（线程安全）"""
+        """Rotate to the next API key (thread-safe)."""
         with self._lock:
             key = self.api_keys[self._key_idx % len(self.api_keys)]
             self._key_idx += 1
             return key
 
     def _get_client_for_key(self, key: str):
-        """为指定Key创建一个OpenAI客户端（缓存避免重复创建）"""
+        """Create an OpenAI client for a given key (cached to avoid re-creating)."""
         if not hasattr(self, '_key_clients'):
             self._key_clients = {}
         if key not in self._key_clients:
@@ -113,7 +116,7 @@ class VisionClient:
 
     @staticmethod
     def encode_image(image_path: Path) -> str:
-        """图片转 base64 data URL。"""
+        """Convert an image to a base64 data URL."""
         data = Path(image_path).read_bytes()
         b64 = base64.b64encode(data).decode()
         ext = Path(image_path).suffix.lower().lstrip(".") or "png"
@@ -123,7 +126,7 @@ class VisionClient:
     def read_page(self, image_path: Path, system_prompt: str, user_prompt: str,
                   max_tokens: int = 4000, timeout: float = 90.0,
                   temperature: float = 0.1) -> Dict[str, Any]:
-        """看一页图片，返回识别文本。多Key模式下自动轮换。timeout可覆盖。"""
+        """Read one page image and return the recognized text. Rotates keys automatically in multi-key mode. timeout can be overridden."""
         image_url = self.encode_image(image_path)
         messages = [
             {"role": "system", "content": system_prompt},
@@ -132,7 +135,7 @@ class VisionClient:
                 {"type": "image_url", "image_url": {"url": image_url}},
             ]},
         ]
-        # 多Key模式：使用轮换的Key对应的client
+        # Multi-key mode: use the client for the rotated key
         if len(self.api_keys) > 1:
             key = self._get_next_key()
             client = self._get_client_for_key(key)

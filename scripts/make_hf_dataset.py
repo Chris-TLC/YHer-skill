@@ -4,7 +4,7 @@
 用法:
   python3 scripts/make_hf_dataset.py --sample-only            # 只生成 samples/(55 题)
   python3 scripts/make_hf_dataset.py --build samples          # 生成 samples/ + hf_export/
-  python3 scripts/make_hf_dataset.py --push ChrisTLC/xxx      # 需要 HF token,构建并推送
+  python3 scripts/make_hf_dataset.py --push Chris-TLC/yher-chemistry-question-bank   # 需要 HF token
 
 字段口径与 data/README.md 一致。样例抽取规则:
   sha256(item_id) 前 4 位为偶数 → 进样例(约 50%),再加 R5 serve 过滤,直到 55 题。
@@ -102,14 +102,17 @@ def build_export():
 
 
 def push_hf(dataset_id: str):
-    from datasets import Dataset, DatasetDict
+    # Push as two separate configs (items_v4 / knowledge_graph), NOT as two splits of
+    # one config: the two sources have different schemas, and the HF viewer cannot
+    # render mixed-schema splits (it fails with CastError).
+    from datasets import Dataset
     items = [json.loads(line) for line in (HF_EXPORT / "chemistry_items_v4.jsonl").open(encoding="utf-8")]
     kg = [json.loads(line) for line in (HF_EXPORT / "knowledge_graph.jsonl").open(encoding="utf-8")]
     ds = Dataset.from_list(items)
-    ds.push_to_hub(dataset_id, split="items_v4")
+    ds.push_to_hub(dataset_id, config_name="items_v4")
     kds = Dataset.from_list(kg)
-    kds.push_to_hub(dataset_id, split="knowledge_graph")
-    print(f"pushed to hf: {dataset_id} (splits: items_v4, knowledge_graph)")
+    kds.push_to_hub(dataset_id, config_name="knowledge_graph")
+    print(f"pushed to hf: {dataset_id} (configs: items_v4, knowledge_graph)")
 
 
 def main():

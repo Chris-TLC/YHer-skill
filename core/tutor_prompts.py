@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""阶段一私教 Demo 的 LLM 提示词构建。"""
+"""LLM prompt construction for the stage 1 private-tutor demo."""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ CONTROL_JSON_RULE = """最后必须附上控制信息，格式严格如下，不
 
 
 def build_diagnostic_review_prompt(session: Any, student_answers: Dict[str, str]) -> str:
-    """让 LLM 批改诊断题并开始第一段私教。"""
+    """Have the LLM grade the diagnostic answers and start the first tutoring segment."""
     session_payload = _session_payload(session)
     answers_payload = {
         q["id"]: {
@@ -104,7 +104,7 @@ def build_progressive_diagnosis_prompt(
     student_answer: str,
     history: Iterable[Dict[str, Any]] | None = None,
 ) -> str:
-    """逐层诊断：批改当前一问，并决定下一问或进入执行。"""
+    """Progressive diagnosis: grade the current question, then decide the next question or move to execution."""
     session_payload = _session_payload(session)
     history_payload = list(history or [])[-8:]
     return f"""你正在进行逐层诊断，不要一次性把所有问题抛给学生。
@@ -164,7 +164,7 @@ def build_task_execution_prompt(
     transcript_tail: Iterable[Dict[str, str]] | None = None,
     diagnostic_review: str = "",
 ) -> str:
-    """让 LLM 执行某一个任务节点。"""
+    """Have the LLM execute a single task node."""
     payload = _session_payload(session)
     task = next((t for t in payload["tasks"] if t["task_id"] == task_id), None)
     if task is None:
@@ -213,7 +213,7 @@ def build_session_report_prompt(
     transcript: Iterable[Dict[str, str]],
     diagnostic_review: str = "",
 ) -> str:
-    """生成一次托管学习后的复盘报告和画像更新。"""
+    """Generate the recap report and profile update after a managed learning session."""
     payload = _session_payload(session)
     transcript_payload = list(transcript)[-30:]
     return f"""请基于这次化学私教学习舱，生成结束复盘。
@@ -252,7 +252,7 @@ def _session_payload(session: Any) -> Dict[str, Any]:
     else:
         payload = getattr(session, "__dict__", {})
 
-    # 给 LLM 的 payload 控制体积，避免把 chunks 直接塞太大。
+    # Keep the LLM payload compact; don't stuff in chunks verbatim.
     diagnosis = payload.get("diagnosis", {})
     compact_diagnosis = {
         "grade_signal": diagnosis.get("grade_signal"),
@@ -273,7 +273,7 @@ def _json(data: Any) -> str:
 
 
 def extract_tagged_json(text: str, tag: str) -> Dict[str, Any]:
-    """从 LLM 输出中提取 [TAG]...[/TAG] JSON。"""
+    """Extract a [TAG]...[/TAG] JSON block from the LLM output."""
     pattern = rf"\[{re.escape(tag)}\]\s*(\{{.*?\}})\s*\[/{re.escape(tag)}\]"
     match = re.search(pattern, text, flags=re.S)
     if not match:
@@ -285,6 +285,6 @@ def extract_tagged_json(text: str, tag: str) -> Dict[str, Any]:
 
 
 def strip_tagged_json(text: str, tag: str) -> str:
-    """隐藏控制 JSON，保留学生可见内容。"""
+    """Strip the control JSON, keeping only the student-visible content."""
     pattern = rf"\s*\[{re.escape(tag)}\]\s*\{{.*?\}}\s*\[/{re.escape(tag)}\]\s*"
     return re.sub(pattern, "", text, flags=re.S).strip()

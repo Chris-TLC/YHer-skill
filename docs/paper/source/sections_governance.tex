@@ -1,0 +1,13 @@
+\section{Engineering Governance: The Off-by-One That Cost a Day}
+\label{sec:governance}
+
+The project's history includes two incidents that are themselves evidence---they show what happens when an acceptance rule is not anchored to concrete, non-forgeable objects, and what happened when it was.
+
+\begin{enumerate}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}\setlength{\parsep}{0pt}
+\item \textbf{2026-06-28, agent-loop incident.} An autonomous agent loop issued 1,418 tool calls and leaked a plaintext API key into a log. The countermeasure was not a bigger model; it was a governance discipline: signed review, contract-based authorization, and a secrets rule (no plaintext keys in tracked files).
+\item \textbf{2026-07-03, P0 answer-leakage.} Cropped images for visual items included printed answers from the original paper; the item-shaping pipeline had copied the printed region. This is why an OCR answer-leak gate became an on-line check, and why the pipeline now verifies answer blocks separately from stems.
+\item \textbf{2026-07-13, governance flip.} Contract-based authorization (unsigned reviewer claims) was replaced by the \emph{reversibility discipline}: every write to official data requires (a) a ``\texttt{\_backup\_pre\_<step>\_<date>}'' backup and (b) a line-by-line change manifest, single-command rollback; backups are never deleted. The reviewer may sign (reviewer=codex/claude, dated, with evidence), but the user remains the only authority for irreversible, outward-facing actions.
+\item \textbf{2026-07-17, double gate for research deliverables.} After a review deliverable that was perfectly honest and contributed nothing, two gates became mandatory for any research artifact: an \emph{honesty gate} (is every claim true?) and a \emph{contribution gate} (does it matter?). The present manuscript is the first document produced under both gates.
+\end{enumerate}
+
+Each audit report in \path{docs/audit-history/} lists exact commands, input hashes, and verdict tables; where a verdict was overturned later (Section~\ref{sec:exp2}), the overturn is itself recorded.

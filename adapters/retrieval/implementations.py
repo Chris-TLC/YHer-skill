@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-RetrieverPort 的三个实现：
-- LocalBgeRetriever：包装现有 core/retrieve.py 的 YihuierRetriever（本地 2GB BGE-M3）。
-- NullRetriever：零配置/无模型时的安全空实现，让 Demo 也能跑。
-- CloudVectorRetriever：云端向量服务占位（阶段二实接，App 后端用，零模型依赖）。
+Three implementations of RetrieverPort:
+- LocalBgeRetriever: wraps the existing YihuierRetriever from core/retrieve.py (local 2GB BGE-M3).
+- NullRetriever: a safe empty implementation for zero-config / no-model setups, so the demo can still run.
+- CloudVectorRetriever: placeholder for a cloud vector service (to be wired up in stage 2, for the app backend, zero model dependencies).
 """
 
 from __future__ import annotations
@@ -17,9 +17,11 @@ SKILL_DIR = Path(__file__).parent.parent.parent
 
 
 class NullRetriever:
-    """无检索能力的安全实现：不依赖任何模型，永远返回空诊断。
+    """A safe no-retrieval implementation: depends on no model and always returns an empty diagnosis.
 
-    用途：本地零配置跑、单元测试、检索模型未就绪时。引擎层据此走"内置 KG 题库"路径。
+    Use cases: running locally with zero config, unit tests, or when the retrieval
+    model isn't ready. The engine layer then falls back to the "built-in KG + item
+    bank" path.
     """
 
     def retrieve(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
@@ -30,10 +32,11 @@ class NullRetriever:
 
 
 class LocalBgeRetriever:
-    """包装现有 YihuierRetriever（本地 BGE-M3 + FAISS）。
+    """Wraps the existing YihuierRetriever (local BGE-M3 + FAISS).
 
-    懒加载：只有第一次真正检索时才加载 2GB 模型，构造本身不触发。
-    加载失败时自动降级为 NullRetriever 行为，绝不让 Demo 崩。
+    Lazy loading: the 2GB model is only loaded on the first actual retrieval;
+    construction alone doesn't trigger it. On load failure it silently degrades
+    to NullRetriever behavior — the demo must never crash.
     """
 
     def __init__(self, embeddings_dir: Optional[str] = None):
@@ -71,10 +74,11 @@ class LocalBgeRetriever:
 
 
 class CloudVectorRetriever:
-    """云端向量服务占位（阶段二实接）。
+    """Placeholder for a cloud vector service (to be wired up in stage 2).
 
-    目标：App 后端无需装 2GB 模型，调用阿里 DashVector / 腾讯向量服务。
-    阶段一只留接口，调用时退化为空诊断，不阻塞开发。
+    Goal: the app backend doesn't need the 2GB model installed; it will call
+    Alibaba DashVector / Tencent's vector service. In stage 1 only the interface
+    exists — calls degrade to an empty diagnosis so development isn't blocked.
     """
 
     def __init__(self, endpoint: str = "", api_key: str = ""):
@@ -82,9 +86,9 @@ class CloudVectorRetriever:
         self.api_key = api_key
 
     def retrieve(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        # TODO(阶段二): 调云端向量服务。
+        # TODO(stage 2): call the cloud vector service.
         return []
 
     def retrieve_with_diagnosis(self, query: str) -> Dict[str, Any]:
-        # TODO(阶段二): 调云端向量服务 + 云端 KG 索引。
+        # TODO(stage 2): call the cloud vector service + cloud KG index.
         return dict(EMPTY_DIAGNOSIS)

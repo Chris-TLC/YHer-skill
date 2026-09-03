@@ -1,22 +1,9 @@
-faiss-cpu>=1.7.4
-sentence-transformers>=2.2.2
-jieba>=0.42.1
-numpy>=1.24.0
-matplotlib>=3.10.0
-scikit-learn>=1.3.0
-
-openai>=1.0.0
-anthropic>=0.25.0
-
-supabase>=2.0.0
-
-streamlit>=1.28.0
-
-# 阶段一引擎层后端（FastAPI 后端，App 阶段复用同一接口）
+# Stage-1 engine backend (FastAPI; reused by the demo app)
 fastapi>=0.110.0
 uvicorn>=0.27.0
 python-multipart>=0.0.9
 
-rich>=13.0.0
+numpy>=1.24.0
+openai>=1.0.0
 pyyaml>=6.0.0
 python-dotenv>=1.0.0

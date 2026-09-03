@@ -7,7 +7,7 @@ Status: pre-alpha. This document describes a system and a set of engineering aud
 
 ## 1. Abstract
 
-We present YHer, a single-node learning loop for Shanghai high-school chemistry built around one central idea:**the diagnosis students receive must be evidence-bound** — every inferred weakness must be traceable to a specific item response, every standard answer to a verified source, every resource recommendation to a signed evidence trail. The system freezes three non-overlapping item families (diagnostic, practice, held-out) from a white-listed bank of 1,202 real exam items; administers an adaptive sequence under a four-state Bayesian belief model with expected-information-gain item selection; verifies the outcome on unseen item families; and writes a replayable student profile. The data pipeline that feeds it — 3,329 structured items recovered from Word documents with formulas, figures, sub/superscripts and answer keys intact — went through a fourteen-batch usability audit (2,526 items, 1,202 serviceable after R5 whitelisting) whose methodology (dual-direction gold labels, node-aware text review, auditor-product-sameness) generalizes to any exam-paper-to-structured-data conversion. A five-round blind evaluation of AI question generation produced a main finding the product honors today:generated questions are distinguishable from real exam items at 65% under fair-conditions comparison and are therefore confined to low-stakes practice slots, never to diagnosis. A third-round architecture audit (six literature lanes, three red-team passes, one independent verification round, over 200 references) returned 4 keep / 10 modify / 5 replace / 2 downgrade verdicts across twenty-one engine components, with the strongest finding being that all hand-set constants in the engine lack calibration evidence. Limitations are stated in §8; the most important is that every conclusion is simulation- or audit-derived, never student-derived.
+We present YHer, a single-node learning loop for Shanghai high-school chemistry built around one central idea:**the diagnosis students receive must be evidence-bound** — every inferred weakness must be traceable to a specific item response, every standard answer to a verified source, every resource recommendation to a signed evidence trail. The system freezes three non-overlapping item families (diagnostic, practice, held-out) from a white-listed bank of 1,202 real exam items; administers an adaptive sequence under a four-state Bayesian belief model with expected-information-gain item selection; verifies the outcome on unseen item families; and writes a replayable student profile. The data pipeline that feeds it — 3,329 structured items recovered from Word documents with formulas, figures, sub/superscripts and answer keys intact — went through a ten-batch usability audit (2,526 items, 1,202 serviceable after R5 whitelisting) whose methodology (dual-direction gold labels, node-aware text review, auditor-product-sameness) generalizes to any exam-paper-to-structured-data conversion. A five-round blind evaluation of AI question generation produced a main finding the product honors today:generated questions are distinguishable from real exam items at 65% overall (60% under fair conditions) and are therefore confined to low-stakes practice slots, never to diagnosis. A third-round architecture audit (six literature lanes, three red-team passes, one independent verification round) returned 4 keep / 10 modify / 5 replace / 2 downgrade verdicts across twenty-one engine components, with the strongest finding being that all hand-set constants in the engine lack calibration evidence. Limitations are stated in §8; the most important is that every conclusion is simulation- or audit-derived, never student-derived.
 
 ## 2. Motivation
 
@@ -54,17 +54,17 @@ The recommender is downstream of diagnosis, not an independent claim: its value 
 ### 4.1 From exam Word documents to structured items
 
 - 79% of the bank (4,522 docx + 573 doc) has a native Word source on disk;
-- extraction: python-docx for text flow; dwml for OMML→LaTeX (105/105 verified); olefile+WMF rendering; direct `word/media` asset extraction; 【答案】【解析】 anchors as natural cut points;
+- extraction: python-docx for text flow; dwml for OMML→LaTeX; olefile+WMF rendering; direct `word/media` asset extraction; 【答案】【解析】 anchors as natural cut points;
 - block schema v4: `text / latex / chem / figure / table`; answer blocks separated from stem;
 - result: 3,329 items, 3,329 with global-unique IDs; 60-item gold set built with 50 formal + 10 reserve.
 
-### 4.2 WS2 asset transcription (6,005 rows)
+### 4.2 WS2 asset transcription (10,102 rows)
 
 Two-track scheme: formula images (3,299) → LaTeX/mhchem with KaTeX compile + double-run + render-back validation; illustrations (2,706) → structured transcripts (VL, double-run consistency, three-pool routing ai_seed / display_only / manual_queue). Gold set: 68 images (34 calibration + 34 blind), gold labels privately held by auditor, producer blind. Blind run caught a P0 systematic artifact: VL rewriting `=` as `⇌`/`→` under chemistry prior (574 cases) — double-run consistency is blind to "both runs made the same error"; the private blind gold set is the only catch.
 
 ### 4.3 QA marathon: 2,526 items to 1,202 serviceable
 
-Fourteen batches (BATCH6–16). Three core methodological results:
+Ten batches (BATCH6, BATCH8–16). Three core methodological results:
 
 1. **Rendering without crashing ≠ item usable.** The first acceptance attempt verified only "render pipeline doesn't throw"; the user review failed it (missing figures, empty answers, broken ions). The usable-item ledger became an on-line gate.
 2. **The auditor must see what students see.** The screenshot pipeline ran without KaTeX for an entire batch; the VL channel judged a different product than the browser. Fix = same-source verification before auditing.
@@ -89,7 +89,7 @@ Three meta-lessons: (a) adversarial distinguishability is not the same as studen
 
 ### 6.1 Method
 
-Round 1 (Aug 5) component-wise adjudication; Round 2 (Aug 6) independent re-review (47 claims: 30 REVISE / 5 REPLACE, overturning some prior numbers); Round 3 (Aug 13) six literature lanes (arXiv/Crossref/ERIC, 200+ refs) + three red-team attack passes + independent verification round. Verdicts per component: **4 keep / 10 modify / 5 replace / 2 downgrade; none of the modifications has yet been implemented** — the engine is an audited design, not an audited implementation.
+Round 1 (Aug 5) component-wise adjudication; Round 2 (Aug 6) independent re-review (47 claims: 30 REVISE / 5 REPLACE, overturning some prior numbers); Round 3 (Aug 13) six literature lanes (arXiv/Crossref/ERIC) + three red-team attack passes + independent verification round. Verdicts per component: **4 keep / 10 modify / 5 replace / 2 downgrade; none of the modifications has yet been implemented** — the engine is an audited design, not an audited implementation.
 
 ### 6.2 Quantified findings (the hardest numbers)
 

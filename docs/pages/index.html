@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YHer — An Evidence-Bound Diagnostic Learning System</title>
+<style>
+  :root { --ink:#1a1d21; --muted:#5b6470; --accent:#0b6bcb; --bg:#fbfbfa; --card:#ffffff; --line:#e5e7eb; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color:var(--ink); background:var(--bg); line-height:1.6; }
+  header { background:linear-gradient(160deg,#0b6bcb 0%,#0a4f96 100%); color:#fff; padding:4.5rem 1.5rem 3.5rem; }
+  .wrap { max-width:860px; margin:0 auto; padding:0 1.5rem; }
+  h1 { font-size:2.1rem; margin:0 0 .6rem; line-height:1.25; }
+  .subtitle { font-size:1.15rem; opacity:.92; max-width:640px; margin:0; }
+  main { padding:2.5rem 0 4rem; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1.6rem 1.8rem; margin-bottom:1.4rem; }
+  h2 { font-size:1.25rem; margin:0 0 .7rem; }
+  p { margin:.5rem 0; }
+  .lead { font-size:1.05rem; }
+  .muted { color:var(--muted); }
+  ul { margin:.5rem 0; padding-left:1.3rem; }
+  li { margin:.35rem 0; }
+  .stats { display:flex; flex-wrap:wrap; gap:1rem; margin:1.2rem 0 .4rem; }
+  .stat { flex:1 1 150px; background:#f4f7fb; border:1px solid var(--line); border-radius:10px; padding:1rem; text-align:center; }
+  .stat b { display:block; font-size:1.35rem; }
+  .stat span { font-size:.85rem; color:var(--muted); }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .buttons { display:flex; flex-wrap:wrap; gap:.8rem; margin-top:1.2rem; }
+  .btn { display:inline-block; padding:.6rem 1.2rem; border-radius:8px; font-weight:600; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-plain { border:1px solid var(--line); color:var(--ink); }
+  footer { text-align:center; color:var(--muted); font-size:.85rem; padding:1.5rem; }
+  .boundary { border-left:4px solid #d97706; background:#fffbf3; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>YHer — An Evidence-Bound Diagnostic Learning System</h1>
+    <p class="subtitle">A high-school chemistry tutor whose every conclusion is traceable: every diagnosis to the exact answer behind it, every solution to a verified source, every recommendation to a signed evidence trail.</p>
+  </div>
+</header>
+<main class="wrap">
+  <section>
+    <h2>The problem</h2>
+    <p class="lead">In the gaokao system, the scarcest resource is not content — it is <b>judgment</b>. Good teachers can always answer the follow-up question: “which of my answers made you say that?” Most students never get that.</p>
+    <p>AI tutoring in 2026 is generation-first: a model produces a diagnosis or a hint directly from its weights. Even when it is right, it cannot show its work — its statements are not linked, by construction, to any particular student response or source document.</p>
+  </section>
+  <section>
+    <h2>The design bet</h2>
+    <p class="lead">Not “make the model smarter.” Instead: <b>make every answer a student sees traceable to something that cannot be invented.</b></p>
+    <ul>
+      <li>Standard solutions are shown only if they passed verification against official answer keys.</li>
+      <li>The item bank is recovered from original exam Word documents — never model-generated.</li>
+      <li>The browser fails closed: answers, rubrics, and item IDs never reach it before a response is locked in.</li>
+      <li>The AI layer only selects and phrases verified content. It cannot invent chemistry facts.</li>
+    </ul>
+    <div class="stats">
+      <div class="stat"><b>3,329</b><span>structured exam items, from source documents</span></div>
+      <div class="stat"><b>1,202</b><span>serviceable items after a 10-batch usability audit</span></div>
+      <div class="stat"><b>21</b><span>engine components adjudicated in a 3-round architecture audit</span></div>
+    </div>
+  </section>
+  <section>
+    <h2>What was measured</h2>
+    <ul>
+      <li><b>The data funnel:</b> 6,083 raw slices → 1,202 serviceable items, a 19.8% end-to-end yield — the price of requiring every answer to be verifiable and every figure renderable.</li>
+      <li><b>The generation boundary:</b> in five blind rounds (¥13.87 total), judges distinguished AI-generated questions from real ones 87% of the time from scratch and 65% overall after style transfer (60% under fair conditions). Generated items therefore never enter the diagnostic path.</li>
+      <li><b>The architecture audit:</b> 4 keep / 10 modify / 5 replace / 2 downgrade across 21 engine components. The hardest finding: every hand-set constant in the engine lacked calibration evidence. Three fixes are already implemented and tested.</li>
+      <li><b>Governance incidents as evidence:</b> an agent-loop runaway and a printed-answer leak became the design rules that followed.</li>
+    </ul>
+  </section>
+  <section class="boundary">
+    <h2>What it does not claim</h2>
+    <p>No real-student trials. No retention or learning-effect evidence. Every conclusion is simulation-, audit-, or engineer-derived — and the report says so in every section, in the same sentence as the claim. That honesty is the product’s central design principle, applied to its own documentation.</p>
+  </section>
+  <section>
+    <h2>Read more</h2>
+    <div class="buttons">
+      <a class="btn btn-primary" href="../paper/YHer_Engineering_Evidence_Report.pdf">Full report (PDF, 16 pages)</a>
+      <a class="btn btn-plain" href="https://github.com/Chris-TLC/YHer-skill">Source repository</a>
+      <a class="btn btn-plain" href="https://huggingface.co/datasets/Chris-TLC/yher-chemistry-question-bank">Question-bank dataset</a>
+    </div>
+    <p class="muted">LaTeX source and the audit trail behind every number are in the repository under <code>docs/paper/</code> and <code>docs/audit-history/</code>.</p>
+  </section>
+</main>
+<footer>YHer · pre-alpha research artifact · 2026 · Author: Licheng Tu</footer>
+</body>
+</html>

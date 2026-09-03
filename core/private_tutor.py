@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-阶段一：化学单科 AI 私教编排层。
+Stage 1: orchestration layer for the single-subject chemistry AI tutor.
 
-这个模块不直接替代原来的 RAG 问答，而是在它上面增加一层
-"先诊断 -> 排任务 -> 执行 -> 复盘 -> 更新画像" 的私教闭环。
+This module does not replace the original RAG Q&A; instead it adds a
+tutoring loop on top of it:
+"diagnose -> schedule tasks -> execute -> recap -> update profile".
 """
 
 from __future__ import annotations
@@ -431,7 +432,7 @@ PROGRESSIVE_DIAGNOSTIC_BANK = {
 
 @dataclass
 class StudentProfile:
-    """阶段一的最小学生画像。"""
+    """Minimal student profile for stage 1."""
 
     user_id: str = "local_demo"
     grade: str = "高二"
@@ -457,7 +458,7 @@ class StudentProfile:
 
 @dataclass
 class TutorTask:
-    """一次托管学习中的可执行任务。"""
+    """An executable task within a single managed learning session."""
 
     task_id: str
     title: str
@@ -477,7 +478,7 @@ class TutorTask:
 
 @dataclass
 class TutorSession:
-    """阶段一私教学习舱状态。"""
+    """State of the stage 1 private-tutor learning cabin."""
 
     session_id: str
     subject: str
@@ -497,13 +498,13 @@ class TutorSession:
 
 
 class ChemistryPrivateTutor:
-    """化学单科私教编排器。"""
+    """Orchestrator for the single-subject chemistry private tutor."""
 
     def __init__(self, retriever=None):
         self.retriever = retriever
 
     def prepare_session(self, profile: StudentProfile) -> TutorSession:
-        """根据学生画像和目标生成诊断包 + 托管计划。"""
+        """Build a diagnostic package + managed plan from the student profile and goal."""
         goal = profile.goal.strip() or "补化学薄弱点"
         diagnosis = self._diagnose(goal, profile)
         topic_id = profile.topic_id if profile.topic_id in TOPIC_LIBRARY else "auto"
@@ -540,10 +541,11 @@ class ChemistryPrivateTutor:
         answers: Dict[str, str],
     ) -> Dict[str, Any]:
         """
-        无 LLM 时的粗评分备用逻辑。
+        Fallback heuristic scoring when no LLM is available.
 
-        它不是最终判分，只用于 Demo 在没有 API 时也能给出结构化画像。
-        真正上线时应让 LLM/题库标准答案共同批改。
+        This is not the final grading; it only lets the demo produce a
+        structured profile even without an API. In production, grading should
+        be done jointly by the LLM and the item bank's standard answers.
         """
         axis_scores = {axis: 3 for axis in ABILITY_AXES}
         evidence = []
@@ -578,7 +580,7 @@ class ChemistryPrivateTutor:
         }
 
     def first_question(self, session: TutorSession) -> Dict[str, Any]:
-        """返回逐层诊断的第一问。"""
+        """Return the first question of the progressive diagnosis."""
         if session.diagnostic_questions:
             return session.diagnostic_questions[0]
         return PROGRESSIVE_DIAGNOSTIC_BANK["general"][0]
@@ -589,7 +591,7 @@ class ChemistryPrivateTutor:
         answered_count: int,
         decision: str = "ask_next",
     ) -> Optional[Dict[str, Any]]:
-        """无 LLM 或 JSON 解析失败时的下一问策略。"""
+        """Next-question strategy when there is no LLM or JSON parsing fails."""
         questions = session.diagnostic_questions
         if not questions:
             return None
@@ -626,34 +628,34 @@ class ChemistryPrivateTutor:
         return asdict(session)
 
     def plan_markdown(self, session: TutorSession) -> str:
-        """把学习舱计划转成 Markdown，供 CLI/Web 展示。"""
+        """Render the learning-cabin plan as Markdown for CLI/Web display."""
         lines = [
-            f"### {session.topic_name} 私教学习舱",
-            f"- 目标：{session.goal}",
-            f"- 时长：{sum(t.duration_min for t in session.tasks)} 分钟",
-            f"- 初始判断：{session.ability_hypothesis.get('summary', '')}",
+            f"### {session.topic_name} Private Tutoring Session",
+            f"- Goal: {session.goal}",
+            f"- Duration: {sum(t.duration_min for t in session.tasks)} min",
+            f"- Initial assessment: {session.ability_hypothesis.get('summary', '')}",
             "",
-            "#### 诊断题",
+            "#### Diagnostic Questions",
         ]
         for i, q in enumerate(session.diagnostic_questions, 1):
             axis_name = ABILITY_AXES.get(q.get("axis", ""), q.get("axis", ""))
             lines.append(f"{i}. [{axis_name}] {q['prompt']}")
 
-        lines.extend(["", "#### 托管任务队列"])
+        lines.extend(["", "#### Managed Task Queue"])
         for task in session.tasks:
             criteria = "；".join(task.success_criteria[:2])
             lines.append(
-                f"- {task.task_id}｜{task.duration_min} 分钟｜{task.title}："
-                f"{task.objective}（过关：{criteria}）"
+                f"- {task.task_id} | {task.duration_min} min | {task.title}: "
+                f"{task.objective} (pass: {criteria})"
             )
 
         if session.recommended_videos:
-            lines.extend(["", "#### 推荐视频"])
+            lines.extend(["", "#### Recommended Videos"])
             for video in session.recommended_videos[:3]:
                 bv = video.get("bv", "")
                 pn = video.get("p_number", 1)
                 title = video.get("short_title") or video.get("video_title", "")
-                collection = video.get("collection", "其他视频")
+                collection = video.get("collection", "Other videos")
                 lines.append(
                     f"- 【{collection}】P{pn}：{title} "
                     f"https://www.bilibili.com/video/{bv}?p={pn}"

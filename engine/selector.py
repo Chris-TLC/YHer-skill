@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 """
-engine/selector.py — 精确期望信息增益选题器（设计文档块 1 选题器，第 107-116 行）
+engine/selector.py — exact expected-information-gain item selector (design doc
+block 1 "item selector", lines 107-116)
 ================================================================================
-EIG(候选题 j) = H(b_n(j)) − Σ_o P(o|b_n(j),j)·H(b_n(j) 更新后(o))
-  其中 n(j) = 该题作答后信念被直接更新的节点：
-    本节点题→k；前置题→k（经跨节点似然表）；横向题→邻节点自身。
-session 目标 = 降低全体目标节点的联合熵（外部声部 #2）。
+EIG(candidate j) = H(b_n(j)) − Σ_o P(o|b_n(j),j)·H(b_n(j) updated by o)
+  where n(j) = the node whose belief is directly updated by answering the item:
+    local-node item → k; prerequisite item → k (via the cross-node likelihood
+    table); lateral item → the neighboring node itself.
+The session goal = minimize the joint entropy over all target nodes (external voice #2).
 
-四状态×每节点几十候选×≤5 观测结果 = 穷举精确计算，微秒级，不近似。
+Four states × dozens of candidates per node × ≤5 observations = exhaustive exact
+computation, microsecond scale, no approximation.
 
-红线/约束：
-  · holdout 题禁进选题（继承母文档）。
-  · 前置题候选门控于对齐表交付（#4 prereq_available）。
-  · T0 硬约束：前置题信念触发——由 EIG 公式自然输出（P/U 竞争时前置题 EIG 最高、
-    C 主导时本节点题 EIG 更高），不设固定配额。
-  · 每 session 目标节点 ≥2 题。
-  · 信念一律经 mastery.get_belief 读（本模块不直读存储态 .b）。
-收敛终止在 should_stop：gap>0.45 且直接作答≥3 题（#9），或预算耗尽。
+Red lines / constraints:
+  · holdout items must not enter selection (inherited from the parent doc).
+  · prerequisite-item candidates are gated on the alignment table delivery (#4 prereq_available).
+  · T0 hard constraint: prerequisite items trigger belief updates — emitted
+    naturally by the EIG formula (when P/U compete, prerequisite items have the
+    highest EIG; when C dominates, local-node items score higher), with no fixed quota.
+  · At least 2 items per target node per session.
+  · Beliefs are always read via mastery.get_belief (this module never reads the stored state .b directly).
+Convergence terminates in should_stop: gap>0.45 and ≥3 direct answers (#9), or budget exhaustion.
 """
 from __future__ import annotations
 
@@ -26,13 +30,13 @@ import numpy as np
 
 from engine import mastery as m
 
-TOP1_STOP = 0.80               # 停止：后验 argmax ≥ 0.80（文献无 gap 先例，改阈值家族）
-MIN_DIRECT_ANSWERS = 4         # 停止：直接证据下限（min_length 4–5，红队裁决）
-MIN_ITEMS_PER_TARGET = 2       # 每 session 目标节点最低题量
+TOP1_STOP = 0.80               # stop: posterior argmax ≥ 0.80 (no gap precedent in the literature; switched to the threshold family)
+MIN_DIRECT_ANSWERS = 4         # stop: minimum direct evidence (min_length 4–5, red-team ruling)
+MIN_ITEMS_PER_TARGET = 2       # minimum items per target node per session
 
 
 def entropy(b: np.ndarray) -> float:
-    """香农熵（bit）。四状态均匀 = 2 bit。"""
+    """Shannon entropy (bits). Uniform over four states = 2 bits."""
     b = np.asarray(b, dtype=float)
     nz = b[b > 1e-12]
     return float(-(nz * np.log2(nz)).sum())
@@ -40,8 +44,8 @@ def entropy(b: np.ndarray) -> float:
 
 def _observation_likelihoods(d: float, item_type: str, role: str,
                              prereq_u_predict: float):
-    """返回该题各观测结果的似然向量列表 [(似然向量, ), ...]。
-    二元退化档（distractor_map 全空，存量真实条件）：观测=对/错两种。"""
+    """Return the list of likelihood vectors for this item's possible observations [(likelihood vector, ), ...].
+    Binary degenerate tier (distractor_map entirely empty, a real stored-data condition): observations are correct/wrong only."""
     if role == "prereq":
         cp = m.prereq_correct_probs(prereq_u_predict, item_type)
     else:
@@ -50,11 +54,11 @@ def _observation_likelihoods(d: float, item_type: str, role: str,
 
 
 def _expected_posterior_entropy(b: np.ndarray, likelihoods) -> float:
-    """Σ_o P(o|b)·H(b 更新后(o))。P(o|b) = Σ_s L_o(s)·b(s)。"""
+    """Σ_o P(o|b)·H(b updated by o). P(o|b) = Σ_s L_o(s)·b(s)."""
     b = np.asarray(b, dtype=float)
     total = 0.0
     for L in likelihoods:
-        po = float((L * b).sum())               # 该观测的边际概率
+        po = float((L * b).sum())               # marginal probability of this observation
         if po <= 1e-12:
             continue
         total += po * entropy(m.bayes_update(b, L))
@@ -62,28 +66,28 @@ def _expected_posterior_entropy(b: np.ndarray, likelihoods) -> float:
 
 
 def eig_local(b: np.ndarray, d: float, item_type: str = "mcq") -> float:
-    """本节点题对其节点信念的 EIG。"""
+    """EIG of a local-node item with respect to its node's belief."""
     L = _observation_likelihoods(d, item_type, "local", m.PREREQ_U_DEFAULT)
     return entropy(b) - _expected_posterior_entropy(b, L)
 
 
 def item_eig(item: Dict, beliefs: Dict[str, np.ndarray],
              prereq_u_predict: float = m.PREREQ_U_DEFAULT) -> float:
-    """候选题 EIG，按其所更新节点计算（#2）。
-    item: {role, target_node, difficulty, item_type}。
-    beliefs: {node: 投影后信念向量}（调用方已用 get_belief 投影）。"""
+    """EIG of a candidate item, computed with respect to the node it updates (#2).
+    item: {role, target_node, difficulty, item_type}.
+    beliefs: {node: projected belief vector} (the caller has already projected via get_belief)."""
     role = item.get("role", "local")
     d = item.get("difficulty", 0.5)
     itype = item.get("item_type", "mcq")
     if role == "lateral":
-        # 横向题更新邻节点自身 → EIG 来自邻节点的熵下降（对 b_k 为零信息）
+        # Lateral items update the neighboring node itself → EIG comes from the neighbor's entropy drop (zero information about b_k)
         nb = item.get("target_node")
         b_nb = beliefs.get(nb)
         if b_nb is None:
             return 0.0
         L = _observation_likelihoods(d, itype, "local", prereq_u_predict)
         return entropy(b_nb) - _expected_posterior_entropy(b_nb, L)
-    # local / prereq 都更新目标节点 k 的信念，但用各自的似然表
+    # local / prereq both update the target node k's belief, but via their own likelihood tables
     k = item.get("target_node")
     b_k = beliefs.get(k)
     if b_k is None:
@@ -93,16 +97,16 @@ def item_eig(item: Dict, beliefs: Dict[str, np.ndarray],
 
 
 def _candidate_pool(candidates, seen_ids, prereq_available):
-    """过滤：holdout 禁取、已做排除、对齐表缺席时前置题门控（#4）。"""
+    """Filter: holdout items barred, already-attempted excluded, prerequisite items gated when the alignment table is absent (#4)."""
     seen_ids = seen_ids or set()
     pool = []
     for it in candidates:
         if it.get("holdout"):
-            continue                              # holdout 红线
+            continue                              # holdout red line
         if it.get("item_id") in seen_ids:
             continue
         if it.get("role") == "prereq" and not prereq_available:
-            continue                              # #4 门控
+            continue                              # #4 gating
         pool.append(it)
     return pool
 
@@ -113,15 +117,16 @@ def select_next(candidates: Sequence[Dict], beliefs: Dict[str, np.ndarray],
                 prereq_available: bool = False,
                 asked_per_node: Optional[Dict[str, int]] = None,
                 prereq_u_predict: float = m.PREREQ_U_DEFAULT) -> Optional[Dict]:
-    """选下一题：最大化 EIG，服从覆盖约束（每目标节点 ≥2 题）。
-    覆盖约束优先于纯 EIG：有目标节点欠测（<MIN_ITEMS_PER_TARGET）时，
-    先在欠测节点的候选里挑 EIG 最高者。"""
+    """Pick the next item: maximize EIG under the coverage constraint (≥2 items per target node).
+    Coverage outranks pure EIG: when a target node is under-tested
+    (<MIN_ITEMS_PER_TARGET), first pick the highest-EIG candidate from the
+    under-tested nodes."""
     pool = _candidate_pool(candidates, seen_ids, prereq_available)
     if not pool:
         return None
     asked_per_node = asked_per_node or {}
 
-    # 覆盖约束：欠测的目标节点
+    # Coverage constraint: under-tested target nodes
     under = [n for n in target_nodes if asked_per_node.get(n, 0) < MIN_ITEMS_PER_TARGET]
     if under:
         under_set = set(under)
@@ -140,12 +145,14 @@ def select_next(candidates: Sequence[Dict], beliefs: Dict[str, np.ndarray],
 def should_stop(beliefs: Dict[str, np.ndarray], target_nodes: Sequence[str], *,
                 direct_answers: Dict[str, int], budget_items: int,
                 asked: int) -> bool:
-    """终止条件（2026-08-13 审计替换）：
-      [P(top1)≥0.80 且本节点直接作答≥4 题]（全部目标节点满足）  或  预算耗尽。
-      旧 gap>0.45 规则无文献先例且早停误判 10.3%（红队1），已废止；
-      gap 值由调用方作为 UI 展示量保留，不再作为终止判据。"""
+    """Stopping condition (2026-08-13 audit replacement):
+      [P(top1)≥0.80 and ≥4 direct answers on this node] (satisfied by all target
+      nodes)  or  budget exhaustion.
+      The old gap>0.45 rule had no precedent in the literature and misjudged early
+      stopping 10.3% of the time (red team 1); it has been retired. The gap value
+      is kept by callers as a UI display quantity, no longer a stopping criterion."""
     if asked >= budget_items:
-        return True                               # 预算耗尽
+        return True                               # budget exhausted
     for n in target_nodes:
         b = beliefs.get(n)
         if b is None:
@@ -154,5 +161,5 @@ def should_stop(beliefs: Dict[str, np.ndarray], target_nodes: Sequence[str], *,
         if top1 < TOP1_STOP:
             return False
         if direct_answers.get(n, 0) < MIN_DIRECT_ANSWERS:
-            return False                          # 证据量不足不收敛
+            return False                          # insufficient evidence, do not converge
     return True

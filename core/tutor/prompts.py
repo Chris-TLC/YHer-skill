@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-引擎层提示词（总蓝图第3章活人感 + 0.3 反人机准则）。
+Engine-layer prompts (master blueprint chapter 3, "alive teacher" feel + the 0.3
+anti-robotic guidelines).
 
-与旧 core/tutor_prompts.py 的区别：
-- 注入标准解锚点（根治讲解太表面）
-- 注入 KG 判据当 rubric（诊断对照打分）
-- 注入多讲法角度（活人感②）
-- 要求每轮吐 engagement/affect（活人感①）
-- 贯彻"反人机·边界感老师"最高准则（克制、不表演、自然流露）
+Differences from the old core/tutor_prompts.py:
+- Inject a standard-solution anchor (fixes surface-level explanations)
+- Inject KG criteria as the rubric (score diagnoses against them)
+- Inject multiple explanation angles ("alive teacher" ②)
+- Require engagement/affect output every round ("alive teacher" ①)
+- Enforce the top-level "anti-robotic, boundary-respecting teacher" principle
+  (restrained, never performative, naturally expressed)
 """
 
 from __future__ import annotations
@@ -17,7 +19,7 @@ import re
 from typing import Any, Dict, Iterable, List, Optional
 
 
-# ── 系统提示词：人设 + 反人机准则（最高准则）─────────────────
+# ── System prompt: persona + anti-robotic guidelines (top priority) ───
 SYSTEM_PROMPT = """你是一名高考化学 AI 私教，吸收了一化儿（杰哥）式的根因诊断、题型化训练和应试视角。你的目标不是表演"像真人"，而是让学生真正学会、并且用起来舒服。
 
 【最高准则：反人机 · 边界感老师】（凌驾一切，违反它宁可不做）
@@ -43,7 +45,7 @@ adaptive_practice（出变式题调难度）/ recap_update（复盘更新画像�
 """
 
 
-# ── 控制 JSON：含活人感①的 engagement/affect ──────────────
+# ── Control JSON: includes engagement/affect for "alive teacher" ① ────
 CONTROL_JSON_RULE = """回答末尾必须附上控制信息，格式严格如下，不要省略：
 
 [CONTROL_JSON]
@@ -81,7 +83,7 @@ def build_diagnosis_prompt(
     kg_criteria: Optional[List[str]] = None,
     history: Optional[Iterable[Dict[str, Any]]] = None,
 ) -> str:
-    """逐层诊断：批改一问，对照 KG 判据打分，决定下一问。"""
+    """Progressive diagnosis: grade one answer, score it against KG criteria, decide the next question."""
     criteria_block = "\n".join(f"- {c}" for c in (kg_criteria or [])) or "（无显式判据，按常识批改）"
     history_payload = list(history or [])[-6:]
     return f"""你正在对知识点【{node_id}】做逐层诊断，不要一次性把所有问题抛给学生。
@@ -130,7 +132,7 @@ def build_teach_prompt(
     time_context: Optional[Dict[str, Any]] = None,
     transcript_tail: Optional[Iterable[Dict[str, str]]] = None,
 ) -> str:
-    """执行教学：注入标准解锚点 + 多讲法 + 反人机。"""
+    """Execute teaching: inject the standard-solution anchor + multiple explanation angles + anti-robotic tone."""
     transcript = list(transcript_tail or [])[-6:]
 
     depth_rule = {
@@ -201,7 +203,7 @@ def build_report_prompt(
     transcript: Iterable[Dict[str, str]],
     mastery_records: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """复盘：更新画像 + 事件级记忆（活人感③的数据来源）。"""
+    """Recap: update the profile + event-level memory (data source for "alive teacher" ③)."""
     transcript_payload = list(transcript)[-30:]
     return f"""请为知识点【{node_id}】的这次私教生成结束复盘。目标不是写漂亮总结，是更新学生档案、方便下次继续教。
 
@@ -225,7 +227,7 @@ def build_report_prompt(
 """
 
 
-# ── 工具函数 ──────────────────────────────────────────────
+# ── Utility functions ─────────────────────────────────────
 
 def _json(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False, indent=2, default=str)

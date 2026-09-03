@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-视觉PDF提取管道 v3.1 —— 多轮验证+图表聚焦+API退避（目标：意图100%保真 + 结构92%+准确）
+Vision PDF extraction pipeline v3.1 — multi-round verification + chart focus + API backoff
+(target: 100% intent fidelity + 92%+ structural accuracy)
 
-v3.1 新增:
-  API重试退避: 指数退避+jitter, 最多4次重试, 解决51%的假阳性需审核
-  图表局部放大: 含图页面→600DPI超清渲染→视觉模型聚焦图表→增强描述（无需新API）
-  Prompt强化:
-    a) 转录分两轮到：先逐字文本，再图表聚焦描述
-    b) 图表聚焦专用Prompt——只看图，不看字
-    c) 切题Prompt强化——子题完整性检查
+New in v3.1:
+  API retry backoff: exponential backoff + jitter, up to 4 retries, cutting the 51% false positives that needed review
+  Chart local zoom: pages with figures → 600 DPI ultra-HD render → the vision model focuses on the chart → enhanced description (no new API needed)
+  Prompt hardening:
+    a) transcription split into two rounds: verbatim text first, then chart-focused description
+    b) a dedicated chart-focus prompt — look at the image only, not the text
+    c) hardened item-splitting prompt — sub-question completeness check
 
-用法:
+Usage:
   python3 scripts/vision_pipeline_v3.py --test "2022年上海高考化学真题"
   python3 scripts/vision_pipeline_v3.py
   python3 scripts/vision_pipeline_v3.py --max-files 5 --resume
@@ -24,7 +25,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict, Counter
 from dataclasses import dataclass, field
 
-# ── 项目路径 ─────────────────────────────────────────
+# ── Project paths ─────────────────────────────────────
 SKILL_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(SKILL_DIR))
 
@@ -34,7 +35,7 @@ load_dotenv(SKILL_DIR / ".env")
 from adapters.vision_client import VisionClient
 from adapters.llm_client import LLMClient
 
-# ── 路径配置 ─────────────────────────────────────────
+# ── Path configuration ────────────────────────────────
 PAPERS_DIR   = Path(os.environ.get("YHER_PAPERS_DIR", str(Path(__file__).resolve().parents[2] / "上海化学卷合集")))
 OUTPUT_DIR   = SKILL_DIR / "data" / "from_pdf"
 PAGE_IMG_DIR = SKILL_DIR / "data" / "page_images_v3"
@@ -48,28 +49,28 @@ VISION_MODEL    = "qwen3-vl-plus"
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
 LLM_MODEL       = "deepseek-chat"
 
-# ── 渲染 ─────────────────────────────────────────────
+# ── Rendering ────────────────────────────────────────
 PAGE_DPI     = 300
-PAGE_DPI_ZOOM = 600   # 图表放大渲染 DPI
+PAGE_DPI_ZOOM = 600   # chart-zoom render DPI
 JPG_QUALITY  = 92
-V_WORKERS    = 3   # 3并发+3Key轮换: 实测2.6x加速(7s/page vs 18s/page串行)
-T_WORKERS    = 1   # 串行文本调用
-# 图表聚焦增强开关: False=跳过(节省50%转录时间), True=启用
+V_WORKERS    = 3   # 3 concurrent + 3-key rotation: measured 2.6x speedup (7s/page vs 18s/page serial)
+T_WORKERS    = 1   # serial text calls
+# Chart-focus enhancement switch: False = skip (saves 50% transcription time), True = enable
 RUN_CHART_ZOOM = False
-# 视觉回查验证开关: False=快速模式(每题省10s/页), True=全量回查
+# Visual re-check switch: False = fast mode (saves 10s/page per item), True = full re-check
 RUN_VISUAL_VERIFY = False
 SOFFICE_BIN  = "/opt/homebrew/bin/soffice"
 
-# API 重试退避参数
+# API retry backoff parameters
 RETRY_MAX     = 4
 RETRY_BASE_S  = 1.5
 RETRY_MAX_S   = 30
 
-# ── API 重试退避（指数退避 + jitter）─────────────────
+# ── API retry backoff (exponential backoff + jitter) ──
 import random as _random
 
 def api_retry(func, *args, retry_on=None, _max_retries=None, **kwargs):
-    """带指数退避的API调用重试。retry_on: 可重试错误的关键词列表"""
+    """Retry an API call with exponential backoff. retry_on: keyword list for retryable errors."""
     if retry_on is None:
         retry_on = ['Connection', 'timeout', 'Timed out', 'Network',
                      'rate', '429', '503', '500', 'RemoteDisconnected',
@@ -90,7 +91,7 @@ def api_retry(func, *args, retry_on=None, _max_retries=None, **kwargs):
             time.sleep(wait)
     return None, f"retry_exhausted: {str(last_err)[:150]}"
 
-# ── 图表检测关键词 ───────────────────────────────────
+# ── Chart-detection keywords ──────────────────────────
 CHART_KEYWORDS = [
     '如图', '下图', '上图', '右图', '左图', '所示', '示意图',
     '装置图', '流程图', '曲线图', '坐标图', '结构图', '晶胞',
@@ -100,7 +101,7 @@ CHART_KEYWORDS = [
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 1 — 视觉忠实转录（禁止分析、禁止推断）
+# Phase 1 — faithful visual transcription (no analysis, no inference)
 # ═══════════════════════════════════════════════════════
 
 TRANSCRIBE_SYS_V3 = """\
@@ -164,7 +165,7 @@ TRANSCRIBE_USER_V3 = """请逐字转录这张化学试卷页面。
 
 
 def render_page(pdf_path: Path, page_idx: int, out_dir: Path) -> Optional[Path]:
-    """将PDF一页渲染为300DPI JPG"""
+    """Render one PDF page into a 300 DPI JPG."""
     import fitz
     out_dir.mkdir(parents=True, exist_ok=True)
     fhash = hashlib.sha256(str(pdf_path.resolve()).encode()).hexdigest()[:12]
@@ -185,7 +186,7 @@ def render_page(pdf_path: Path, page_idx: int, out_dir: Path) -> Optional[Path]:
 
 
 def page_classify(pdf_path: Path, page_idx: int) -> str:
-    """快速分类：题目页/答案页/广告页/空白页"""
+    """Quick classification: question pages / answer pages / ad pages / blank pages."""
     try:
         import fitz
         doc = fitz.open(pdf_path)
@@ -203,18 +204,18 @@ def page_classify(pdf_path: Path, page_idx: int) -> str:
 
 
 def transcribe_page(img: Path, client: VisionClient, label: str="") -> dict:
-    """视觉模型转录单页（带API重试退避）"""
+    """Transcribe a single page via the vision model (with API retry backoff)."""
     prompt = TRANSCRIBE_USER_V3
     if label: prompt = f"【{label}】\n\n{prompt}"
     r, err = api_retry(client.read_page, img, TRANSCRIBE_SYS_V3, prompt, max_tokens=6000)
     if r is None:
-        raise ConnectionError(f"转录失败(重试{RETRY_MAX}次): {err}")
+        raise ConnectionError(f"transcription failed after {RETRY_MAX} retries: {err}")
     return {"md": r["content"].strip(), "cost": r.get("cost_yuan", 0),
             "tokens": r.get("usage",{}).get("input_tokens",0)
                     + r.get("usage",{}).get("output_tokens",0)}
 
 
-# ── 图表聚焦转录 ─────────────────────────────────────
+# ── Chart-focused transcription ───────────────────────
 
 TRANSCRIBE_CHART_SYS = """\
 你是化学试卷图表描述专家。你收到的是一张放大的试卷页面图片。你的唯一任务：详细描述这张图中所有的化学图表。
@@ -241,7 +242,7 @@ TRANSCRIBE_CHART_USER = "请详细描述这张试卷页面中的所有化学图�
 
 
 def has_charts(markdown: str) -> bool:
-    """检测转录文本中是否包含图表引用"""
+    """Detect whether the transcribed text references charts."""
     import re
     for kw in ['如图', '下图', '上图', '所示', '装置图', '流程图', '曲线图', '坐标图',
                 '结构图', '晶胞', '合成路线', '示意图', '转化关系']:
@@ -251,7 +252,7 @@ def has_charts(markdown: str) -> bool:
 
 
 def render_page_zoom(pdf_path: Path, page_idx: int, out_dir: Path) -> Optional[Path]:
-    """超清渲染一页（600 DPI），用于图表放大识别"""
+    """Render one page at ultra-HD (600 DPI) for chart-zoom recognition."""
     import fitz
     out_dir.mkdir(parents=True, exist_ok=True)
     fhash = hashlib.sha256(str(pdf_path.resolve()).encode()).hexdigest()[:12]
@@ -272,7 +273,7 @@ def render_page_zoom(pdf_path: Path, page_idx: int, out_dir: Path) -> Optional[P
 
 
 def transcribe_charts(img: Path, client: VisionClient, label: str="") -> dict:
-    """图表聚焦转录（超清渲染 + 图表专用Prompt）"""
+    """Chart-focused transcription (ultra-HD render + dedicated chart prompt)."""
     prompt = TRANSCRIBE_CHART_USER
     if label: prompt = f"【{label}】\n\n{prompt}"
     r, err = api_retry(client.read_page, img, TRANSCRIBE_CHART_SYS, prompt, max_tokens=4000)
@@ -302,7 +303,7 @@ def doc_to_pdf(doc_path: Path, cache_dir: Path) -> Optional[Path]:
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 2 — 文本智能切题
+# Phase 2 — smart text item-splitting
 # ═══════════════════════════════════════════════════════
 
 STRUCTURE_SYS_V3 = """\
@@ -343,21 +344,21 @@ STRUCTURE_SYS_V3 = """\
 
 
 def structure_paper(md: str, src: str, client: LLMClient) -> Tuple[List[Dict], Dict]:
-    """文本模型将整卷转录切为结构化题目。长卷自动分块。"""
-    MAX_CHUNK = 25000  # 每块最大字符数 (降为25K, 长文本DeepSeek响应慢易超时)
+    """Split the whole-paper transcription into structured items via the text model. Long papers are chunked automatically."""
+    MAX_CHUNK = 25000  # max chars per chunk (lowered to 25K; DeepSeek responds slowly and times out on long text)
 
     if len(md) <= MAX_CHUNK:
-        # 短卷：一次切完
+        # Short paper: split in one pass
         prompt = f"【试卷来源】{src}\n\n【试卷完整转录】\n{md}\n\n【任务】将以上试卷切成单题，每题一行JSON。综合大题每个子题(1)(2)(3)单独输出。选择题stem必须含全部ABCD选项文字。"
         messages = [{"role":"system","content":STRUCTURE_SYS_V3},
                     {"role":"user","content":prompt}]
         r = client.chat(messages, max_tokens=12000, temperature=0.1)
         return _parse_structure_jsonl(r["content"]), r
 
-    # 长卷：按"--- 第N页 ---"分块，每块独立切题
+    # Long paper: chunk on "--- 第N页 ---" and split each chunk independently
     import re
     chunks = re.split(r'(--- 第\d+页 ---)', md)
-    # 重新组合：每个页面标记+内容为一单元
+    # Reassemble: each page marker + content forms one unit
     units = []
     for i in range(1, len(chunks), 2):
         if i+1 < len(chunks):
@@ -367,7 +368,7 @@ def structure_paper(md: str, src: str, client: LLMClient) -> Tuple[List[Dict], D
     if not units:
         units = [chunks[0]] if chunks else [md]
 
-    # 将单元合并到不超过MAX_CHUNK
+    # Merge units until each batch stays under MAX_CHUNK
     batched = []
     cur = ""
     for u in units:
@@ -393,7 +394,7 @@ def structure_paper(md: str, src: str, client: LLMClient) -> Tuple[List[Dict], D
         total_tokens += r.get("usage", {}).get("input_tokens", 0)
         total_tokens += r.get("usage", {}).get("output_tokens", 0)
 
-    # 去重（按q_num）
+    # Dedup (by q_num)
     seen_nums = set()
     deduped = []
     for q in all_qs:
@@ -409,7 +410,7 @@ def structure_paper(md: str, src: str, client: LLMClient) -> Tuple[List[Dict], D
 
 
 def _parse_structure_jsonl(content: str) -> List[Dict]:
-    """解析structured JSONL输出"""
+    """Parse the structured JSONL output."""
     if '```' in content:
         parts = content.split('```')
         content = '\n'.join(p for p in parts if '{' in p or '[' in p)
@@ -429,7 +430,7 @@ def _parse_structure_jsonl(content: str) -> List[Dict]:
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 3a — 视觉回查验证（每页必验，100%覆盖）
+# Phase 3a — visual re-check verification (every page verified, 100% coverage)
 # ═══════════════════════════════════════════════════════
 
 VERIFY_SYS_V3 = """\
@@ -457,7 +458,7 @@ VERIFY_SYS_V3 = """\
 
 def verify_page_extractions(img: Path, qs_on_page: List[Dict],
                             client: VisionClient, page_num: int) -> List[Dict]:
-    """视觉模型回查一页的提取结果（短超时，验证非关键路径）"""
+    """Visually re-check one page's extraction results via the vision model (short timeout; verification is a non-critical path)."""
     if not qs_on_page: return []
     qj = json.dumps(qs_on_page, ensure_ascii=False, indent=2)
     prompt = f"以下是第{page_num}页提取的题目：\n\n{qj}\n\n请逐题核对，每题一行JSON输出验证结果。"
@@ -474,7 +475,7 @@ def verify_page_extractions(img: Path, qs_on_page: List[Dict],
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 3b — 化学正确性验证
+# Phase 3b — chemical-correctness verification
 # ═══════════════════════════════════════════════════════
 
 CHEM_SYS_V3 = """\
@@ -495,7 +496,7 @@ CHEM_SYS_V3 = """\
 
 
 def validate_chem_batch(qs: List[Dict], client: LLMClient) -> List[Dict]:
-    """批量化学正确性验证"""
+    """Batch chemical-correctness verification."""
     if not qs: return []
     batches, all_vs = [], []
     for b_start in range(0, len(qs), 25):
@@ -521,7 +522,7 @@ def validate_chem_batch(qs: List[Dict], client: LLMClient) -> List[Dict]:
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 3c — 意图保真验证（核心创新）
+# Phase 3c — intent-fidelity verification (core innovation)
 # ═══════════════════════════════════════════════════════
 
 INTENT_SYS_V3 = """\
@@ -546,7 +547,7 @@ INTENT_SYS_V3 = """\
 
 
 def validate_intent(qs: List[Dict], paper_md: str, client: LLMClient) -> List[Dict]:
-    """验证提取的题目是否保持了原题意图"""
+    """Verify that the extracted items preserve the original intent."""
     if not qs: return []
     all_vs = []
     for b_start in range(0, len(qs), 20):
@@ -569,81 +570,81 @@ def validate_intent(qs: List[Dict], paper_md: str, client: LLMClient) -> List[Di
 
 
 # ═══════════════════════════════════════════════════════
-# Phase 4 — 推导式评分（不从0.90起跳）
+# Phase 4 — derived scoring (does not start from 0.90)
 # ═══════════════════════════════════════════════════════
 
 def compute_confidence(q: Dict, v3a: Dict, v3b: Dict, v3c: Dict) -> Tuple[float, List[str]]:
     """
-    从验证结果推导置信度。
+    Derive the confidence score from the verification results.
 
-    评分公式:
-      结构完整性 (0-35分): 基于v3a视觉验证结果
-      化学正确性 (0-35分): 基于v3b化学验证结果
-      意图保真度 (0-30分): 基于v3c意图验证结果
+    Scoring formula:
+      structural completeness (0-35 points): based on the v3a visual verification
+      chemical correctness (0-35 points): based on the v3b chemistry verification
+      intent fidelity (0-30 points): based on the v3c intent verification
       ─────────────────
-      满分100分 → 映射到0-1置信度
+      a perfect 100 points → mapped to a 0-1 confidence
 
-    无验证覆盖 → 0分，不输出
+    No verification coverage → 0 points, not output.
     """
     reasons = []
     score = 0.0
 
-    # ── 结构完整性 (0-35) ──
+    # ── Structural completeness (0-35) ──
     if v3a:
         checks = v3a.get("checks", {})
         issues = v3a.get("issues", [])
         has_checks = any(v is True for v in checks.values()) or any(v is False for v in checks.values())
 
-        # 区分 minor vs major 严重程度
+        # Distinguish minor vs major severity
         major_count = sum(1 for iss in issues if 'major' in str(iss).lower())
         minor_count = len(issues) - major_count
 
-        # 纯minor = 验证本质通过，给满分-3
+        # Pure minor = verification essentially passed; give full marks minus 3
         if minor_count > 0 and major_count == 0:
-            score += 33  # 35-2=33, minor瑕疵轻扣
-            reasons.append(f"视觉验证:{minor_count}个minor问题(不影响答题)")
+            score += 33  # 35-2=33, light deduction for minor flaws
+            reasons.append(f"visual verification: {minor_count} minor issue(s) (don't affect answering)")
         elif has_checks:
-            # 有major问题，逐项评分
+            # Has major issues; score item by item
             sev = checks.get("stem_severity", "")
             if checks.get("stem_accurate") is True: score += 8
             elif checks.get("stem_accurate") is False and sev == "minor": score += 6
             elif checks.get("stem_accurate") is False:
-                score += 2; reasons.append("题干文字与原图有差异(major)")
+                score += 2; reasons.append("stem text differs from the original image (major)")
             else: score += 6
 
             if checks.get("formulas_correct") is True: score += 8
             elif checks.get("formulas_correct") is False:
-                score += 2; reasons.append("化学式转录有误")
+                score += 2; reasons.append("chemical formulas transcribed incorrectly")
             else: score += 6
 
             if checks.get("options_complete") is True: score += 7
             elif checks.get("options_complete") is False:
-                score += 2; reasons.append("选项不完整")
+                score += 2; reasons.append("options incomplete")
             else: score += 5
 
             if checks.get("answer_correct") is True: score += 6
             elif checks.get("answer_correct") is False:
-                score += 2; reasons.append("答案转录有误")
+                score += 2; reasons.append("answer transcribed incorrectly")
             else: score += 4
 
             if checks.get("diagram_accurate") is True: score += 6
             elif checks.get("diagram_accurate") is False:
-                score += 2; reasons.append("图表描述不准确")
+                score += 2; reasons.append("diagram description inaccurate")
             else: score += 5
 
             if checks.get("answerable") is True: score += 2
 
             if major_count > 0 and v3a.get("overall_pass") is False:
                 score *= 0.7
-                reasons.append(f"视觉验证发现{major_count}个major问题")
+                reasons.append(f"visual verification found {major_count} major issue(s)")
         else:
             score += 24
     else:
-        # v3a缺失：区分API失败(给底分24) vs 真的没跑(给18)
+        # v3a missing: distinguish API failure (floor of 24) vs genuinely not run (18)
         score += 24
-        reasons.append("⚠️ 视觉验证缺失(API失败或未分配页面)")
+        reasons.append("⚠️ visual verification missing (API failure or no pages assigned)")
 
-    # ── 化学正确性 (0-35) ──
+    # ── Chemical correctness (0-35) ──
     if v3b:
         checks = v3b.get("checks", {})
         issues = v3b.get("issues", [])
@@ -654,27 +655,27 @@ def compute_confidence(q: Dict, v3a: Dict, v3b: Dict, v3c: Dict) -> Tuple[float,
 
             if checks.get("equation_balanced") is True: score += 8
             elif checks.get("equation_balanced") is False:
-                score += 2; reasons.append("方程式未配平")
+                score += 2; reasons.append("equation not balanced")
 
             if checks.get("reaction_valid") is True: score += 8
             elif checks.get("reaction_valid") is False:
-                score += 2; reasons.append("化学反应不成立")
+                score += 2; reasons.append("reaction chemically invalid")
 
             if checks.get("answer_chemically_correct") is True: score += 10
             elif checks.get("answer_chemically_correct") is False:
-                score += 2; reasons.append("答案化学上不正确")
+                score += 2; reasons.append("answer chemically incorrect")
 
             if checks.get("terminology_correct") is True: score += 4
             elif checks.get("terminology_correct") is False:
-                score += 1; reasons.append("化学术语不规范")
+                score += 1; reasons.append("chemical terminology non-standard")
 
         if v3b.get("overall_pass") is False:
             score *= 0.7
-            reasons.append(f"化学验证发现{len(issues)}个问题")
+            reasons.append(f"chemistry verification found {len(issues)} issue(s)")
     else:
-        reasons.append("⚠️ 未经化学验证")
+        reasons.append("⚠️ not chemistry-verified")
 
-    # ── 意图保真度 (0-30) ──
+    # ── Intent fidelity (0-30) ──
     if v3c:
         checks = v3c.get("intent_checks", {})
         issues = v3c.get("issues", [])
@@ -682,63 +683,64 @@ def compute_confidence(q: Dict, v3a: Dict, v3b: Dict, v3c: Dict) -> Tuple[float,
         if has_checks:
             if checks.get("knowledge_point_match") is True: score += 10
             elif checks.get("knowledge_point_match") is False:
-                score += 2; reasons.append("考点与原题不一致")
+                score += 2; reasons.append("knowledge point differs from the original item")
             else: score += 5
 
             if checks.get("trap_preserved") is True: score += 10
             elif checks.get("trap_preserved") is False:
-                score += 2; reasons.append("陷阱缺失或改变")
+                score += 2; reasons.append("trap missing or changed")
             else: score += 5
 
             if checks.get("solution_path_match") is True: score += 10
             elif checks.get("solution_path_match") is False:
-                score += 2; reasons.append("解题路径与原题不一致")
+                score += 2; reasons.append("solution path differs from the original item")
             else: score += 5
 
         if v3c.get("overall_pass") is False:
             score *= 0.7
-            reasons.append(f"意图验证发现{len(issues)}个问题")
+            reasons.append(f"intent verification found {len(issues)} issue(s)")
     else:
-        reasons.append("⚠️ 未经意图验证")
+        reasons.append("⚠️ not intent-verified")
 
-    # ── 基础质量检查 ──
+    # ── Basic quality checks ──
     stem = q.get("stem", "")
-    if not stem or len(stem) < 10: score = 0; reasons.append("题干为空")
-    elif len(stem) < 25: score *= 0.5; reasons.append("题干过短")
+    if not stem or len(stem) < 10: score = 0; reasons.append("empty stem")
+    elif len(stem) < 25: score *= 0.5; reasons.append("stem too short")
     if q.get("stem") == "题干文字": score = 0
 
-    # 选项完整性（选择题）
+    # Option completeness (multiple-choice items)
     if q.get("question_type") == "选择题" or q.get("options"):
         opts = q.get("options", {})
         if not opts or len(opts) < 3: score *= 0.7
         if not any(v and len(v.strip())>0 for v in opts.values()): score *= 0.5
 
-    # v3.1: 三重验证完全缺失 → 给极低基础分（几乎不可能，因为化学+意图走文本API很稳定）
+    # v3.1: all three verifications entirely missing → give an extremely low base
+    # score (nearly impossible, since chemistry+intent go through the very stable text API)
     if not v3a and not v3b and not v3c:
-        score = 5  # 5/100，基本等于不合格
-        reasons.append("❌ 未经过任何验证")
+        score = 5  # 5/100, basically failing
+        reasons.append("❌ not verified at all")
 
-    # 映射到0-1（100分制→置信度）
+    # Map to 0-1 (100-point scale → confidence)
     confidence = round(max(0.0, min(1.0, score / 100.0)), 3)
     return confidence, reasons
 
 
 # ═══════════════════════════════════════════════════════
-# 文件收集
+# File collection
 # ═══════════════════════════════════════════════════════
 
 def collect_files() -> List[Tuple[str, Path]]:
-    """收集所有文件，去重（剥离所有括号标签），解析卷优先"""
+    """Collect all files, deduplicated (all parenthesized tags stripped), preferring annotated papers."""
     seen = {}
     for ext in ('*.pdf','*.doc','*.docx'):
         for f in PAPERS_DIR.rglob(ext):
             if f.name.startswith('.'): continue
-            # 剥离所有括号标签：(解析卷)、(空白卷)、(含答案)、(解析版) 等
+            # Strip all parenthesized tags: (解析卷), (空白卷), (含答案), (解析版), etc.
             key = re.sub(r'[（(][^）)]*[）)]', '', f.stem)
             key = re.sub(r'[\s\-_]+', '', key).strip()
             if not key: continue
             if key in seen:
-                # 优先保留解析卷/答案卷（内容最全）
+                # Prefer keeping annotated/answer papers (most complete content)
                 if '解析' in f.name or '答案' in f.name:
                     seen[key] = f
             else:
@@ -755,7 +757,7 @@ def collect_files() -> List[Tuple[str, Path]]:
 
 
 # ═══════════════════════════════════════════════════════
-# 主管道：处理单份试卷
+# Main pipeline: process a single paper
 # ═══════════════════════════════════════════════════════
 
 @dataclass
@@ -773,21 +775,21 @@ class PaperResult:
 
 
 def process_paper(fp: Path, tag: str, vc: VisionClient, lc: LLMClient) -> PaperResult:
-    """处理单份试卷（完整四轮管道）"""
+    """Process a single paper (complete four-round pipeline)."""
     result = PaperResult(source_file=fp.name, tag=tag)
 
     # ── Step 0: DOC/DOCX → PDF ──
     wf = fp
     if fp.suffix.lower() in ('.doc', '.docx'):
         pdf = doc_to_pdf(fp, DOC_CACHE)
-        if not pdf: result.errors.append("DOC→PDF转换失败"); return result
+        if not pdf: result.errors.append("DOC→PDF conversion failed"); return result
         wf = pdf
 
-    # ── Step 1: 获取页数 + 分类 ──
+    # ── Step 1: get the page count + classification ──
     try:
         import fitz; doc = fitz.open(wf)
         total_pages = len(doc); doc.close()
-    except Exception as e: result.errors.append(f"无法打开: {e}"); return result
+    except Exception as e: result.errors.append(f"cannot open: {e}"); return result
     result.total_pages = total_pages
 
     page_tasks = []
@@ -796,19 +798,19 @@ def process_paper(fp: Path, tag: str, vc: VisionClient, lc: LLMClient) -> PaperR
         if pt == 'ad': result.skipped_pages += 1; continue
         page_tasks.append((pn, pt))
 
-    if not page_tasks: result.errors.append("无有效页面"); return result
+    if not page_tasks: result.errors.append("no valid pages"); return result
 
-    # ── Phase 1: 并行视觉转录 ──
+    # ── Phase 1: parallel visual transcription ──
     t1 = time.time()
-    print(f"  [转录 {len(page_tasks)}页...", end='', flush=True)
+    print(f"  [transcribing {len(page_tasks)} pages...", end='', flush=True)
     page_mds = {}
     def _transcribe(pn, pt):
         img = render_page(wf, pn, PAGE_IMG_DIR)
-        if not img: return pn, None, f"页{pn+1}渲染失败"
+        if not img: return pn, None, f"page {pn+1} render failed"
         try:
             mr = transcribe_page(img, vc, label=f"{fp.name} P{pn+1}")
             return pn, mr, None
-        except Exception as e: return pn, None, f"页{pn+1}转录失败:{e}"
+        except Exception as e: return pn, None, f"page {pn+1} transcription failed: {e}"
 
     with ThreadPoolExecutor(max_workers=V_WORKERS) as ex:
         futs = {ex.submit(_transcribe, pn, pt): pn for pn, pt in page_tasks}
@@ -824,40 +826,40 @@ def process_paper(fp: Path, tag: str, vc: VisionClient, lc: LLMClient) -> PaperR
                 result.cost_vision += mr["cost"]
                 result.transcribed_pages += 1
 
-    print(f" {len(page_mds)}完成, {time.time()-t1:.0f}s]", flush=True)
+    print(f" {len(page_mds)} done, {time.time()-t1:.0f}s]", flush=True)
 
-    if not page_mds: result.errors.append("全部转录失败"); return result
+    if not page_mds: result.errors.append("all pages failed transcription"); return result
 
-    # ── Phase 1b: 图表聚焦增强（可选, 含图页面翻倍耗时）──
-    chart_mds = {}  # pn → 增强图表描述
+    # ── Phase 1b: chart-focus enhancement (optional; doubles the time for pages with figures) ──
+    chart_mds = {}  # pn → enhanced chart description
     if RUN_CHART_ZOOM:
         for pn in sorted(page_mds.keys()):
             if not has_charts(page_mds[pn]):
                 continue
-            # 用600 DPI超清渲染该页 → 视觉模型聚焦图表
+            # Ultra-HD render the page at 600 DPI → the vision model focuses on the chart
             zoom_img = render_page_zoom(wf, pn, PAGE_IMG_DIR)
             if not zoom_img:
                 continue
             try:
-                cr = transcribe_charts(zoom_img, vc, label=f"{fp.name} P{pn+1} 图表聚焦")
+                cr = transcribe_charts(zoom_img, vc, label=f"{fp.name} P{pn+1} chart focus")
                 if cr.get("md"):
                     chart_mds[pn] = cr["md"]
                     result.cost_vision += cr.get("cost", 0)
             except Exception:
-                pass  # 图表聚焦失败不阻塞
+                pass  # chart-focus failure must not block
 
-    # 将图表增强描述注入到对应页的转录中
+    # Inject the enhanced chart descriptions into the corresponding pages' transcripts
     for pn, chart_desc in chart_mds.items():
         if chart_desc:
             page_mds[pn] += f"\n\n【图表详细描述】\n{chart_desc}"
 
-    # 按页码排序拼接
+    # Join in page order
     full_md = "\n\n".join(
         f"--- 第{pn+1}页 ---\n\n{page_mds[pn]}"
         for pn in sorted(page_mds.keys())
     )
 
-    # 保存完整转录
+    # Save the full transcript
     md_file = FULL_MD_DIR / f"{fp.stem[:60]}_transcript.md"
     md_file.parent.mkdir(parents=True, exist_ok=True)
     try: md_file.write_text(full_md, encoding='utf-8')

@@ -1,67 +1,67 @@
 # Audit History Index
 
-公开仓内的审计档案 = 项目三轮系统级审计的**终审级**报告。完整的过程记录(356 条逐日会话账本、批次内审记录)保留在项目内部,不在本公开仓。
+The audit archive in this public repo = the **final-verdict** reports of the project's three rounds of system-level audits. The full process records (356 daily session ledger entries, batch-level intermediate reviews) stay inside the project and are not in this public repo.
 
-## 目录
+## Index
 
-### 第一轮:项目级审计(2026-07-01 → 07-06)
+### Round 1: Project-level audit (2026-07-01 → 07-06)
 
-| 文件 | 主题 |
+| File | Topic |
 |---|---|
-| `YHER_FULL_PROJECT_AUDIT_2026-07-01.md` | 全项目审计:架构、数据管线、质量门设计 |
-| `GOLD_QUESTIONS_MODEL_REVIEW_REPORT_2026-07-01.md` | 黄金题模型评审 |
-| `VISUAL_ITEM_QUALITY_GATE_EXECUTION_PLAN_2026-07-01.md` | 视觉题质量门执行计划 |
-| `VISUAL_ITEM_QUALITY_GATE_EXECUTION_REPORT_2026-07-01.md` | 视觉题质量门执行报告 |
-| `STRATEGIC_REVIEW_2026-07-06.md` | 战略复审(项目定位与优先级) |
+| `YHER_FULL_PROJECT_AUDIT_2026-07-01.md` | Full-project audit: architecture, data pipeline, quality-gate design |
+| `GOLD_QUESTIONS_MODEL_REVIEW_REPORT_2026-07-01.md` | Gold-question model review |
+| `VISUAL_ITEM_QUALITY_GATE_EXECUTION_PLAN_2026-07-01.md` | Visual-item quality gate execution plan |
+| `VISUAL_ITEM_QUALITY_GATE_EXECUTION_REPORT_2026-07-01.md` | Visual-item quality gate execution report |
+| `STRATEGIC_REVIEW_2026-07-06.md` | Strategic re-review (project position and priorities) |
 
-### QA 长征(BATCH6–16):2526 题可用性审计
+### QA marathon (BATCH6–16): usability audit of 2,526 items
 
-| 文件 | 主题 |
+| File | Topic |
 |---|---|
-| `BATCH10_AUDIT_2026-07-05.md` | 批次10:latex/离子/图资产修复审计 |
-| `BATCH14_AUDIT_2026-07-06.md` | 批次14:校准门失败与 KaTeX 根因(审计基础设施与真产品同源教训) |
-| `BATCH16_AUDIT_2026-07-06.md` | 批次16:节点感知审查零误伤;审查器精度金标方法论 |
+| `BATCH10_AUDIT_2026-07-05.md` | Batch 10: LaTeX / ion / figure-asset repair audit |
+| `BATCH14_AUDIT_2026-07-06.md` | Batch 14: calibration-gate failure and KaTeX root cause (audit infrastructure must be same-source as the product) |
+| `BATCH16_AUDIT_2026-07-06.md` | Batch 16: node-aware review with zero false positives; reviewer precision-gold methodology |
 
-### AI 出题五轮验证(2026-07-06 → 07-08)
+### AI question generation: five-round verification (2026-07-06 → 07-08)
 
-| 文件 | 主题 |
+| File | Topic |
 |---|---|
-| `NEIHUA_P1_AUDIT_2026-07-06.md` | 第一轮:裸生成基线(首过正确率≈45%) |
-| `NEIHUA_P2_AUDIT_2026-07-06.md` | 第二轮:门控生成(六门规格) |
-| `NEIHUA_MVP_AUDIT_2026-07-07.md` | MVP 三路验证(文字/渲染/图锚) |
-| `NEIHUA_R2_AUDIT_2026-07-07.md` | R2 三路重跑(执行层诚实 FAIL 不等于路线 FAIL) |
-| `NEIHUA_R3_AUDIT_2026-07-07.md` | R3 收口(风格转移方向) |
-| `NEIHUA_R4R5_AUDIT_2026-07-08.md` | R4+R5 终审:五轮验证收口(区分率 65%/公平 60%) |
+| `NEIHUA_P1_AUDIT_2026-07-06.md` | Round 1: bare-generation baseline (first-pass accuracy ≈45%) |
+| `NEIHUA_P2_AUDIT_2026-07-06.md` | Round 2: gated generation (six-gate spec) |
+| `NEIHUA_MVP_AUDIT_2026-07-07.md` | MVP three-route verification (text / rendering / figure-anchored) |
+| `NEIHUA_R2_AUDIT_2026-07-07.md` | R2 three-route rerun (an execution-layer honest FAIL is not a route FAIL) |
+| `NEIHUA_R3_AUDIT_2026-07-07.md` | R3 close-out (style-transfer direction) |
+| `NEIHUA_R4R5_AUDIT_2026-07-08.md` | R4+R5 final: five-round verification closed (65% / 60% fair) |
 
-### 第二轮:CEO 工程审计(2026-07-10)
+### Round 2: CEO engineering audit (2026-07-10)
 
-`YHER_CEO_ENGINEERING_AUDIT_2026-07-10.md` — 工程投入与产品判断双维度复审(结论:方向 70% 正确、优先级 40% 正确)。
+`YHER_CEO_ENGINEERING_AUDIT_2026-07-10.md` — dual-dimension re-review of engineering investment and product judgment (verdict: direction 70% right, priorities 40% right).
 
-### 第三轮:文献级架构审计(2026-08-05 → 08-13,11 份报告)
+### Round 3: literature-level architecture audit (2026-08-05 → 08-13, 11 reports)
 
-6 条研究车道(lane1-6)+ 3 条红队攻防(redteam1-3)+ 独立复核轮:
+6 research lanes (lane1–6) + 3 red-team attack passes + independent verification round:
 
-| 文件 | 主题 |
+| File | Topic |
 |---|---|
-| `lane1_measurement.md` | 测量:二元化掌握度 vs 四状态构念 |
-| `lane2_selection_stopping.md` | 选题与停止规则:gap>0.45 废止;P(top1)+min_length |
-| `lane3_memory_review.md` | 记忆与复习:FSRS-4.5 阻尼替换手设常数 |
-| `lane4_recommendation.md` | 推荐:乘法评分保留;efficacy Beta-Binomial 只作平局键 |
-| `lane5_verification_profile.md` | 验证与画像:held-out 早停 3→6;n=2 二值化禁止 |
-| `lane6_math_pipeline.md` | 数学管线:整页转写 + MFD + SymPy 全量语法门 |
-| `redteam1_measurement_selection.md` | 红队1:四状态 12 题上限 54–69% 独立复算 |
-| `redteam2_memory_recommendation.md` | 红队2:S 膨胀 4608 天复算;efficacy 无学术位置 |
-| `redteam3_verification_pipeline_product.md` | 红队3:n=2 下界 22.4%;SymPy 7 假等价 5 复现;产品层一致性 |
-| `VERIFICATION_ROUND4.md` | 独立复核轮:多重推翻(FSRS 旧计算错 5 倍) |
-| `MASTER_AUDIT_REPORT_2026-08-13.md` | 终裁:21 组件 4 保留/10 改造/5 替换/2 降级;数学 MVP 蓝图 v0′ |
+| `lane1_measurement.md` | Measurement: binarized mastery vs four-state construct |
+| `lane2_selection_stopping.md` | Selection and stopping: gap>0.45 retired; P(top1)+min_length |
+| `lane3_memory_review.md` | Memory and review: FSRS-4.5 damping replaces hand-set constants |
+| `lane4_recommendation.md` | Recommendation: multiplicative scoring kept; efficacy Beta-Binomial only as tie-break |
+| `lane5_verification_profile.md` | Verification and profile: held-out early-stop 3→6; n=2 binarization forbidden |
+| `lane6_math_pipeline.md` | Math pipeline: full-page transcription + MFD + SymPy full syntax gate |
+| `redteam1_measurement_selection.md` | Red team 1: four-state 12-item ceiling 54–69% independently recomputed |
+| `redteam2_memory_recommendation.md` | Red team 2: S-inflation 4,608 days recomputed; efficacy has no academic position |
+| `redteam3_verification_pipeline_product.md` | Red team 3: n=2 lower bound 22.4%; SymPy 7 false equivalences / 5 reproduced; product-layer consistency |
+| `VERIFICATION_ROUND4.md` | Independent verification round: multiple overturns (old FSRS calculation wrong by 5×) |
+| `MASTER_AUDIT_REPORT_2026-08-13.md` | Final verdict: 21 components 4 keep / 10 modify / 5 replace / 2 downgrade; math MVP blueprint v0′ |
 
-## 为什么公开这些
+## Why these are public
 
-- 审计报告是"工程严谨性"的直接证据:每份都含**独立复现命令、输入哈希、逐条判定与证据等级**;
-- 三轮审计的演进本身记录了"什么结论被推翻、为什么推翻"——这是科研记录的标准形态;
-- 报告中的结论(如 gap>0.45 废止、FSRS-4.5 阻尼)已经或正在进入生产引擎。
+- Audit reports are direct evidence of engineering rigor: each contains **independent reproduction commands, input hashes, per-item verdicts, and evidence grades**;
+- The evolution across the three rounds records "what conclusion was overturned and why" — the standard form of a research record;
+- Verdicts in the reports (gap>0.45 retired, FSRS-4.5 damping) are already in, or entering, the production engine.
 
-## 未公开部分
+## What is not public
 
-- `ledger_archive/`(逐日会话账本 356 条):流程颗粒度过细,含内部事故与翻车记录,不作为公开档案;
-- 批次级中间报告(BATCH6/8/9/11/12/13/15、R1 等):过程文档,非终审级。
+- `ledger_archive/` (356 daily session ledger entries): too fine-grained a process record; contains internal incidents and flips, not suitable as public archive;
+- Batch-level intermediate reports (BATCH6/8/9/11/12/13/15, R1, etc.): process documents, not final-verdict level.

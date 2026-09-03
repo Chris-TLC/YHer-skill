@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-一化儿 AI 化学助手 - 长期记忆模块（Supabase）
-v3：完整记忆 always-on + 季度高保真压缩（4000 tokens）
+Yihuier AI chemistry assistant - long-term memory module (Supabase)
+v3: full always-on memory + quarterly high-fidelity compression (4000 tokens)
 """
 
 from typing import List, Dict
@@ -10,7 +10,7 @@ from collections import defaultdict
 
 
 # ═══════════════════════════════════════════════════
-# 高保真压缩 Prompt（v3 关键）
+# High-fidelity compression prompt (key to v3)
 # ═══════════════════════════════════════════════════
 
 HIGH_FIDELITY_COMPRESSION_PROMPT = """
@@ -68,7 +68,7 @@ HIGH_FIDELITY_COMPRESSION_PROMPT = """
 
 
 class YihuierMemory:
-    """Supabase 长期记忆（v3 完整记忆 + 季度高保真压缩）"""
+    """Supabase long-term memory (v3 full memory + quarterly high-fidelity compression)."""
 
     def __init__(self, supabase_url: str, supabase_key: str):
         if not supabase_url or not supabase_key:
@@ -79,10 +79,10 @@ class YihuierMemory:
         from supabase import create_client
         self.supabase = create_client(supabase_url, supabase_key)
 
-    # ========== 用户档案 ============================
+    # ========== User profile ========================
 
     def get_user_profile(self, user_id: str) -> dict:
-        """获取用户档案（跨表合并 users + user_profile，按 user_id 隔离）"""
+        """Fetch the user profile (merges users + user_profile across tables, isolated by user_id)."""
         user_data = {}
         profile_data = {}
 
@@ -92,7 +92,7 @@ class YihuierMemory:
             if user_result.data:
                 user_data = user_result.data[0]
         except Exception as e:
-            print(f"[memory] 查 users 表失败: {e}")
+            print(f"[memory] querying users table failed: {e}")
 
         try:
             profile_result = self.supabase.table('user_profile')\
@@ -100,7 +100,7 @@ class YihuierMemory:
             if profile_result.data:
                 profile_data = profile_result.data[0]
         except Exception as e:
-            print(f"[memory] 查 user_profile 表失败: {e}")
+            print(f"[memory] querying user_profile table failed: {e}")
 
         return {
             'user_id': user_id,
@@ -114,7 +114,7 @@ class YihuierMemory:
 
     def sync_user_info(self, user_id: str, grade: str = None,
                        name: str = None, school: str = None):
-        """同步用户基本信息到 Supabase（Web 端用）"""
+        """Sync basic user info to Supabase (used by the web frontend)."""
         import traceback
         try:
             user_data = {'user_id': user_id}
@@ -127,22 +127,22 @@ class YihuierMemory:
 
             self.supabase.table('users').upsert(user_data).execute()
 
-            # 确保 user_profile 行存在
+            # Make sure a user_profile row exists
             self.supabase.table('user_profile').upsert({
                 'user_id': user_id,
             }).execute()
         except Exception as e:
-            print(f"[memory] ❌ sync_user_info 失败: {e}")
+            print(f"[memory] ❌ sync_user_info failed: {e}")
             traceback.print_exc()
 
     def update_weak_topics(self, user_id: str, new_weak: list):
-        """从诊断结果增量更新弱点列表"""
+        """Incrementally update the weak-topic list from diagnosis results."""
         try:
             profile = self.get_user_profile(user_id)
             existing = set(profile.get('weak_topics') or [])
             existing.update(new_weak)
 
-            # 去重 + 限制数量
+            # Deduplicate + cap the count
             merged = list(existing)[:20]
 
             self.supabase.table('user_profile').upsert({
@@ -150,23 +150,23 @@ class YihuierMemory:
                 'weak_topics': merged,
             }).execute()
         except Exception as e:
-            print(f"[memory] ❌ update_weak_topics 失败: {e}")
+            print(f"[memory] ❌ update_weak_topics failed: {e}")
 
-    # ========== 缓存友好的分段记忆（v3.1）============
+    # ========== Cache-friendly segmented memory (v3.1) =
 
     def get_static_memory_section(self, user_id: str) -> str:
         """
-        v3.1 静态记忆：USER_PROFILE + HISTORICAL_SUMMARIES
-        每次会话启动时拉 1 次，拼到 system_prompt 末尾
-        稳定 24h → prompt caching 命中率高
+        v3.1 static memory: USER_PROFILE + HISTORICAL_SUMMARIES
+        Fetched once per session start and appended to the system_prompt.
+        Stable for 24h → high prompt-caching hit rate.
         """
         try:
-            # 用户档案
+            # User profile
             profile = self.get_user_profile(user_id)
             weak_str = ', '.join(profile.get('weak_topics') or [])
             master_str = ', '.join(profile.get('mastered_topics') or [])
 
-            # 季度摘要
+            # Quarterly summaries
             summaries = self.supabase.table('memory_summaries')\
                 .select('*').eq('user_id', user_id)\
                 .order('period').execute()
@@ -192,9 +192,9 @@ mastered_topics: [{master_str}]
 
     def get_dynamic_memory_section(self, user_id: str) -> str:
         """
-        v3.1 动态记忆：RECENT_30_DAYS_HISTORY
-        每次提问都可能更新 → 放在 user_message
-        不破坏 system_prompt 的缓存命中
+        v3.1 dynamic memory: RECENT_30_DAYS_HISTORY
+        May change with every question → goes into the user_message,
+        so it doesn't break system_prompt cache hits.
         """
         try:
             cutoff = (datetime.now() - timedelta(days=30)).isoformat()
@@ -218,17 +218,17 @@ mastered_topics: [{master_str}]
 
     def get_full_memory_with_summaries(self, user_id: str) -> str:
         """
-        兼容旧接口：返回完整记忆（静态 + 动态）
-        新代码请使用 get_static_memory_section + get_dynamic_memory_section
+        Legacy-interface compatibility: return the full memory (static + dynamic).
+        New code should use get_static_memory_section + get_dynamic_memory_section.
         """
         return (self.get_static_memory_section(user_id) + "\n\n" +
                 self.get_dynamic_memory_section(user_id))
 
-    # ========== 历史记录写入 ========================
+    # ========== History writes ======================
 
     def save_query(self, user_id: str, query: str, diagnosis: dict,
                    response: str, cost: float):
-        """保存提问到历史（显式报错，静默失败是工程纪律 bug）"""
+        """Save a query to history (errors are raised explicitly; silent failure is an engineering-discipline bug)."""
         import traceback
         try:
             diag_summary = self._summarize_diagnosis(diagnosis)
@@ -243,19 +243,19 @@ mastered_topics: [{master_str}]
                 'cost_yuan': cost,
             }).execute()
         except Exception as e:
-            print(f"[memory] ❌ save_query 失败: {type(e).__name__}: {e}")
+            print(f"[memory] ❌ save_query failed: {type(e).__name__}: {e}")
             traceback.print_exc()
 
     def _summarize_diagnosis(self, diagnosis: dict) -> str:
-        """把 diagnose.py 的输出压成一句话"""
+        """Condense diagnose.py's output into a one-liner."""
         nodes = ', '.join(diagnosis.get('related_nodes', [])[:3])
         prereqs = ', '.join(diagnosis.get('missing_prereqs', [])[:3])
         return f"涉及 [{nodes}]，缺漏 [{prereqs}]"
 
-    # ========== 季度压缩机制（v3 关键）==============
+    # ========== Quarterly compression (key to v3) ===
 
     def get_compression_status(self, user_id: str) -> dict:
-        """检查是否需要压缩（90 天前的记录数）"""
+        """Check whether compression is needed (count of records older than 90 days)."""
         try:
             cutoff = (datetime.now() - timedelta(days=90)).isoformat()
             result = self.supabase.table('query_history')\
@@ -268,15 +268,15 @@ mastered_topics: [{master_str}]
                 'old_records': result.count,
             }
         except Exception as e:
-            print(f"[memory] ❌ get_compression_status 失败: {e}")
+            print(f"[memory] ❌ get_compression_status failed: {e}")
             return {'needs_compression': False, 'old_records': 0}
 
     def compress_old_memory(self, user_id: str, llm_client) -> dict:
         """
-        v3 季度高保真压缩：90+ 天前的历史 → 4000 tokens 详细摘要
+        v3 quarterly high-fidelity compression: history older than 90 days → a detailed ~4000-token summary.
 
-        成本：每季度 1 次 × ~4000 tokens × ¥6.26/M = ¥0.025
-        24 个月总计：~8 次 × ¥0.025 = ¥0.20
+        Cost: once per quarter × ~4000 tokens × ¥6.26/M = ¥0.025
+        24-month total: ~8 runs × ¥0.025 = ¥0.20
         """
         try:
             cutoff = datetime.now() - timedelta(days=90)
@@ -288,7 +288,7 @@ mastered_topics: [{master_str}]
             if len(old_records.data) < 30:
                 return {'compressed': 0, 'cost': 0, 'periods': []}
 
-            # 按季度分组
+            # Group by quarter
             by_quarter = defaultdict(list)
             for r in old_records.data:
                 date_str = r['created_at'][:10]
@@ -302,7 +302,7 @@ mastered_topics: [{master_str}]
             compressed_periods = []
 
             for period, records in by_quarter.items():
-                # 检查是否已有摘要
+                # Check whether a summary already exists
                 existing = self.supabase.table('memory_summaries')\
                     .select('*').eq('user_id', user_id)\
                     .eq('period', period).execute()
@@ -310,7 +310,7 @@ mastered_topics: [{master_str}]
                 if existing.data:
                     continue
 
-                # 拼接原始记录
+                # Concatenate the raw records
                 records_text = "\n".join([
                     f"[{r['created_at'][:10]}] 问: {r['query']} | "
                     f"诊断: {r.get('diagnosis_summary', '')} | "
@@ -318,7 +318,7 @@ mastered_topics: [{master_str}]
                     for r in records
                 ])
 
-                # v3：max_tokens=4000 高保真压缩
+                # v3: high-fidelity compression with max_tokens=4000
                 summary_response = llm_client.chat(
                     messages=[
                         {"role": "system",
@@ -328,7 +328,7 @@ mastered_topics: [{master_str}]
                     max_tokens=4000,
                 )
 
-                # 存摘要
+                # Store the summary
                 self.supabase.table('memory_summaries').insert({
                     'user_id': user_id,
                     'period': period,
@@ -339,7 +339,7 @@ mastered_topics: [{master_str}]
                     'created_at': datetime.now().isoformat()
                 }).execute()
 
-                # 删除原始记录
+                # Delete the raw records
                 for r in records:
                     self.supabase.table('query_history')\
                         .delete().eq('id', r['id']).execute()
@@ -355,16 +355,16 @@ mastered_topics: [{master_str}]
             }
         except Exception as e:
             import traceback
-            print(f"[memory] ❌ compress_old_memory 失败: {e}")
+            print(f"[memory] ❌ compress_old_memory failed: {e}")
             traceback.print_exc()
             return {'compressed': 0, 'cost': 0, 'periods': []}
 
-    # ========== 成本查询 ============================
+    # ========== Cost queries ========================
 
     def get_month_cost(self, user_id: str, month: str) -> float:
-        """查询某月累计成本，month 格式 'YYYY-MM'"""
+        """Query the accumulated cost for a month; month format 'YYYY-MM'."""
         try:
-            # 计算下月第一天作为上界（避免无效日期如 01-32）
+            # Use the first day of the next month as the upper bound (avoid invalid dates like 01-32)
             year, m = month.split('-')
             y, mo = int(year), int(m)
             if mo == 12:
@@ -380,5 +380,5 @@ mastered_topics: [{master_str}]
 
             return sum(r['cost_yuan'] for r in result.data if r['cost_yuan'])
         except Exception as e:
-            print(f"[memory] ❌ get_month_cost 失败: {e}")
+            print(f"[memory] ❌ get_month_cost failed: {e}")
             return 0.0

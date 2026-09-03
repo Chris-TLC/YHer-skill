@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-LLM 桥接：把 adapters/llm_client.LLMClient 包成编排层需要的 (system, user) -> dict 签名。
+LLM bridge: wraps adapters/llm_client.LLMClient into the
+(system, user) -> dict signature the orchestration layer needs.
 
-编排层只认这个简单签名，不直接依赖具体 LLM SDK，便于换模型/测试 mock。
+The orchestration layer only knows this simple signature and never depends on
+a concrete LLM SDK directly, which makes swapping models and mocking tests easy.
 """
 
 from __future__ import annotations
@@ -13,22 +15,22 @@ from typing import Any, Callable, Dict, Optional
 def make_llm_caller(
     provider: str = "deepseek",
     api_key: Optional[str] = None,
-    model: Optional[str] = None,  # ✨ 新增：支持指定模型
+    model: Optional[str] = None,  # ✨ new: supports specifying a model
     max_tokens: int = 3000,
     temperature: float = 0.3,
 ) -> Callable[[str, str, Optional[str]], Dict[str, Any]]:
     """
-    返回一个 (system_prompt, user_prompt, model_override?) -> {content, cost_yuan, usage} 的函数。
+    Return a (system_prompt, user_prompt, model_override?) -> {content, cost_yuan, usage} function.
 
     Args:
-        provider: API提供商
-        api_key: API密钥
-        model: 默认模型（可被每次调用的model_override覆盖）
-        max_tokens: 最大输出token数
-        temperature: 温度
+        provider: API provider
+        api_key: API key
+        model: default model (can be overridden per call via model_override)
+        max_tokens: max output tokens
+        temperature: temperature
 
     Returns:
-        调用函数，支持运行时指定模型
+        The call function, which supports specifying a model at runtime
     """
     from adapters.llm_client import LLMClient
 
@@ -36,14 +38,14 @@ def make_llm_caller(
 
     def _call(system_prompt: str, user_prompt: str, model_override: Optional[str] = None) -> Dict[str, Any]:
         """
-        调用LLM，支持运行时覆盖模型。
+        Call the LLM, with runtime model override support.
 
         Args:
-            system_prompt: 系统提示词
-            user_prompt: 用户提示词
-            model_override: 运行时指定的模型（如"deepseek-v4-flash"），覆盖默认值
+            system_prompt: system prompt
+            user_prompt: user prompt
+            model_override: model specified at runtime (e.g. "deepseek-v4-flash"), overriding the default
         """
-        # 临时创建新client以使用不同模型（如果指定了）
+        # Create a temporary client for the different model (when specified)
         if model_override:
             temp_client = LLMClient(provider=provider, model=model_override, api_key=api_key)
             resp = temp_client.chat(

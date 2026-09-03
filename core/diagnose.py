@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-一化儿 SKILL 诊断引擎
-功能：
-1. 识别 query 的学段、复杂度
-2. 通过 retrieve 找到相关知识点
-3. 反查 prerequisite 链路
-4. 推断可能的 missing prerequisites
+Diagnosis engine for the yihuier SKILL.
+
+What it does:
+1. Detect the query's grade level and complexity
+2. Find related knowledge points via retrieval
+3. Trace prerequisite chains backwards
+4. Infer possible missing prerequisites
 """
 
 import json
@@ -13,11 +14,11 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from collections import OrderedDict
 
-# ── 路径 ─────────────────────────────────────────
+# ── Paths ────────────────────────────────────────
 SKILL_DIR = Path(__file__).parent.parent
 DATA_DIR = SKILL_DIR / "data"
 
-# ── 学段识别关键词 ───────────────────────────────
+# ── Grade-level detection keywords ───────────────
 GRADE_SIGNALS = {
     '高一': ['摩尔', '物质分类', '氧化还原', '化学计量', '配平',
              '必修一', '必修二', '阿伏伽德罗', '物质的量',
@@ -36,7 +37,7 @@ COMPLEXITY_SIGNALS = {
     'complex': ['压轴', '综合', '系统', '原理', '所有'],
 }
 
-# ── 知识图谱加载 ─────────────────────────────────
+# ── Knowledge graph loading ──────────────────────
 _kg_data = None
 
 
@@ -55,7 +56,7 @@ def _load_kg() -> Dict:
 
 
 def detect_grade(query: str) -> str:
-    """识别学段，返回 '高一'/'高二'/'高三'/'unknown'"""
+    """Detect the grade level; returns '高一'/'高二'/'高三'/'unknown'."""
     scores = {grade: 0 for grade in GRADE_SIGNALS}
     for grade, keywords in GRADE_SIGNALS.items():
         for kw in keywords:
@@ -69,8 +70,8 @@ def detect_grade(query: str) -> str:
 
 
 def detect_complexity(query: str) -> str:
-    """识别复杂度"""
-    # diagnostic 优先（用户表达了困难）
+    """Detect query complexity."""
+    # diagnostic takes priority (the user has expressed difficulty)
     if any(kw in query for kw in COMPLEXITY_SIGNALS['diagnostic']):
         return 'diagnostic'
     if any(kw in query for kw in COMPLEXITY_SIGNALS['complex']):
@@ -84,9 +85,9 @@ def detect_complexity(query: str) -> str:
 
 def trace_prerequisites(node_ids: List[str], depth: int = 3) -> List[str]:
     """
-    反查 prerequisite 链路
-    depth: 查多深
-    返回所有前置节点 id（保序去重）
+    Trace prerequisite chains backwards.
+    depth: how many levels deep to trace
+    Returns the ids of all prerequisite nodes (order preserved, deduplicated).
     """
     kg_data = _load_kg()
 
@@ -116,32 +117,32 @@ def trace_prerequisites(node_ids: List[str], depth: int = 3) -> List[str]:
 
 
 def diagnose_query(query: str, retriever) -> Dict:
-    """主诊断函数"""
-    # 1. 调用 retrieve_with_diagnosis
+    """Main diagnosis function."""
+    # 1. Call retrieve_with_diagnosis
     retrieval = retriever.retrieve_with_diagnosis(query)
 
-    # 2. 学段识别
+    # 2. Detect grade level
     grade = detect_grade(query)
 
-    # 3. 复杂度识别
+    # 3. Detect complexity
     complexity = detect_complexity(query)
 
-    # 4. 反查前置节点
+    # 4. Trace prerequisite nodes backwards
     related_node_ids = [n['node_id'] for n in retrieval['related_nodes']]
     depth_map = {'高一': 1, '高二': 2, '高三': 3, 'unknown': 2}
     depth = depth_map.get(grade, 2)
     prereqs = trace_prerequisites(related_node_ids, depth=depth)
 
-    # 5. 推断 missing prerequisites
+    # 5. Infer missing prerequisites
     n_missing = 2 if grade == '高一' else 3
     missing_prereqs = prereqs[:n_missing]
 
-    # 6. 提取题型 + 招式
+    # 6. Extract exam patterns + techniques
     exam_patterns = [p['pattern_id'] for p in retrieval['related_patterns']][:2]
     thinking_patterns = [t['id'] for t in retrieval['related_thinking']][:3]
     thinking_names = [t['name'] for t in retrieval['related_thinking']][:3]
 
-    # 7. 提取推荐视频（从 chunks 中收集真实 BV+P，含完整视频信息）
+    # 7. Extract recommended videos (collect real BV+P from chunks, with full video info)
     recommended_videos = []
     seen_bvp = set()
     for c in retrieval.get('chunks', []):

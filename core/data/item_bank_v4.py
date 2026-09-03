@@ -1,28 +1,39 @@
 #!/usr/bin/env python3
-"""Schema v4 题库(WS3 apply,2026-07-03)的唯一合法读取入口。
+"""The only legitimate read entry point for the schema-v4 item bank (WS3 apply, 2026-07-03).
 
-v4 manifest 与 v3 并存:
-- v3 服务路径(core/data/item_repository.py)glob 的是 data/item_bank/*.jsonl(非递归),
-  永远看不到本目录 —— 切换到 v4 必须是显式改代码,不存在"悄悄混入"。
-- 本模块是 v4 的规则级防线。任何学生端展示、练习、诊断、AI 内化种子,
-  只允许通过 iter_service_items() / load_service_pool() 取题,不得绕过直接读 jsonl。
+The v4 manifest coexists with v3:
+- The v3 service path (core/data/item_repository.py) globs data/item_bank/*.jsonl
+  (non-recursive), so it can never see this directory — switching to v4 must be an
+  explicit code change; there is no way for v4 to "quietly sneak in".
+- This module is v4's rule-level line of defense. Any student-facing display,
+  practice, diagnosis, or AI internalization seed may only obtain items through
+  iter_service_items() / load_service_pool(), and must never bypass them by
+  reading the jsonl directly.
 
-硬规则(交接文档 WS3 apply 条款 + 2026-07-03 apply 前审计结论):
-  R1  只有 pool == "main" 且 service_eligible == true 的题可进服务池。
-  R2  quality_flags 含 "answer_type_mismatch" 的题,答案视为不存在(即使数据里有也不采信),
-      且不可服务 —— 这是对残留疑似错配的规则级兜底,优先于逐条排查。
-  R3  全链路无答案的题不可服务:answer_blocks_effective 为空、standard_solution 也给不出
-      答案的题挡在池外(apply 前审计实测 main 池有 138 道此类漏网题)。
-  R4  service_exclusions.jsonl 显式排除清单必须尊重(7 道题干实为解析文本的错切题 +
-      4 道答案片段/纯答案文档误抽题,均经人工逐条核验,泄漏类)。
-      按治理纪律,该清单的新增只能由用户或 Claude 签字。
-  R5  可用性白名单门(2026-07-06 R5 apply,用户 L1「授权,并且先上R5……直接开始授权入库」):
-      只 serve usability_r5_v1.jsonl 中 r5_serve == true 的题。数量以台账动态读取为准；
-      2026-07-13 坏题结案后为 1202。排除口径见
-      PROJECT_HANDOFF/BATCH14_AUDIT_2026-07-06.md §五，含空心结构式、真源码、
-      碎片字面量、部分答案和变式库挂起等 clean 漏报类。
-      台账无记录的题一律不服务(宁缺勿滥)。审计/预览/回归需看全池时显式传
-      apply_r5=False —— 学生端取题路径禁止关闭 R5。
+Hard rules (WS3 apply clauses in the handoff doc + pre-apply audit conclusions of 2026-07-03):
+  R1  Only items with pool == "main" and service_eligible == true may enter the service pool.
+  R2  Items whose quality_flags contains "answer_type_mismatch" are treated as having no
+      answer (not trusted even if present in the data) and are not serviceable — a rule-level
+      backstop against residual suspected mismatches, taking priority over case-by-case triage.
+  R3  Items with no answer anywhere in the chain are not serviceable: items whose
+      answer_blocks_effective is empty and whose standard_solution also yields no answer are
+      kept out of the pool (the pre-apply audit measured 138 such leaked-through items in the
+      main pool).
+  R4  The explicit exclusion list in service_exclusions.jsonl must be respected (7 mis-sliced
+      items whose stems are actually solution text + 4 items wrongly extracted from answer
+      fragments / answer-only documents; all verified one by one by hand, leak class).
+      Per governance discipline, additions to this list may only be signed off by the user
+      or Claude.
+  R5  Usability whitelist gate (2026-07-06 R5 apply; user L1: "authorized, and R5 goes first...
+      proceed directly with the authorized ingest"): only serve items with r5_serve == true in
+      usability_r5_v1.jsonl. The count is read dynamically from the ledger; after the
+      bad-item closeout of 2026-07-13 it stands at 1202. See
+      PROJECT_HANDOFF/BATCH14_AUDIT_2026-07-06.md §5 for the exclusion criteria, including
+      hollow structural formulas, verbatim source code, fragment literals, partial answers,
+      and held variant libraries — the clean false-negative classes.
+      Items absent from the ledger are never served (better to omit than to serve junk).
+      Audits/previews/regressions that need the full pool must pass apply_r5=False explicitly —
+      student-facing item-retrieval paths must not disable R5.
 """
 
 from __future__ import annotations
@@ -32,12 +43,14 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
 V4_BANK_DIR = Path(__file__).parent.parent.parent / "data" / "item_bank" / "v4"
-# Batch 7 apply(2026-07-04,用户授权「授权batch7」):切到 v4.1(98 行处置,零增零删)。
-# 回滚 = 指回 chemistry_v4_3329.jsonl(见 data/_backup_pre_v4_1_apply_20260704/ROLLBACK.md)。
+# Batch 7 apply (2026-07-04, user authorization "authorize batch7"): switch to v4.1
+# (98 rows handled, zero additions, zero deletions).
+# Rollback = point back to chemistry_v4_3329.jsonl (see data/_backup_pre_v4_1_apply_20260704/ROLLBACK.md).
 V4_MANIFEST = V4_BANK_DIR / "chemistry_v4_1_3329.jsonl"
 V4_SERVICE_EXCLUSIONS = V4_BANK_DIR / "service_exclusions.jsonl"
-# R5 apply(2026-07-06,用户 L1「授权,并且先上R5……直接开始授权入库」):batch14 可用性台账。
-# 回滚 = 删本文件引用/恢复备份(见 data/_backup_pre_r5_apply_20260706/ROLLBACK.md)。
+# R5 apply (2026-07-06, user L1 "authorized, and R5 goes first... proceed directly with the
+# authorized ingest"): the batch14 usability ledger.
+# Rollback = remove this file's reference / restore the backup (see data/_backup_pre_r5_apply_20260706/ROLLBACK.md).
 V4_USABILITY_R5 = V4_BANK_DIR / "usability_r5_v1.jsonl"
 
 ANSWER_TYPE_MISMATCH = "answer_type_mismatch"
@@ -68,7 +81,7 @@ def load_service_exclusions(path: Optional[Path] = None) -> Dict[str, Dict[str, 
 
 
 def load_usability_r5(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
-    """R5:batch14 可用性台账(item_id → {usability_pool, r5_serve, r5_block_reason, ...})。"""
+    """R5: the batch14 usability ledger (item_id → {usability_pool, r5_serve, r5_block_reason, ...})."""
     return {
         row["item_id"]: row
         for row in _iter_jsonl(path or V4_USABILITY_R5)
@@ -77,7 +90,7 @@ def load_usability_r5(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
 
 
 def effective_answer_blocks(item: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """R2:错配题答案视为不存在 —— 不信任数据,规则再判一次。"""
+    """R2: mismatched items are treated as having no answer — don't trust the data, re-judge at the rule level."""
     if ANSWER_TYPE_MISMATCH in (item.get("quality_flags") or []):
         return []
     return item.get("answer_blocks_effective") or []
@@ -95,7 +108,7 @@ def solution_answers(item: Dict[str, Any]) -> List[str]:
 
 
 def has_effective_answer(item: Dict[str, Any]) -> bool:
-    """R3:answer_blocks_effective 或 standard_solution 至少一处给得出答案。"""
+    """R3: at least one of answer_blocks_effective or standard_solution must yield an answer."""
     return bool(effective_answer_blocks(item)) or bool(solution_answers(item))
 
 
@@ -105,9 +118,10 @@ def service_blockers(
     usability: Optional[Dict[str, Dict[str, Any]]] = None,
     apply_r5: bool = True,
 ) -> List[str]:
-    """返回该题不能进服务池的全部原因;空列表 = 可服务。
+    """Return every reason this item cannot enter the service pool; an empty list = serviceable.
 
-    apply_r5=False 仅供审计/预览/回归看全池(R1-R4 口径);学生端取题不得关闭。
+    apply_r5=False is only for audits/previews/regressions that need the full pool
+    (R1-R4 scope); student-facing item retrieval must not disable it.
     """
     if exclusions is None:
         exclusions = load_service_exclusions()
@@ -128,7 +142,7 @@ def service_blockers(
             usability = load_usability_r5()
         urow = usability.get(item.get("item_id", ""))
         if urow is None:
-            # 台账无记录 = 未过可用性审计,宁缺勿滥。
+            # No ledger entry = never passed the usability audit; better to omit than to serve junk.
             blockers.append("usability_missing")
         elif urow.get("r5_serve") is not True:
             blockers.append(
@@ -138,7 +152,7 @@ def service_blockers(
 
 
 def iter_items(manifest_path: Optional[Path] = None) -> Iterator[Dict[str, Any]]:
-    """全量遍历(含 legacy/excluded 池)。只用于审计、回归、数据工程,禁止用于服务。"""
+    """Full traversal (including the legacy/excluded pools). For audits, regression, and data engineering only — never for serving."""
     yield from _iter_jsonl(manifest_path or V4_MANIFEST)
 
 
@@ -148,9 +162,10 @@ def iter_service_items(
     apply_r5: bool = True,
     usability_path: Optional[Path] = None,
 ) -> Iterator[Dict[str, Any]]:
-    """服务池遍历:学生端/练习/诊断/AI 内化种子的唯一取题入口(默认 R5 白名单口径)。
+    """Service-pool traversal: the only item-retrieval entry for student-facing features / practice / diagnosis / AI internalization seeds (defaults to the R5 whitelist scope).
 
-    apply_r5=False 仅供审计/预览/回归(R1-R4 口径,2526);学生端路径禁止使用。
+    apply_r5=False is only for audits/previews/regression (R1-R4 scope, 2526);
+    student-facing paths must not use it.
     """
     exclusions = load_service_exclusions(exclusions_path)
     usability = load_usability_r5(usability_path) if apply_r5 else None
@@ -175,7 +190,7 @@ def service_pool_stats(
     exclusions_path: Optional[Path] = None,
     apply_r5: bool = True,
 ) -> Dict[str, Any]:
-    """审计用:全库分池 + 服务池规模 + 各 blocker 计数。"""
+    """For audits: per-pool split of the whole bank + service-pool size + per-blocker counts."""
     exclusions = load_service_exclusions(exclusions_path)
     usability = load_usability_r5() if apply_r5 else None
     total = 0

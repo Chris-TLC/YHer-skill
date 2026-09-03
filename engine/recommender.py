@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
 """
-engine/recommender.py — 视频格局层评分制路由器（curriculum layer，2026-07-08）
+engine/recommender.py — score-based router for the video landscape layer (curriculum
+layer, 2026-07-08)
 ==============================================================================
-规格源（唯一权威）：~/.gstack/projects/Tools/mac-unknown-design-20260708-212231.md
-  §2 评分公式 + §4 测试断言（28 条，eng-review + CEO 复审定稿）。
+Spec source (sole authority): ~/.gstack/projects/Tools/mac-unknown-design-20260708-212231.md
+  §2 scoring formula + §4 test assertions (28 items, finalized by eng-review + CEO re-review).
 
-五段串联：画像(年级+目的) → 默认轨道 → 诊断病因 → 轨道内匹配(可跨轨) → 段落精选。
-评分：Score(s) = W_track(轨道×画像×诊断解锁×掌握门) × Match(内容匹配) × Efficacy(疗效)
+Five-stage chain: profile (grade + purpose) → default track → diagnosed cause →
+in-track matching (may cross tracks) → segment selection.
+Scoring: Score(s) = W_track (track × profile × diagnostic unlock × mastery gate) × Match (content match) × Efficacy
 
-红线（与 selector 同款）：
-  · 本模块不直读存储态 node.b——只接收调用方经 get_belief 投影后的 np.array 信念。
-  · 熵函数复用 selector.entropy（log2 版），不自建自然对数版（DRY，eng-review E3）。
-  · 纯函数 + 参数传表：catalog/track_map 由调用方 load_curriculum 一次加载后传入，
-    落盘归接线层（引擎零 IO，eng-review E6/F1）。
+Red lines (same flavor as selector):
+  · This module never reads the stored belief state directly — it only receives
+    the projected np.array beliefs from the caller via get_belief.
+  · The entropy function is reused from selector.entropy (log2 version); no
+    self-built natural-log version (DRY, eng-review E3).
+  · Pure functions + tables passed as parameters: catalog/track_map are loaded
+    once by the caller via load_curriculum and passed in; persistence belongs to
+    the wiring layer (engine does zero IO, eng-review E6/F1).
 
-工程决议（eng-review E1-E8 + CEO 复审 F1-F5，见设计文档决策表）。
+Engineering resolutions (eng-review E1-E8 + CEO re-review F1-F5; see the design
+doc's decision table).
 """
 from __future__ import annotations
 
@@ -27,9 +33,9 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 
 from engine import mastery as m
-from engine import selector as sel   # 复用 entropy（E3）
+from engine import selector as sel   # reuse entropy (E3)
 
-# ── 画像正规化表（E1；上游 grade_detail/learning_purpose 是无校验自由文本）──
+# ── Profile normalization tables (E1; upstream grade_detail/learning_purpose are free text without validation) ──
 GRADE_MAP = {
     "高一": "高一", "高一上": "高一", "高一下": "高一",
     "高二": "高二", "高二上": "高二", "高二下": "高二",
@@ -38,31 +44,31 @@ GRADE_MAP = {
 PURPOSE_MAP = {
     "preview": "preview", "review": "review", "exam_prep": "exam_prep",
     "预习新课": "preview", "巩固复习": "review", "考前冲刺": "exam_prep",
-    "薄弱突破": "review",              # 已有测试锁定的自由值 → review
+    "薄弱突破": "review",              # free value already locked in by existing tests → review
 }
 DEFAULT_GRADE = "高二"
 DEFAULT_PURPOSE = "review"
 
-# ── 处方段类型族（v1 代理字段，E2；seg_type 来自视频级 type）──
+# ── Prescription segment-type families (v1 proxy fields, E2; seg_type comes from the video-level type) ──
 CONCEPT_TYPES = {"concept_intro", "concept", "知识点串讲"}
 DRILL_TYPES = {"method", "exercise", "problem", "drill", "题刷刷", "刷题"}
 REVIEW_TYPES = {"review", "advanced", "复习", "拔高"}
 
-# ── 难度档位（chunk difficulty_tier 众数的代理）──
+# ── Difficulty tiers (proxy for the mode of chunk difficulty_tier) ──
 _TIER = {"T1": 1, "T2": 2, "T3": 3, "T4": 4}
 
-# ── 轨道展示名（输出理由用人话，CEO 复审 #4）──
+# ── Track display names (plain-language reasons in output, CEO re-review #4) ──
 TRACK_DISPLAY = {
     "foundation": "基础大合集", "round1": "一轮复习", "sprint": "刷题冲刺",
     "topical": "专项突破", "scene": "场景特供",
 }
 
-EPSILON = 0.05                        # 平局分桶粒度
-TOPK = 3                              # 每节点候选 top-k
+EPSILON = 0.05                        # tie-bucketing granularity
+TOPK = 3                              # top-k candidates per node
 DEFAULT_MODE = "full"
 AUTHORIZED_CODEX_REVIEWER = "codex_sol_20260713"
 
-# 真实 curriculum draft 只列轨道 ID；这些是已审批的 v1 路由参数。
+# The real curriculum draft only lists track IDs; these are the approved v1 routing parameters.
 DEFAULT_TRACK_CONFIG = {
     "foundation": {
         "audience": {
@@ -109,17 +115,17 @@ def _unit_interval(value, label: str) -> float:
     try:
         numeric = float(value)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"{label} 必须为 [0,1] 数值") from exc
+        raise ValueError(f"{label} must be a number in [0,1]") from exc
     if not np.isfinite(numeric) or not 0.0 <= numeric <= 1.0:
-        raise ValueError(f"{label} 必须在 [0,1]")
+        raise ValueError(f"{label} must lie in [0,1]")
     return numeric
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 画像正规化（E1；recommender 入口必经，脏值挡在门口）
+# Profile normalization (E1; every recommender entry passes through it, dirty values are stopped at the door)
 # ══════════════════════════════════════════════════════════════════════
 def normalize_profile(grade, learning_purpose) -> Tuple[str, str, List[str]]:
-    """(年级, 目的) → (g, q, warnings)。未知值安全默认 + warning，绝不 KeyError。"""
+    """(grade, purpose) → (g, q, warnings). Unknown values get a safe default + warning; never raises KeyError."""
     warnings: List[str] = []
     g = GRADE_MAP.get((grade or "").strip())
     if g is None:
@@ -133,31 +139,31 @@ def normalize_profile(grade, learning_purpose) -> Tuple[str, str, List[str]]:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 课程表加载 + 校验（E6 参数传表；断言 10/14）
+# Curriculum loading + validation (E6 tables passed as parameters; assertions 10/14)
 # ══════════════════════════════════════════════════════════════════════
 def load_track_map(raw: Dict) -> Dict:
-    """把 YAML 原始结构（tracks/entities 为列表）正规化为 O(1) 查表 dict，并校验：
-       · 任一轨道缺 audience 块 → ValueError（断言 14）。
-       · 重复/悬空 ID、越界权重、未授权 Codex 签字 → ValueError。
-       · 未完成签字的实体进入 neutral_entities，不参与轨道路由。"""
+    """Normalize the raw YAML structure (tracks/entities as lists) into an O(1) lookup dict, and validate:
+       · Any track missing its audience block → ValueError (assertion 14).
+       · Duplicate/dangling IDs, out-of-range weights, unauthorized Codex signers → ValueError.
+       · Entities with incomplete signatures go into neutral_entities and stay out of track routing."""
     tracks: Dict[str, Dict] = {}
     for track_row in raw.get("tracks", []):
         if isinstance(track_row, str):
             if track_row not in DEFAULT_TRACK_CONFIG:
-                raise ValueError(f"未知 track id: {track_row!r}")
+                raise ValueError(f"unknown track id: {track_row!r}")
             t = {"id": track_row, **copy.deepcopy(DEFAULT_TRACK_CONFIG[track_row])}
         elif isinstance(track_row, dict):
             t = track_row
         else:
-            raise ValueError(f"track 必须是 ID 字符串或完整对象，实际 {type(track_row).__name__}")
+            raise ValueError(f"track must be an ID string or a full object, got {type(track_row).__name__}")
         tid = t["id"]
         if tid in tracks:
-            raise ValueError(f"重复 track id: {tid!r}")
+            raise ValueError(f"duplicate track id: {tid!r}")
         if "audience" not in t or not t["audience"]:
-            raise ValueError(f"track {tid!r} 缺 audience 块，拒绝加载")
+            raise ValueError(f"track {tid!r} is missing its audience block; refusing to load")
         for grade, purposes in t["audience"].items():
             if not isinstance(purposes, dict) or not purposes:
-                raise ValueError(f"track {tid!r} audience[{grade!r}] 非法")
+                raise ValueError(f"track {tid!r} audience[{grade!r}] is invalid")
             for purpose, value in purposes.items():
                 _unit_interval(value, f"track {tid!r} audience[{grade!r}][{purpose!r}]")
         if "efficacy" in t:
@@ -173,13 +179,13 @@ def load_track_map(raw: Dict) -> Dict:
     for e in raw.get("entities", []):
         entity_id = e["entity"]
         if entity_id in seen_entity_ids:
-            raise ValueError(f"重复 entity id: {entity_id!r}")
+            raise ValueError(f"duplicate entity id: {entity_id!r}")
         seen_entity_ids.add(entity_id)
         if e["track"] not in tracks:
-            raise ValueError(f"entity {entity_id!r} 引用不存在的 track {e['track']!r}")
+            raise ValueError(f"entity {entity_id!r} references nonexistent track {e['track']!r}")
         reviewer = str(e.get("reviewer") or "").strip()
         if reviewer.startswith("codex_") and reviewer != AUTHORIZED_CODEX_REVIEWER:
-            raise ValueError(f"entity {entity_id!r} reviewer={reviewer} 未授权")
+            raise ValueError(f"entity {entity_id!r} reviewer={reviewer} is unauthorized")
         if "efficacy" in e:
             _unit_interval(e["efficacy"], f"entity {entity_id!r} efficacy")
         evidence = e.get("evidence")
@@ -203,10 +209,10 @@ def load_track_map(raw: Dict) -> Dict:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 片段 → 轨道解析（E4；断言 19：bv 精确 > season > foundation 回退）
+# Segment → track resolution (E4; assertion 19: exact bv > season > foundation fallback)
 # ══════════════════════════════════════════════════════════════════════
 def resolve_track(segment: Dict, track_map: Dict, warnings: Optional[List[str]] = None) -> str:
-    """解析优先级：bv 精确实体 > season 实体 > foundation 回退（+warning，断言 6）。"""
+    """Resolution priority: exact bv entity > season entity > foundation fallback (+warning, assertion 6)."""
     ents = track_map["entities"]
     bv_key = "bv:" + str(segment.get("bv"))
     if bv_key in ents:
@@ -217,15 +223,15 @@ def resolve_track(segment: Dict, track_map: Dict, warnings: Optional[List[str]] 
         if s_key in ents:
             return ents[s_key]["track"]
     if warnings is not None:
-        warnings.append(f"segment {segment.get('bv')}#{segment.get('p')} 无实体映射 → foundation 回退")
+        warnings.append(f"segment {segment.get('bv')}#{segment.get('p')} has no entity mapping → foundation fallback")
     return "foundation"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 状态判据 + 处方分叉（3A；shallow 二分，E7）
+# State criterion + prescription fork (3A; shallow binary split, E7)
 # ══════════════════════════════════════════════════════════════════════
 def node_state(b_n: np.ndarray, mode: str = DEFAULT_MODE) -> str:
-    """节点状态。full 档：argmax → M/P/C/U。shallow 档：M/非M 二分（E7）。"""
+    """Node state. full tier: argmax → M/P/C/U. shallow tier: M/non-M binary split (E7)."""
     idx = int(np.argmax(np.asarray(b_n, dtype=float)))
     if mode == "shallow":
         return "M" if idx == m.M else "nonM"
@@ -233,8 +239,8 @@ def node_state(b_n: np.ndarray, mode: str = DEFAULT_MODE) -> str:
 
 
 def prescription(state: str, mode: str = DEFAULT_MODE) -> Dict:
-    """病因 → 需要的段类型/难度/来源节点（设计文档第一步）。
-       shallow 非M 强制 foundation 概念段（保守安全默认，不触发 unlock，E7）。"""
+    """Cause → needed segment type / difficulty / source node (design doc step 1).
+       shallow non-M forces foundation concept segments (conservative safe default, no unlock triggered, E7)."""
     if mode == "shallow":
         if state == "M":
             return {"source": "self", "type_pref": REVIEW_TYPES, "diff": "any", "force_track": None}
@@ -248,7 +254,7 @@ def prescription(state: str, mode: str = DEFAULT_MODE) -> Dict:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# W_track（三步定序：基础权重 → unlock 抬升 → gate 压制）
+# W_track (three ordered steps: base weight → unlock boost → gate suppression)
 # ══════════════════════════════════════════════════════════════════════
 def _base_weight(track_id: str, g: str, q: str, track_map: Dict) -> float:
     aud = track_map["tracks"][track_id]["audience"]
@@ -256,15 +262,15 @@ def _base_weight(track_id: str, g: str, q: str, track_map: Dict) -> float:
 
 
 def gate_blocked(track_id: str, pm_proj: float, track_map: Dict) -> bool:
-    """掌握门是否压制该轨道（投影态 P(M) < 门槛）。兜底硬排除据此判断（断言 11）。"""
+    """Whether the mastery gate suppresses this track (projected P(M) < threshold). The fallback hard exclusion relies on this (assertion 11)."""
     gate = track_map["tracks"][track_id].get("mastery_gate")
     return gate is not None and pm_proj < gate
 
 
 def w_track(track_id: str, g: str, q: str, state: str, pm_proj: float,
             track_map: Dict, mode: str) -> Tuple[float, bool]:
-    """返回 (最终权重, 是否跨轨)。三步：基础 → unlock（仅 full）→ gate。
-       跨轨 = full 档 unlock 把基础权重<1.0 的轨道抬到 1.0（断言 1/4/8/12）。"""
+    """Returns (final weight, whether the track was crossed). Three steps: base → unlock (full only) → gate.
+       Cross-track = a full-tier unlock lifts a track whose base weight <1.0 up to 1.0 (assertions 1/4/8/12)."""
     track = track_map["tracks"][track_id]
     base = _base_weight(track_id, g, q, track_map)
     w = base
@@ -272,15 +278,15 @@ def w_track(track_id: str, g: str, q: str, state: str, pm_proj: float,
     if mode != "shallow" and state in track["diagnostic_unlock"]:
         if base < 1.0:
             crossed = True
-        w = max(w, 1.0)                        # unlock 抬升
+        w = max(w, 1.0)                        # unlock boost
     gate = track.get("mastery_gate")
     if gate is not None and pm_proj < gate:
-        w = min(w, 0.2)                        # gate 终裁（断言 12：先 unlock 后 gate）
+        w = min(w, 0.2)                        # gate final verdict (assertion 12: unlock first, gate after)
     return w, crossed
 
 
 # ══════════════════════════════════════════════════════════════════════
-# Match（v1 代理字段）+ Efficacy（v1 占位）
+# Match (v1 proxy fields) + Efficacy (v1 placeholder)
 # ══════════════════════════════════════════════════════════════════════
 def _difficulty_tier(d) -> int:
     if isinstance(d, (int, float)):
@@ -293,7 +299,7 @@ def _difficulty_tier(d) -> int:
 
 
 def _type_fit(seg_type: str, type_pref) -> float:
-    """精确匹配 1.0；同族 0.6；跨族(概念↔刷题) 0.3。"""
+    """Exact match 1.0; same family 0.6; cross-family (concept ↔ drill) 0.3."""
     if seg_type in type_pref:
         return 1.0
     seg_concept = seg_type in CONCEPT_TYPES
@@ -301,8 +307,8 @@ def _type_fit(seg_type: str, type_pref) -> float:
     seg_drill = seg_type in DRILL_TYPES
     want_drill = any(t in DRILL_TYPES for t in type_pref)
     if (seg_concept and want_drill) or (seg_drill and want_concept):
-        return 0.3                            # 跨族错配
-    return 0.6                                # 中性/同族
+        return 0.3                            # cross-family mismatch
+    return 0.6                                # neutral / same family
 
 
 def _diff_fit(tier: int, pref: str) -> float:
@@ -316,7 +322,7 @@ def _diff_fit(tier: int, pref: str) -> float:
 
 
 def match(segment: Dict, rx: Dict) -> float:
-    """topic_match_ratio × 类型匹配 × 难度匹配 ∈ [0,1]（断言 20 方向性）。"""
+    """topic_match_ratio × type match × difficulty match ∈ [0,1] (assertion 20 directionality)."""
     tmr = float(segment.get("topic_match_ratio", segment.get("checks", {}).get("topic_match_ratio", 0.0)))
     tf = _type_fit(segment.get("seg_type", ""), rx["type_pref"])
     df = _diff_fit(_difficulty_tier(segment.get("difficulty", "T2")), rx["diff"])
@@ -324,7 +330,7 @@ def match(segment: Dict, rx: Dict) -> float:
 
 
 def efficacy(segment: Dict, rx: Dict, table: Optional[Dict] = None) -> float:
-    """v1 恒 1.0 占位（E2/断言 9）。传入 table 时按 (bv,p) 取后验均值（断言 15，公式形状先行）。"""
+    """v1 constant-1.0 placeholder (E2/assertion 9). With a table passed in, look up the posterior mean by (bv,p) (assertion 15, formula shape first)."""
     if table is None:
         return 1.0
     value = table.get((segment.get("bv"), segment.get("p")), 1.0)
@@ -332,7 +338,7 @@ def efficacy(segment: Dict, rx: Dict, table: Optional[Dict] = None) -> float:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 单段评分
+# Single-segment scoring
 # ══════════════════════════════════════════════════════════════════════
 def _score_one(segment: Dict, g: str, q: str, b_n: np.ndarray, state: str,
                track_map: Dict, mode: str, rx: Dict,
@@ -341,7 +347,7 @@ def _score_one(segment: Dict, g: str, q: str, b_n: np.ndarray, state: str,
     tid = resolve_track(segment, track_map, warns)
     pm_proj = float(np.asarray(b_n, dtype=float)[m.M])
     w, crossed = w_track(tid, g, q, state, pm_proj, track_map, mode)
-    # shallow force_track：非 foundation 段直接压零（E7，非 unlock 路径）
+    # shallow force_track: non-foundation segments are zeroed directly (E7, not an unlock path)
     if rx.get("force_track") and tid != rx["force_track"]:
         w = 0.0
         crossed = False
@@ -353,10 +359,10 @@ def _score_one(segment: Dict, g: str, q: str, b_n: np.ndarray, state: str,
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 平局排序键（哨兵值容错，F/断言 5/21）
+# Tie-break sort key (sentinel values for fault tolerance, F/assertions 5/21)
 # ══════════════════════════════════════════════════════════════════════
 def _pubdate_ts(segment: Dict) -> int:
-    """'2023-09-01' → 20230901；缺失 → 0（最旧，新版优先的反向安全面）。"""
+    """'2023-09-01' → 20230901; missing → 0 (oldest, the reverse-safe face of newer-first)."""
     p = segment.get("pubdate")
     if not p:
         return 0
@@ -367,7 +373,7 @@ def _pubdate_ts(segment: Dict) -> int:
 
 
 def _sort_key(entry: Tuple[Dict, float, Dict]):
-    """(−Score_bucket, −pubdate, −view, season_order)。null 字段用哨兵，排序永不抛异常。"""
+    """(−Score_bucket, −pubdate, −view, season_order). Sentinel values for null fields, so sorting never raises."""
     seg, score, _ = entry
     bucket = round(score / EPSILON)
     view = seg.get("view") or 0
@@ -377,33 +383,34 @@ def _sort_key(entry: Tuple[Dict, float, Dict]):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 全零兜底（降级阶梯，断言 11）
+# All-zero fallback (degradation ladder, assertion 11)
 # ══════════════════════════════════════════════════════════════════════
 def _fallback(scored: List[Tuple[Dict, float, Dict]], track_map: Dict,
               b_n: np.ndarray, warnings: List[str], node: str
               ) -> List[Tuple[Dict, float, Dict]]:
-    """某节点全员 Score=0：只重纳「audience 归零、非 gate 压制」的轨道，按 Match 重排。
-       gate 压制的轨道依然排除（掌握不足的后门不开）。"""
+    """A node where every segment scores 0: readmit only tracks whose audience
+       score is zero without being gate-suppressed, re-ranked by Match.
+       Gate-suppressed tracks stay excluded (no back door for insufficient mastery)."""
     pm_proj = float(np.asarray(b_n, dtype=float)[m.M])
     readmit = []
     for seg, sc, comp in scored:
         if comp["gate_blocked"]:
-            continue                          # 硬排除，不豁免
-        # 升轨：忽略 W_track，按 Match 重排；标记跨轨以便理由说明
+            continue                          # hard exclusion, no exemption
+        # Upgrade: ignore W_track and re-rank by Match; mark crossed so the reason can explain it
         comp2 = dict(comp)
         comp2["crossed"] = True
         comp2["upgraded"] = True
         readmit.append((seg, comp["match"], comp2))
     if readmit:
-        warnings.append(f"节点 {node} 全零兜底：{len(readmit)} 段升轨（缺基础轨讲解）")
+        warnings.append(f"node {node} all-zero fallback: {len(readmit)} segments upgraded (missing foundational-track coverage)")
     return readmit
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 理由构建（表达层，模板拼装；跨轨强制含轨道名，断言 8/22）
+# Reason construction (expression layer, template assembly; cross-track reasons must name the track, assertions 8/22)
 # ══════════════════════════════════════════════════════════════════════
 def _part_title(segment: Dict) -> str:
-    """part_title 正常返回；序号/重复退化 → 回退 video_title（断言 22）。"""
+    """Return part_title normally; on ordinal/duplicate degradation → fall back to video_title (assertion 22)."""
     pt = segment.get("part_title")
     deg = segment.get("part_degrade_state")
     if not pt or deg in ("ordinal_degraded", "duplicate_degraded"):
@@ -428,16 +435,16 @@ def _build_reason(segment: Dict, comp: Dict, budget_left_min: int) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# 主入口：recommend（五段串联 + 多节点汇合 + rec_served 快照）
+# Main entry: recommend (five-stage chain + multi-node merge + rec_served snapshot)
 # ══════════════════════════════════════════════════════════════════════
 def _optional_business_id(value, label: str) -> Optional[str]:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"{label} 必须是非空字符串")
+        raise ValueError(f"{label} must be a non-empty string")
     normalized = value.strip()
     if not normalized:
-        raise ValueError(f"{label} 必须是非空字符串")
+        raise ValueError(f"{label} must be a non-empty string")
     return normalized
 
 
@@ -449,13 +456,15 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
               rec_id_factory=lambda: uuid.uuid4().hex,
               session_id: Optional[str] = None,
               action_id: Optional[str] = None) -> Dict:
-    """返回 {recommendations, rec_served, warnings, status}。
-       beliefs_proj：调用方已用 get_belief 投影的 {node: np.array}（红线：本模块不碰 .b）。
-       budget：planner.session_budget(tier)。seen_segments：已推 (bv,p) 集合（防重复，断言 27）。"""
+    """Returns {recommendations, rec_served, warnings, status}.
+       beliefs_proj: {node: np.array} already projected by the caller via get_belief
+       (red line: this module never touches the stored belief directly).
+       budget: planner.session_budget(tier). seen_segments: the set of already-pushed
+       (bv,p) pairs (dedup, assertion 27)."""
     normalized_session_id = _optional_business_id(session_id, "session_id")
     normalized_action_id = _optional_business_id(action_id, "action_id")
     if (normalized_session_id is None) != (normalized_action_id is None):
-        raise ValueError("session_id 与 action_id 必须成对提供")
+        raise ValueError("session_id and action_id must be provided as a pair")
     if normalized_session_id is not None:
         business_payload = json.dumps(
             [normalized_session_id, normalized_action_id],
@@ -481,20 +490,20 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
             if segment_id is None:
                 continue
             if segment_id in segment_ids:
-                raise ValueError(f"重复 segment_id: {segment_id!r}")
+                raise ValueError(f"duplicate segment_id: {segment_id!r}")
             segment_ids.add(segment_id)
 
-    # 1. 每节点评分 + 熵
+    # 1. Per-node scoring + entropy
     node_pools: Dict[str, List[Tuple[Dict, float, Dict]]] = {}
     node_entropy: Dict[str, float] = {}
     for node in target_nodes:
         try:
             b = np.asarray(beliefs_proj[node], dtype=float)
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"节点 {node!r} belief 无效") from exc
+            raise ValueError(f"node {node!r} has an invalid belief") from exc
         if (b.shape != (4,) or not np.all(np.isfinite(b)) or np.any(b < 0)
                 or not np.isclose(b.sum(), 1.0, rtol=0.0, atol=1e-6)):
-            raise ValueError(f"节点 {node!r} belief 必须是四维概率分布")
+            raise ValueError(f"node {node!r} belief must be a 4-dimensional probability distribution")
         node_entropy[node] = sel.entropy(b)
         state = node_state(b, mode)
         rx = prescription(state, mode)
@@ -506,17 +515,17 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
             comp = _score_one(s, g, q, b, state, track_map, mode, rx, efficacy_table)
             warnings.extend(comp.pop("warns"))
             scored.append((s, comp["score"], comp))
-        # 全零兜底
+        # All-zero fallback
         if scored and all(sc <= 0 for _, sc, _ in scored):
             scored = _fallback(scored, track_map, b, warnings, node)
         scored.sort(key=_sort_key)
         node_pools[node] = scored[:TOPK]
 
-    # 2. 多节点汇合：段名额按熵降序分配，每节点≥1（断言 13）
+    # 2. Multi-node merge: segment slots are allocated in descending entropy order, ≥1 per node (assertion 13)
     order = sorted(target_nodes, key=lambda n: (-node_entropy[n], n))
     counts = {n: 0 for n in order}
     slots = rx_segments
-    for n in order:                            # 第一轮：熵序每节点 1 段
+    for n in order:                            # round one: 1 segment per node in entropy order
         if slots <= 0:
             break
         if node_pools[n]:
@@ -524,7 +533,7 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
             slots -= 1
     i = 0
     while slots > 0 and any(counts[n] < len(node_pools[n]) for n in order):
-        n = order[i % len(order)]              # 富余给熵最高者（2h/3h+ 档）
+        n = order[i % len(order)]              # surplus goes to the highest-entropy nodes (2h/3h+ tiers)
         if counts[n] < len(node_pools[n]):
             counts[n] += 1
             slots -= 1
@@ -532,7 +541,7 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
         if i > 4096:
             break
 
-    # 3. 全局排序（熵降序 → 节点内 Score 降序）+ 预算硬约束
+    # 3. Global sort (descending entropy → descending Score within node) + hard budget constraint
     picks: List[Tuple[str, Dict, float, Dict]] = []
     for n in order:
         for seg, sc, comp in node_pools[n][:counts[n]]:
@@ -556,7 +565,7 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
         if segment_key in served_ids:
             continue
         if used_sec + dur > budget_sec:
-            continue                           # 超预算截断（宁缺勿滥，断言 7）
+            continue                           # over-budget cutoff (better to omit than to serve junk, assertion 7)
         used_sec += dur
         left_min = max(0, (reason_budget_sec - used_sec) // 60)
         rid = rec_id_factory()
@@ -577,7 +586,7 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
             "crossed_track": comp["crossed"],
         })
 
-    # 4. 未服务 top-k 快照（护城河原料，断言 25）
+    # 4. Unserved top-k snapshot (moat material, assertion 25)
     unserved = []
     for n in order:
         for seg, sc, comp in node_pools[n]:
@@ -609,26 +618,28 @@ def recommend(grade, learning_purpose, target_nodes: Sequence[str],
 
 
 # ══════════════════════════════════════════════════════════════════════
-# rec_served 落盘（接线层用；fail-open + 内存重试队列，F2/F5/断言 26）
+# rec_served persistence (used by the wiring layer; fail-open + in-memory retry queue, F2/F5/assertion 26)
 # ══════════════════════════════════════════════════════════════════════
 def append_rec_served(snapshot: Dict, writer, retry_queue: List, *,
                       queue_alert_threshold: int = 10,
                       max_queue_size: int = 100) -> Dict:
-    """接线层调用。writer(record) 可能抛异常（磁盘满/权限）。
-       fail-open：写失败不阻断推荐服务；瞬时故障进内存重试队列，先 flush 积压再写本条；
-       持久故障丢数据但返回 error 可见（零静默失败）。返回 {ok, flushed, queued, error}。"""
+    """Called by the wiring layer. writer(record) may raise (disk full / permissions).
+       fail-open: a write failure must not block recommendation serving; transient
+       failures go into the in-memory retry queue, flushing the backlog before
+       writing this record; persistent failures drop data but return a visible
+       error (zero silent failures). Returns {ok, flushed, queued, error}."""
     result = {"ok": False, "flushed": 0, "queued": len(retry_queue),
               "dropped": 0, "error": None}
-    # 先尝试 flush 积压（瞬时故障恢复后不丢）
+    # Try flushing the backlog first (nothing lost after transient failures recover)
     still_queued = []
     for rec in retry_queue:
         try:
             writer(rec)
             result["flushed"] += 1
-        except Exception:                      # noqa: BLE001 — fail-open 边界，下游可见
+        except Exception:                      # noqa: BLE001 — fail-open boundary, visible downstream
             still_queued.append(rec)
     retry_queue[:] = still_queued
-    # 写本条
+    # Write this record
     try:
         writer(snapshot)
         result["ok"] = True
@@ -640,7 +651,7 @@ def append_rec_served(snapshot: Dict, writer, retry_queue: List, *,
         if overflow:
             del retry_queue[:overflow]
             result["dropped"] = overflow
-        result["error"] = f"{type(e).__name__}: {e}"   # 响亮报错，非静默吞
+        result["error"] = f"{type(e).__name__}: {e}"   # loud error, not silently swallowed
     result["queued"] = len(retry_queue)
     if result["queued"] > queue_alert_threshold:
         result["error"] = (result["error"] or "") + f" | 重试队列积压 {result['queued']} 条 [ERROR]"

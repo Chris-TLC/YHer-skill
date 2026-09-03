@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small}
+
+\title{\textbf{YHer: An Evidence-Bound Diagnostic Learning System for High-School Chemistry}\\
+\large An Engineering Evidence Report}
+\author{\textbf{Licheng Tu}\thanks{Independent researcher.}}
+\date{September 2026}
+
+\setlength{\emergencystretch}{3em}
+\begin{document}
+\makeatletter\@ifundefined{sec@limitations}{}{}\makeatother
+\maketitle
+
+\begin{abstract}
+\noindent
+We present YHer, a single-node diagnostic learning loop for Shanghai high-school chemistry built on one design constraint: every conclusion a student sees must be traceable to evidence that cannot be invented. Standard solutions are projected only from records that passed answer verification against official examination keys; the item bank is recovered from original examination Word documents rather than generated; resource recommendations carry signed provenance; and the browser never receives answers, rubrics, or item identities before a response is locked in. We report the engineering evidence for each of these claims. A data pipeline converts 6,083 raw sliced items from public Shanghai chemistry examinations into 3,329 structured items (block schema, formulas and figures preserved), from which a ten-batch usability audit selects 2,526 into a whitelist and 1,202 into service (47.6\%). Five blind rounds of AI question generation measure whether generated questions are distinguishable from real items: 87\% under adversarial comparison from scratch, 65\% overall for style transfer (60\% under fair conditions)---yielding a generation boundary that the product honors today. A three-round architecture audit (six literature lanes, three red-team passes, one independent verification round) returns 4 keep / 10 modify / 5 replace / 2 downgrade verdicts across twenty-one engine components, with the hardest finding that all hand-set constants in the engine lacked calibration evidence. \textbf{The manuscript is an engineering-evidence report. All conclusions are simulation-derived, audit-derived, or engineer-derived; there is no real-student validation. No claim herein rests on learner data.}
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+\subsection{A concrete failure}
+A student completes a five-item diagnostic session, all of them on the molarity of solutions. The system reports ``unstable reasoning''. The student asks: \emph{which answer led you there?} In most AI tutoring products in 2026, this question cannot be answered---not because the diagnosis is wrong, but because the diagnosis is not \emph{built} on a per-item trace. The language model produced a statement; the statement is not linked, by construction, to any particular response, to any particular standard answer, or to any particular source document.
+
+In the Chinese gaokao system, the most valuable educational asset is not content: it is judgment. A student's question is rarely ``what is the answer to item 12?'' but ``why do I keep failing at this exact kind of step, and what do I do in the next ten minutes?'' A good teacher produces that judgment, and can always answer the follow-up question---with an answer book, a worked example, and a record of what the student actually submitted.
+
+\subsection{The design constraint}
+Our central design constraint is therefore not ``make the model smarter''. It is: \emph{make every answer a student sees traceable to something that cannot be invented}. We call this \textbf{evidence-binding}. Concretely, the design freezes:
+
+\begin{itemize}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}\setlength{\parsep}{0pt}
+\item \textbf{Standard solutions} are projected only from records with \texttt{answer\_verification=passed}, whose provenance is an official answer key (Section~\ref{sec:data-pipeline}).
+\item \textbf{The item bank} is derived from original examination Word documents via a deterministic extraction pipeline---not model-generated (Section~\ref{sec:data-pipeline}).
+\item \textbf{Recommendations} carry a signed evidence trail (\path{track_map_v1.yaml} + \path{curriculum_runtime_v1.json}); unverified resources stay neutral (Section~\ref{sec:system}).
+\item \textbf{The browser fails closed}: answers, rubrics, and item IDs are never delivered before the response is locked in (Section~\ref{sec:system}).
+\end{itemize}
+
+This is not a privacy filter layered on a model; it is a \emph{scoping decision}. The generative layer does limited selection and language organization. It cannot create new chemistry facts.
+
+\subsection{Contributions}
+We report the following, each quantified and each falsifiable:
+\begin{enumerate}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}\setlength{\parsep}{0pt}
+\item \textbf{An end-to-end system} with a frozen three-family design (diagnostic / practice / held-out), four-state belief model, expected-information-gain item selection, signed recommendation, and replayable profile (Section~\ref{sec:system}).
+\item \textbf{A data-pipeline methodology} that converts 6,083 raw slices from Shanghai chemistry examinations into 1,202 serviceable items---a 19.8\% end-to-end yield---with a ten-batch usability audit whose acceptance line is ``a student can use it'', not ``it renders'' (Section~\ref{sec:data-pipeline}).
+\item \textbf{A measured generation boundary}: five blind rounds (total cost \textyen13.87) establish that from-scratch AI generation is distinguishable from real items at 87\% under adversarial pairwise comparison and is therefore confined to low-stakes practice slots; style transfer reaches 65\% distinguishability / 60\% fair-conditions and is alive (Section~\ref{sec:exp1}).
+\item \textbf{An audit protocol} whose evolution itself is evidence: three rounds of component-wise adjudication, independent re-review, six literature lanes, and three red-team passes returning 4 keep / 10 modify / 5 replace / 2 downgrade across 21 engine components (Section~\ref{sec:exp2})---and an explicit statement of what is \emph{not} validated (Section~\ref{sec:limitations}).
+\end{enumerate}
+
+\subsection{Scope and honesty}
+We chose the Engineering Evidence genre deliberately. The product has \emph{no real-student validation} as of this manuscript. Every number in this paper is either a measured property of code, of files, or of a documented audit; where a number comes from simulation or from an audit, we say so in the same sentence. We have not run a randomized controlled trial or a pilot with students; Section~\ref{sec:limitations} enumerates what that absence means for every claim.
+
+\section{Background and Motivation}
+\label{sec:background}
+
+The Shanghai high-school chemistry examination is a high-stakes, single-subject, closed-form assessment. It has a distinctive public-data property: original papers, with answer keys, are public documents, and 155 distinct papers (\texttt{group\_key}s) are recoverable as Word or PDF sources. This makes a per-item evidence trail \emph{architecturally possible} in chemistry in a way that it is not for, say, essay-based subjects.
+
+The dominant AI-tutoring paradigm in 2026 is generation-first: a language model produces an answer, a hint, a diagnosis, or a recommendation directly from its weights and context. This has demonstrated competence on textbook tasks (e.g., math word problems, code, exams) and is increasingly studied in education settings, including knowledge tracing from tutor-student dialogues \cite{llmkt2025}, and tutoring-system intelligence augmented by LLMs \cite{tutorLLM2024}. However, the paradigm has a structural property that matters for high-stakes diagnosis: \emph{its statements are not bound to evidence by construction}. Even when the model is right, it cannot answer the follow-up question.
+
+Evidence-binding is the alternative: make the trace the first-class artifact. This has engineering consequences. Data quality stops being a preprocessing detail and becomes the product's core asset; auditability stops being a compliance feature and becomes a design requirement. The remainder of this paper reports what those consequences cost, and what they bought.
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig1_system_flow.pdf}
+\caption{Session flow. All six stages read from the same evidence ledger; no stage can invent a fact.}
+\label{fig:flow}
+\end{figure}
+\section{System Design}
+\label{sec:system}
+
+Figure~\ref{fig:flow} shows the session flow. The system is a single-node Python service. This section reports the design that the audits in Section~\ref{sec:exp2} evaluated; it is an \emph{audited design}, and where verdicts have already been implemented we say so.
+
+\subsection{Session flow}
+\begin{enumerate}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}\setlength{\parsep}{0pt}
+\item \textbf{Freeze} three disjoint item families (diagnostic / practice / held-out) from the R5 pool.
+\item \textbf{Server-side scoring}: no answer leakage before submission (fail-closed; the browser never receives answers, rubrics, or item IDs pre-response).
+\item \textbf{Adaptive selection} under a four-state belief \{M mastered / P prerequisite-missing / C unstable-reasoning / U unmastered\} with expected information gain (EIG) selection and prerequisite descent when beliefs compete.
+\item \textbf{Learning checkpoint} with explanations anchored to verified standard solutions.
+\item \textbf{Signed resource recommendation} with propensity snapshots and seen-segment tracking.
+\item \textbf{Held-out verification} on two unseen families $\rightarrow$ session report, FSRS stability, 7-day review hint.
+\end{enumerate}
+
+\subsection{Engine components}
+Five modules implement the loop (\texttt{engine/}):
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}p{2.6cm}p{4.4cm}p{6.2cm}@{}}
+\toprule
+\textbf{Module} & \textbf{Role} & \textbf{Key properties} \\
+\midrule
+\texttt{mastery.py} & four-state belief + evidence update + FSRS decay projection & single read entry \texttt{get\_belief}; decay only reallocates M$\rightarrow$C; FSRS damping tested \\
+\texttt{selector.py} & EIG item choice, prerequisite competition, stopping rule, seen-exclusion & exact enumeration, no approximation; stop: P(top1)$\ge$0.80 with min direct answers 4 \\
+\texttt{planner.py} & 30/60/120/180-min budget tables & honest exhaustion \\
+\texttt{recommender.py} & signed tracks: W$_{track}\times$Match$\times$Efficacy scoring, budget, seen-segments & pure function; no engine IO; propensity snapshots \\
+\texttt{memory.py} & high-value events; restricted recall & expression-only injection; never into the diagnostic judgment path \\
+\bottomrule
+\end{tabular}
+\caption{The five audited engine modules.}
+\label{tab:modules}
+\end{table}
+
+The recommender is deliberately \emph{downstream} of diagnosis, not an independent claim: its value is a reranked vector search whose quality is bounded by the diagnostic state that feeds it. The memory layer may recall high-value events in natural language, but cannot inject into belief updates---an architectural isolation that the audit (Section~\ref{sec:exp2}) explicitly tested and kept.
+
+\subsection{What the audits evaluated}
+Twenty-one components were enumerated across inference, selection, planning, recommendation, memory, data, and verification (Section~\ref{sec:exp2}); each was adjudicated individually. Three audit-verdict fixes are already implemented and tested in the current tree (FSRS-4.5 damped stability with $S_{\max}=500$~d, replaced gap-based stopping rule, event provenance field), each with regression tests in \texttt{tests/}. The remaining modify/replace verdicts are documented as fixes but \emph{not yet applied} at manuscript time: the engine is an audited design, not an audited implementation, and we say so in Section~\ref{sec:limitations}.
+
+\input{sections_data_pipeline}
+\input{sections_exp1}
+\input{sections_exp2}
+\input{sections_governance}
+\input{sections_limitations_repro}
+\input{sections_related_work}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\input{sections_conclusion_back}
+
+\end{document}

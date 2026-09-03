@@ -1,40 +1,40 @@
-# 本次发布范围之外的改进清单(诚实存档)
+# Improvements known but deliberately outside this release
 
-> 2026-09-02 发布快照。本清单列出**已知、有审计依据、但未包含在本次发布**的改进项(因为要么需要真人数据、要么需要用户拍板、要么触碰"不做创新"边界)。每项都注明状态与触发条件,供未来重启时直接使用。
+> Snapshot: 2026-09-02. This list records improvements with audit evidence that were intentionally left out of this release (because they need real student data, a user decision, or cross a "no novelty" boundary). Each item carries its status and trigger condition, so a future restart can pick it up directly.
 
-## 1. 架构审计 21 组件中"未实施"的整改(2026-08-13 终裁)
+## 1. "Not implemented" remediation items from the 21-component architecture audit (final verdict 2026-08-13)
 
-> 终裁文件:`MASTER_AUDIT_REPORT_2026-08-13.md`。除三项随本次发布落地外(见 §3),其余如下:
+> Final verdict file: `MASTER_AUDIT_REPORT_2026-08-13.md`. Except for the three items that shipped with this release (see §3):
 
-| 组件 | 审计建议 | 状态 | 落地触发 |
+| Component | Audit recommendation | Status | Trigger |
 |---|---|---|---|
-| 四状态→二元 mastery + 前置先验 + 错误码路由 | 改造(推断层) | **未实施** | 需要真人数据校准;UI 四标签可保留 |
-| EIG→带阈值校准(随机≈EIG 已解释) | 保留 | 未实施 | 题库参数就绪后 |
-| 预算 1.5×→lognormal RT 换算 | 保留(兜底) | 未实施 | 需要响应时间数据 |
-| FSRS 复核常数→4.5 阻尼 | 替换 | ✅ **已实施(2026-09-02)** | — |
-| M→C 投影→二元化后"只影响 due" | 保留方向 | 未实施 | 随二元化一起来 |
-| efficacy≡1.0→Beta-Binomial 收缩 | 替换 | 未实施 | 需要观看→再测真实数据 |
-| held_out 2→3/6 早停协议 | 改造 | 未实施 | 真人数据(或下一轮仿真) |
-| retained(d=7) 不作门 | 改造 | 未实施 | 随机 |
-| 事件溯源 source 字段 | 改造 | ✅ **已实施(2026-09-02)** | — |
-| SymPy L0–L4 分层判分 | 替换 | 未实施 | 数学线重启时 |
-| 数学 v0′ 蓝图(固定 6 题+二元+Beta) | 替换 | 未实施(蓝图) | 数学 MVP 启动 |
+| Four-state → binary mastery + prerequisite prior + error-code routing | Modify (inference layer) | **not implemented** | Needs real-student calibration; the four UI labels can stay |
+| EIG → threshold-calibrated (random ≈ EIG already explained) | Keep | not implemented | Once item-bank parameters are ready |
+| Budget 1.5× → lognormal RT conversion | Keep (fallback) | not implemented | Needs response-time data |
+| FSRS revisited constants → 4.5 damping | Replace | ✅ **implemented (2026-09-02)** | — |
+| M→C projection → after binarization "affects due only" | Keep direction | not implemented | Ships with binarization |
+| efficacy≡1.0 → Beta-Binomial shrinkage | Replace | not implemented | Needs real watch → retest data |
+| held_out 2 → 3/6 early-stop protocol | Modify | not implemented | Real-student data (or a next simulation round) |
+| retained(d=7) as a gate | Modify | not implemented | Random |
+| Event-provenance source field | Modify | ✅ **implemented (2026-09-02)** | — |
+| SymPy L0–L4 tiered grading | Replace | not implemented | When the math line restarts |
+| Math v0′ blueprint (fixed 6 items + binary + Beta) | Replace | not implemented (blueprint) | Math MVP start |
 
-## 2. 已知但决定暂不处理的技术债(摘自 docs/待完善事项)
+## 2. Known technical debt deliberately not addressed (from docs/待完善事项)
 
-- AI 诊断题库 18 个多步推理硬节点产不出题(119/137 定格;3 个硬空洞:溶液三大守恒/工艺流程/实验综合大题);
-- 方案 A/B/C 见原文(人工金标入 gold_bank/放宽阈值/真题直抽);
-- 图形依赖节点(晶胞/装置图/曲线)无 AI 生成题,依赖真题资源。
+- 18 multi-step-reasoning hard nodes in the AI diagnostic bank cannot produce items (frozen at 119/137; three true holes: solution conservation laws / process flows / integrated experiment questions);
+- options A/B/C in the original (manual gold into `gold_bank` / relaxed threshold / direct extraction from real items);
+- figure-dependent nodes (crystal cells, apparatus, curves) have no AI-generated items and rely on authentic exam resources.
 
-## 3. 本次已落地的三项(带测试,可在 git log 查看)
+## 3. The three items that shipped with this release (tested; see git log)
 
-1. `engine/mastery.py`:FSRS-4.5 阻尼公式替换手设常数(修 4608→73 天型膨胀;附防爆炸回归测试);
-2. `engine/selector.py`:停止判据 gap>0.45 → P(top1)≥0.80 且 min_length 4;
-3. `engine/event_log.py`:事件溯源字段(source∈{real,qa,synthetic} + schema_version=2)。
+1. `engine/mastery.py`: FSRS-4.5 damped formula replaces hand-set constants (fixes the 4608→73-day explosion; regression tests included);
+2. `engine/selector.py`: stopping criterion gap>0.45 → P(top1)≥0.80 with min_length 4;
+3. `engine/event_log.py`: event-provenance field (source∈{real,qa,synthetic} + schema_version=2).
 
-## 4. 需要真人数据才可改进的(无数据=不可验证)
+## 4. Improvements gated on real student data (no data = not verifiable)
 
-- 判分器校准(LLM 判分 35–65% QWK 证据不足);
-- 视频疗效表(需要真实观看→再测);
-- 前置图(prerequisite graph)参数;
-- 画像时间轴(需要真实多 session)。
+- Grader calibration (LLM grading 35–65% QWK, insufficient evidence);
+- Video efficacy table (needs real watch → retest);
+- Prerequisite-graph parameters;
+- Profile timeline (needs real multi-session data).

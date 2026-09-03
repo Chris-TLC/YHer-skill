@@ -1,0 +1,69 @@
+\section{Conclusion}
+
+We built a diagnostic learning loop whose central property is evidence-binding: every conclusion traceable, every answer sourced, every recommendation signed. We measured the cost of that property in the data pipeline (6,083 raw slices $\rightarrow$ 1,202 serviceable items, 19.8\%), in the generation boundary (from-scratch generation dead at 87\% distinguishability; style transfer alive at 65\%), and in the engine's own audit (4 keep / 10 modify / 5 replace / 2 downgrade across 21 components, with the hardest numbers quantified). We did not---and cannot, from the evidence in hand---claim any effect on student outcomes.
+
+The next step is the one step this report deliberately does not take: a pre-registered pilot with real learners, which this manuscript treats as the plan it is designed to serve.
+
+\section*{Author Contribution and AI-Authoring Statement}
+
+\textbf{Author contributions.} The author of this manuscript designed and directed the engineering effort (including the reversibility governance flip), made all product decisions, and conducted the end-to-end curation and acceptance review. Assistant systems contributed design proposals, implementation, and audits under an explicit signed-review protocol (reviewer=claude or codex, with dates and evidence).
+
+\textbf{AI usage disclosure.} Claude and Codex assisted with implementation, audit execution, and manuscript drafting. Factual claims, data points, and citations in this manuscript were checked against the repository and audit records, with a dedicated independent verification pass; that pass found and corrected two quantitative statements and seven bibliographic entries, and its report accompanies this manuscript.
+
+\section*{Acknowledgements}
+The author thanks the system-design and audit assistant systems for the proposal and verification labor that made the engineering evidence possible. The item bank originates from publicly released Shanghai chemistry examinations; the remainder of this report stands on the audit records in \texttt{docs/audit-history/}.
+
+\appendix
+\section{Reproduction Commands}
+\label{app:commands}
+
+All commands below were run at the repository state reported here (public tree, main branch). The item-bank rebuild, test suite, and demo boot do not require any paid API: the deterministic path uses \texttt{YHER\_ENABLE\_PAID\_LLM=0}.
+
+\begin{enumerate}\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}\setlength{\parsep}{0pt}
+\item \textbf{Clone and install.}
+\small
+\begin{verbatim}
+git clone https://github.com/Chris-TLC/YHer-skill.git
+cd YHer-skill
+python3 -m venv .venv-pub
+.venv-pub/bin/pip install -r requirements-dev.txt
+YHER_ENABLE_PAID_LLM=0 ./deploy/run_demo.sh   # self-bootstraps .venv-demo, port 8700
+\end{verbatim}
+\item \textbf{Health check.}
+\small
+\small
+\begin{verbatim}
+curl -fsS http://127.0.0.1:8700/health | python3 -m json.tool
+\end{verbatim}
+\item \textbf{Re-derive the audit-critical counts} (item IDs, R5 ledger, media map):
+\small
+\small
+\begin{verbatim}
+wc -l data/item_bank/v4/chemistry_v4_1_3329.jsonl   # 3329 items
+wc -l data/item_bank/v4/usability_r5_v1.jsonl      # 2526 R5 ledger rows
+python3 -c "import json
+print(sum(1 for l in open('data/item_bank/v4/usability_r5_v1.jsonl')
+          if json.loads(l).get('r5_serve') in (True,'True')))"   # 1202 serviceable
+\end{verbatim}
+\item \textbf{Build the Hugging Face mirror} (deterministic):
+\small
+\small
+\begin{verbatim}
+python3 scripts/make_hf_dataset.py --sample-only          # local sample (55 items)
+python3 scripts/make_hf_dataset.py --push <dataset-id>    # full push, needs HF token
+\end{verbatim}
+\item \textbf{Run the regression suite} (engine-default config; paid tests excluded; the mark filter comes from \texttt{pytest.ini}):
+\small
+\begin{verbatim}
+PYTHONDONTWRITEBYTECODE=1 .venv-pub/bin/python -B -m pytest -q --timeout=120
+\end{verbatim}
+\item \textbf{Deterministic session replay} (synthetic corpus):
+\small
+\small
+\begin{verbatim}
+YHER_ENABLE_PAID_LLM=0 ./deploy/run_demo.sh \
+  # synthetic material under demo/synthetic_scenarios/, SYNTHETIC_DEMO label
+\end{verbatim}
+\end{enumerate}
+
+Every audit report in \texttt{docs/audit-history/} lists the exact commands, input hashes, and verdict tables for the numbers quoted in this manuscript; the audit history index (\texttt{docs/audit-history/README.md}) maps each claim in this paper to its report.
