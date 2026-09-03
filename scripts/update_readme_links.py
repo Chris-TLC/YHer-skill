@@ -1,9 +1,9 @@
 """
-更新 GitHub README 里的占位符链接：
-- YOUR-GITHUB-USERNAME → Chris-TLC
-- YOUR-HF-USERNAME → ChrisTLC（同时把下载方式从 HuggingFace 改为 ModelScope）
+Update the placeholder links in the GitHub README:
+- YOUR-GITHUB-USERNAME -> Chris-TLC
+- YOUR-HF-USERNAME -> ChrisTLC (also switches the download instructions from HuggingFace to ModelScope)
 
-用法：python3 scripts/update_readme_links.py
+Usage: python3 scripts/update_readme_links.py
 """
 from pathlib import Path
 
@@ -13,17 +13,17 @@ MS_USERNAME = "ChrisTLC"
 readme = Path('README.md')
 content = readme.read_text(encoding='utf-8')
 
-# 替换所有 GitHub 用户名占位符
+# Replace all GitHub username placeholders
 content = content.replace('YOUR-GITHUB-USERNAME', GITHUB_USERNAME)
 content = content.replace('YOUR-USERNAME', GITHUB_USERNAME)
 
-# 把 HuggingFace 描述文字替换
+# Replace the HuggingFace description text
 content = content.replace(
     "embeddings 索引文件（约 154 MB）托管在 HuggingFace Datasets，方便研究复现：",
     "embeddings 索引文件（约 154 MB）托管在 ModelScope（国内访问最快）："
 )
 
-# 替换 HuggingFace 下载块为 ModelScope
+# Replace the HuggingFace download block with ModelScope
 old_hf_block = """# 方式 A：huggingface-cli（推荐）
 pip install huggingface_hub
 huggingface-cli download YOUR-HF-USERNAME/YHer-skill-embeddings \\
@@ -44,7 +44,7 @@ python3 -c "from modelscope.hub.snapshot_download import snapshot_download; snap
 
 content = content.replace(old_hf_block, new_block)
 
-# 验证有没有残留 placeholder
+# Verify no placeholders remain
 remaining = []
 for ph in ['YOUR-GITHUB-USERNAME', 'YOUR-HF-USERNAME', 'YOUR-USERNAME']:
     if ph in content:
@@ -53,11 +53,11 @@ for ph in ['YOUR-GITHUB-USERNAME', 'YOUR-HF-USERNAME', 'YOUR-USERNAME']:
 readme.write_text(content, encoding='utf-8')
 
 if remaining:
-    print(f"⚠️ 还有 placeholder 没替换：{remaining}")
+    print(f"WARNING: placeholders not replaced: {remaining}")
     raise SystemExit(1)
 else:
-    print("✅ README placeholder 全部替换完成")
+    print("All README placeholders replaced")
 
-print(f"   文件大小：{len(content)} 字符")
-print(f"   ModelScope 用户名：{MS_USERNAME}")
-print(f"   GitHub 用户名：{GITHUB_USERNAME}")
+print(f"   File size: {len(content)} chars")
+print(f"   ModelScope username: {MS_USERNAME}")
+print(f"   GitHub username: {GITHUB_USERNAME}")

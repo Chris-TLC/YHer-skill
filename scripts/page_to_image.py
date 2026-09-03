@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-试卷 → 每页图片（视觉切题的前置）。
+Exam paper -> one image per page (prerequisite for visual item splitting).
 
-- PDF：PyMuPDF 直接渲染每页为 PNG（零额外依赖）。
-- docx/.doc：先用 LibreOffice 转 PDF，再渲染。无 LibreOffice 则提示。
+- PDF: render each page to PNG directly with PyMuPDF (zero extra dependencies).
+- docx/.doc: convert to PDF with LibreOffice first, then render. Warns if LibreOffice is missing.
 
-输出到 data/page_images/{卷名}/page_N.png
+Outputs to data/page_images/{paper_name}/page_N.png
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from typing import List
 SKILL_DIR = Path(__file__).parent.parent
 PAGE_IMG_DIR = SKILL_DIR / "data" / "page_images"
 
-# LibreOffice 可执行路径（mac 常见位置）
+# LibreOffice executable paths (common macOS locations)
 SOFFICE_PATHS = [
     "/Applications/LibreOffice.app/Contents/MacOS/soffice",
     "soffice", "libreoffice",
@@ -35,23 +35,23 @@ def find_soffice():
 
 
 def docx_to_pdf(path: Path, out_dir: Path) -> Path:
-    """docx/.doc → PDF（需 LibreOffice）。"""
+    """docx/.doc -> PDF (requires LibreOffice)."""
     soffice = find_soffice()
     if not soffice:
         raise RuntimeError(
-            "需要 LibreOffice 把 docx 转图。安装：brew install --cask libreoffice")
+            "LibreOffice is required to convert docx files. Install with: brew install --cask libreoffice")
     subprocess.run(
         [soffice, "--headless", "--convert-to", "pdf", "--outdir", str(out_dir), str(path)],
         capture_output=True, timeout=120, check=True,
     )
     pdf = out_dir / (path.stem + ".pdf")
     if not pdf.exists():
-        raise RuntimeError(f"LibreOffice 转换失败: {path.name}")
+        raise RuntimeError(f"LibreOffice conversion failed: {path.name}")
     return pdf
 
 
 def pdf_to_images(pdf_path: Path, out_dir: Path, dpi: int = 150) -> List[Path]:
-    """PDF 每页渲染为 PNG。"""
+    """Render each PDF page as PNG."""
     import fitz
     out_dir.mkdir(parents=True, exist_ok=True)
     doc = fitz.open(str(pdf_path))
@@ -67,7 +67,7 @@ def pdf_to_images(pdf_path: Path, out_dir: Path, dpi: int = 150) -> List[Path]:
 
 
 def paper_to_images(path: Path, dpi: int = 150) -> List[Path]:
-    """统一入口：试卷 → 页图片列表。"""
+    """Unified entry point: exam paper -> list of page images."""
     path = Path(path)
     out_dir = PAGE_IMG_DIR / path.stem
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -79,12 +79,12 @@ def paper_to_images(path: Path, dpi: int = 150) -> List[Path]:
         with tempfile.TemporaryDirectory() as tmp:
             pdf = docx_to_pdf(path, Path(tmp))
             return pdf_to_images(pdf, out_dir, dpi)
-    raise ValueError(f"不支持的格式: {ext}")
+    raise ValueError(f"Unsupported format: {ext}")
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         imgs = paper_to_images(Path(sys.argv[1]))
-        print(f"生成 {len(imgs)} 页图片:")
+        print(f"Generated {len(imgs)} page images:")
         for p in imgs:
             print(f"  {p}")

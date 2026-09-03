@@ -1,4 +1,4 @@
-"""T0: 备份 chris_2026 数据（阶段 10 多用户改造前快照）"""
+"""T0: Back up chris_2026 data (snapshot before the Stage 10 multi-user rework)."""
 import os
 import json
 import sys
@@ -15,7 +15,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ SUPABASE_URL / SUPABASE_KEY 未设置")
+    print("ERROR: SUPABASE_URL / SUPABASE_KEY not set")
     sys.exit(1)
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -29,7 +29,7 @@ tables = {
 
 backup = {
     "timestamp": datetime.now().isoformat(),
-    "description": "阶段 10 多用户改造前 chris_2026 数据快照",
+    "description": "Snapshot of chris_2026 data taken before the Stage 10 multi-user rework",
 }
 
 total_records = 0
@@ -39,9 +39,9 @@ for table_name, key_field in tables.items():
         backup[table_name] = result.data
         n = len(result.data)
         total_records += n
-        print(f"  {table_name}: {n} 条记录")
+        print(f"  {table_name}: {n} records")
     except Exception as e:
-        print(f"  {table_name}: ❌ {e}")
+        print(f"  {table_name}: ERROR {e}")
         backup[table_name] = []
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -50,5 +50,5 @@ backup_path = SKILL_DIR / "data" / "backups" / f"chris_2026_{timestamp}.json"
 with open(backup_path, "w", encoding="utf-8") as f:
     json.dump(backup, f, ensure_ascii=False, indent=2, default=str)
 
-print(f"\n✅ 备份完成：{backup_path}")
-print(f"   共 {total_records} 条记录（4 张表）")
+print(f"\nBackup complete: {backup_path}")
+print(f"   Total {total_records} records (4 tables)")

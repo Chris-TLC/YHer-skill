@@ -1,8 +1,8 @@
 # YHer Chemistry — An Evidence-Bound Diagnostic Learning System
 
-**Information equity, made verifiable.** Every diagnosis a student receives is traceable to the exact answer that produced it. Every standard solution comes from a verified source. Every video recommendation carries a signed evidence trail.
+**Information equity, made verifiable.** Every diagnosis a student receives traces back to the exact answer that produced it. Every standard solution comes from a verified source. Every video recommendation carries a signed evidence trail.
 
-YHer is a single-node learning loop for Shanghai high-school chemistry. The core asset is not any one content source but the **diagnostic engine**: a four-state Bayesian belief model with expected-information-gain item selection, held-out verification on unseen question families, and a replayable student profile.
+YHer is a diagnostic learning system for Shanghai high-school chemistry. Its core asset is not any one content library but the **diagnostic engine**: a four-state Bayesian belief model with expected-information-gain item selection, held-out verification on unseen question families, and a replayable student profile.
 
 > **Status: pre-alpha, localhost demo.** This is not a deployed product. There is no real-student validation, retention, or learning-effect evidence — every conclusion in this repository is simulation-, audit-, or engineer-derived. Do not deploy for minors without adult consent processes.
 
@@ -12,22 +12,22 @@ This repository is [MIT-licensed](LICENSE) (code); the question bank, knowledge 
 
 ## Why this exists
 
-In gaokao regions, the scarcest educational resource is not content — it is **judgment**. Good teachers, good methods, and good questions concentrate in a few well-resourced schools. YHer's answer to that inequality is threefold:
+In the gaokao system, the scarcest educational resource is not content — it is **judgment**. Good teachers, effective methods, and well-chosen questions concentrate in a few well-resourced schools. YHer addresses that inequality through three design principles:
 
-1. **Turn judgment into verifiable engineering.** Whether a student is stuck on a prerequisite or on method is *computed from evidence*, not guessed by a model.
-2. **Turn "who teaches well" into a retrieval problem.** Quality-checked public video content is ranked by the student's current state, not by luck.
+1. **Turn judgment into verifiable engineering.** Whether a student is stuck on a prerequisite or on reasoning is computed from evidence, not inferred by a model.
+2. **Turn "who teaches well" into a retrieval problem.** Quality-checked public video content is ranked by the student's current diagnostic state, not by chance.
 3. **Treat answer credibility as a discipline.** Every standard solution served to a student comes from verified official answer keys. AI organizes language; it does not invent chemistry facts.
 
-The design constraint in one sentence: **every conclusion a student sees must be traceable to something that cannot be invented.**
+The design constraint: **every conclusion a student sees must trace to something that cannot be invented.**
 
-## One canonical session
+## How a session works
 
-1. Freeze three disjoint item families (diagnostic / practice / held-out) from the R5 whitelist.
-2. **Server-side scoring** — the browser never receives answers, rubrics, or item IDs before a response is locked in (fail-closed).
-3. **Adaptive selection** under a four-state belief model (Mastered / Prerequisite-missing / Unstable-reasoning / Unmastered) with expected information gain (EIG); prerequisite descent when beliefs compete.
+1. Three disjoint item families are frozen from the R5 whitelist: diagnostic, practice, and held-out.
+2. **Server-side scoring** — the browser never receives answers, rubrics, or item IDs before a response is locked in. Fail-closed by design.
+3. **Adaptive selection** under a four-state belief model: Mastered, Prerequisite-missing, Unstable-reasoning, Unmastered. Item selection uses expected information gain, with prerequisite descent when beliefs compete.
 4. **Learning checkpoint** with explanations anchored to verified standard solutions.
 5. **Signed video recommendations** with propensity snapshots and seen-segment tracking.
-6. **Held-out verification** on two unseen families, producing a session report, FSRS stability estimate, and a 7-day review hint.
+6. **Held-out verification** on two unseen families, producing a session report, an FSRS stability estimate, and a 7-day review hint.
 
 ## Quick start
 
@@ -77,17 +77,17 @@ adapters/store/local_json.py
   append-only events + session snapshots + projected profile
 ```
 
-The five engine modules, each audited against the literature:
+The system consists of five engine modules, each audited against the literature:
 
 | Engine | Responsibility |
 |---|---|
-| `engine/mastery.py` | Four-state belief, evidence updates, FSRS-4.5 decay projection |
-| `engine/selector.py` | EIG item selection, prerequisite competition, stopping rule, seen-item exclusion |
-| `engine/planner.py` | 30/60/120/180-minute budget tables with honest exhaustion |
-| `engine/recommender.py` | Signed tracks, budget, seen segments, propensity snapshots |
+| `engine/mastery.py` | Four-state belief model, evidence updates, FSRS-4.5 decay projection |
+| `engine/selector.py` | EIG-based item selection, prerequisite competition, stopping rule, seen-item exclusion |
+| `engine/planner.py` | Budget tables for 30/60/120/180-minute sessions with honest exhaustion |
+| `engine/recommender.py` | Signed video tracks, budget management, seen segments, propensity snapshots |
 | `engine/memory.py` | High-value event recall, restricted to expression-layer prompts |
 
-**Diagnosis is the core; the recommender is its downstream.** The video layer is quality-check + vector retrieval + state-adapted reranking. Its value is bounded by the diagnostic state feeding it.
+**Diagnosis is the foundation; the recommender is downstream.** The video layer combines quality-checking, vector retrieval, and state-adapted reranking. Its value is bounded by the diagnostic state that drives it.
 
 ## Data and dataset
 
@@ -106,15 +106,15 @@ python3 -m venv .venv-pub
 - The offline suite and engine-contract tests define the baseline (see CI/local runs).
 - QA evidence and synthetic scenarios (labeled `SYNTHETIC_DEMO`) are **engineering verification, not student evidence**.
 
-## Honest boundaries
+## What this is not
 
-- This is a localhost pre-alpha: no login, tenant isolation, parental consent, deletion policy, or production operations.
-- Browser journeys, API QA, and synthetic scenarios are engineering validation, not empirical research.
-- Belief states are model states under current evidence — not scores, long-term mastery, or causal learning gains.
-- R5 is a service whitelist, not a full manual gold standard. Critical diagnostic positions use only real exam items and verified standard solutions.
-- AI-generated questions are a historical supply experiment; the canonical first diagnosis and held-out verification never use them.
-- Video resources are hosted by their original platforms; link availability, copyright, and content changes are outside this repo's control.
-- Public deployment, credential rotation, release processes, and minor-data flows are not yet implemented.
+- **Not production-ready.** This is a localhost pre-alpha with no login, tenant isolation, parental consent, deletion policy, or production operations.
+- **Not empirical research.** Browser journeys, API QA, and synthetic scenarios are engineering validation, not student trials.
+- **Belief states are model states.** They reflect current evidence, not long-term mastery, scores, or causal learning gains.
+- **R5 is a service whitelist, not a gold standard.** Critical diagnostic positions use only real exam items and verified standard solutions.
+- **AI-generated questions are deprecated.** The canonical first diagnosis and held-out verification never use them. They remain as a documented supply experiment.
+- **Video resources are external.** Hosted by their original platforms; link availability, copyright, and content changes are outside this repository's control.
+- **Deployment infrastructure is incomplete.** Public deployment, credential rotation, release processes, and minor-data flows are not yet implemented.
 
 ## Further reading
 

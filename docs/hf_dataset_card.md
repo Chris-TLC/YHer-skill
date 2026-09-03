@@ -21,7 +21,7 @@ tags:
 
 The data layer of an evidence-bound diagnostic learning system for Shanghai high-school chemistry ([Chris-TLC/YHer-skill](https://github.com/Chris-TLC/YHer-skill)).
 
-Every record in this dataset is derived from **publicly released Shanghai gaokao and mock examination papers** via deterministic mechanical structuring — text extraction, layout repair, and answer alignment. Nothing here is model-generated.
+Every record in this dataset is derived from publicly released Shanghai gaokao and mock examination papers through deterministic mechanical structuring: text extraction, layout repair, and answer alignment. No content is model-generated.
 
 ## What's inside
 
@@ -36,29 +36,29 @@ Companion files in the source repository: an R5 serviceability whitelist (2,526 
 
 ## Record structure (items_v4)
 
-Each item object carries:
+Each item record contains:
 
-- `item_id` — sha1-derived unique key
-- `group_key` / `section_num` / `q_num` — paper and position identifiers
+- `item_id` — SHA-1-derived unique key
+- `group_key`, `section_num`, `q_num` — paper and position identifiers
 - `source_path`, `answer_source_path` — provenance of stem and answer key
-- `analysis_blocks`, `answer_blocks_effective` — block-level text with types `text / latex / omml / image / table`
+- `analysis_blocks`, `answer_blocks_effective` — block-level text with types: `text`, `latex`, `omml`, `image`, `table`
 - `rubric` — scoring rules with keywords and must-have flags
 - `answer_verification` — credibility verdict from the source pipeline
-- `kg_nodes` — links into the knowledge graph
-- `r5_serve`, `r5_reason` — service whitelist status (1,202 items serviceable)
+- `kg_nodes` — links into the 135-node knowledge graph
+- `r5_serve`, `r5_reason` — service whitelist status (1,202 of 3,329 items serviceable)
 
 ## Intended uses
 
-- Adaptive-testing and diagnostic-model research on real, structured exam items
-- Question-generation evaluation (this bank served as the reference set for a five-round blind distinguishability study)
-- Knowledge-tracing features (the items link into a prerequisite graph)
-- Benchmarking OCR/extraction pipelines on exam documents
+- **Adaptive testing and diagnostic modeling** on real, structured exam items
+- **Question-generation evaluation** — this bank served as the reference set for a five-round blind distinguishability study
+- **Knowledge tracing** — items link into a prerequisite-structured knowledge graph
+- **OCR and extraction benchmarking** on exam documents with complex layout and notation
 
-## Honest boundaries
+## What this dataset is not
 
-- Items are **mechanically restructured** exam content, not original creation and not manually re-authored. 926 of 3,329 items lack a separately sourced answer key path (27.8%).
-- No student response data is included, and no claim in the companion system rests on learner data.
-- The license is **CC BY-NC 4.0** (non-commercial). Code in the source repository is MIT.
+- **Not original creation.** Items are mechanically restructured from exam content, not manually re-authored. 926 of 3,329 items (27.8%) lack a separately sourced answer key path.
+- **No student data.** No student response data is included. No claim in the companion system rests on learner data.
+- **Non-commercial license.** The dataset is licensed under CC BY-NC 4.0. Code in the source repository is MIT-licensed.
 
 ## Building from source
 

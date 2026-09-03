@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""10g 选项拆分 apply（QA-3 首件）—— 高置信子集 740 条。
+"""10g option-split apply (first QA-3 item) -- 740 high-confidence candidates.
 
-审计: PROJECT_HANDOFF/BATCH10_AUDIT_2026-07-05.md P4。
-范围: 仅服务池 stem_blocks 区、拆分段为合法严格递增选项序列(A<B<C<D)的候选。
-      answer 区 82 条 + 结构可疑 46 条 + 非服务池,全部不入(留 QA-3 后续)。
-语义: 把粘连成一个 text 节点的多选项(如 "A.淀粉B.二氧化硫"),按 block_path 定位后
-      拆成 stem_blocks 里多个独立 block(每选项一个 block={"para":[{text}]}),
-      前端每个 block = 一个 rir-para 各自换行 + rir-option 悬挂缩进。
-      纯文本操作,不碰 media/ref_map(与 10c 题干回填的坑无关)。
-范围收窄: 仅处理"粘连节点是其所在 block 唯一节点"的候选(拆法无歧义: 一 block 换 N block);
-          节点与其他内容同 block 的 51 条留后续(拆点位置有歧义)。
-安全: block_path 定位的节点 text 必须精确等于候选 original_text 才拆(防错位);
-      拆分段拼接(去空白)必须等于原文(防吞字);零匹配则跳过。幂等: 已拆过跳过。
+Audit: PROJECT_HANDOFF/BATCH10_AUDIT_2026-07-05.md P4.
+Scope: only candidates in the service pool's stem_blocks whose suggested split is a valid strictly-increasing option sequence (A<B<C<D).
+       The 82 in the answer area + 46 structurally suspicious + non-service-pool ones are all excluded (left for later QA-3 work).
+Semantics: multi-options glued into a single text node (e.g. "A.淀粉B.二氧化硫") are located by block_path and
+      split into multiple independent blocks in stem_blocks (one block per option = {"para":[{text}]}),
+      frontend renders each block as one rir-para with line break + rir-option hanging indent.
+      Pure text operation; does not touch media/ref_map (unrelated to the 10c stem backfill pitfalls).
+Narrowed scope: only candidates whose glued node is the sole node in its block are processed (unambiguous split: 1 block -> N blocks);
+          the 51 candidates whose node shares a block with other content are left for later (split position is ambiguous).
+Safety: the text of the node located by block_path must exactly equal the candidate's original_text before splitting (prevents misalignment);
+      the concatenation of the split segments (whitespace-stripped) must equal the original text (prevents dropped characters); zero matches are skipped. Idempotent: already-split candidates are skipped.
 
-授权: 需用户点名 L1(题库主库写入)。默认 dry-run。
+Authorization: requires explicit user L1 (item bank main-store write). Dry-run by default.
 """
 from __future__ import annotations
 import argparse, json, re
@@ -39,7 +39,7 @@ def write_jsonl(p: Path, rows):
     tmp.replace(p)
 
 def locate(item, path):
-    """返回 (blocks_list, block_idx, para_idx) 或 None。"""
+    """Return (blocks_list, block_idx, para_idx) or None."""
     m = PATH_RE.match(path)
     if not m:
         return None
@@ -75,7 +75,7 @@ def apply_10g(dry: bool):
     cands = read_jsonl(CANDIDATES)
     stats = Counter()
     touched_items = set()
-    # 同题多候选 → 按 block_idx 从大到小拆,避免前面插入 block 导致后面 idx 位移
+    # Multiple candidates in one item -> split by descending block_idx so earlier block insertions don't shift later idx values
     def _bi(c):
         m = PATH_RE.match(c["block_path"])
         return int(m.group(2)) if m else -1
@@ -96,7 +96,7 @@ def apply_10g(dry: bool):
         blocks, bi, pi = loc
         block = blocks[bi]
         para = block["para"]
-        # 范围: 仅粘连节点独占 block(拆法无歧义)
+        # Scope: only glued nodes that exclusively occupy their block (unambiguous split)
         if len(para) != 1 or pi != 0:
             stats["not_sole_node"] += 1
             continue
@@ -110,7 +110,7 @@ def apply_10g(dry: bool):
         if _norm("".join(segs)) != _norm(c["original_text"]):
             stats["join_mismatch"] += 1
             continue
-        # 执行: 用 N 个独立 block(每选项一 block)替换原 block
+        # Execute: replace the original block with N independent blocks (one per option)
         new_blocks = [{"para": [{"type": "text", "text": s}]} for s in segs]
         blocks[bi:bi + 1] = new_blocks
         stats["split_applied"] += 1
@@ -127,11 +127,11 @@ def main():
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
     dry = not args.apply
-    print(f"=== 10g 选项拆分 {'APPLY' if not dry else 'DRY-RUN'} ===")
+    print(f"=== 10g option split {'APPLY' if not dry else 'DRY-RUN'} ===")
     st = apply_10g(dry)
     for k, v in sorted(st.items()):
         print(f"  {k}: {v}")
-    print("=== 完成 ===")
+    print("=== DONE ===")
 
 if __name__ == "__main__":
     main()

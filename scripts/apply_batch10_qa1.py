@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Batch 10 (QA-1) apply —— 用户 2026-07-05「授权全部写入v4主库」。
+"""Batch 10 (QA-1) apply -- user authorization dated 2026-07-05 ("authorize all writes to the v4 main store").
 
-审计报告: PROJECT_HANDOFF/BATCH10_AUDIT_2026-07-05.md
-授权级别: L1(点名 v4 主库)。模式沿用 WS2/batch7: 纯新增/精准回填 + 幂等 + dry-run。
+Audit report: PROJECT_HANDOFF/BATCH10_AUDIT_2026-07-05.md
+Authorization level: L1 (targeting the v4 main store). Mode follows WS2/batch7: pure additions / precise backfills + idempotent + dry-run.
 
-写入目标(全程备份在 data/_backup_pre_batch10_apply_20260705/):
+Write targets (backed up throughout in data/_backup_pre_batch10_apply_20260705/):
   1. ws2_asset_transcripts_v1.jsonl
-     - 10a: 新增 4075 个答案/解析区资产的转写/latex 行(官方零撞行,已验)
-            latex 按白名单分层: 合规→latex_status=passed(启用渲染); 其余→archived(图直显)
-     - 10b: 238 个已存在 ai_seed/display_only 行补 latex(白名单分层)
-     - 10d: 54 行改 latex —— 15 条用 Claude 改判(reviewer=claude), 12 条 deterministic, 27 条 no-op
+     - 10a: add 4075 transcription/latex rows for answer/analysis-zone assets (zero collisions with official rows, verified)
+            latex tiered by whitelist: compliant -> latex_status=passed (rendering enabled); else -> archived (image shown directly)
+     - 10b: 238 existing ai_seed/display_only rows get latex filled in (whitelist tiering)
+     - 10d: 54 rows' latex changed -- 15 via Claude re-judgment (reviewer=claude), 12 deterministic, 27 no-op
   2. ws2_omml_latex_cache_v1.jsonl
-     - 10f: 52 行 katex_ok=false→升级为已转 latex(独立编译100%过); 16 条 ❑ 占位清为裸符号
+     - 10f: 52 rows katex_ok=false -> upgraded to latex-converted (independently compiled 100% pass); 16 rows' placeholder cleared to bare symbols
   3. chemistry_v4_1_3329.jsonl
-     - 10c: 152 题内容字段回填(stem/answer/analysis blocks + stem_text),
-            保留官方全部服务字段(pool/service_eligible/quality_flags/item_id 不变) —— 只去字面量
+     - 10c: backfill content fields for 152 items (stem/answer/analysis blocks + stem_text),
+            keeping all official service fields untouched (pool/service_eligible/quality_flags/item_id unchanged) -- literal-only cleanup
 
-不写: ws2_media_ref_map_v1.jsonl(loader 不看 in_ws2_manifest, 4209 ref 官方已存在, 无需动)。
-10e 整体打回不入; 10g 留 QA-3; 10a manual_queue/broken 占位行如实记账写入(pool=manual_queue,渲染端降级)。
+Not written: ws2_media_ref_map_v1.jsonl (loader does not read in_ws2_manifest; the 4209 refs already exist officially, no need to touch).
+10e rejected wholesale, not included; 10g left for QA-3; 10a manual_queue/broken placeholder rows recorded as-is (pool=manual_queue, rendering side degrades).
 """
 from __future__ import annotations
 import argparse, json, re, shutil, sys
@@ -33,7 +33,7 @@ TRANSCRIPTS = V4 / "ws2_asset_transcripts_v1.jsonl"
 OMML_CACHE = V4 / "ws2_omml_latex_cache_v1.jsonl"
 ITEM_BANK = V4 / "chemistry_v4_1_3329.jsonl"
 
-# ---- 审计报告 P2 白名单: 编译过 且 ≤120 且 无罗马代号式 且 无电子式特征 → 启用渲染 ----
+# ---- Audit report P2 whitelist: compiles AND <=120 chars AND no Roman-code style AND no Lewis-structure signature -> rendering enabled ----
 ROMAN_CODE_RE = re.compile(r"\\ce\{[^}]*\b(?:I{1,3}|IV|V|VI)\b")
 LEWIS_RE = re.compile(r"\\ddot|(?<![a-zA-Z])：|(?<!\\):(?=[A-Z])")
 
@@ -48,7 +48,7 @@ def latex_enabled(latex: str, compile_ok: bool) -> bool:
         return False
     return True
 
-# ---- 审计报告 P1: 10d 的 15 条 Claude 改判(图面亲验) ----
+# ---- Audit report P1: 15 rows in 10d re-judged by Claude (images verified by hand) ----
 CLAUDE_10D_OVERRIDES = {
     "5e630523b505a41b90f53bca3b888e764cc3e3b5eec6450bbd8035b69f83d707": "{}^{2-}_{3}",
     "322dcdac6ccd9eb076582b36bb226a192af95d358fb03557d7ada75191ef2b6b": "{}^{2-}_{3}",
@@ -83,11 +83,11 @@ def write_jsonl(p: Path, rows):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     tmp.replace(p)
 
-# ---------- 构造 10a 新增转写行(候选 schema → 官方 schema) ----------
+# ---------- Build 10a new transcript rows (candidate schema -> official schema) ----------
 def build_10a_rows():
     rows = []
     stats = Counter()
-    # formula 候选 → formula_latex 行
+    # formula candidates -> formula_latex rows
     for r in read_jsonl(B10 / "answer_zone_assets/formula_latex/formula_latex_candidates.jsonl"):
         h = r["asset_hash"]
         if r.get("pool") == "manual_queue" or not r.get("latex"):
@@ -105,7 +105,7 @@ def build_10a_rows():
                      "latex_consistency": bool((r.get("consistency") or {}).get("consistent")),
                      "batch10_source": "10a_formula"})
         stats["10a_formula_passed" if enabled else "10a_formula_archived"] += 1
-    # transcript 候选 → transcript 行
+    # transcript candidates -> transcript rows
     for r in read_jsonl(B10 / "answer_zone_assets/transcripts/transcript_candidates.jsonl"):
         h = r["asset_hash"]
         pool = r.get("pool") or "manual_queue"
@@ -126,7 +126,7 @@ def build_10a_rows():
         stats[f"10a_transcript_{pool}"] += 1
     return rows, stats
 
-# ---------- 10b/10d: 改现有官方行的 latex ----------
+# ---------- 10b/10d: change latex in existing official rows ----------
 def load_10b_updates():
     upd = {}
     for r in read_jsonl(B10 / "formula_backfill/formula_backfill_candidates.jsonl"):
@@ -146,7 +146,7 @@ def load_10d_updates():
             upd[h] = (new, "claude")
         else:
             sug = (r.get("suggested_latex") or r.get("latex") or "").strip()
-            if sug and sug != orig:  # deterministic 变化(no-op 不动)
+            if sug and sug != orig:  # deterministic change (no-op left untouched)
                 upd[h] = (sug, "batch10_deterministic")
     return upd
 
@@ -154,7 +154,7 @@ def apply_transcripts(dry: bool):
     rows = read_jsonl(TRANSCRIPTS)
     by_hash = {r["asset_hash"]: r for r in rows}
     new_rows, a_stats = build_10a_rows()
-    # 幂等: 已 apply 过则跳过
+    # Idempotent: skip rows already applied
     existing_b10 = {r["asset_hash"] for r in rows if r.get("apply_id") == APPLY_ID}
     new_rows = [r for r in new_rows if r["asset_hash"] not in by_hash and r["asset_hash"] not in existing_b10]
 
@@ -199,11 +199,11 @@ def apply_omml(dry: bool):
         ok = bool((r.get("compile_result") or {}).get("ok"))
         if not sha or not latex or not ok:
             continue
-        latex = latex.replace("❑", "").replace("□", "")  # 清占位符
+        latex = latex.replace("❑", "").replace("□", "")  # clear placeholder chars
         if sha in by_sha:
             tgt = by_sha[sha]
             if tgt.get("katex_ok") and tgt.get("latex") == latex:
-                continue  # 幂等
+                continue  # idempotent
             tgt["latex"] = latex
             tgt["ok"] = True
             tgt["katex_ok"] = True
@@ -213,12 +213,13 @@ def apply_omml(dry: bool):
         write_jsonl(OMML_CACHE, rows)
     return stats, len(rows)
 
-# ---- 10c 回填护栏(审计后加固) ----
-# (1) 范围: 仅 answer/analysis 区。题干区 rerun 把 [figure:imageN.png] 转成裸名 media 节点,
-#     但裸名既不在 official ref_map、也不在 WS1 assets(实体带 ans_ 前缀)→ 回填反致题干图降级。
-#     题干重切需 ref_map 配套,超出"纯去字面量"范围,留 QA-3。
-# (2) blocks 仅当候选未丢失官方真图、且文本量未骤降>60% 时才回填(挡 rerun 塌空的坏候选)。
-# stem_text 是衍生摘要,答案/解析回填后同步更新;题干字面量不动则 stem_text 保持官方原值。
+# ---- 10c backfill guardrails (hardened after the audit) ----
+# (1) Scope: answer/analysis zones only. The stem-zone rerun turned [figure:imageN.png] into bare-name media nodes,
+#     but those bare names are neither in the official ref_map nor in WS1 assets (real files carry the ans_ prefix)
+#     -> backfilling would instead degrade the stem images.
+#     Re-segmenting stems needs ref_map support, which is beyond "pure literal cleanup"; left to QA-3.
+# (2) Blocks are backfilled only when the candidate has not lost official real images and text volume did not drop >60% (blocks collapse-prone bad candidates from reruns).
+# stem_text is a derived summary; it is refreshed when answer/analysis are backfilled; if stem literals are untouched, stem_text keeps the official value.
 BACKFILL_FIELDS = ("answer_blocks_effective", "analysis_blocks")
 
 def _struct_media(blocks):
@@ -251,7 +252,7 @@ def _text_len(blocks):
     return tot
 
 def _blocks_safe(old_val, new_val) -> bool:
-    """候选 blocks 是否安全回填: 真图数不减 且 文本量未骤降>60%。"""
+    """Whether candidate blocks are safe to backfill: real image count does not decrease AND text volume does not drop >60%."""
     old_media, new_media = _struct_media(old_val), _struct_media(new_val)
     if len(new_media) < len(old_media):
         return False
@@ -283,7 +284,7 @@ def apply_item_bank(dry: bool):
             if json.dumps(f[fld], ensure_ascii=False) == json.dumps(item.get(fld), ensure_ascii=False):
                 continue
             if not _blocks_safe(item.get(fld), f[fld]):
-                guarded = True  # 该字段候选塌陷,保留官方原值
+                guarded = True  # candidate collapsed for this field; keep the official original value
                 continue
             item[fld] = f[fld]
             changed = True
@@ -300,28 +301,28 @@ def apply_item_bank(dry: bool):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--apply", action="store_true", help="真写入(默认 dry-run)")
+    ap.add_argument("--apply", action="store_true", help="Write for real (dry-run by default)")
     args = ap.parse_args()
     dry = not args.apply
-    mode = "DRY-RUN" if dry else "APPLY(真写入)"
+    mode = "DRY-RUN" if dry else "APPLY (real write)"
     print(f"=== Batch10 {mode} ===\n")
 
     t_stats, t_before, t_after = apply_transcripts(dry)
-    print(f"[转写表] {t_before} → {t_after} 行 (+{t_after - t_before})")
+    print(f"[transcripts] {t_before} -> {t_after} rows (+{t_after - t_before})")
     for k, v in sorted(t_stats.items()):
         print(f"   {k}: {v}")
 
     o_stats, o_total = apply_omml(dry)
-    print(f"\n[OMML cache] {o_total} 行")
+    print(f"\n[OMML cache] {o_total} rows")
     for k, v in sorted(o_stats.items()):
         print(f"   {k}: {v}")
 
     i_stats, i_total = apply_item_bank(dry)
-    print(f"\n[题库] {i_total} 行(行数不变,原地回填)")
+    print(f"\n[item bank] {i_total} rows (row count unchanged, in-place backfill)")
     for k, v in sorted(i_stats.items()):
         print(f"   {k}: {v}")
 
-    print(f"\n=== {mode} 完成 ===")
+    print(f"\n=== {mode} DONE ===")
 
 if __name__ == "__main__":
     main()

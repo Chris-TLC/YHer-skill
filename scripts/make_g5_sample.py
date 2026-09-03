@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""G5 验收抽样器（2026-07-06，D2-A 决议 Track A①）。
+"""G5 acceptance sampler (2026-07-06, D2-A decision Track A).
 
-从 R5 白名单（当前 1207）按 知识节点 × 题型 分层抽样 ~120 题，
-生成给用户肉眼验收的清单（markdown，含预览深链）。
+Stratified-samples ~120 items from the R5 whitelist (currently 1207) by knowledge node x item type,
+and generates a checklist for the user's eyeball acceptance (markdown with deep preview links).
 
-- 分层：每个覆盖节点至少 1 题；名额按节点池大小加权；choice/非choice 分桶。
-- 确定性：固定 seed，重复运行同一清单（验收中途可续）。
-- 只读官方数据；产物写 /tmp/yher_g5/。
+- Stratification: each covered node gets at least 1 item; remaining slots weighted by node pool size; choice/free bucketed.
+- Deterministic: fixed seed, same checklist on re-run (acceptance can be resumed mid-way).
+- Read-only on official data; output written to /tmp/yher_g5/.
 
-用法：python3 scripts/make_g5_sample.py [--n 120] [--out-dir /tmp/yher_g5]
+Usage: python3 scripts/make_g5_sample.py [--n 120] [--out-dir /tmp/yher_g5]
 """
 from __future__ import annotations
 
@@ -38,20 +38,20 @@ def main() -> None:
     ap.add_argument("--out-dir", default="/tmp/yher_g5")
     args = ap.parse_args()
 
-    items = list(iter_service_items())  # R5 默认口径 = 学生所见
+    items = list(iter_service_items())  # R5 default scope = what students see
     by_node: dict[str, list[dict]] = collections.defaultdict(list)
     for it in items:
-        for n in (it.get("kg_nodes") or ["(无节点)"]):
+        for n in (it.get("kg_nodes") or ["(no node)"]):
             by_node[n].append(it)
 
     rng = random.Random(20260706)
     total_pool = sum(len(v) for v in by_node.values())
     picked: dict[str, dict] = {}
-    # 第一轮：每节点保底 1 题
+    # Round 1: at least 1 item per node
     for node, pool in sorted(by_node.items()):
         it = rng.choice(pool)
         picked.setdefault(it["item_id"], it)
-    # 第二轮：按节点权重补齐到 n，choice/free 尽量均衡
+    # Round 2: fill up to n by node weight, balancing choice/free as much as possible
     weights = sorted(by_node.items(), key=lambda kv: -len(kv[1]))
     wi = 0
     while len(picked) < args.n and wi < 10000:
@@ -70,26 +70,26 @@ def main() -> None:
     rows = sorted(picked.values(), key=lambda x: (sorted(x.get("kg_nodes") or ["~"])[0], x["item_id"]))
 
     md = [
-        "# G5 验收清单（R5 白名单分层抽样）",
+        "# G5 Acceptance Checklist (R5 whitelist stratified sample)",
         "",
-        f"共 {len(rows)} 题 / 覆盖 {len(by_node)} 节点（白名单 {len(items)} 题池）。"
-        "先起预览：launch.json 的 yher-api-v4（8822 端口），再逐条点链接。",
+        f"{len(rows)} items / {len(by_node)} nodes covered (whitelist pool: {len(items)} items)."
+        "Start the preview first: launch.json's yher-api-v4 (port 8822), then click through the links.",
         "",
-        "**判定口径（对每题勾一格）**：`OK` = 题面完整可作答 + 答案对得上题目且完整；"
-        "`BAD-题面` / `BAD-答案` / `BAD-渲染` = 任一硬伤（记 item_id 前 12 位即可）；`?` = 拿不准。",
+        "**Judgment rubric (tick one box per item)**: `OK` = stem complete and answerable + answer matches the stem and is complete;"
+        "`BAD-stem` / `BAD-answer` / `BAD-render` = any hard defect (just note the first 12 chars of item_id); `?` = unsure.",
         "",
-        "| # | 节点 | 型 | 预览 | 判定 |",
+        "| # | Node | Type | Preview | Verdict |",
         "|---|---|---|---|---|",
     ]
     for i, it in enumerate(rows, 1):
         node = "、".join((it.get("kg_nodes") or ["-"])[:2])
-        kind = "选" if item_kind(it) == "choice" else "答"
+        kind = "choice" if item_kind(it) == "choice" else "free"
         iid = it["item_id"]
         md.append(f"| {i} | {node[:14]} | {kind} | [{iid[:12]}]({PREVIEW}#{iid}) | ☐ |")
     md += [
         "",
-        "> 放行判据（D2-A 已批）：抽样零硬伤漏报即 G5 过；发现 BAD 记 id 交 Claude 归因，",
-        "> 不足以推翻整门（R5 宁缺勿滥仍在线上兜底），除非 BAD 率 >3%。",
+        "> Release criterion (approved in D2-A): G5 passes if the sample reports zero missed hard defects;"
+        "> on BAD, record the id and hand it to Claude for root-cause; one defect does not overturn the whole set (R5's 'rather fewer than faulty' line stays online as fallback), unless the BAD rate exceeds 3%.",
     ]
     (out / "G5_SAMPLE.md").write_text("\n".join(md), encoding="utf-8")
     (out / "g5_sample_ids.json").write_text(

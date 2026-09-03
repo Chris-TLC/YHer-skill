@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""Batch12 (QA-3 滚动第一批) apply —— 待用户点名 L1。
+"""Batch12 (first rolling QA-3 batch) apply -- awaiting explicit user L1 authorization.
 
-审计口径(Claude 全实测,2026-07-05):
-  12a 580 候选中剔除 19 条元素列举误拆(`C、N` 类)+ 50 条空选项段(`D.` 无内容)
-      → apply 白名单 511 条(88%),拼接=原文 100% 独立复验过。
-  12b 救回 226 张 PNG 全量像素扫过(剔 1 张 4x1 噪声 → 225 张);94 kept 转写垃圾/泄漏 0;
-      OMML 43 条独立 KaTeX 复编译全过。
-  ref_map 80 条 unresolvable 亲验为真(实体文件 WS1 就没有),不 apply,并入批次13 裁片靶。
+Audit scope (all verified by Claude, 2026-07-05):
+  From 12a's 580 candidates, 19 element-list false splits (`C、N` style) + 50 empty option segments (`D.` no content) removed
+      -> apply whitelist of 511 rows (88%), concatenation == original text independently re-verified 100%.
+  12b: all 226 rescued PNGs pixel-scanned (1 4x1 noise removed -> 225); 94 kept rows with zero transcript garbage/leaks;
+      OMML: 43 rows independently re-compiled with KaTeX, all passed.
+  ref_map: 80 unresolvable rows manually verified as real (the entity files never existed in WS1); not applied; merged into batch 13 crop targets.
 
-写入目标:
-  1. chemistry_v4_1_3329.jsonl —— 12a 511 条拆分(block 级,复用 10g 语义:
-     in_block=块内节点重排后拆成多 block;tight_text=文本切分成多 block)
-  2. ws2_repaired_assets/ —— 225 张救回图收编
-  3. ws2_asset_transcripts_v1.jsonl —— 12b 救回资产的行升级:
-     官方已有 pool=manual_queue 行 → kept 94 条升级为 ai_seed/display_only(带 transcript);
-     其余救回但转写弱的仍 manual_queue(图已可直显,行加 batch12_rescued 标记)
-  4. ws2_omml_latex_cache_v1.jsonl —— 43 条新增(键 omml_sha1,katex_ok=true)
+Write targets:
+  1. chemistry_v4_1_3329.jsonl -- 12a's 511 splits (block level, reusing 10g semantics:
+     in_block=reorder nodes within the block then split into multiple blocks; tight_text=split text into multiple blocks)
+  2. ws2_repaired_assets/ -- collect the 225 rescued images
+  3. ws2_asset_transcripts_v1.jsonl -- upgrade rows for 12b rescued assets:
+     existing official pool=manual_queue rows -> 94 kept rows upgraded to ai_seed/display_only (with transcript);
+     other rescued-but-weakly-transcribed rows stay manual_queue (image now displayable; row tagged batch12_rescued)
+  4. ws2_omml_latex_cache_v1.jsonl -- 43 new rows (key omml_sha1, katex_ok=true)
 
-安全: 拆分沿用 10g 验证过的手法(降序防位移/幂等 text 精确匹配/独占与非独占分治);
-      转写行升级只改既有行字段;全部幂等。默认 dry-run。
+Safety: splitting reuses the 10g-verified techniques (descending order prevents index shift / idempotent exact text match / exclusive vs non-exclusive split handling);
+      transcript-row upgrades only modify fields of existing rows; everything idempotent. Dry-run by default.
 """
 from __future__ import annotations
 import argparse, json, re, shutil
@@ -35,8 +35,8 @@ B12 = Path("/tmp/yher_batch12_qa3")
 APPLY_ID = "batch12_apply_20260705"
 
 MARK = re.compile(r"^\s*([A-D])[.．、]")
-ELEM = re.compile(r"^[A-D][、,]\s*[A-Z]")   # 元素列举误拆特征
-EMPTY = re.compile(r"^[A-D][.．、]\s*$")     # 空选项段
+ELEM = re.compile(r"^[A-D][、,]\s*[A-Z]")   # element-list false-split signature
+EMPTY = re.compile(r"^[A-D][.．、]\s*$")     # empty option segment
 PATH_RE = re.compile(r"(\w+)\[(\d+)\]\.para\[(\d+)\]")
 
 def read_jsonl(p: Path):
@@ -52,7 +52,7 @@ def write_jsonl(p: Path, rows):
 def _norm(s): return re.sub(r"\s+", "", s or "")
 
 def clean_split_candidates():
-    """审计白名单: 剔元素列举误拆 + 空选项段。"""
+    """Audit whitelist: drop element-list false splits + empty option segments."""
     cands = read_jsonl(B12 / "option_split_v2/option_split_candidates.jsonl")
     keep, rejected = [], Counter()
     for c in cands:
@@ -83,7 +83,7 @@ def apply_split(dry: bool):
         if item is None:
             stats["item_missing"] += len(sites)
             continue
-        # 同 field 内按 block_idx 降序(先拆后面的,前面索引不位移)
+        # Within the same field, process in descending block_idx (split later ones first so earlier indexes don't shift)
         def bi(c):
             m = PATH_RE.match(c["block_path"]); return int(m.group(2)) if m else -1
         sites.sort(key=lambda c: (c["field"] if "field" in c else "", -bi(c)))
@@ -110,19 +110,19 @@ def apply_split(dry: bool):
                 continue
             segs = c["suggested_segments"]
             if len(para) == 1 and pidx == 0:
-                # 独占 block → 拆成多 block(10g 同款)
+                # Exclusive block -> split into multiple blocks (same as 10g)
                 blocks[bidx:bidx + 1] = [{"para": [{"type": "text", "text": s}]} for s in segs]
             else:
-                # 非独占: 节点位置拆成多 text 节点 + 从原 block 分离成独立 block 序列
-                # 保守: 前段留原位,后续选项段成新 block 插到本 block 之后
+                # Non-exclusive: split node position into multiple text nodes + separate the option segments into their own block sequence
+                # Conservative: first segment stays in place; remaining option segments become new blocks inserted right after this block
                 node["text"] = segs[0]
                 new_blocks = [{"para": [{"type": "text", "text": s}]} for s in segs[1:]]
-                # 若节点是块内最后一个节点,选项新 block 紧跟本 block
+                # If the node is the last node in the block, the new option blocks follow this block directly
                 if pidx == len(para) - 1:
                     blocks[bidx + 1:bidx + 1] = new_blocks
                 else:
-                    # 节点后还有内容(如图),把后续节点留在原块,新 block 插在其后仍会乱序
-                    # → 回退: 不拆,记录(避免图文错序)
+                    # Content still follows the node (e.g. an image); keeping later nodes in this block while inserting new blocks after it would scramble the order
+                    # -> fall back: don't split, record it (avoid image/text ordering errors)
                     node["text"] = c["original_text"]
                     stats["skip_mid_node"] += 1
                     continue
@@ -137,7 +137,7 @@ def apply_split(dry: bool):
 
 def apply_assets_and_transcripts(dry: bool):
     stats = Counter()
-    # 1. 收编救回图(剔 4x1 噪声)
+    # 1. Collect rescued images (drop 4x1 noise)
     from PIL import Image
     src = B12 / "asset_rerender/asset_repair/repaired"
     copied = 0
@@ -153,7 +153,7 @@ def apply_assets_and_transcripts(dry: bool):
             copied += 1
     stats["png_collected"] = copied
 
-    # 2. 转写行升级(官方 manual_queue 行 → kept 升池 / 其余标记已救图)
+    # 2. Upgrade transcript rows (official manual_queue rows -> kept promote to pool / others flagged as image rescued)
     rows = read_jsonl(TRANSCRIPTS)
     by_hash = {r["asset_hash"]: r for r in rows}
     kept = read_jsonl(B12 / "asset_rerender/transcripts/transcript_candidates.jsonl")
@@ -175,7 +175,7 @@ def apply_assets_and_transcripts(dry: bool):
         tgt["apply_id"] = APPLY_ID
         tgt["batch12_source"] = "12b_rescued_transcript"
         stats[f"transcript_upgraded_{pool}"] += 1
-    # 仍 manual 但图已救回的行: 打标(渲染端图可直显)
+    # Rows still in manual_queue whose image is now rescued: tag them (rendering can display the image directly)
     for h in rescued_hashes:
         tgt = by_hash.get(h)
         if tgt and tgt.get("pool") == "manual_queue" and tgt.get("batch12_source") is None:
@@ -211,17 +211,17 @@ def main():
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
     dry = not args.apply
-    print(f"=== Batch12 {'APPLY(真写)' if not dry else 'DRY-RUN'} ===")
+    print(f"=== Batch12 {'APPLY (real write)' if not dry else 'DRY-RUN'} ===")
     s1 = apply_split(dry)
-    print("[12a 拆分]")
+    print("[12a split]")
     for k, v in sorted(s1.items()): print(f"   {k}: {v}")
     s2 = apply_assets_and_transcripts(dry)
-    print("[12b 图+转写]")
+    print("[12b images + transcripts]")
     for k, v in sorted(s2.items()): print(f"   {k}: {v}")
     s3, total = apply_omml(dry)
-    print(f"[12b OMML] cache 行数 -> {total}")
+    print(f"[12b OMML] cache rows -> {total}")
     for k, v in sorted(s3.items()): print(f"   {k}: {v}")
-    print("=== 完成 ===")
+    print("=== DONE ===")
 
 if __name__ == "__main__":
     main()

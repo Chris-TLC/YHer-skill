@@ -20,7 +20,7 @@
 | SymPy L0–L4 tiered grading | Replace | not implemented | When the math line restarts |
 | Math v0′ blueprint (fixed 6 items + binary + Beta) | Replace | not implemented (blueprint) | Math MVP start |
 
-## 2. Known technical debt deliberately not addressed (from docs/待完善事项)
+## 2. Known technical debt deliberately not addressed (from the internal backlog)
 
 - 18 multi-step-reasoning hard nodes in the AI diagnostic bank cannot produce items (frozen at 119/137; three true holes: solution conservation laws / process flows / integrated experiment questions);
 - options A/B/C in the original (manual gold into `gold_bank` / relaxed threshold / direct extraction from real items);

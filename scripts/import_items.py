@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """
-真题导入管线（总蓝图 B-1，离线运行，引擎层不依赖它）。
+Real-exam-item import pipeline (master blueprint B-1; runs offline, the engine layer does not depend on it).
 
-用途：Chris 搞到真题后，用这个脚本把原始题转成 item_bank/{topic}.jsonl。
+Purpose: once Chris obtains real exam items, use this script to convert the raw items into item_bank/{topic}.jsonl.
 
-Chris 需要提供的最小格式（每题 5 样，缺一不可）：
-  1. 题干 stem（数据/图表文字化，化学式纯文本如 N2+3H2⇌2NH3）
-  2. 来源 source（哪年哪卷第几题）
-  3. 标准答案 final_answers（每小问）
-  4. 标准解步骤 solution_steps
-  5. 每小问分值 score
-能多给更好：官方评分细则/得分点（= 现成 rubric，优先搞带细则的真题）。
+Minimum format Chris must provide (5 fields per item, none optional):
+  1. Stem (textualize data/figures; chemical formulas as plain text, e.g. N2+3H2⇌2NH3)
+  2. Source (which year/paper/question number)
+  3. Final answers (per sub-question)
+  4. Solution steps
+  5. Score per sub-question
+Nice to have: official grading rubrics/scoring points (= ready-made rubric; prioritize real items with official rubrics).
 
-管线步骤：
-  解析 → 自动挂题型(向量) → 自动挂KG节点(向量) → LLM半自动拆rubric(★须人审)
-       → 挂一化儿讲法chunk → 挂视频 → 写 jsonl
+Pipeline steps:
+  parse -> auto-tag item type (vector) -> auto-tag KG nodes (vector) -> LLM semi-auto rubric split (MUST be human-reviewed)
+       -> attach yihua-style explanation chunks -> attach videos -> write jsonl
 
-当前实现：提供"从结构化输入直接写库"的最小可用版（rubric 由人提供或 LLM 生成后人审）。
-向量自动挂接、LLM 拆 rubric 在有真题批量导入需求时再接 retriever/llm_client。
+Current implementation: a minimal usable version that writes directly from structured input (rubric provided by a human, or LLM-generated then human-reviewed).
+Vector auto-attachment and LLM rubric splitting will hook in the retriever/llm_client when there is a real batch import need.
 
-用法示例：
-    python3 scripts/import_items.py --validate   # 校验现有题库格式
+Usage example:
+    python3 scripts/import_items.py --validate   # validate the existing item bank format
 """
 
 from __future__ import annotations
@@ -40,29 +40,29 @@ REQUIRED_RUBRIC_FIELDS = ["point_id", "desc", "keywords", "score"]
 
 
 def validate_item(item: dict) -> list:
-    """校验一道题是否符合 schema，返回问题列表（空=合格）。"""
+    """Validate whether an item conforms to the schema; return the list of problems (empty = valid)."""
     problems = []
     for f in REQUIRED_FIELDS:
         if f not in item or item[f] in (None, "", [], {}):
-            problems.append(f"缺字段: {f}")
+            problems.append(f"missing field: {f}")
     sol = item.get("standard_solution", {})
     if not sol.get("final_answers"):
-        problems.append("standard_solution 缺 final_answers")
+        problems.append("standard_solution missing final_answers")
     if not sol.get("solution_steps"):
-        problems.append("standard_solution 缺 solution_steps")
+        problems.append("standard_solution missing solution_steps")
     for i, rp in enumerate(item.get("rubric", [])):
         for rf in REQUIRED_RUBRIC_FIELDS:
             if rf not in rp:
-                problems.append(f"rubric[{i}] 缺 {rf}")
+                problems.append(f"rubric[{i}] missing {rf}")
     if not any(rp.get("must_have") for rp in item.get("rubric", [])):
-        problems.append("rubric 里没有任何 must_have 得分点（建议至少 1 个）")
+        problems.append("rubric has no must_have scoring points (at least 1 recommended)")
     return problems
 
 
 def validate_bank() -> int:
-    """校验整个题库。返回不合格题数。"""
+    """Validate the whole item bank. Returns the number of invalid items."""
     if not ITEM_BANK_DIR.exists():
-        print("题库目录不存在:", ITEM_BANK_DIR)
+        print("Item bank directory does not exist:", ITEM_BANK_DIR)
         return 0
     total, bad = 0, 0
     for f in sorted(ITEM_BANK_DIR.glob("*.jsonl")):
@@ -74,22 +74,22 @@ def validate_bank() -> int:
             try:
                 item = json.loads(line)
             except Exception as e:
-                print(f"  行{ln} JSON解析失败: {e}")
+                print(f"  line {ln} JSON parse failed: {e}")
                 bad += 1
                 continue
             problems = validate_item(item)
             if problems:
                 bad += 1
-                print(f"  ✗ {item.get('item_id','?')}: {'; '.join(problems)}")
+                print(f"  X {item.get('item_id','?')}: {'; '.join(problems)}")
             else:
-                print(f"  ✓ {item.get('item_id')} ({len(item.get('rubric',[]))} 得分点)")
-    print(f"\n合计 {total} 题，{bad} 题有问题，{total-bad} 题合格。")
+                print(f"  OK {item.get('item_id')} ({len(item.get('rubric',[]))} scoring points)")
+    print(f"\nTotal {total} items, {bad} with problems, {total-bad} valid.")
     return bad
 
 
 def main():
-    parser = argparse.ArgumentParser(description="真题导入管线")
-    parser.add_argument("--validate", action="store_true", help="校验现有题库格式")
+    parser = argparse.ArgumentParser(description="Real-exam-item import pipeline")
+    parser.add_argument("--validate", action="store_true", help="Validate the existing item bank format")
     args = parser.parse_args()
 
     if args.validate:

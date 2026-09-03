@@ -1,20 +1,20 @@
-"""验证 ModelScope dataset 完整可读"""
+"""Verify that the ModelScope dataset is complete and readable"""
 import os
 import sys
 from modelscope.hub.api import HubApi
 
 api = HubApi()
 
-print("🔍 检查 ChrisTLC/YHer-skill-embeddings...")
+print("Checking ChrisTLC/YHer-skill-embeddings...")
 try:
     files = api.get_dataset_files("ChrisTLC/YHer-skill-embeddings")
 except Exception as e:
-    print(f"❌ 无法访问 dataset: {e}")
+    print(f"ERROR: cannot access dataset: {e}")
     sys.exit(1)
 
-print(f"   共 {len(files)} 个文件\n")
+print(f"   {len(files)} files total\n")
 
-# 核心文件清单
+# Core file manifest
 expected_core = [
     "chunks.faiss",
     "chunks_meta.jsonl",
@@ -37,33 +37,33 @@ for f in files:
     fpath = f.get('path', f.get('name', str(f)))
     size_mb = f.get('size', 0) / 1024 / 1024
     present.add(fpath)
-    print(f"  {'✅' if size_mb > 0 else '⚠️'} {fpath:<45} {size_mb:>8.2f} MB")
+    print(f"  {'OK' if size_mb > 0 else 'WARN'} {fpath:<45} {size_mb:>8.2f} MB")
 
-# 核心文件检查
-print(f"\n📋 核心文件检查:")
+# Core file check
+print(f"\nCore file check:")
 core_ok = True
 for fname in expected_core:
     ok = any(fname in p for p in present)
     if ok:
-        print(f"  ✅ {fname}")
+        print(f"  OK {fname}")
     else:
-        print(f"  ❌ {fname} 缺失!")
+        print(f"  MISSING {fname}!")
         core_ok = False
 
-# BM25 文件检查
-print(f"\n📋 BM25 文件检查:")
+# BM25 file check
+print(f"\nBM25 file check:")
 bm25_ok = True
 for fname in bm25_files:
     ok = any(fname in p for p in present)
     if ok:
-        print(f"  ✅ {fname}")
+        print(f"  OK {fname}")
     else:
-        print(f"  ❌ {fname} 缺失!")
+        print(f"  MISSING {fname}!")
         bm25_ok = False
 
 print(f"\n{'=' * 50}")
 if core_ok and bm25_ok:
-    print("✅ ModelScope dataset 完整可读，可以开始 T0。")
+    print("ModelScope dataset complete and readable; T0 can proceed.")
 else:
-    print("❌ 文件不完整，需要重新上传!")
+    print("Files incomplete; re-upload required!")
     sys.exit(1)

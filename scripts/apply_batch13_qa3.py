@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Batch13 (QA-3 视觉裁片) apply —— 用户 2026-07-05「授权」(绑定 batch13 三目标)。
+"""Batch13 (QA-3 visual crops) apply -- user authorization dated 2026-07-05 (bound to batch13's three goals).
 
-审计: 105 kept 零张冠李戴(12 证据链+4 亲验图),13d 97 kept 垃圾/泄漏 0,refmap 28 行合规。
-写入:
-  1. ws2_repaired_assets/ +105 裁片,按 final_asset_hash 命名
-     (dead_asset 77 张=原 hash 正身;dead_ref 28 张=crop_sha256 新 hash)
-  2. ws2_media_ref_map_v1.jsonl +28 行(死引用新映射;in_ws2_manifest=false 同现网口径,
-     loader 不读该字段,(group,media)→hash 即可寻址)
-  3. ws2_asset_transcripts_v1.jsonl: 13d 97 条按官方 schema 落
-     - hash 已在官方(76): 升池/补字段(latex → formula_latex 池;transcript → 按候选池)
-     - hash 新(24=28 dead_ref 减 4 无转写): 新增行
-     - icon_or_noise 永不升池(batch12 教训,13d 无此类,防御性过滤仍保留)
-幂等: apply_id 标记;图已存在跳过;ref_map 已有 (group,media) 跳过。默认 dry-run。
+Audit: 105 kept with zero misattributions (12 evidence chains + 4 manually verified images); 13d's 97 kept items with zero garbage/leaks; refmap's 28 rows compliant.
+Writes:
+  1. ws2_repaired_assets/ +105 crops, named by final_asset_hash
+     (dead_asset 77 = original hash as-is; dead_ref 28 = crop_sha256 new hash)
+  2. ws2_media_ref_map_v1.jsonl +28 rows (new mapping for dead references; in_ws2_manifest=false matches the live-service convention;
+     the loader does not read this field; (group,media)->hash is sufficient for addressing)
+  3. ws2_asset_transcripts_v1.jsonl: 13d's 97 rows written per the official schema
+     - hash already official (76): promote to pool / fill fields (latex -> formula_latex pool; transcript -> per candidate pool)
+     - new hash (24 = 28 dead_ref minus 4 without transcript): new rows
+     - icon_or_noise never promotes to pool (batch12 lesson; none in 13d, but defensive filtering kept)
+Idempotent: apply_id marker; skip if image exists; skip if ref_map already has (group,media). Dry-run by default.
 """
 from __future__ import annotations
 import argparse, json, shutil
@@ -41,11 +41,11 @@ def main():
     ap.add_argument("--apply", action="store_true")
     args = ap.parse_args()
     dry = not args.apply
-    print(f"=== Batch13 {'APPLY(真写)' if not dry else 'DRY-RUN'} ===")
+    print(f"=== Batch13 {'APPLY (real write)' if not dry else 'DRY-RUN'} ===")
     stats = Counter()
 
     kept = read_jsonl(B13 / "crop_candidates.jsonl")
-    # 1. 裁片收编(按 final_asset_hash 命名)
+    # 1. Collect crops (named by final_asset_hash)
     for c in kept:
         fh = c["final_asset_hash"]
         src = Path(c["crop_path"])
@@ -60,7 +60,7 @@ def main():
             shutil.copy2(src, dst)
         stats["png_collected"] += 1
 
-    # 2. ref_map +28(dead_ref)
+    # 2. ref_map +28 (dead_ref)
     ref_rows = read_jsonl(REF_MAP)
     have_gm = {(r.get("group_key"), r.get("media")) for r in ref_rows}
     for r in read_jsonl(B13 / "refmap_new_rows.jsonl"):
@@ -68,7 +68,7 @@ def main():
         if gm in have_gm:
             stats["ref_exists_skip"] += 1
             continue
-        # 该 media 的 zones 从 kept 行取
+        # Take this media's zones from its kept row
         src_row = next((c for c in kept if c["group_key"] == r["group_key"] and c["media"] == r["media"]), None)
         zones = (src_row or {}).get("zones") or []
         ref_rows.append({"group_key": r["group_key"], "media": r["media"],
@@ -79,7 +79,7 @@ def main():
     if not dry:
         write_jsonl(REF_MAP, ref_rows)
 
-    # 3. 转写表: 13d 97 条
+    # 3. Transcript table: 13d's 97 rows
     t_rows = read_jsonl(TRANSCRIPTS)
     by_hash = {r["asset_hash"]: r for r in t_rows}
     # formula
@@ -112,7 +112,7 @@ def main():
         h = r["asset_hash"]
         pool = r.get("pool") or "display_only"
         if r.get("fine_type") == "icon_or_noise":
-            stats["skip_icon"] += 1  # batch12 教训: 噪声不升池
+            stats["skip_icon"] += 1  # batch12 lesson: noise never promotes to pool
             continue
         tgt = by_hash.get(h)
         if tgt is None:
@@ -136,8 +136,8 @@ def main():
 
     for k, v in sorted(stats.items()):
         print(f"  {k}: {v}")
-    print(f"  转写表行数: {len(t_rows)}")
-    print("=== 完成 ===")
+    print(f"  transcript rows: {len(t_rows)}")
+    print("=== DONE ===")
 
 if __name__ == "__main__":
     main()
